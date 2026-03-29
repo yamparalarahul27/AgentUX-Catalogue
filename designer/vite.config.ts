@@ -4,6 +4,11 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  base: '/designer/',
+  build: {
+    outDir: '../site/designer',
+    emptyOutDir: true,
+  },
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../src'),
