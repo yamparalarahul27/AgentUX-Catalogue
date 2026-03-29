@@ -22,6 +22,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -31,6 +32,7 @@ body {
   color: var(--ink);
   font-family: "Instrument Sans", sans-serif;
   line-height: 1.55;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -123,6 +125,7 @@ img {
   overflow: hidden;
   border-radius: var(--radius-xl);
   padding: 42px;
+  min-width: 0;
 }
 
 .hero-copy::after {
@@ -211,6 +214,8 @@ li {
   box-shadow: 0 8px 20px rgba(31, 42, 46, 0.05);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.95rem;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .hero-actions {
@@ -448,6 +453,7 @@ li {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.92rem;
   line-height: 1.6;
+  max-width: 100%;
 }
 
 .install-card pre {
@@ -457,6 +463,7 @@ li {
   padding: 16px;
   background: #132225;
   color: #f9f2e8;
+  max-width: 100%;
 }
 
 .install-step-card pre {
@@ -466,6 +473,17 @@ li {
   padding: 16px;
   background: #132225;
   color: #f9f2e8;
+  max-width: 100%;
+}
+
+.install-card,
+.install-step-card,
+.feature-card,
+.loop-step,
+.scenario-card,
+.spec-note,
+.faq-card {
+  min-width: 0;
 }
 
 .footer {
