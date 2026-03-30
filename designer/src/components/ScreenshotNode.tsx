@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from 'react';
+import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 
 export interface ScreenshotNodeData {
@@ -34,6 +34,15 @@ export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {
   const [group, setGroup] = useState(nodeData.group || '');
   const inputRef = useRef<HTMLInputElement>(null);
   const groupInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageAttach = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      window.dispatchEvent(new CustomEvent('attach-screenshot-image', { detail: { id, file } }));
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [id]);
 
   useEffect(() => { setName(nodeData.label); }, [nodeData.label]);
   useEffect(() => { setGroup(nodeData.group || ''); }, [nodeData.group]);
@@ -94,14 +103,26 @@ export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {
             draggable={false}
           />
         ) : (
-          <div className="screenshot-node-placeholder">
+          <div
+            className="screenshot-node-placeholder"
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            title="Click to add screenshot"
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="1.5">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <polyline points="21 15 16 10 5 21" />
             </svg>
+            <span className="screenshot-node-placeholder-text">Click to add image</span>
           </div>
         )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageAttach}
+          style={{ display: 'none' }}
+        />
       </div>
 
       <div className="screenshot-node-info">

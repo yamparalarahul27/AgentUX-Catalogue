@@ -25,6 +25,7 @@ import { ScreenshotNodeComponent } from './ScreenshotNode';
 import { ConnectionEdgeComponent } from './ConnectionEdge';
 import { Toolbar } from './Toolbar';
 import { UploadZone } from './UploadZone';
+import { FlowInput } from './FlowInput';
 import { MobileFlowView } from './MobileFlowView';
 
 const THEME = {
@@ -118,6 +119,7 @@ export function Canvas({ user }: CanvasProps) {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [showFlowInput, setShowFlowInput] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [relayoutKey, setRelayoutKey] = useState(0);
 
@@ -151,7 +153,9 @@ export function Canvas({ user }: CanvasProps) {
       // Generate public URLs for images
       const withUrls = screenshotRes.data.map((s: ScreenshotNode) => ({
         ...s,
-        image_url: supabase.storage.from('screenshots').getPublicUrl(s.storage_path).data.publicUrl,
+        image_url: s.storage_path
+          ? supabase.storage.from('screenshots').getPublicUrl(s.storage_path).data.publicUrl
+          : '',
       }));
       setScreenshots(withUrls);
     }
@@ -220,6 +224,41 @@ export function Canvas({ user }: CanvasProps) {
     window.addEventListener('rename-screenshot-group', handler);
     return () => window.removeEventListener('rename-screenshot-group', handler);
   }, []);
+
+  // Listen for attach-screenshot-image events (placeholder click to add image)
+  useEffect(() => {
+    const handler = async (evt: Event) => {
+      const { id, file } = (evt as CustomEvent).detail;
+      if (!projectId) return;
+
+      const safeName = file.name.replace(/\s+/g, '-');
+      const storagePath = `${user.id}/${projectId}/${safeName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('screenshots')
+        .upload(storagePath, file, { upsert: true });
+
+      if (uploadError) {
+        console.error('Image attach failed:', uploadError);
+        return;
+      }
+
+      const imageUrl = supabase.storage
+        .from('screenshots')
+        .getPublicUrl(storagePath).data.publicUrl;
+
+      await supabase
+        .from('screenshots')
+        .update({ storage_path: storagePath, file_name: file.name })
+        .eq('id', id);
+
+      setScreenshots((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, storage_path: storagePath, file_name: file.name, image_url: imageUrl } : s)),
+      );
+    };
+    window.addEventListener('attach-screenshot-image', handler);
+    return () => window.removeEventListener('attach-screenshot-image', handler);
+  }, [projectId, user.id]);
 
   // Save position changes (debounced)
   const handleNodesChange: typeof onNodesChange = useCallback(
@@ -372,6 +411,66 @@ export function Canvas({ user }: CanvasProps) {
     setUploading(false);
   }
 
+  // Insert flow from text
+  async function handleFlowInsert(text: string) {
+    if (!projectId) return;
+    setShowFlowInput(false);
+
+    const steps = text.split('->').map((s) => s.trim()).filter(Boolean);
+    if (steps.length === 0) return;
+
+    const newScreenshots: ScreenshotNode[] = [];
+
+    // Create screenshot placeholders for each step
+    for (let i = 0; i < steps.length; i++) {
+      const { data, error } = await supabase
+        .from('screenshots')
+        .insert({
+          project_id: projectId,
+          name: steps[i],
+          file_name: '',
+          storage_path: '',
+          sequence: i + 1,
+          group: null,
+        })
+        .select()
+        .single();
+
+      if (data && !error) {
+        newScreenshots.push({ ...data, image_url: '' });
+      }
+    }
+
+    // Create connections between consecutive steps
+    const newConnections: Connection[] = [];
+    for (let i = 0; i < newScreenshots.length - 1; i++) {
+      const { data, error } = await supabase
+        .from('connections')
+        .insert({
+          project_id: projectId,
+          source_id: newScreenshots[i].id,
+          target_id: newScreenshots[i + 1].id,
+          type: 'manual',
+        })
+        .select()
+        .single();
+
+      if (data && !error) {
+        newConnections.push(data);
+      }
+    }
+
+    setScreenshots((prev) => [...prev, ...newScreenshots]);
+    setConnections((prev) => [...prev, ...newConnections]);
+    setRelayoutKey((k) => k + 1);
+
+    // Update project timestamp
+    await supabase
+      .from('projects')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', projectId);
+  }
+
   // Auto-connect
   async function handleAutoConnect() {
     if (!projectId) return;
@@ -477,6 +576,7 @@ export function Canvas({ user }: CanvasProps) {
         screenshotCount={screenshots.length}
         connectionCount={connections.length}
         onUploadClick={() => setShowUpload(true)}
+        onAddFlow={() => setShowFlowInput(true)}
         onAutoConnect={handleAutoConnect}
         onRelayout={handleRelayout}
         onExport={handleExport}
@@ -531,6 +631,13 @@ export function Canvas({ user }: CanvasProps) {
                   <UploadZone onFilesSelected={handleFilesSelected} disabled={uploading} />
                 </div>
               </div>
+            )}
+
+            {showFlowInput && (
+              <FlowInput
+                onInsert={handleFlowInsert}
+                onCancel={() => setShowFlowInput(false)}
+              />
             )}
           </>
         )}

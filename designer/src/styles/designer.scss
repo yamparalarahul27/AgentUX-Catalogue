@@ -800,3 +800,89 @@ body {
     }
   }
 }
+
+// ---- Flow Input Modal ----
+
+.flow-input-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.flow-input-modal {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 28px;
+  width: 500px;
+  max-width: 90vw;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+}
+
+.flow-input-hint {
+  color: $text-muted;
+  font-size: 13px;
+  margin-bottom: 16px;
+
+  code {
+    background: $bg;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: $accent;
+  }
+}
+
+.flow-input-field {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid $border;
+  background: $bg;
+  color: $text;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+
+  &:focus { border-color: $accent; }
+  &::placeholder { color: $text-dim; }
+}
+
+.flow-input-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// ---- Placeholder Node ----
+
+.screenshot-node-placeholder {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover {
+    background: rgba($accent, 0.05);
+
+    svg { stroke: $accent; }
+    .screenshot-node-placeholder-text { color: $accent; }
+  }
+}
+
+.screenshot-node-placeholder-text {
+  font-size: 11px;
+  color: $text-dim;
+  transition: color 0.2s;
+}
