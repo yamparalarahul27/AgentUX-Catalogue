@@ -9,7 +9,7 @@ import { Canvas } from './components/Canvas';
 // Auth disabled for now — using a mock user
 // Re-enable Auth component and supabase imports when Supabase is set up
 const MOCK_USER: User = {
-  id: 'local-user',
+  id: '00000000-0000-0000-0000-000000000000',
   email: 'designer@agentux.dev',
   app_metadata: {},
   user_metadata: {},
