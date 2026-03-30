@@ -737,3 +737,24 @@ body {
   justify-content: center;
   padding: 2px 0;
 }
+
+// ---- React Flow Controls Dark Theme ----
+
+.react-flow__controls {
+  button {
+    background: $surface;
+    border: 1px solid $border;
+    color: $text-muted;
+    fill: $text-muted;
+
+    &:hover {
+      background: $border;
+      color: $text;
+      fill: $text;
+    }
+
+    svg {
+      fill: inherit;
+    }
+  }
+}

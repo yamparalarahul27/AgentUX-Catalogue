@@ -5,7 +5,7 @@ interface UploadZoneProps {
   disabled?: boolean;
 }
 
-const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'image/bmp', 'image/tiff'];
 
 export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -30,7 +30,7 @@ export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
     if (disabled) return;
 
     const files = Array.from(e.dataTransfer.files).filter((f) =>
-      ACCEPTED_TYPES.includes(f.type),
+      f.type.startsWith('image/') || ACCEPTED_TYPES.includes(f.type),
     );
     if (files.length > 0) onFilesSelected(files);
   }, [onFilesSelected, disabled]);
@@ -41,7 +41,7 @@ export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).filter((f) =>
-      ACCEPTED_TYPES.includes(f.type),
+      f.type.startsWith('image/') || ACCEPTED_TYPES.includes(f.type),
     );
     if (files.length > 0) onFilesSelected(files);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -59,7 +59,7 @@ export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
         ref={fileInputRef}
         type="file"
         multiple
-        accept=".png,.jpg,.jpeg,.webp"
+        accept="image/*"
         onChange={handleFileChange}
         style={{ display: 'none' }}
       />
