@@ -1,6 +1,61 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Comparison } from '../types';
 import { supabase } from '../lib/supabase';
+
+function DraggableImage({ src, alt }: { src: string; alt: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0, posX: 50, posY: 50 });
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setDragging(true);
+    dragStart.current = { x: e.clientX, y: e.clientY, posX: pos.x, posY: pos.y };
+  }, [pos]);
+
+  useEffect(() => {
+    if (!dragging) return;
+
+    function handleMove(e: MouseEvent) {
+      const dx = e.clientX - dragStart.current.x;
+      const dy = e.clientY - dragStart.current.y;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const newX = Math.max(0, Math.min(100, dragStart.current.posX - (dx / rect.width) * 100));
+      const newY = Math.max(0, Math.min(100, dragStart.current.posY - (dy / rect.height) * 100));
+      setPos({ x: newX, y: newY });
+    }
+
+    function handleUp() {
+      setDragging(false);
+    }
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [dragging]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="compare-image-draggable"
+      onMouseDown={handleMouseDown}
+      style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+      />
+    </div>
+  );
+}
 
 interface CompareModalProps {
   screenshotId: string;
@@ -27,8 +82,11 @@ export function CompareModal({
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadComparisons();
@@ -142,6 +200,22 @@ export function CompareModal({
     });
   }
 
+  function startRename(id: string, name: string) {
+    setRenamingId(id);
+    setRenameValue(name);
+    setTimeout(() => renameInputRef.current?.focus(), 0);
+  }
+
+  async function commitRename() {
+    if (!renamingId) return;
+    const trimmed = renameValue.trim();
+    if (trimmed) {
+      await supabase.from('comparisons').update({ name: trimmed }).eq('id', renamingId);
+      setComparisons((prev) => prev.map((c) => (c.id === renamingId ? { ...c, name: trimmed } : c)));
+    }
+    setRenamingId(null);
+  }
+
   const activeComp = !addingMode ? comparisons[activeIndex] || null : null;
 
   function renderRightSide() {
@@ -189,11 +263,29 @@ export function CompareModal({
     if (activeComp) {
       return (
         <>
-          <div className="compare-image">
-            <img src={activeComp.image_url} alt={activeComp.name} />
-          </div>
+          <DraggableImage src={activeComp.image_url || ''} alt={activeComp.name} />
           <div className="compare-name">
-            <span>{activeComp.name}</span>
+            {renamingId === activeComp.id ? (
+              <input
+                ref={renameInputRef}
+                className="compare-rename-input"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onBlur={commitRename}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitRename();
+                  if (e.key === 'Escape') setRenamingId(null);
+                }}
+              />
+            ) : (
+              <span
+                onDoubleClick={() => startRename(activeComp.id, activeComp.name)}
+                title="Double-click to rename"
+                style={{ cursor: 'text' }}
+              >
+                {activeComp.name}
+              </span>
+            )}
             <button className="compare-change" onClick={() => deleteComparison(activeComp.id)}>
               Remove
             </button>
@@ -244,9 +336,7 @@ export function CompareModal({
         <div className="compare-body">
           <div className="compare-side">
             <div className="compare-label">Current</div>
-            <div className="compare-image">
-              <img src={screenshotUrl} alt={screenshotName} />
-            </div>
+            <DraggableImage src={screenshotUrl} alt={screenshotName} />
             <p className="compare-name">{screenshotName}</p>
           </div>
 

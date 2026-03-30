@@ -1311,21 +1311,20 @@ body {
   margin-bottom: 12px;
 }
 
-.compare-image {
-  flex: 1;
+.compare-image,
+.compare-image-draggable {
+  aspect-ratio: 4 / 3;
   border: 1px solid $border;
   border-radius: 8px;
   overflow: hidden;
   background: #111;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  user-select: none;
 
   img {
     width: 100%;
-    height: auto;
-    max-height: 60vh;
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
   }
 }
 
@@ -1336,6 +1335,17 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.compare-rename-input {
+  background: $bg;
+  border: 1px solid $accent;
+  border-radius: 4px;
+  color: $text;
+  font-size: 12px;
+  padding: 2px 6px;
+  outline: none;
+  flex: 1;
 }
 
 .compare-change {
