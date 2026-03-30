@@ -974,7 +974,7 @@ body {
 // ---- Edge Popup ----
 
 .edge-popup {
-  position: absolute;
+  position: fixed;
   background: $surface;
   border: 1px solid $border;
   border-radius: 10px;
@@ -982,6 +982,7 @@ body {
   z-index: 200;
   min-width: 180px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -100%) translateY(-12px);
 }
 
 .edge-popup-section {
@@ -1083,6 +1084,7 @@ body {
   font-size: 11px;
   color: $text-muted;
   white-space: nowrap;
+  z-index: 50;
 }
 
 // ---- Flow List ----
@@ -1170,6 +1172,33 @@ body {
 }
 
 // ---- Project Rename ----
+
+.project-card-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  h3 { margin: 0; }
+}
+
+.project-rename-btn {
+  background: none;
+  border: none;
+  color: $text-dim;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 1;
+
+  &:hover { color: $accent; background: rgba($accent, 0.1); }
+}
+
+.project-card:hover .project-rename-btn { opacity: 1; }
 
 .project-rename-input {
   width: 100%;

@@ -39,6 +39,8 @@ export interface Connection {
   type: 'auto' | 'manual';
   label: string | null;
   arrow_direction: 'forward' | 'backward' | 'both';
+  source_handle: string | null;
+  target_handle: string | null;
   created_at?: string;
 }
 

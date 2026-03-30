@@ -109,6 +109,8 @@ function buildFlowElements(screenshots: ScreenshotNode[], connections: Connectio
       id: c.id,
       source: c.source_id,
       target: c.target_id,
+      sourceHandle: c.source_handle || undefined,
+      targetHandle: c.target_handle || undefined,
       type: 'connectionEdge',
       animated: c.type === 'auto',
       ...buildEdgeMarkers(c.arrow_direction || 'forward'),
@@ -322,6 +324,8 @@ export function Canvas({ user }: CanvasProps) {
           flow_id: flowId,
           source_id: connection.source,
           target_id: connection.target,
+          source_handle: connection.sourceHandle || null,
+          target_handle: connection.targetHandle || null,
           type: 'manual',
         })
         .select()
@@ -350,11 +354,10 @@ export function Canvas({ user }: CanvasProps) {
   const handleEdgeClick = useCallback(
     (event: React.MouseEvent, _edge: Edge) => {
       if (toolMode !== 'pointer') return;
-      const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
       setSelectedEdge({
         edgeId: _edge.id,
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
+        x: event.clientX,
+        y: event.clientY,
       });
     },
     [toolMode],
@@ -643,6 +646,9 @@ export function Canvas({ user }: CanvasProps) {
               nodesConnectable={!isHand}
               elementsSelectable={!isHand}
               panOnDrag={isHand}
+              panOnScroll
+              zoomOnScroll={false}
+              zoomOnPinch
               fitView
               fitViewOptions={{ padding: 0.2 }}
               proOptions={{ hideAttribution: true }}
