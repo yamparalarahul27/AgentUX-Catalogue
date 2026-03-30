@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd designer && npm install && npx vite build",
+  "buildCommand": "npm run build:site",
   "outputDirectory": "site",
   "rewrites": [
     { "source": "/designer", "destination": "/designer/index.html" },
