@@ -175,10 +175,76 @@ export function Canvas({ user }: CanvasProps) {
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
+  // Listen for delete-screenshot events from node delete buttons
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      const { id } = (evt as CustomEvent).detail;
+      // Delete from Supabase
+      supabase
+        .from('connections')
+        .delete()
+        .or(`source_id.eq.${id},target_id.eq.${id}`)
+        .then(() => {
+          supabase.from('screenshots').delete().eq('id', id).then(() => {});
+        });
+      // Delete from local state
+      setScreenshots((prev) => prev.filter((s) => s.id !== id));
+      setConnections((prev) => prev.filter((c) => c.source_id !== id && c.target_id !== id));
+      setNodes((nds) => nds.filter((n) => n.id !== id));
+      setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
+    };
+    window.addEventListener('delete-screenshot', handler);
+    return () => window.removeEventListener('delete-screenshot', handler);
+  }, [setNodes, setEdges]);
+
+  // Listen for rename-screenshot events from node inline edit
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      const { id, name } = (evt as CustomEvent).detail;
+      // Update in Supabase
+      supabase.from('screenshots').update({ name }).eq('id', id).then(() => {});
+      // Update local state
+      setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
+    };
+    window.addEventListener('rename-screenshot', handler);
+    return () => window.removeEventListener('rename-screenshot', handler);
+  }, []);
+
+  // Listen for rename-screenshot-group events
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      const { id, group } = (evt as CustomEvent).detail;
+      supabase.from('screenshots').update({ group }).eq('id', id).then(() => {});
+      setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, group } : s)));
+    };
+    window.addEventListener('rename-screenshot-group', handler);
+    return () => window.removeEventListener('rename-screenshot-group', handler);
+  }, []);
+
   // Save position changes (debounced)
   const handleNodesChange: typeof onNodesChange = useCallback(
     (changes) => {
       onNodesChange(changes);
+
+      // Handle node removals — delete from Supabase
+      const removeChanges = changes.filter((c) => c.type === 'remove');
+      for (const change of removeChanges) {
+        // Delete associated connections first, then the screenshot
+        supabase
+          .from('connections')
+          .delete()
+          .or(`source_id.eq.${change.id},target_id.eq.${change.id}`)
+          .then(() => {
+            supabase.from('screenshots').delete().eq('id', change.id).then(() => {});
+          });
+
+        // Also remove from local screenshots state
+        setScreenshots((prev) => prev.filter((s) => s.id !== change.id));
+        // Remove associated connections from local state
+        setConnections((prev) =>
+          prev.filter((c) => c.source_id !== change.id && c.target_id !== change.id),
+        );
+      }
 
       // Debounce position saves
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
@@ -259,7 +325,8 @@ export function Canvas({ user }: CanvasProps) {
 
     for (const file of files) {
       const parsed = parseScreenshotName(file.name);
-      const storagePath = `${user.id}/${projectId}/${file.name}`;
+      const safeName = file.name.replace(/\s+/g, '-');
+      const storagePath = `${user.id}/${projectId}/${safeName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('screenshots')
