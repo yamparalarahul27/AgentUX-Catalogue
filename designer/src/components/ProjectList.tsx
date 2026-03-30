@@ -13,6 +13,19 @@ interface ProjectListProps {
   onLogout?: () => void;
 }
 
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const day = d.getDate();
+  const suffix = [, 'st', 'nd', 'rd'][day % 10 > 3 ? 0 : (day % 100 - day % 10 !== 10 ? day % 10 : 0)] || 'th';
+  const month = d.toLocaleString('en', { month: 'short' });
+  const year = d.getFullYear();
+  const hours = d.getHours();
+  const mins = d.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const h12 = hours % 12 || 12;
+  return `${day}${suffix} ${month} ${year}, ${h12.toString().padStart(2, '0')}:${mins} ${ampm}`;
+}
+
 function truncateEmail(email: string, maxLen = 24): string {
   if (email.length <= maxLen) return email;
   const [local, domain] = email.split('@');
@@ -48,7 +61,7 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
       const withCounts: ProjectWithCounts[] = await Promise.all(
         data.map(async (p: Project) => {
           const { count } = await supabase
-            .from('connections')
+            .from('flows')
             .select('*', { count: 'exact', head: true })
             .eq('project_id', p.id);
           return { ...p, flow_count: count ?? 0 };
@@ -208,7 +221,7 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
                   </h3>
                 )}
                 <p className="project-date">
-                  {new Date(project.updated_at).toLocaleDateString()}
+                  {formatDate(project.updated_at)}
                 </p>
                 {(project.flow_count ?? 0) > 0 && (
                   <p className="project-flow-count">

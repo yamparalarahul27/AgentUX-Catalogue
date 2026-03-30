@@ -4,6 +4,19 @@ import type { User } from '@supabase/supabase-js';
 import type { Project, Flow } from '../types';
 import { supabase } from '../lib/supabase';
 
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const day = d.getDate();
+  const suffix = [, 'st', 'nd', 'rd'][day % 10 > 3 ? 0 : (day % 100 - day % 10 !== 10 ? day % 10 : 0)] || 'th';
+  const month = d.toLocaleString('en', { month: 'short' });
+  const year = d.getFullYear();
+  const hours = d.getHours();
+  const mins = d.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const h12 = hours % 12 || 12;
+  return `${day}${suffix} ${month} ${year}, ${h12.toString().padStart(2, '0')}:${mins} ${ampm}`;
+}
+
 interface FlowWithCount extends Flow {
   screen_count?: number;
 }
@@ -153,7 +166,7 @@ export function FlowList({ user: _user }: FlowListProps) {
                 </div>
                 <h3>{flow.name}</h3>
                 <p className="project-date">
-                  {(flow.screen_count ?? 0)} screen{flow.screen_count !== 1 ? 's' : ''}
+                  {(flow.screen_count ?? 0)} screen{flow.screen_count !== 1 ? 's' : ''} · {formatDate(flow.updated_at)}
                 </p>
                 <button
                   className="project-delete"

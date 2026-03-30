@@ -79,9 +79,12 @@ export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {
 
   return (
     <div className={`screenshot-node ${expanded ? 'screenshot-node-expanded' : ''}`}>
-      <Handle type="target" position={Position.Top} className="screenshot-handle" id="top" />
-      <Handle type="source" position={Position.Right} className="screenshot-handle" id="right" />
-      <Handle type="target" position={Position.Left} className="screenshot-handle" id="left" />
+      <Handle type="target" position={Position.Top} className="screenshot-handle" id="top-target" />
+      <Handle type="source" position={Position.Top} className="screenshot-handle" id="top-source" />
+      <Handle type="target" position={Position.Right} className="screenshot-handle" id="right-target" />
+      <Handle type="source" position={Position.Right} className="screenshot-handle" id="right-source" />
+      <Handle type="target" position={Position.Left} className="screenshot-handle" id="left-target" />
+      <Handle type="source" position={Position.Left} className="screenshot-handle" id="left-source" />
 
       {nodeData.imageUrl && (
         <button
@@ -209,7 +212,8 @@ export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {
         </div>
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="screenshot-handle" id="bottom" />
+      <Handle type="target" position={Position.Bottom} className="screenshot-handle" id="bottom-target" />
+      <Handle type="source" position={Position.Bottom} className="screenshot-handle" id="bottom-source" />
     </div>
   );
 });
