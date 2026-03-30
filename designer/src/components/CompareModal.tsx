@@ -21,25 +21,27 @@ export function CompareModal({
 }: CompareModalProps) {
   const [comparisons, setComparisons] = useState<Comparison[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [showNameInput, setShowNameInput] = useState(false);
+  const [addingMode, setAddingMode] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Load existing comparisons
   useEffect(() => {
     loadComparisons();
   }, [screenshotId]);
 
   useEffect(() => {
-    if (showNameInput && nameInputRef.current) {
+    if (addingMode && pendingFile && nameInputRef.current) {
       nameInputRef.current.focus();
     }
-  }, [showNameInput]);
+  }, [addingMode, pendingFile]);
 
   async function loadComparisons() {
+    setLoading(true);
     const { data } = await supabase
       .from('comparisons')
       .select('*')
@@ -55,25 +57,34 @@ export function CompareModal({
       }));
       setComparisons(withUrls);
     }
+    setLoading(false);
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setPendingFile(file);
+      setPendingPreview(URL.createObjectURL(file));
       setNewName(file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '));
-      setShowNameInput(true);
+      setAddingMode(true);
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function cancelAdding() {
+    setAddingMode(false);
+    setPendingFile(null);
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview);
+    setPendingPreview(null);
+    setNewName('');
   }
 
   async function commitUpload() {
     if (!pendingFile || !newName.trim()) return;
     setUploading(true);
-    setShowNameInput(false);
 
     const safeName = pendingFile.name.replace(/\s+/g, '-');
-    const storagePath = `${userId}/${projectId}/comparisons/${screenshotId}/${safeName}`;
+    const storagePath = `${userId}/${projectId}/comparisons/${screenshotId}/${Date.now()}-${safeName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('screenshots')
@@ -107,8 +118,11 @@ export function CompareModal({
       });
     }
 
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview);
     setPendingFile(null);
+    setPendingPreview(null);
     setNewName('');
+    setAddingMode(false);
     setUploading(false);
   }
 
@@ -121,11 +135,98 @@ export function CompareModal({
     }
     await supabase.from('comparisons').delete().eq('id', id);
 
-    setComparisons((prev) => prev.filter((c) => c.id !== id));
-    setActiveIndex((prev) => Math.max(0, Math.min(prev, comparisons.length - 2)));
+    setComparisons((prev) => {
+      const updated = prev.filter((c) => c.id !== id);
+      setActiveIndex((idx) => Math.max(0, Math.min(idx, updated.length - 1)));
+      return updated;
+    });
   }
 
-  const activeComp = comparisons[activeIndex] || null;
+  const activeComp = !addingMode ? comparisons[activeIndex] || null : null;
+
+  function renderRightSide() {
+    // Adding mode — show preview + name input
+    if (addingMode) {
+      return (
+        <div className="compare-adding">
+          {pendingPreview && (
+            <div className="compare-image compare-image-preview">
+              <img src={pendingPreview} alt="Preview" />
+            </div>
+          )}
+          <div className="compare-name-form">
+            <input
+              ref={nameInputRef}
+              className="compare-name-input"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitUpload();
+                if (e.key === 'Escape') cancelAdding();
+              }}
+              placeholder="Name this comparison..."
+              disabled={uploading}
+            />
+            <div className="compare-name-actions">
+              <button className="btn-primary" onClick={commitUpload} disabled={!newName.trim() || uploading}>
+                {uploading ? (
+                  <>
+                    <div className="loading-spinner-small" />
+                    Saving...
+                  </>
+                ) : 'Save'}
+              </button>
+              <button className="btn-secondary" onClick={cancelAdding} disabled={uploading}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Has saved comparisons — show active one
+    if (activeComp) {
+      return (
+        <>
+          <div className="compare-image">
+            <img src={activeComp.image_url} alt={activeComp.name} />
+          </div>
+          <div className="compare-name">
+            <span>{activeComp.name}</span>
+            <button className="compare-change" onClick={() => deleteComparison(activeComp.id)}>
+              Remove
+            </button>
+          </div>
+        </>
+      );
+    }
+
+    // Loading
+    if (loading) {
+      return (
+        <div className="compare-upload">
+          <div className="loading-spinner" />
+          <span>Loading...</span>
+        </div>
+      );
+    }
+
+    // Empty — show upload area
+    return (
+      <div
+        className="compare-upload"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+        <span>Upload screenshot to compare</span>
+      </div>
+    );
+  }
 
   return (
     <div className="compare-overlay" onClick={onClose}>
@@ -141,7 +242,6 @@ export function CompareModal({
         </div>
 
         <div className="compare-body">
-          {/* Left side — current screenshot */}
           <div className="compare-side">
             <div className="compare-label">Current</div>
             <div className="compare-image">
@@ -154,63 +254,13 @@ export function CompareModal({
             <span className="compare-vs">VS</span>
           </div>
 
-          {/* Right side — comparison images */}
           <div className="compare-side">
             <div className="compare-label">
-              Compare {comparisons.length > 0 && `(${activeIndex + 1}/${comparisons.length})`}
+              Compare {comparisons.length > 0 && !addingMode && `(${activeIndex + 1}/${comparisons.length})`}
+              {addingMode && '(adding new)'}
             </div>
 
-            {activeComp ? (
-              <>
-                <div className="compare-image">
-                  <img src={activeComp.image_url} alt={activeComp.name} />
-                </div>
-                <div className="compare-name">
-                  <span>{activeComp.name}</span>
-                  <button
-                    className="compare-change"
-                    onClick={() => deleteComparison(activeComp.id)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </>
-            ) : showNameInput ? (
-              <div className="compare-name-form">
-                <p className="compare-name-prompt">Name this comparison:</p>
-                <input
-                  ref={nameInputRef}
-                  className="compare-name-input"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitUpload();
-                    if (e.key === 'Escape') { setShowNameInput(false); setPendingFile(null); }
-                  }}
-                  placeholder="e.g., New Login Design"
-                />
-                <div className="compare-name-actions">
-                  <button className="btn-primary" onClick={commitUpload} disabled={!newName.trim() || uploading}>
-                    {uploading ? 'Uploading...' : 'Save'}
-                  </button>
-                  <button className="btn-secondary" onClick={() => { setShowNameInput(false); setPendingFile(null); }}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div
-                className="compare-upload"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <span>Upload screenshot to compare</span>
-              </div>
-            )}
+            {renderRightSide()}
 
             <input
               ref={fileInputRef}
@@ -220,24 +270,27 @@ export function CompareModal({
               style={{ display: 'none' }}
             />
 
-            {/* Circular nav dots + add button */}
-            {(comparisons.length > 0) && (
+            {(comparisons.length > 0 || addingMode) && (
               <div className="compare-nav">
                 {comparisons.map((c, i) => (
                   <button
                     key={c.id}
-                    className={`compare-nav-dot ${i === activeIndex ? 'active' : ''}`}
-                    onClick={() => setActiveIndex(i)}
+                    className={`compare-nav-dot ${!addingMode && i === activeIndex ? 'active' : ''}`}
+                    onClick={() => { setAddingMode(false); setActiveIndex(i); }}
                     title={c.name}
-                  />
+                  >
+                    {c.name.charAt(0).toUpperCase()}
+                  </button>
                 ))}
-                <button
-                  className="compare-nav-add"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Add comparison"
-                >
-                  +
-                </button>
+                {!addingMode && (
+                  <button
+                    className="compare-nav-add"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Add comparison"
+                  >
+                    +
+                  </button>
+                )}
               </div>
             )}
           </div>
