@@ -6,7 +6,7 @@ import './styles/designer.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/designer">
       <App />
     </BrowserRouter>
   </React.StrictMode>,
