@@ -50,8 +50,19 @@ a {
   text-decoration: none;
 }
 
-img {
+img,
+svg {
   display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+main,
+section,
+article,
+header,
+footer {
+  min-width: 0;
 }
 
 .site-shell {
@@ -86,11 +97,17 @@ img {
 }
 
 .nav {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   gap: 18px;
+  row-gap: 10px;
+  max-width: 100%;
   color: var(--muted);
   font-weight: 500;
+}
+
+.nav a {
+  white-space: nowrap;
 }
 
 .nav a:hover,
@@ -216,6 +233,10 @@ li {
   font-size: 0.95rem;
   max-width: 100%;
   overflow-x: auto;
+}
+
+.install-command code {
+  max-width: 100%;
 }
 
 .hero-actions {
@@ -516,19 +537,31 @@ li {
   }
 }
 
+@media (max-width: 960px) {
+  .topbar {
+    border-radius: 28px;
+    padding: 18px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav {
+    width: 100%;
+    gap: 12px;
+  }
+}
+
 @media (max-width: 720px) {
   .site-shell {
     width: min(calc(100% - 20px), var(--max-width));
     padding-top: 14px;
   }
 
-  .topbar,
   .footer {
     border-radius: 28px;
     padding: 18px;
   }
 
-  .topbar,
   .footer {
     flex-direction: column;
     align-items: flex-start;
@@ -545,10 +578,25 @@ li {
   }
 
   .nav {
+    width: 100%;
     gap: 12px;
   }
 
   .button {
     width: 100%;
+  }
+
+  .install-command {
+    width: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .install-command code,
+  .spec-block,
+  .install-card pre,
+  .install-step-card pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
