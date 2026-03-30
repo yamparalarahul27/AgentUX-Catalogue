@@ -28,6 +28,7 @@ import { UploadZone } from './UploadZone';
 import { FlowInput } from './FlowInput';
 import { EdgePopup, type ArrowDirection } from './EdgePopup';
 import { Toast } from './Toast';
+import { CompareModal } from './CompareModal';
 import { MobileFlowView } from './MobileFlowView';
 
 const THEME = {
@@ -139,6 +140,7 @@ export function Canvas({ user }: CanvasProps) {
   const [toolMode, setToolMode] = useState<ToolMode>('pointer');
   const [selectedEdge, setSelectedEdge] = useState<{ edgeId: string; x: number; y: number } | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const [compareData, setCompareData] = useState<{ id: string; imageUrl: string; name: string } | null>(null);
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -278,6 +280,16 @@ export function Canvas({ user }: CanvasProps) {
     window.addEventListener('attach-screenshot-image', handler);
     return () => window.removeEventListener('attach-screenshot-image', handler);
   }, [flowId, projectId, user.id]);
+
+  // Listen for compare-screenshot events
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      const { id, imageUrl, name } = (evt as CustomEvent).detail;
+      setCompareData({ id, imageUrl, name });
+    };
+    window.addEventListener('compare-screenshot', handler);
+    return () => window.removeEventListener('compare-screenshot', handler);
+  }, []);
 
   // Save position changes (debounced)
   const handleNodesChange: typeof onNodesChange = useCallback(
@@ -707,6 +719,17 @@ export function Canvas({ user }: CanvasProps) {
             <div className="loading-spinner" />
             Uploading screenshots...
           </div>
+        )}
+
+        {compareData && (
+          <CompareModal
+            screenshotId={compareData.id}
+            screenshotUrl={compareData.imageUrl}
+            screenshotName={compareData.name}
+            projectId={projectId || ''}
+            userId={user.id}
+            onClose={() => setCompareData(null)}
+          />
         )}
 
         {toast && (

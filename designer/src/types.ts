@@ -44,6 +44,15 @@ export interface Connection {
   created_at?: string;
 }
 
+export interface Comparison {
+  id: string;
+  screenshot_id: string;
+  name: string;
+  storage_path: string;
+  image_url?: string;
+  created_at?: string;
+}
+
 export interface ParsedScreenshotName {
   sequence: number | null;
   group: string | null;
