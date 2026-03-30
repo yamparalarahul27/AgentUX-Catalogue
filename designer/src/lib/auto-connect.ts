@@ -44,10 +44,12 @@ export function autoConnect(
     connections.push({
       id: `auto-${sourceId}-${targetId}`,
       project_id: projectId,
+      flow_id: null,
       source_id: sourceId,
       target_id: targetId,
       type: 'auto',
       label: null,
+      arrow_direction: 'forward',
     });
   }
 

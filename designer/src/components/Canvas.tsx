@@ -16,16 +16,18 @@ import {
 import '@xyflow/react/dist/style.css';
 import dagre from '@dagrejs/dagre';
 import type { User } from '@supabase/supabase-js';
-import type { Project, ScreenshotNode, Connection } from '../types';
+import type { Flow, ScreenshotNode, Connection } from '../types';
 import { supabase } from '../lib/supabase';
 import { parseScreenshotName } from '../lib/naming';
 import { autoConnect } from '../lib/auto-connect';
 import { generateDesignerMarkdown } from '../lib/export-markdown';
 import { ScreenshotNodeComponent } from './ScreenshotNode';
 import { ConnectionEdgeComponent } from './ConnectionEdge';
-import { Toolbar } from './Toolbar';
+import { Toolbar, type ToolMode } from './Toolbar';
 import { UploadZone } from './UploadZone';
 import { FlowInput } from './FlowInput';
+import { EdgePopup, type ArrowDirection } from './EdgePopup';
+import { Toast } from './Toast';
 import { MobileFlowView } from './MobileFlowView';
 
 const THEME = {
@@ -74,6 +76,17 @@ function layoutElements(nodes: Node[], edges: Edge[], direction: 'TB' | 'LR' = '
   };
 }
 
+function buildEdgeMarkers(dir: ArrowDirection) {
+  const markers: { markerEnd?: { type: MarkerType; color: string }; markerStart?: { type: MarkerType; color: string } } = {};
+  if (dir === 'forward' || dir === 'both') {
+    markers.markerEnd = { type: MarkerType.ArrowClosed, color: THEME.accent };
+  }
+  if (dir === 'backward' || dir === 'both') {
+    markers.markerStart = { type: MarkerType.ArrowClosed, color: THEME.accent };
+  }
+  return markers;
+}
+
 function buildFlowElements(screenshots: ScreenshotNode[], connections: Connection[]) {
   const rawNodes: Node[] = screenshots.map((s) => ({
     id: s.id,
@@ -98,11 +111,10 @@ function buildFlowElements(screenshots: ScreenshotNode[], connections: Connectio
       target: c.target_id,
       type: 'connectionEdge',
       animated: c.type === 'auto',
-      markerEnd: { type: MarkerType.ArrowClosed, color: THEME.accent },
-      data: { type: c.type },
+      ...buildEdgeMarkers(c.arrow_direction || 'forward'),
+      data: { type: c.type, label: c.label || '' },
     }));
 
-  // Only apply dagre layout if no saved positions
   const hasPositions = screenshots.some((s) => s.position_x !== null && s.position_y !== null);
   if (hasPositions) {
     return { nodes: rawNodes, edges: rawEdges };
@@ -111,9 +123,9 @@ function buildFlowElements(screenshots: ScreenshotNode[], connections: Connectio
 }
 
 export function Canvas({ user }: CanvasProps) {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { projectId, flowId } = useParams<{ projectId: string; flowId: string }>();
   const navigate = useNavigate();
-  const [project, setProject] = useState<Project | null>(null);
+  const [flow, setFlow] = useState<Flow | null>(null);
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,6 +134,9 @@ export function Canvas({ user }: CanvasProps) {
   const [showFlowInput, setShowFlowInput] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [relayoutKey, setRelayoutKey] = useState(0);
+  const [toolMode, setToolMode] = useState<ToolMode>('pointer');
+  const [selectedEdge, setSelectedEdge] = useState<{ edgeId: string; x: number; y: number } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -132,25 +147,35 @@ export function Canvas({ user }: CanvasProps) {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  // Load project data
+  // Keyboard shortcuts for tool modes
   useEffect(() => {
-    if (!projectId) return;
-    loadProjectData();
-  }, [projectId]);
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'h' || e.key === 'H') setToolMode('hand');
+      if (e.key === 'v' || e.key === 'V') setToolMode('pointer');
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
-  async function loadProjectData() {
+  // Load flow data
+  useEffect(() => {
+    if (!flowId) return;
+    loadFlowData();
+  }, [flowId]);
+
+  async function loadFlowData() {
     setLoading(true);
 
-    const [projectRes, screenshotRes, connectionRes] = await Promise.all([
-      supabase.from('projects').select('*').eq('id', projectId).single(),
-      supabase.from('screenshots').select('*').eq('project_id', projectId).order('created_at'),
-      supabase.from('connections').select('*').eq('project_id', projectId),
+    const [flowRes, screenshotRes, connectionRes] = await Promise.all([
+      supabase.from('flows').select('*').eq('id', flowId).single(),
+      supabase.from('screenshots').select('*').eq('flow_id', flowId).order('created_at'),
+      supabase.from('connections').select('*').eq('flow_id', flowId),
     ]);
 
-    if (projectRes.data) setProject(projectRes.data);
+    if (flowRes.data) setFlow(flowRes.data);
 
     if (screenshotRes.data) {
-      // Generate public URLs for images
       const withUrls = screenshotRes.data.map((s: ScreenshotNode) => ({
         ...s,
         image_url: s.storage_path
@@ -179,19 +204,13 @@ export function Canvas({ user }: CanvasProps) {
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
-  // Listen for delete-screenshot events from node delete buttons
+  // Listen for delete-screenshot events
   useEffect(() => {
     const handler = (evt: Event) => {
       const { id } = (evt as CustomEvent).detail;
-      // Delete from Supabase
-      supabase
-        .from('connections')
-        .delete()
-        .or(`source_id.eq.${id},target_id.eq.${id}`)
-        .then(() => {
-          supabase.from('screenshots').delete().eq('id', id).then(() => {});
-        });
-      // Delete from local state
+      supabase.from('connections').delete().or(`source_id.eq.${id},target_id.eq.${id}`).then(() => {
+        supabase.from('screenshots').delete().eq('id', id).then(() => {});
+      });
       setScreenshots((prev) => prev.filter((s) => s.id !== id));
       setConnections((prev) => prev.filter((c) => c.source_id !== id && c.target_id !== id));
       setNodes((nds) => nds.filter((n) => n.id !== id));
@@ -201,13 +220,11 @@ export function Canvas({ user }: CanvasProps) {
     return () => window.removeEventListener('delete-screenshot', handler);
   }, [setNodes, setEdges]);
 
-  // Listen for rename-screenshot events from node inline edit
+  // Listen for rename-screenshot events
   useEffect(() => {
     const handler = (evt: Event) => {
       const { id, name } = (evt as CustomEvent).detail;
-      // Update in Supabase
       supabase.from('screenshots').update({ name }).eq('id', id).then(() => {});
-      // Update local state
       setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
     };
     window.addEventListener('rename-screenshot', handler);
@@ -225,11 +242,11 @@ export function Canvas({ user }: CanvasProps) {
     return () => window.removeEventListener('rename-screenshot-group', handler);
   }, []);
 
-  // Listen for attach-screenshot-image events (placeholder click to add image)
+  // Listen for attach-screenshot-image events
   useEffect(() => {
     const handler = async (evt: Event) => {
       const { id, file } = (evt as CustomEvent).detail;
-      if (!projectId) return;
+      if (!flowId || !projectId) return;
 
       const safeName = file.name.replace(/\s+/g, '-');
       const storagePath = `${user.id}/${projectId}/${safeName}`;
@@ -239,7 +256,7 @@ export function Canvas({ user }: CanvasProps) {
         .upload(storagePath, file, { upsert: true });
 
       if (uploadError) {
-        console.error('Image attach failed:', uploadError);
+        setToast({ message: `Image attach failed: ${uploadError.message}`, type: 'error' });
         return;
       }
 
@@ -258,34 +275,22 @@ export function Canvas({ user }: CanvasProps) {
     };
     window.addEventListener('attach-screenshot-image', handler);
     return () => window.removeEventListener('attach-screenshot-image', handler);
-  }, [projectId, user.id]);
+  }, [flowId, projectId, user.id]);
 
   // Save position changes (debounced)
   const handleNodesChange: typeof onNodesChange = useCallback(
     (changes) => {
       onNodesChange(changes);
 
-      // Handle node removals — delete from Supabase
       const removeChanges = changes.filter((c) => c.type === 'remove');
       for (const change of removeChanges) {
-        // Delete associated connections first, then the screenshot
-        supabase
-          .from('connections')
-          .delete()
-          .or(`source_id.eq.${change.id},target_id.eq.${change.id}`)
-          .then(() => {
-            supabase.from('screenshots').delete().eq('id', change.id).then(() => {});
-          });
-
-        // Also remove from local screenshots state
+        supabase.from('connections').delete().or(`source_id.eq.${change.id},target_id.eq.${change.id}`).then(() => {
+          supabase.from('screenshots').delete().eq('id', change.id).then(() => {});
+        });
         setScreenshots((prev) => prev.filter((s) => s.id !== change.id));
-        // Remove associated connections from local state
-        setConnections((prev) =>
-          prev.filter((c) => c.source_id !== change.id && c.target_id !== change.id),
-        );
+        setConnections((prev) => prev.filter((c) => c.source_id !== change.id && c.target_id !== change.id));
       }
 
-      // Debounce position saves
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
       saveTimeout.current = setTimeout(() => {
         const positionChanges = changes.filter(
@@ -295,10 +300,7 @@ export function Canvas({ user }: CanvasProps) {
           if ('position' in change && change.position) {
             supabase
               .from('screenshots')
-              .update({
-                position_x: change.position.x,
-                position_y: change.position.y,
-              })
+              .update({ position_x: change.position.x, position_y: change.position.y })
               .eq('id', change.id)
               .then(() => {});
           }
@@ -311,12 +313,13 @@ export function Canvas({ user }: CanvasProps) {
   // Manual edge drawing
   const handleConnect = useCallback(
     async (connection: FlowConnection) => {
-      if (!projectId || !connection.source || !connection.target) return;
+      if (!flowId || !projectId || !connection.source || !connection.target) return;
 
       const { data } = await supabase
         .from('connections')
         .insert({
           project_id: projectId,
+          flow_id: flowId,
           source_id: connection.source,
           target_id: connection.target,
           type: 'manual',
@@ -333,30 +336,54 @@ export function Canvas({ user }: CanvasProps) {
               id: data.id,
               type: 'connectionEdge',
               markerEnd: { type: MarkerType.ArrowClosed, color: THEME.accent },
-              data: { type: 'manual' },
+              data: { type: 'manual', label: '' },
             },
             eds,
           ),
         );
       }
     },
-    [projectId, setEdges],
+    [flowId, projectId, setEdges],
   );
 
-  // Delete edge on click
+  // Edge click — show popup in pointer mode
   const handleEdgeClick = useCallback(
-    async (_: React.MouseEvent, edge: Edge) => {
-      if (!confirm('Delete this connection?')) return;
-      await supabase.from('connections').delete().eq('id', edge.id);
-      setConnections((prev) => prev.filter((c) => c.id !== edge.id));
-      setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+    (event: React.MouseEvent, _edge: Edge) => {
+      if (toolMode !== 'pointer') return;
+      const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      setSelectedEdge({
+        edgeId: _edge.id,
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
     },
-    [setEdges],
+    [toolMode],
   );
+
+  // Edge popup actions
+  function handleEdgeArrowChange(dir: ArrowDirection) {
+    if (!selectedEdge) return;
+    supabase.from('connections').update({ arrow_direction: dir }).eq('id', selectedEdge.edgeId).then(() => {});
+    setConnections((prev) => prev.map((c) => (c.id === selectedEdge.edgeId ? { ...c, arrow_direction: dir } : c)));
+  }
+
+  function handleEdgeLabelChange(label: string) {
+    if (!selectedEdge) return;
+    supabase.from('connections').update({ label: label || null }).eq('id', selectedEdge.edgeId).then(() => {});
+    setConnections((prev) => prev.map((c) => (c.id === selectedEdge.edgeId ? { ...c, label: label || null } : c)));
+  }
+
+  function handleEdgeDelete() {
+    if (!selectedEdge) return;
+    supabase.from('connections').delete().eq('id', selectedEdge.edgeId).then(() => {});
+    setConnections((prev) => prev.filter((c) => c.id !== selectedEdge.edgeId));
+    setEdges((eds) => eds.filter((e) => e.id !== selectedEdge.edgeId));
+    setSelectedEdge(null);
+  }
 
   // Upload screenshots
   async function handleFilesSelected(files: File[]) {
-    if (!projectId) return;
+    if (!flowId || !projectId) return;
     setUploading(true);
     setShowUpload(false);
 
@@ -372,7 +399,7 @@ export function Canvas({ user }: CanvasProps) {
         .upload(storagePath, file, { upsert: true });
 
       if (uploadError) {
-        console.error('Upload failed:', uploadError);
+        setToast({ message: `Upload failed: ${uploadError.message}`, type: 'error' });
         continue;
       }
 
@@ -384,6 +411,7 @@ export function Canvas({ user }: CanvasProps) {
         .from('screenshots')
         .insert({
           project_id: projectId,
+          flow_id: flowId,
           name: parsed.name,
           file_name: file.name,
           storage_path: storagePath,
@@ -402,18 +430,13 @@ export function Canvas({ user }: CanvasProps) {
       setScreenshots((prev) => [...prev, ...newScreenshots]);
     }
 
-    // Update project timestamp
-    await supabase
-      .from('projects')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', projectId);
-
+    await supabase.from('flows').update({ updated_at: new Date().toISOString() }).eq('id', flowId);
     setUploading(false);
   }
 
   // Insert flow from text
   async function handleFlowInsert(text: string) {
-    if (!projectId) return;
+    if (!flowId || !projectId) return;
     setShowFlowInput(false);
 
     const steps = text.split('->').map((s) => s.trim()).filter(Boolean);
@@ -421,12 +444,12 @@ export function Canvas({ user }: CanvasProps) {
 
     const newScreenshots: ScreenshotNode[] = [];
 
-    // Create screenshot placeholders for each step
     for (let i = 0; i < steps.length; i++) {
       const { data, error } = await supabase
         .from('screenshots')
         .insert({
           project_id: projectId,
+          flow_id: flowId,
           name: steps[i],
           file_name: '',
           storage_path: '',
@@ -441,13 +464,13 @@ export function Canvas({ user }: CanvasProps) {
       }
     }
 
-    // Create connections between consecutive steps
     const newConnections: Connection[] = [];
     for (let i = 0; i < newScreenshots.length - 1; i++) {
       const { data, error } = await supabase
         .from('connections')
         .insert({
           project_id: projectId,
+          flow_id: flowId,
           source_id: newScreenshots[i].id,
           target_id: newScreenshots[i + 1].id,
           type: 'manual',
@@ -464,23 +487,14 @@ export function Canvas({ user }: CanvasProps) {
     setConnections((prev) => [...prev, ...newConnections]);
     setRelayoutKey((k) => k + 1);
 
-    // Update project timestamp
-    await supabase
-      .from('projects')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', projectId);
+    await supabase.from('flows').update({ updated_at: new Date().toISOString() }).eq('id', flowId);
   }
 
   // Auto-connect
   async function handleAutoConnect() {
-    if (!projectId) return;
+    if (!flowId || !projectId) return;
 
-    // Delete existing auto connections
-    await supabase
-      .from('connections')
-      .delete()
-      .eq('project_id', projectId)
-      .eq('type', 'auto');
+    await supabase.from('connections').delete().eq('flow_id', flowId).eq('type', 'auto');
 
     const newConnections = autoConnect(screenshots, projectId);
 
@@ -490,6 +504,7 @@ export function Canvas({ user }: CanvasProps) {
         .insert(
           newConnections.map((c) => ({
             project_id: c.project_id,
+            flow_id: flowId,
             source_id: c.source_id,
             target_id: c.target_id,
             type: c.type,
@@ -499,17 +514,29 @@ export function Canvas({ user }: CanvasProps) {
         .select();
 
       if (data) {
-        // Keep manual connections, replace auto ones
-        setConnections((prev) => [
-          ...prev.filter((c) => c.type !== 'auto'),
-          ...data,
-        ]);
+        setConnections((prev) => [...prev.filter((c) => c.type !== 'auto'), ...data]);
       }
     } else {
       setConnections((prev) => prev.filter((c) => c.type !== 'auto'));
     }
 
     setRelayoutKey((k) => k + 1);
+  }
+
+  // Canvas drop to create node from image
+  function handleCanvasDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
+    if (files.length === 0) {
+      setToast({ message: 'Only image files can be dropped on the canvas', type: 'error' });
+      return;
+    }
+    handleFilesSelected(files);
+  }
+
+  function handleCanvasDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
   }
 
   // Re-layout
@@ -521,12 +548,12 @@ export function Canvas({ user }: CanvasProps) {
 
   // Export markdown
   async function handleExport() {
-    if (!project) return;
+    if (!flow) return;
+    const project = { id: flow.project_id, name: flow.name, user_id: '', created_at: '', updated_at: '' };
     const markdown = generateDesignerMarkdown(project, screenshots, connections);
     try {
       await navigator.clipboard.writeText(markdown);
     } catch {
-      // Fallback
       const textarea = document.createElement('textarea');
       textarea.value = markdown;
       textarea.style.position = 'fixed';
@@ -542,16 +569,16 @@ export function Canvas({ user }: CanvasProps) {
     return (
       <div className="loading-screen">
         <div className="loading-spinner" />
-        <p>Loading project...</p>
+        <p>Loading flow...</p>
       </div>
     );
   }
 
-  if (!project) {
+  if (!flow) {
     return (
       <div className="loading-screen">
-        <p>Project not found.</p>
-        <button className="btn-primary" onClick={() => navigate('/')}>Back to Projects</button>
+        <p>Flow not found.</p>
+        <button className="btn-primary" onClick={() => navigate(`/project/${projectId}`)}>Back to Flows</button>
       </div>
     );
   }
@@ -560,30 +587,39 @@ export function Canvas({ user }: CanvasProps) {
   if (isMobile) {
     return (
       <MobileFlowView
-        project={project}
+        project={{ id: flow.project_id, name: flow.name, user_id: '', created_at: '', updated_at: '' }}
         screenshots={screenshots}
         connections={connections}
-        onBack={() => navigate('/')}
+        onBack={() => navigate(`/project/${projectId}`)}
         onExport={handleExport}
       />
     );
   }
 
+  const isHand = toolMode === 'hand';
+  const selectedConn = selectedEdge ? connections.find((c) => c.id === selectedEdge.edgeId) : null;
+
   return (
     <div className="canvas-page">
       <Toolbar
-        projectName={project.name}
+        flowName={flow.name}
         screenshotCount={screenshots.length}
         connectionCount={connections.length}
+        toolMode={toolMode}
+        onToolModeChange={setToolMode}
         onUploadClick={() => setShowUpload(true)}
         onAddFlow={() => setShowFlowInput(true)}
         onAutoConnect={handleAutoConnect}
         onRelayout={handleRelayout}
         onExport={handleExport}
-        onBack={() => navigate('/')}
+        onBack={() => navigate(`/project/${projectId}`)}
       />
 
-      <div className="canvas-container">
+      <div
+        className={`canvas-container ${isHand ? 'canvas-hand' : ''}`}
+        onDrop={handleCanvasDrop}
+        onDragOver={handleCanvasDragOver}
+      >
         {screenshots.length === 0 ? (
           <div className="canvas-empty">
             <UploadZone onFilesSelected={handleFilesSelected} disabled={uploading} />
@@ -598,10 +634,15 @@ export function Canvas({ user }: CanvasProps) {
               edges={edges}
               onNodesChange={handleNodesChange}
               onEdgesChange={onEdgesChange}
-              onConnect={handleConnect}
-              onEdgeClick={handleEdgeClick}
+              onConnect={isHand ? undefined : handleConnect}
+              onEdgeClick={isHand ? undefined : handleEdgeClick}
+              onPaneClick={() => setSelectedEdge(null)}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
+              nodesDraggable={!isHand}
+              nodesConnectable={!isHand}
+              elementsSelectable={!isHand}
+              panOnDrag={isHand}
               fitView
               fitViewOptions={{ padding: 0.2 }}
               proOptions={{ hideAttribution: true }}
@@ -625,6 +666,19 @@ export function Canvas({ user }: CanvasProps) {
               />
             </ReactFlow>
 
+            {selectedEdge && selectedConn && (
+              <EdgePopup
+                x={selectedEdge.x}
+                y={selectedEdge.y}
+                label={selectedConn.label || ''}
+                arrowDirection={selectedConn.arrow_direction || 'forward'}
+                onChangeArrow={handleEdgeArrowChange}
+                onChangeLabel={handleEdgeLabelChange}
+                onDelete={handleEdgeDelete}
+                onClose={() => setSelectedEdge(null)}
+              />
+            )}
+
             {showUpload && (
               <div className="canvas-upload-overlay" onClick={() => setShowUpload(false)}>
                 <div className="canvas-upload-modal" onClick={(e) => e.stopPropagation()}>
@@ -647,6 +701,14 @@ export function Canvas({ user }: CanvasProps) {
             <div className="loading-spinner" />
             Uploading screenshots...
           </div>
+        )}
+
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
         )}
       </div>
     </div>

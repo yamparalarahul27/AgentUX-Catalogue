@@ -3,12 +3,12 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import type { User } from '@supabase/supabase-js';
 import { Auth } from './components/Auth';
 import { ProjectList } from './components/ProjectList';
+import { FlowList } from './components/FlowList';
 import { Canvas } from './components/Canvas';
 
 const STORAGE_KEY = 'agentux-designer-email';
 
 function createMockUser(email: string): User {
-  // Derive a stable UUID from the email so the same email always gets the same user_id
   const hash = Array.from(email).reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0);
   const hex = Math.abs(hash).toString(16).padStart(8, '0');
   const id = `${hex}-0000-0000-0000-000000000000`;
@@ -47,7 +47,8 @@ export function App() {
   return (
     <Routes>
       <Route path="/" element={<ProjectList user={user} onLogout={handleLogout} />} />
-      <Route path="/project/:projectId" element={<Canvas user={user} />} />
+      <Route path="/project/:projectId" element={<FlowList user={user} />} />
+      <Route path="/project/:projectId/flow/:flowId" element={<Canvas user={user} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

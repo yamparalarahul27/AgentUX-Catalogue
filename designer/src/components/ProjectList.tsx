@@ -28,6 +28,8 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
   const [creating, setCreating] = useState(false);
   const [showInput, setShowInput] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   useEffect(() => {
     loadProjects();
@@ -93,6 +95,22 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
 
     await supabase.from('projects').delete().eq('id', id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function startRename(id: string, name: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setRenamingId(id);
+    setRenameValue(name);
+  }
+
+  async function commitRename() {
+    if (!renamingId) return;
+    const trimmed = renameValue.trim();
+    if (trimmed) {
+      await supabase.from('projects').update({ name: trimmed }).eq('id', renamingId);
+      setProjects((prev) => prev.map((p) => (p.id === renamingId ? { ...p, name: trimmed } : p)));
+    }
+    setRenamingId(null);
   }
 
   function handleSignOut() {
@@ -171,7 +189,24 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
                     <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
                   </svg>
                 </div>
-                <h3>{project.name}</h3>
+                {renamingId === project.id ? (
+                  <input
+                    className="project-rename-input"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={commitRename}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitRename();
+                      if (e.key === 'Escape') setRenamingId(null);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    autoFocus
+                  />
+                ) : (
+                  <h3 onDoubleClick={(e) => startRename(project.id, project.name, e)} title="Double-click to rename">
+                    {project.name}
+                  </h3>
+                )}
                 <p className="project-date">
                   {new Date(project.updated_at).toLocaleDateString()}
                 </p>

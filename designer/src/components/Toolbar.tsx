@@ -1,9 +1,13 @@
 import { useState } from 'react';
 
+export type ToolMode = 'pointer' | 'hand';
+
 interface ToolbarProps {
-  projectName: string;
+  flowName: string;
   screenshotCount: number;
   connectionCount: number;
+  toolMode: ToolMode;
+  onToolModeChange: (mode: ToolMode) => void;
   onUploadClick: () => void;
   onAddFlow: () => void;
   onAutoConnect: () => void;
@@ -13,9 +17,11 @@ interface ToolbarProps {
 }
 
 export function Toolbar({
-  projectName,
+  flowName,
   screenshotCount,
   connectionCount,
+  toolMode,
+  onToolModeChange,
   onUploadClick,
   onAddFlow,
   onAutoConnect,
@@ -34,12 +40,39 @@ export function Toolbar({
   return (
     <div className="toolbar">
       <div className="toolbar-left">
-        <button className="toolbar-btn toolbar-btn-back" onClick={onBack} title="Back to projects">
+        <button className="toolbar-btn toolbar-btn-back" onClick={onBack} title="Back to flows">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h2 className="toolbar-title">{projectName}</h2>
+
+        <div className="toolbar-mode-toggle">
+          <button
+            className={`toolbar-mode-btn ${toolMode === 'pointer' ? 'active' : ''}`}
+            onClick={() => onToolModeChange('pointer')}
+            title="Pointer tool (V)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
+            </svg>
+          </button>
+          <button
+            className={`toolbar-mode-btn ${toolMode === 'hand' ? 'active' : ''}`}
+            onClick={() => onToolModeChange('hand')}
+            title="Hand tool (H)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 11V6a2 2 0 00-4 0v2" />
+              <path d="M14 10V4a2 2 0 00-4 0v6" />
+              <path d="M10 10.5V6a2 2 0 00-4 0v8" />
+              <path d="M18 8a2 2 0 014 0v7a8 8 0 01-8 8h-2c-2.83 0-5.27-1.17-6.83-3L2 16" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="toolbar-divider" />
+
+        <h2 className="toolbar-title">{flowName}</h2>
         <span className="toolbar-stats">
           {screenshotCount} screens · {connectionCount} flows
         </span>
