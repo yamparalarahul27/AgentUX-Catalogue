@@ -1,5 +1,5 @@
 {
-  "buildCommand": "if [ -f designer/package.json ]; then npm ci --prefix designer && npm --prefix designer run build; elif [ -f ../designer/package.json ]; then npm ci --prefix ../designer && npm --prefix ../designer run build; else echo 'designer source not found, skipping designer build'; fi",
+  "buildCommand": "cd designer && npm ci && npx vite build",
   "outputDirectory": "site",
   "rewrites": [
     { "source": "/designer", "destination": "/designer/index.html" },
