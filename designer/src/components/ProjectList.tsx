@@ -6,9 +6,10 @@ import { supabase } from '../lib/supabase';
 
 interface ProjectListProps {
   user: User;
+  onLogout?: () => void;
 }
 
-export function ProjectList({ user }: ProjectListProps) {
+export function ProjectList({ user, onLogout }: ProjectListProps) {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [newName, setNewName] = useState('');
@@ -68,8 +69,8 @@ export function ProjectList({ user }: ProjectListProps) {
     setProjects((prev) => prev.filter((p) => p.id !== id));
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
+  function handleSignOut() {
+    if (onLogout) onLogout();
   }
 
   return (

@@ -1,49 +1,52 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import type { User } from '@supabase/supabase-js';
-import { supabase } from './lib/supabase';
 import { Auth } from './components/Auth';
 import { ProjectList } from './components/ProjectList';
 import { Canvas } from './components/Canvas';
 
+const STORAGE_KEY = 'agentux-designer-email';
+
+function createMockUser(email: string): User {
+  // Derive a stable UUID from the email so the same email always gets the same user_id
+  const hash = Array.from(email).reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0);
+  const hex = Math.abs(hash).toString(16).padStart(8, '0');
+  const id = `${hex}-0000-0000-0000-000000000000`;
+
+  return {
+    id,
+    email,
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+  } as User;
+}
+
 export function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState<string | null>(
+    () => localStorage.getItem(STORAGE_KEY),
+  );
 
-  useEffect(() => {
-    // Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      },
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="auth-page">
-        <div className="auth-card" style={{ textAlign: 'center' }}>
-          <p style={{ color: '#a1a1aa' }}>Loading...</p>
-        </div>
-      </div>
-    );
+  function handleLogin(newEmail: string) {
+    localStorage.setItem(STORAGE_KEY, newEmail);
+    setEmail(newEmail);
   }
 
-  if (!user) {
-    return <Auth />;
+  function handleLogout() {
+    localStorage.removeItem(STORAGE_KEY);
+    setEmail(null);
   }
+
+  if (!email) {
+    return <Auth onLogin={handleLogin} />;
+  }
+
+  const user = createMockUser(email);
 
   return (
     <Routes>
-      <Route path="/" element={<ProjectList user={user} />} />
+      <Route path="/" element={<ProjectList user={user} onLogout={handleLogout} />} />
       <Route path="/project/:projectId" element={<Canvas user={user} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

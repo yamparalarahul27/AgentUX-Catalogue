@@ -1,29 +1,16 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
 
-type AuthMode = 'signin' | 'signup';
+interface AuthProps {
+  onLogin: (email: string) => void;
+}
 
-export function Auth() {
+export function Auth({ onLogin }: AuthProps) {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<AuthMode>('signin');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const { error: authError } =
-      mode === 'signup'
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-
-    setLoading(false);
-
-    if (authError) {
-      setError(authError.message);
+    if (email.trim()) {
+      onLogin(email.trim());
     }
   }
 
@@ -46,49 +33,16 @@ export function Auth() {
           <input
             className="auth-input"
             type="email"
-            placeholder="Email"
+            placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoFocus
           />
-          <input
-            className="auth-input"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-
-          {error && <p className="auth-error">{error}</p>}
-
-          <button className="auth-btn auth-btn-primary" type="submit" disabled={loading}>
-            {loading
-              ? 'Please wait...'
-              : mode === 'signin'
-                ? 'Sign In'
-                : 'Create Account'}
+          <button className="auth-btn auth-btn-primary" type="submit">
+            Continue
           </button>
         </form>
-
-        <p className="auth-toggle">
-          {mode === 'signin' ? (
-            <>
-              Don&apos;t have an account?{' '}
-              <button type="button" onClick={() => { setMode('signup'); setError(null); }}>
-                Sign Up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{' '}
-              <button type="button" onClick={() => { setMode('signin'); setError(null); }}>
-                Sign In
-              </button>
-            </>
-          )}
-        </p>
       </div>
     </div>
   );
