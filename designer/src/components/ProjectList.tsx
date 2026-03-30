@@ -68,10 +68,9 @@ export function ProjectList({ user }: ProjectListProps) {
     setProjects((prev) => prev.filter((p) => p.id !== id));
   }
 
-  // Auth disabled for now — re-enable when Supabase is set up
-  // async function handleSignOut() {
-  //   await supabase.auth.signOut();
-  // }
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+  }
 
   return (
     <div className="project-list-page">
@@ -86,7 +85,7 @@ export function ProjectList({ user }: ProjectListProps) {
         </div>
         <div className="header-right">
           <span className="user-email">{user.email}</span>
-          {/* <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button> */}
+          <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
         </div>
       </header>
 
