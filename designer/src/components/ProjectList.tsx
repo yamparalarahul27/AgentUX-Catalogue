@@ -4,30 +4,57 @@ import type { User } from '@supabase/supabase-js';
 import type { Project } from '../types';
 import { supabase } from '../lib/supabase';
 
+interface ProjectWithCounts extends Project {
+  flow_count?: number;
+}
+
 interface ProjectListProps {
   user: User;
   onLogout?: () => void;
 }
 
+function truncateEmail(email: string, maxLen = 24): string {
+  if (email.length <= maxLen) return email;
+  const [local, domain] = email.split('@');
+  if (!domain) return email.slice(0, maxLen) + '...';
+  const keep = Math.max(3, Math.floor((maxLen - domain.length - 4) / 2));
+  return `${local.slice(0, keep)}...@${domain}`;
+}
+
 export function ProjectList({ user, onLogout }: ProjectListProps) {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectWithCounts[]>([]);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
   const [showInput, setShowInput] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadProjects();
   }, []);
 
   async function loadProjects() {
+    setLoading(true);
     const { data } = await supabase
       .from('projects')
       .select('*')
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
-    if (data) setProjects(data);
+    if (data) {
+      // Fetch flow counts for each project
+      const withCounts: ProjectWithCounts[] = await Promise.all(
+        data.map(async (p: Project) => {
+          const { count } = await supabase
+            .from('connections')
+            .select('*', { count: 'exact', head: true })
+            .eq('project_id', p.id);
+          return { ...p, flow_count: count ?? 0 };
+        }),
+      );
+      setProjects(withCounts);
+    }
+    setLoading(false);
   }
 
   async function createProject() {
@@ -53,7 +80,6 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
     e.stopPropagation();
     if (!confirm('Delete this project and all its screenshots?')) return;
 
-    // Delete storage files
     const { data: screenshots } = await supabase
       .from('screenshots')
       .select('storage_path')
@@ -85,13 +111,14 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
           <h1>Flow Builder</h1>
         </div>
         <div className="header-right">
-          <span className="user-email">{user.email}</span>
+          <span className="user-email" title={user.email || ''}>{truncateEmail(user.email || '')}</span>
           <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
         </div>
       </header>
 
       <main className="project-list-main">
         <div className="project-list-actions">
+          <h2 className="project-list-title">Projects</h2>
           {showInput ? (
             <div className="new-project-input">
               <input
@@ -116,7 +143,12 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
           )}
         </div>
 
-        {projects.length === 0 ? (
+        {loading ? (
+          <div className="empty-state">
+            <div className="loading-spinner" />
+            <p>Loading projects...</p>
+          </div>
+        ) : projects.length === 0 ? (
           <div className="empty-state">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="1.5">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -143,6 +175,11 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
                 <p className="project-date">
                   {new Date(project.updated_at).toLocaleDateString()}
                 </p>
+                {(project.flow_count ?? 0) > 0 && (
+                  <p className="project-flow-count">
+                    {project.flow_count} flow{project.flow_count !== 1 ? 's' : ''}
+                  </p>
+                )}
                 <button
                   className="project-delete"
                   onClick={(e) => deleteProject(project.id, e)}
