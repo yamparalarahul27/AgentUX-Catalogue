@@ -9,12 +9,14 @@ interface RuntimeData {
 }
 
 /** React hook that tracks runtime navigation and discovers routes/edges */
-export function useRuntimeRoutes(enabled = true): RuntimeData {
+export function useRuntimeRoutes(enabled = true, refreshKey = 0): RuntimeData {
   const [data, setData] = useState<RuntimeData>({ routes: [], edges: [] });
   const lastKeyRef = useRef<string>('');
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return;
+
+    lastKeyRef.current = '';
 
     const tracker = new NavigationTracker();
     tracker.start();
@@ -62,7 +64,7 @@ export function useRuntimeRoutes(enabled = true): RuntimeData {
       clearInterval(interval);
       tracker.stop();
     };
-  }, [enabled]);
+  }, [enabled, refreshKey]);
 
   return data;
 }

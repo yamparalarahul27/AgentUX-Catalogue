@@ -22,4 +22,17 @@ export default defineConfig([
     platform: 'node',
     external: ['react', 'react-dom'],
   },
+  // Node.js CLI entry for project setup
+  {
+    entry: {
+      cli: 'src/cli/index.ts',
+    },
+    format: ['esm'],
+    dts: false,
+    sourcemap: true,
+    platform: 'node',
+    banner: {
+      js: '#!/usr/bin/env node',
+    },
+  },
 ]);

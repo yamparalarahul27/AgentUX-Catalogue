@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { AppMapConfig } from '../types';
 import { Z_INDEX, DEFAULT_THEME } from '../constants';
 
@@ -12,12 +13,15 @@ interface FloatingButtonProps {
   isOpen: boolean;
   position: NonNullable<AppMapConfig['position']>;
   onPositionChange?: (pos: ButtonPosition) => void;
+  dockedPosition?: ButtonPosition | null;
 }
 
 const STORAGE_KEY = 'appmap-button-position';
 const DRAG_THRESHOLD = 8;
 export const BUTTON_SIZE = 48;
 const EDGE_PADDING = 20;
+
+type AnchorStyle = Pick<React.CSSProperties, 'top' | 'right' | 'bottom' | 'left'>;
 
 /** Get default pixel position from a named position */
 function getDefaultPosition(position: string): ButtonPosition {
@@ -34,6 +38,20 @@ function getDefaultPosition(position: string): ButtonPosition {
         x: typeof window !== 'undefined' ? window.innerWidth - BUTTON_SIZE - EDGE_PADDING : 0,
         y: typeof window !== 'undefined' ? window.innerHeight - BUTTON_SIZE - EDGE_PADDING : 0,
       };
+  }
+}
+
+function getAnchoredStyle(position: string): AnchorStyle {
+  switch (position) {
+    case 'bottom-left':
+      return { left: EDGE_PADDING, bottom: EDGE_PADDING };
+    case 'top-right':
+      return { top: EDGE_PADDING, right: EDGE_PADDING };
+    case 'top-left':
+      return { top: EDGE_PADDING, left: EDGE_PADDING };
+    case 'bottom-right':
+    default:
+      return { right: EDGE_PADDING, bottom: EDGE_PADDING };
   }
 }
 
@@ -65,21 +83,46 @@ function clampPosition(x: number, y: number): ButtonPosition {
 }
 
 /** Floating button that toggles the App Map modal — draggable anywhere on screen */
-export function FloatingButton({ onClick, isOpen, position, onPositionChange }: FloatingButtonProps) {
+export function FloatingButton({
+  onClick,
+  isOpen,
+  position,
+  onPositionChange,
+  dockedPosition,
+}: FloatingButtonProps) {
   const [pos, setPos] = useState<ButtonPosition | null>(null);
   const isDraggingRef = useRef(false);
   const justDraggedRef = useRef(false);
   const mouseDownRef = useRef<{ x: number; y: number; posX: number; posY: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const container = document.createElement('div');
+    container.id = 'appmap-floating-button-root';
+    document.body.appendChild(container);
+    containerRef.current = container;
+
+    return () => {
+      document.body.removeChild(container);
+      containerRef.current = null;
+    };
+  }, []);
 
   // Initialize position on mount
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const saved = loadPosition();
-    const initial = saved || getDefaultPosition(position);
+    const fallback = saved || getDefaultPosition(position);
+    const initial = clampPosition(fallback.x, fallback.y);
     setPos(initial);
     onPositionChange?.(initial);
   }, [position, onPositionChange]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isOpen && dockedPosition) return;
     if (!pos) return;
     e.preventDefault();
     isDraggingRef.current = false;
@@ -123,7 +166,7 @@ export function FloatingButton({ onClick, isOpen, position, onPositionChange }: 
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [pos, onPositionChange]);
+  }, [dockedPosition, isOpen, pos, onPositionChange]);
 
   const handleClick = useCallback(() => {
     // Ignore click if we just finished dragging
@@ -134,26 +177,27 @@ export function FloatingButton({ onClick, isOpen, position, onPositionChange }: 
     onClick();
   }, [onClick]);
 
-  // Don't render until position is initialized (avoids flash)
-  if (!pos) return null;
+  const placementStyle = isOpen && dockedPosition
+    ? { left: dockedPosition.x, top: dockedPosition.y }
+    : pos
+      ? { left: pos.x, top: pos.y }
+      : getAnchoredStyle(position);
 
-  return (
+  const button = (
     <button
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       aria-label={isOpen ? 'Close App Map' : 'Open App Map'}
       style={{
         position: 'fixed',
-        left: pos.x,
-        top: pos.y,
         zIndex: Z_INDEX.floatingButton,
         width: BUTTON_SIZE,
         height: BUTTON_SIZE,
         borderRadius: '50%',
-        border: 'none',
-        background: isOpen ? '#ef4444' : DEFAULT_THEME.accentColor,
+        border: isOpen ? '1px solid rgba(255,255,255,0.5)' : 'none',
+        background: isOpen ? '#09090b' : DEFAULT_THEME.accentColor,
         color: '#fff',
-        cursor: isDraggingRef.current ? 'grabbing' : 'grab',
+        cursor: isOpen && dockedPosition ? 'pointer' : isDraggingRef.current ? 'grabbing' : 'grab',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -163,6 +207,7 @@ export function FloatingButton({ onClick, isOpen, position, onPositionChange }: 
         fontSize: '20px',
         userSelect: 'none',
         touchAction: 'none',
+        ...placementStyle,
       }}
       onMouseEnter={(e) => {
         if (!isDraggingRef.current) {
@@ -193,4 +238,6 @@ export function FloatingButton({ onClick, isOpen, position, onPositionChange }: 
       )}
     </button>
   );
+
+  return containerRef.current ? createPortal(button, containerRef.current) : button;
 }

@@ -4,8 +4,8 @@ import { Z_INDEX, DEFAULT_THEME } from '../constants';
 import type { ButtonPosition } from './FloatingButton';
 import { BUTTON_SIZE } from './FloatingButton';
 
-const MODAL_WIDTH = 720;
-const MODAL_HEIGHT = 560;
+const MODAL_WIDTH = 1040;
+const MODAL_HEIGHT = 720;
 const GAP = 12;
 const EDGE_PADDING = 20;
 
@@ -16,8 +16,13 @@ interface ModalProps {
 }
 
 /** Compute modal position anchored near the button, staying within viewport */
-function computeModalPosition(btn: ButtonPosition): { left: number; top: number } {
-  if (typeof window === 'undefined') return { left: 0, top: 0 };
+export function computeModalFrame(btn: ButtonPosition): {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+} {
+  if (typeof window === 'undefined') return { left: 0, top: 0, width: MODAL_WIDTH, height: MODAL_HEIGHT };
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -45,7 +50,7 @@ function computeModalPosition(btn: ButtonPosition): { left: number; top: number 
   }
   top = Math.max(EDGE_PADDING, Math.min(vh - h - EDGE_PADDING, top));
 
-  return { left, top };
+  return { left, top, width: w, height: h };
 }
 
 /** Portal-based modal that renders into document.body to escape host app CSS stacking */
@@ -68,7 +73,7 @@ export function Modal({ isOpen, children, buttonPosition }: ModalProps) {
 
   const modalPos = useMemo(() => {
     if (!buttonPosition) return null;
-    return computeModalPosition(buttonPosition);
+    return computeModalFrame(buttonPosition);
   }, [buttonPosition]);
 
   if (!isOpen || !containerRef.current) return null;
@@ -84,7 +89,9 @@ export function Modal({ isOpen, children, buttonPosition }: ModalProps) {
         height: `min(${MODAL_HEIGHT}px, calc(100vh - ${EDGE_PADDING * 2 + BUTTON_SIZE + GAP}px))`,
         zIndex: Z_INDEX.modal,
         borderRadius: '12px',
-        overflow: 'hidden',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
         border: `1px solid ${DEFAULT_THEME.nodeBorderColor}`,
         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         display: 'flex',

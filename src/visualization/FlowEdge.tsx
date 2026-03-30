@@ -22,7 +22,14 @@ export function FlowEdgeComponent({
   markerEnd,
 }: EdgeProps) {
   const edgeType = (data?.type as string) || 'link';
-  const color = edgeTypeColors[edgeType] || edgeTypeColors.link;
+  const state = (data?.state as string) || 'current';
+  const canvasEditMode = (data?.canvasEditMode as string) || 'inspect';
+  const color =
+    state === 'removed'
+      ? '#f59e0b'
+      : state === 'intended'
+        ? '#22c55e'
+        : edgeTypeColors[edgeType] || edgeTypeColors.link;
 
   const [edgePath] = getSmoothStepPath({
     sourceX,
@@ -41,7 +48,10 @@ export function FlowEdgeComponent({
       markerEnd={markerEnd}
       style={{
         stroke: color,
-        strokeWidth: 2,
+        strokeWidth: canvasEditMode === 'prune' ? 3 : 2,
+        strokeDasharray: state === 'removed' ? '8 6' : state === 'intended' ? '6 4' : undefined,
+        opacity: state === 'removed' ? 0.75 : canvasEditMode === 'prune' ? 0.95 : 1,
+        cursor: canvasEditMode === 'prune' ? 'pointer' : 'default',
       }}
     />
   );

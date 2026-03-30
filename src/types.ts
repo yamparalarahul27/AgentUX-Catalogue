@@ -44,6 +44,61 @@ export interface AppMapData {
   scannedAt: string;
 }
 
+/** Semantic role a screen plays within an intended journey */
+export type RouteRole = 'entry' | 'step' | 'decision' | 'terminal';
+
+/** Optional user-authored metadata for a route inside a workspace */
+export interface RouteAnnotation {
+  /** Semantic role assigned by the developer */
+  role?: RouteRole;
+  /** Optional notes that help explain why a screen exists */
+  notes?: string;
+}
+
+/** Manual change to the detected flow within an intended journey */
+export interface JourneyEdgeChange {
+  /** Unique identifier */
+  id: string;
+  /** Source route ID */
+  sourceRouteId: string;
+  /** Target route ID */
+  targetRouteId: string;
+  /** Whether this flow is being added or removed */
+  change: 'add' | 'remove';
+  /** Optional reason for the change */
+  rationale?: string;
+}
+
+/** A developer-authored intended journey layered on top of detected flow */
+export interface Journey {
+  /** Unique identifier */
+  id: string;
+  /** Human-readable name */
+  name: string;
+  /** Start screens for the intended journey */
+  startRouteIds: string[];
+  /** End screens for the intended journey */
+  endRouteIds: string[];
+  /** Manual flow changes */
+  edgeChanges: JourneyEdgeChange[];
+  /** Creation timestamp */
+  createdAt: string;
+  /** Last update timestamp */
+  updatedAt: string;
+}
+
+/** Persistable workspace state layered on top of detected app data */
+export interface Workspace {
+  /** Detected graph used as the source of truth */
+  baseData: AppMapData;
+  /** User-authored intended journeys */
+  journeys: Journey[];
+  /** Optional annotations keyed by route ID */
+  annotations: Record<string, RouteAnnotation>;
+  /** Last time the workspace was saved/updated */
+  savedAt?: string;
+}
+
 /** Configuration for the <AppMap /> component */
 export interface AppMapConfig {
   /** Root directory for static analysis (defaults to process.cwd()) */
@@ -60,6 +115,8 @@ export interface AppMapConfig {
   devOnly?: boolean;
   /** Custom theme overrides */
   theme?: Partial<AppMapTheme>;
+  /** Optional workspace state for intended journey editing */
+  workspace?: Workspace;
 }
 
 /** Theme configuration */

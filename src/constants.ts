@@ -5,9 +5,9 @@ export const CSS_PREFIX = 'appmap';
 
 /** Z-index for the floating button and modal */
 export const Z_INDEX = {
-  floatingButton: 99990,
   modal: 99991,
   overlay: 99992,
+  floatingButton: 99993,
 } as const;
 
 /** Default position for the floating button */

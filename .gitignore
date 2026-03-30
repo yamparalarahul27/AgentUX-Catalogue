@@ -6,3 +6,5 @@ site/designer/
 .env
 .env.local
 *.tgz
+.playwright-cli/
+output/

@@ -9,7 +9,17 @@ An agent-agnostic visual feedback tool. Map all screens of your app, correct flo
 
 ```bash
 npm install @yamparala27/agentux -D
+npx agentux init
+npx agentux scan
 ```
+
+`agentux init` finds your app root and mounts `<AppMap />` automatically in one of these files:
+
+- `app/layout.*` for Next.js App Router
+- `pages/_app.*` for Next.js Pages Router
+- `src/App.*` or `src/main.*` for standard React apps
+
+If you prefer, you can still wire it in manually:
 
 ## Usage
 
@@ -28,7 +38,13 @@ function App() {
 }
 ```
 
-The map becomes active on click. Drag nodes to rearrange, zoom in and out, and copy structured Markdown for your AI agent.
+When you click the floating button, AgentUX now starts with a `Run AgentUX` panel:
+
+- `Load agentux.json` loads the project structure from `public/agentux.json`
+- `Restart runtime capture` refreshes the runtime flow map
+- `Refresh all` reloads both the structure scan and runtime state
+
+The default view is the UX flow map, and the `Structure` view groups main screens and nested sub-screens by route path.
 
 ## Features
 
@@ -82,6 +98,12 @@ const data = await analyzeProject('./');
 writeFileSync('agentux.json', JSON.stringify(data, null, 2));
 ```
 
+Or use the CLI, which writes `public/agentux.json` for you:
+
+```bash
+npx agentux scan
+```
+
 Then pass the result to the component:
 
 ```tsx
@@ -130,6 +152,33 @@ npm test          # Run tests
 npm run build     # Build package
 npm run dev       # Watch mode
 ```
+
+## Local Install In Another Project
+
+To use AgentUX locally without publishing it to npm, package a tarball and install it via a `file:` link:
+
+```bash
+npm run pack:local
+```
+
+That command builds the package, creates a `.tgz`, and prints an installable local link like:
+
+```bash
+npm install file:/absolute/path/to/yamparala27-agentux-0.1.0.tgz
+npx agentux init
+```
+
+You can also paste the same `file:` link into another project's `package.json`:
+
+```json
+{
+  "devDependencies": {
+    "@yamparala27/agentux": "file:/absolute/path/to/yamparala27-agentux-0.1.0.tgz"
+  }
+}
+```
+
+This is the safest local workflow for a React component package because it avoids the duplicate-React issues that can happen with `npm link`.
 
 ## License
 
