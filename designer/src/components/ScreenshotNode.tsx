@@ -1,6 +1,8 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { getGroupColor } from '../lib/naming';
+import { ConfirmModal } from './ConfirmModal';
 
 export interface ScreenshotNodeData {
   label: string;
@@ -16,6 +18,7 @@ export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {
   const groupColor = getGroupColor(nodeData.group);
   const [editing, setEditing] = useState(false);
   const [editingGroup, setEditingGroup] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [name, setName] = useState(nodeData.label);
   const [group, setGroup] = useState(nodeData.group || '');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -118,9 +121,7 @@ export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {
         title="Delete screenshot"
         onClick={(e) => {
           e.stopPropagation();
-          if (confirm('Delete this screenshot?')) {
-            window.dispatchEvent(new CustomEvent('delete-screenshot', { detail: { id } }));
-          }
+          setShowDeleteConfirm(true);
         }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -212,6 +213,19 @@ export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {
 
       <Handle type="target" position={Position.Bottom} className="screenshot-handle" id="bottom-target" />
       <Handle type="source" position={Position.Bottom} className="screenshot-handle" id="bottom-source" />
+
+      {showDeleteConfirm && createPortal(
+        <ConfirmModal
+          title="Delete Screenshot"
+          message={`Delete "${nodeData.label}" from this flow?`}
+          onConfirm={() => {
+            setShowDeleteConfirm(false);
+            window.dispatchEvent(new CustomEvent('delete-screenshot', { detail: { id } }));
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />,
+        document.body,
+      )}
     </div>
   );
 });

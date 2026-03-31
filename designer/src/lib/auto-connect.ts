@@ -50,8 +50,8 @@ export function autoConnect(
       type: 'auto',
       label: null,
       arrow_direction: 'forward',
-      source_handle: null,
-      target_handle: null,
+      source_handle: 'right-source',
+      target_handle: 'left-target',
     });
   }
 

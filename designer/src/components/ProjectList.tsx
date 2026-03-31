@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { User } from '@supabase/supabase-js';
 import type { Project } from '../types';
 import { supabase } from '../lib/supabase';
+import { ConfirmModal } from './ConfirmModal';
 
 interface ProjectWithCounts extends Project {
   flow_count?: number;
@@ -91,9 +92,11 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
     }
   }
 
-  async function deleteProject(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!confirm('Delete this project and all its screenshots?')) return;
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+
+  async function confirmDeleteProject() {
+    if (!deleteProjectId) return;
+    const id = deleteProjectId;
 
     const { data: screenshots } = await supabase
       .from('screenshots')
@@ -108,6 +111,7 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
 
     await supabase.from('projects').delete().eq('id', id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
+    setDeleteProjectId(null);
   }
 
   function startRename(id: string, name: string, e: React.MouseEvent) {
@@ -249,7 +253,7 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
                 )}
                 <button
                   className="project-delete"
-                  onClick={(e) => deleteProject(project.id, e)}
+                  onClick={(e) => { e.stopPropagation(); setDeleteProjectId(project.id); }}
                   title="Delete project"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -262,6 +266,15 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
           </div>
         )}
       </main>
+
+      {deleteProjectId && (
+        <ConfirmModal
+          title="Delete Project"
+          message={`Delete "${projects.find((p) => p.id === deleteProjectId)?.name || 'this project'}" and all its screenshots and flows?`}
+          onConfirm={confirmDeleteProject}
+          onCancel={() => setDeleteProjectId(null)}
+        />
+      )}
     </div>
   );
 }

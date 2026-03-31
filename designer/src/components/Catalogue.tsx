@@ -9,6 +9,7 @@ import { CatalogueToolbar } from './CatalogueToolbar';
 import { FlowAssignModal } from './FlowAssignModal';
 import { UploadZone } from './UploadZone';
 import { Dropdown } from './Dropdown';
+import { ConfirmModal } from './ConfirmModal';
 import { Toast } from './Toast';
 
 interface CatalogueProps {
@@ -40,6 +41,7 @@ export function Catalogue({ user }: CatalogueProps) {
   const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'assign' | 'group' | 'platform' | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'bulk' } | null>(null);
   const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
 
@@ -449,7 +451,6 @@ export function Catalogue({ user }: CatalogueProps) {
 
   async function handleBulkDelete() {
     if (selected.size === 0) return;
-    if (!confirm(`Delete ${selected.size} screenshot${selected.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
 
     const ids = Array.from(selected);
     const toDelete = screenshots.filter((s) => ids.includes(s.id));
@@ -920,7 +921,7 @@ export function Catalogue({ user }: CatalogueProps) {
               </svg>
               Assign to Flow
             </button>
-            <button className="catalogue-bulk-btn catalogue-bulk-btn-danger" onClick={handleBulkDelete}>
+            <button className="catalogue-bulk-btn catalogue-bulk-btn-danger" onClick={() => setConfirmDelete({ type: 'bulk' })}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
@@ -1028,6 +1029,16 @@ export function Catalogue({ user }: CatalogueProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Confirm Delete */}
+      {confirmDelete && (
+        <ConfirmModal
+          title={`Delete ${selected.size} Screenshot${selected.size > 1 ? 's' : ''}`}
+          message={`This will permanently delete ${selected.size} screenshot${selected.size > 1 ? 's' : ''} and remove them from any flows. This cannot be undone.`}
+          onConfirm={() => { setConfirmDelete(null); handleBulkDelete(); }}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
       {/* Toast */}

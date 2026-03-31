@@ -690,6 +690,24 @@ export function Canvas({ user }: CanvasProps) {
             <p className="canvas-empty-hint">
               Tip: Name files like <code>01-auth-login.png</code> for auto-connection
             </p>
+            <div className="canvas-empty-actions">
+              <button className="btn-secondary" onClick={() => setShowCataloguePicker(true)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                </svg>
+                Add from Catalogue
+              </button>
+              <button className="btn-secondary" onClick={() => setShowFlowInput(true)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add Text Flow
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -761,6 +779,14 @@ export function Canvas({ user }: CanvasProps) {
               />
             )}
           </>
+        )}
+
+        {/* FlowInput also available on empty canvas */}
+        {screenshots.length === 0 && showFlowInput && (
+          <FlowInput
+            onInsert={handleFlowInsert}
+            onCancel={() => setShowFlowInput(false)}
+          />
         )}
 
         {showCataloguePicker && projectId && flowId && (

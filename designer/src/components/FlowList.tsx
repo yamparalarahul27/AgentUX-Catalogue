@@ -4,6 +4,7 @@ import type { User } from '@supabase/supabase-js';
 import type { Project, Flow } from '../types';
 import { supabase } from '../lib/supabase';
 import { Dropdown } from './Dropdown';
+import { ConfirmModal } from './ConfirmModal';
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -117,12 +118,13 @@ export function FlowList({ user: _user }: FlowListProps) {
     setFlows((prev) => prev.map((f) => f.id === id ? { ...f, platform } : f));
   }
 
-  async function deleteFlow(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!confirm('Delete this flow and all its screens?')) return;
+  const [deleteFlowId, setDeleteFlowId] = useState<string | null>(null);
 
-    await supabase.from('flows').delete().eq('id', id);
-    setFlows((prev) => prev.filter((f) => f.id !== id));
+  async function confirmDeleteFlow() {
+    if (!deleteFlowId) return;
+    await supabase.from('flows').delete().eq('id', deleteFlowId);
+    setFlows((prev) => prev.filter((f) => f.id !== deleteFlowId));
+    setDeleteFlowId(null);
   }
 
   if (loading) {
@@ -282,7 +284,7 @@ export function FlowList({ user: _user }: FlowListProps) {
                 </div>
                 <button
                   className="project-delete"
-                  onClick={(e) => deleteFlow(flow.id, e)}
+                  onClick={(e) => { e.stopPropagation(); setDeleteFlowId(flow.id); }}
                   title="Delete flow"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -295,6 +297,15 @@ export function FlowList({ user: _user }: FlowListProps) {
           </div>
         )}
       </main>
+
+      {deleteFlowId && (
+        <ConfirmModal
+          title="Delete Flow"
+          message={`Delete "${flows.find((f) => f.id === deleteFlowId)?.name || 'this flow'}" and all its screens?`}
+          onConfirm={confirmDeleteFlow}
+          onCancel={() => setDeleteFlowId(null)}
+        />
+      )}
     </div>
   );
 }

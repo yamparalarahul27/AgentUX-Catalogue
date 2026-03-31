@@ -4,6 +4,7 @@ import type { ScreenshotNode, ScreenshotVersion } from '../types';
 import { supabase } from '../lib/supabase';
 import { getGroupColor } from '../lib/naming';
 import { Dropdown } from './Dropdown';
+import { ConfirmModal } from './ConfirmModal';
 
 interface CatalogueCardProps {
   screenshot: ScreenshotNode;
@@ -41,6 +42,7 @@ export function CatalogueCard({
   const [showRef, setShowRef] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [versions, setVersions] = useState<ScreenshotVersion[]>([]);
   const [name, setName] = useState(screenshot.name);
   const [group, setGroup] = useState(screenshot.group || '');
@@ -178,11 +180,7 @@ export function CatalogueCard({
           <button
             className="catalogue-card-action catalogue-card-action-danger"
             title="Delete screenshot"
-            onClick={() => {
-              if (confirm('Delete this screenshot? This will also remove it from any flow.')) {
-                onDelete(screenshot.id);
-              }
-            }}
+            onClick={() => setShowDeleteConfirm(true)}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 6 5 6 21 6" />
@@ -313,6 +311,17 @@ export function CatalogueCard({
           ))}
           {versions.length === 0 && <p className="catalogue-card-versions-empty">Loading...</p>}
         </div>
+      )}
+
+      {/* Delete Confirm */}
+      {showDeleteConfirm && createPortal(
+        <ConfirmModal
+          title="Delete Screenshot"
+          message={`Delete "${screenshot.name}"? This will also remove it from any flow.`}
+          onConfirm={() => { setShowDeleteConfirm(false); onDelete(screenshot.id); }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />,
+        document.body,
       )}
 
       {/* Lightbox */}
