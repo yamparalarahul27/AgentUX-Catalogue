@@ -13,7 +13,7 @@ export function CatalogueApp() {
   return (
     <>
       <Catalogue user={user} />
-      <Agentation />
+      {import.meta.env.DEV && <Agentation />}
     </>
   );
 }

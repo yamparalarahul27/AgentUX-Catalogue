@@ -19,6 +19,7 @@ interface CatalogueToolbarProps {
   onVsGroupsChange: (gs: string[]) => void;
   showGroupConfig: boolean;
   onUploadClick: () => void;
+  onQuickUploadClick: () => void;
   screenshotCount: number;
 }
 
@@ -41,6 +42,7 @@ export function CatalogueToolbar({
   onVsGroupsChange,
   showGroupConfig,
   onUploadClick,
+  onQuickUploadClick,
   screenshotCount,
 }: CatalogueToolbarProps) {
   const nonPrimaryGroups = groups.filter((g) => g !== primaryGroup);
@@ -107,6 +109,9 @@ export function CatalogueToolbar({
 
         <div className="catalogue-toolbar-right">
           <span className="catalogue-count">{screenshotCount} screenshot{screenshotCount !== 1 ? 's' : ''}</span>
+          <button className="btn-secondary" onClick={onQuickUploadClick}>
+            Quick Upload
+          </button>
           <button className="btn-primary" onClick={onUploadClick}>
             + Upload
           </button>

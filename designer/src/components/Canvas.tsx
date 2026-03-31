@@ -52,7 +52,7 @@ interface CanvasProps {
   user: User;
 }
 
-function layoutElements(nodes: Node[], edges: Edge[], direction: 'TB' | 'LR' = 'TB') {
+function layoutElements(nodes: Node[], edges: Edge[], direction: 'TB' | 'LR' = 'LR') {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({ rankdir: direction, nodesep: NODE_SEP, ranksep: RANK_SEP });
@@ -204,11 +204,16 @@ export function Canvas({ user }: CanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Sync when data changes
+  // Sync edges when connections change (don't reset node positions)
+  useEffect(() => {
+    setEdges(initialEdges);
+  }, [initialEdges, setEdges]);
+
+  // Only sync nodes when screenshots change (not connections)
+  const screenshotKey = screenshots.map((s) => s.id).sort().join(',');
   useEffect(() => {
     setNodes(initialNodes);
-    setEdges(initialEdges);
-  }, [initialNodes, initialEdges, setNodes, setEdges]);
+  }, [screenshotKey, relayoutKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Listen for delete-screenshot events
   useEffect(() => {
@@ -762,6 +767,7 @@ export function Canvas({ user }: CanvasProps) {
           <CataloguePicker
             projectId={projectId}
             flowId={flowId}
+            userId={user.id}
             onAdd={handleAddFromCatalogue}
             onClose={() => setShowCataloguePicker(false)}
           />

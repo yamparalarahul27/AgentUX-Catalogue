@@ -27,14 +27,19 @@ export function Catalogue({ user }: CatalogueProps) {
   const [uploadGroup, setUploadGroup] = useState<string>('');
   const [newGroupName, setNewGroupName] = useState('');
   const [uploadTheme, setUploadTheme] = useState<'light' | 'dark' | null>(null);
+  const [uploadRefFile, setUploadRefFile] = useState<File | null>(null);
+  const [uploadRefLabel, setUploadRefLabel] = useState('');
+  const [uploadRefPreview, setUploadRefPreview] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [filterTheme, setFilterTheme] = useState<string | null>(null);
   const [assignModal, setAssignModal] = useState<string | null>(null);
+  const [showQuickUpload, setShowQuickUpload] = useState(false);
+  const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<'assign' | 'group' | null>(null);
+  const [bulkAction, setBulkAction] = useState<'assign' | 'group' | 'platform' | null>(null);
   const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
 
@@ -76,11 +81,27 @@ export function Catalogue({ user }: CatalogueProps) {
     ]);
 
     if (screenshotRes.data) {
+      // Load version counts
+      const screenshotIds = screenshotRes.data.map((s: ScreenshotNode) => s.id);
+      const versionCounts: Record<string, number> = {};
+      if (screenshotIds.length > 0) {
+        const { data: versionData } = await supabase
+          .from('screenshot_versions')
+          .select('screenshot_id')
+          .in('screenshot_id', screenshotIds);
+        if (versionData) {
+          for (const v of versionData) {
+            versionCounts[v.screenshot_id] = (versionCounts[v.screenshot_id] || 0) + 1;
+          }
+        }
+      }
+
       const withUrls = screenshotRes.data.map((s: ScreenshotNode) => ({
         ...s,
         image_url: s.storage_path
           ? supabase.storage.from('screenshots').getPublicUrl(s.storage_path).data.publicUrl
           : '',
+        version_count: versionCounts[s.id] || 0,
       }));
       setScreenshots(withUrls);
     }
@@ -227,12 +248,28 @@ export function Catalogue({ user }: CatalogueProps) {
     const screenshot = screenshots.find((s) => s.id === id);
     if (!screenshot) return;
 
+    // Save current image as a version before replacing
+    const { count } = await supabase
+      .from('screenshot_versions')
+      .select('*', { count: 'exact', head: true })
+      .eq('screenshot_id', id);
+    const nextVersion = (count ?? 0) + 1;
+
+    await supabase.from('screenshot_versions').insert({
+      screenshot_id: id,
+      version_number: nextVersion,
+      storage_path: screenshot.storage_path,
+      file_name: screenshot.file_name,
+    });
+
+    // Upload new image
+    const compressed = await compressImage(file);
     const safeName = file.name.replace(/\s+/g, '-');
     const storagePath = `${user.id}/${screenshot.project_id}/${safeName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('screenshots')
-      .upload(storagePath, file, { upsert: true });
+      .upload(storagePath, compressed, { upsert: true });
 
     if (uploadError) {
       setToast({ message: `Upload failed: ${uploadError.message}`, type: 'error' });
@@ -247,9 +284,9 @@ export function Catalogue({ user }: CatalogueProps) {
     }).eq('id', id);
 
     setScreenshots((prev) => prev.map((s) =>
-      s.id === id ? { ...s, storage_path: storagePath, file_name: file.name, image_url: imageUrl } : s
+      s.id === id ? { ...s, storage_path: storagePath, file_name: file.name, image_url: imageUrl, version_count: nextVersion } : s
     ));
-    setToast({ message: 'Image replaced', type: 'success' });
+    setToast({ message: `Image replaced (v${nextVersion + 1})`, type: 'success' });
   }
 
   async function handleAssignFlow(screenshotId: string, flowId: string | null) {
@@ -306,9 +343,30 @@ export function Catalogue({ user }: CatalogueProps) {
     if (!uploadProjectId || !groupToAssign) return;
     setUploading(true);
     setShowUpload(false);
+
+    // Upload reference image if provided
+    let refStoragePath: string | null = null;
+    let refUrl: string | null = null;
+    const refLabel = uploadRefLabel.trim() || null;
+
+    if (uploadRefFile) {
+      const refCompressed = await compressImage(uploadRefFile);
+      const refSafeName = uploadRefFile.name.replace(/\s+/g, '-');
+      refStoragePath = `${user.id}/${uploadProjectId}/references/${Date.now()}-${refSafeName}`;
+      const { error: refError } = await supabase.storage
+        .from('screenshots')
+        .upload(refStoragePath, refCompressed, { upsert: true });
+      if (!refError) {
+        refUrl = supabase.storage.from('screenshots').getPublicUrl(refStoragePath).data.publicUrl;
+      }
+    }
+
     setUploadGroup('');
     setNewGroupName('');
     setUploadTheme(null);
+    setUploadRefFile(null);
+    setUploadRefLabel('');
+    if (uploadRefPreview) { URL.revokeObjectURL(uploadRefPreview); setUploadRefPreview(null); }
 
     const results = await Promise.allSettled(
       files.map(async (file) => {
@@ -336,6 +394,9 @@ export function Catalogue({ user }: CatalogueProps) {
             sequence: parsed.sequence,
             group: groupToAssign,
             theme: themeToAssign,
+            reference_url: refUrl,
+            reference_storage_path: refStoragePath,
+            reference_label: refLabel,
           })
           .select()
           .single();
@@ -429,6 +490,16 @@ export function Catalogue({ user }: CatalogueProps) {
     clearSelection();
   }
 
+  async function handleBulkPlatform(platform: 'mobile' | 'web' | null) {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+
+    await supabase.from('screenshots').update({ platform }).in('id', ids);
+    setScreenshots((prev) => prev.map((s) => selected.has(s.id) ? { ...s, platform } : s));
+    setToast({ message: `${selected.size} set to ${platform || 'no platform'}`, type: 'success' });
+    clearSelection();
+  }
+
   // Flows available for bulk assign (from selected screenshots' projects)
   const bulkFlows = useMemo(() => {
     if (selected.size === 0) return [];
@@ -437,6 +508,64 @@ export function Catalogue({ user }: CatalogueProps) {
   }, [selected, screenshots, flows]);
 
   // Get flows for a specific screenshot's project
+  async function handleQuickUpload(files: File[]) {
+    if (!quickUploadProjectId) return;
+    setUploading(true);
+    setShowQuickUpload(false);
+
+    const results = await Promise.allSettled(
+      files.map(async (file) => {
+        const compressed = await compressImage(file);
+        const parsed = parseScreenshotName(file.name);
+        const safeName = file.name.replace(/\s+/g, '-');
+        const storagePath = `${user.id}/${quickUploadProjectId}/${safeName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('screenshots')
+          .upload(storagePath, compressed, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
+
+        const { data, error } = await supabase
+          .from('screenshots')
+          .insert({
+            project_id: quickUploadProjectId,
+            flow_id: null,
+            name: parsed.name,
+            file_name: file.name,
+            storage_path: storagePath,
+            sequence: parsed.sequence,
+            group: parsed.group,
+          })
+          .select()
+          .single();
+
+        if (error || !data) throw error;
+        return { ...data, image_url: imageUrl } as ScreenshotNode;
+      }),
+    );
+
+    const newScreenshots = results
+      .filter((r): r is PromiseFulfilledResult<ScreenshotNode> => r.status === 'fulfilled')
+      .map((r) => r.value);
+
+    const failed = results.filter((r) => r.status === 'rejected').length;
+
+    if (newScreenshots.length > 0) {
+      setScreenshots((prev) => [...newScreenshots, ...prev]);
+      // Auto-select all newly uploaded screenshots
+      setSelected(new Set(newScreenshots.map((s) => s.id)));
+      setToast({ message: `${newScreenshots.length} uploaded${failed ? `, ${failed} failed` : ''} — now assign them`, type: 'success' });
+    } else if (failed) {
+      setToast({ message: `Upload failed for ${failed} file${failed > 1 ? 's' : ''}`, type: 'error' });
+    }
+
+    setUploading(false);
+    setQuickUploadProjectId(null);
+  }
+
   function getProjectFlows(screenshotId: string): Flow[] {
     const s = screenshots.find((ss) => ss.id === screenshotId);
     if (!s) return [];
@@ -483,6 +612,7 @@ export function Catalogue({ user }: CatalogueProps) {
           onVsGroupsChange={handleVsGroupsChange}
           showGroupConfig={!!filterProject}
           onUploadClick={() => setShowUpload(true)}
+          onQuickUploadClick={() => setShowQuickUpload(true)}
           screenshotCount={filteredScreenshots.length}
         />
 
@@ -520,7 +650,29 @@ export function Catalogue({ user }: CatalogueProps) {
             {Object.entries(groupedScreenshots).map(([groupName, items]) => (
               <section key={groupName} className="catalogue-section">
                 <h3 className="catalogue-section-title">
+                  <button
+                    className="catalogue-section-select"
+                    title={items.every((s) => selected.has(s.id)) ? 'Deselect group' : 'Select group'}
+                    onClick={() => {
+                      const allSelected = items.every((s) => selected.has(s.id));
+                      setSelected((prev) => {
+                        const next = new Set(prev);
+                        for (const s of items) {
+                          if (allSelected) next.delete(s.id);
+                          else next.add(s.id);
+                        }
+                        return next;
+                      });
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      {items.every((s) => selected.has(s.id))
+                        ? <><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" /><polyline points="9 11 12 14 20 6" stroke="#0f0f10" strokeWidth="3" /></>
+                        : <rect x="3" y="3" width="18" height="18" rx="2" />}
+                    </svg>
+                  </button>
                   {groupName}
+                  <span className="catalogue-section-count">{items.length}</span>
                   {primaryGroup === groupName && (
                     <span className="catalogue-badge catalogue-badge-primary">Primary</span>
                   )}
@@ -556,7 +708,7 @@ export function Catalogue({ user }: CatalogueProps) {
 
       {/* Upload Modal */}
       {showUpload && (
-        <div className="catalogue-upload-overlay" onClick={() => { setShowUpload(false); setUploadProjectId(null); setUploadGroup(''); setNewGroupName(''); setUploadTheme(null); }}>
+        <div className="catalogue-upload-overlay" onClick={() => { setShowUpload(false); setUploadProjectId(null); setUploadGroup(''); setNewGroupName(''); setUploadTheme(null); setUploadRefFile(null); setUploadRefLabel(''); if (uploadRefPreview) { URL.revokeObjectURL(uploadRefPreview); setUploadRefPreview(null); } }}>
           <div className="catalogue-upload-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Upload Screenshots</h3>
             <p className="catalogue-upload-subtitle">Choose a project and group, then upload your screenshots.</p>
@@ -615,6 +767,56 @@ export function Catalogue({ user }: CatalogueProps) {
                   ))}
                 </div>
 
+                <label className="catalogue-upload-label">Reference (optional)</label>
+                <div className="catalogue-upload-ref">
+                  {uploadRefPreview ? (
+                    <div className="catalogue-upload-ref-preview">
+                      <img src={uploadRefPreview} alt="Reference" />
+                      <button
+                        className="catalogue-upload-ref-remove"
+                        onClick={() => {
+                          URL.revokeObjectURL(uploadRefPreview);
+                          setUploadRefFile(null);
+                          setUploadRefPreview(null);
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="catalogue-upload-ref-picker">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                      </svg>
+                      <span>Add reference image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file && file.type.startsWith('image/')) {
+                            setUploadRefFile(file);
+                            setUploadRefPreview(URL.createObjectURL(file));
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  )}
+                  <input
+                    className="catalogue-upload-ref-label"
+                    type="text"
+                    placeholder="Label (e.g., Binance, Dribbble)"
+                    value={uploadRefLabel}
+                    onChange={(e) => setUploadRefLabel(e.target.value)}
+                  />
+                </div>
+
                 {(uploadGroup && uploadGroup !== '__new__') || (uploadGroup === '__new__' && newGroupName.trim()) ? (
                   <UploadZone
                     onFilesSelected={(files) => {
@@ -632,6 +834,30 @@ export function Catalogue({ user }: CatalogueProps) {
             )}
 
             {!uploadProjectId && (
+              <p className="catalogue-upload-hint">Select a project above to enable upload.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Upload Modal */}
+      {showQuickUpload && (
+        <div className="catalogue-upload-overlay" onClick={() => { setShowQuickUpload(false); setQuickUploadProjectId(null); }}>
+          <div className="catalogue-upload-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Quick Upload</h3>
+            <p className="catalogue-upload-subtitle">Select a project and drop files. Groups auto-assigned from filenames.</p>
+
+            <Dropdown
+              className="catalogue-upload-project-dropdown"
+              value={quickUploadProjectId}
+              placeholder="Select a project..."
+              options={projects.map((p) => ({ value: p.id, label: p.name }))}
+              onChange={setQuickUploadProjectId}
+            />
+
+            {quickUploadProjectId ? (
+              <UploadZone onFilesSelected={handleQuickUpload} disabled={uploading} />
+            ) : (
               <p className="catalogue-upload-hint">Select a project above to enable upload.</p>
             )}
           </div>
@@ -680,6 +906,13 @@ export function Catalogue({ user }: CatalogueProps) {
               </svg>
               Change Group
             </button>
+            <button className="catalogue-bulk-btn" onClick={() => setBulkAction('platform')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                <line x1="12" y1="18" x2="12.01" y2="18" />
+              </svg>
+              Set Platform
+            </button>
             <button className="catalogue-bulk-btn" onClick={() => setBulkAction('assign')}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="16 3 21 3 21 8" />
@@ -727,6 +960,32 @@ export function Catalogue({ user }: CatalogueProps) {
             <div className="flow-assign-actions">
               <button className="btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
               <button className="btn-primary" onClick={() => handleBulkAssignFlow(null)}>Unassign All</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Set Platform Modal */}
+      {bulkAction === 'platform' && (
+        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
+          <div className="flow-assign-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Set Platform for {selected.size}</h3>
+            <div className="flow-assign-options">
+              <label className="flow-assign-option">
+                <input type="radio" name="bulk-platform" onChange={() => handleBulkPlatform('mobile')} />
+                <span>Mobile</span>
+              </label>
+              <label className="flow-assign-option">
+                <input type="radio" name="bulk-platform" onChange={() => handleBulkPlatform('web')} />
+                <span>Web</span>
+              </label>
+              <label className="flow-assign-option">
+                <input type="radio" name="bulk-platform" onChange={() => handleBulkPlatform(null)} />
+                <span>No platform</span>
+              </label>
+            </div>
+            <div className="flow-assign-actions">
+              <button className="btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
             </div>
           </div>
         </div>

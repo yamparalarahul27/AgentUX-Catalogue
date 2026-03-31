@@ -29,6 +29,10 @@ export interface ScreenshotNode {
   group: string | null;
   platform: 'mobile' | 'web' | null;
   theme: 'light' | 'dark' | null;
+  reference_url: string | null;
+  reference_storage_path: string | null;
+  reference_label: string | null;
+  version_count?: number;
   position_x: number | null;
   position_y: number | null;
   metadata: Record<string, string>;
@@ -54,6 +58,16 @@ export interface Comparison {
   screenshot_id: string;
   name: string;
   storage_path: string;
+  image_url?: string;
+  created_at?: string;
+}
+
+export interface ScreenshotVersion {
+  id: string;
+  screenshot_id: string;
+  version_number: number;
+  storage_path: string;
+  file_name: string;
   image_url?: string;
   created_at?: string;
 }

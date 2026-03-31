@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import type { ScreenshotNode } from '../types';
+import { createPortal } from 'react-dom';
+import type { ScreenshotNode, ScreenshotVersion } from '../types';
+import { supabase } from '../lib/supabase';
 import { getGroupColor } from '../lib/naming';
 import { Dropdown } from './Dropdown';
 
@@ -36,6 +38,10 @@ export function CatalogueCard({
 }: CatalogueCardProps) {
   const [editingName, setEditingName] = useState(false);
   const [editingGroup, setEditingGroup] = useState(false);
+  const [showRef, setShowRef] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [versions, setVersions] = useState<ScreenshotVersion[]>([]);
   const [name, setName] = useState(screenshot.name);
   const [group, setGroup] = useState(screenshot.group || '');
   const nameRef = useRef<HTMLInputElement>(null);
@@ -52,6 +58,25 @@ export function CatalogueCard({
   useEffect(() => {
     if (editingGroup && groupRef.current) { groupRef.current.focus(); groupRef.current.select(); }
   }, [editingGroup]);
+
+  useEffect(() => {
+    if (!showVersions) return;
+    (async () => {
+      const { data } = await supabase
+        .from('screenshot_versions')
+        .select('*')
+        .eq('screenshot_id', screenshot.id)
+        .order('version_number', { ascending: false });
+      if (data) {
+        setVersions(data.map((v: ScreenshotVersion) => ({
+          ...v,
+          image_url: v.storage_path
+            ? supabase.storage.from('screenshots').getPublicUrl(v.storage_path).data.publicUrl
+            : undefined,
+        })));
+      }
+    })();
+  }, [showVersions, screenshot.id]);
 
   function commitName() {
     const trimmed = name.trim();
@@ -85,7 +110,7 @@ export function CatalogueCard({
 
   return (
     <div className={`catalogue-card ${isSelected ? 'catalogue-card--selected' : ''}`}>
-      <div className="catalogue-card-image">
+      <div className="catalogue-card-image" onClick={() => setShowLightbox(true)} style={{ cursor: 'pointer' }}>
         {screenshot.image_url ? (
           <img src={screenshot.image_url} alt={screenshot.name} draggable={false} />
         ) : (
@@ -113,6 +138,30 @@ export function CatalogueCard({
             {isPrimary ? 'Primary' : 'Vs'}
           </span>
         )}
+        <div className="catalogue-card-indicators">
+          {screenshot.reference_url && (
+            <button
+              className="catalogue-card-ref-btn"
+              title={screenshot.reference_label ? `Ref: ${screenshot.reference_label}` : 'View reference'}
+              onClick={(e) => { e.stopPropagation(); setShowRef(!showRef); }}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              Ref
+            </button>
+          )}
+          {(screenshot.version_count ?? 0) > 0 && (
+            <button
+              className="catalogue-card-version-btn"
+              title="View version history"
+              onClick={(e) => { e.stopPropagation(); setShowVersions(!showVersions); }}
+            >
+              v{(screenshot.version_count ?? 0) + 1}
+            </button>
+          )}
+        </div>
         <div className="catalogue-card-actions">
           <button
             className="catalogue-card-action"
@@ -225,6 +274,70 @@ export function CatalogueCard({
           <span className="catalogue-card-project">{projectName}</span>
         </div>
       </div>
+
+      {/* Reference Popover */}
+      {showRef && screenshot.reference_url && (
+        <div className="catalogue-card-ref-popover">
+          <div className="catalogue-card-ref-popover-header">
+            <span>{screenshot.reference_label || 'Reference'}</span>
+            <button onClick={() => setShowRef(false)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <img src={screenshot.reference_url} alt={screenshot.reference_label || 'Reference'} />
+        </div>
+      )}
+
+      {/* Version History */}
+      {showVersions && (
+        <div className="catalogue-card-versions">
+          <div className="catalogue-card-versions-header">
+            <span>Version History</span>
+            <button onClick={() => setShowVersions(false)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div className="catalogue-card-versions-current">
+            <img src={screenshot.image_url} alt="Current" />
+            <span>Current</span>
+          </div>
+          {versions.map((v) => (
+            <div key={v.id} className="catalogue-card-versions-item">
+              <img src={v.image_url} alt={`v${v.version_number}`} />
+              <span>v{v.version_number} · {new Date(v.created_at || '').toLocaleDateString()}</span>
+            </div>
+          ))}
+          {versions.length === 0 && <p className="catalogue-card-versions-empty">Loading...</p>}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {showLightbox && screenshot.image_url && createPortal(
+        <div className="catalogue-lightbox" onClick={() => setShowLightbox(false)}>
+          <div className="catalogue-lightbox-header">
+            <span className="catalogue-lightbox-name">{screenshot.name}</span>
+            {screenshot.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}>{screenshot.group}</span>}
+            {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
+            {screenshot.theme && <span className="catalogue-lightbox-tag">{screenshot.theme}</span>}
+            <button className="catalogue-lightbox-close" onClick={() => setShowLightbox(false)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <img
+            src={screenshot.image_url}
+            alt={screenshot.name}
+            className="catalogue-lightbox-img"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

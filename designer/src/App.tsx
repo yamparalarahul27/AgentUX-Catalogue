@@ -21,7 +21,7 @@ export function App() {
         <Route path="/project/:projectId/flow/:flowId" element={<Canvas user={user} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <Agentation />
+      {import.meta.env.DEV && <Agentation />}
     </>
   );
 }

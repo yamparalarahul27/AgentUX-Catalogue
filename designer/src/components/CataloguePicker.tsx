@@ -7,11 +7,12 @@ import { Dropdown } from './Dropdown';
 interface CataloguePickerProps {
   projectId: string;
   flowId: string;
+  userId: string;
   onAdd: (screenshots: ScreenshotNode[]) => void;
   onClose: () => void;
 }
 
-export function CataloguePicker({ projectId, flowId, onAdd, onClose }: CataloguePickerProps) {
+export function CataloguePicker({ projectId, flowId, userId, onAdd, onClose }: CataloguePickerProps) {
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
@@ -28,24 +29,20 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
   async function loadScreenshots() {
     const { data: projectData } = await supabase
       .from('projects')
-      .select('primary_group')
-      .eq('id', projectId)
-      .single();
+      .select('id, primary_group')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
 
-    const pg = projectData?.primary_group || null;
+    const pg = projectData?.find((p: { id: string }) => p.id === projectId)?.primary_group || null;
     setPrimaryGroup(pg);
 
-    let query = supabase
+    const projectIds = projectData?.map((p: { id: string }) => p.id) || [projectId];
+
+    const { data } = await supabase
       .from('screenshots')
       .select('*')
-      .eq('project_id', projectId)
-      .or(`flow_id.is.null,flow_id.neq.${flowId}`);
-
-    if (pg) {
-      query = query.eq('group', pg);
-    }
-
-    const { data } = await query.order('created_at', { ascending: false });
+      .in('project_id', projectIds)
+      .order('created_at', { ascending: false });
 
     if (data) {
       const withUrls = data.map((s: ScreenshotNode) => ({
@@ -169,13 +166,11 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
         ) : filtered.length === 0 ? (
           <div className="catalogue-picker-empty">
             {screenshots.length === 0
-              ? primaryGroup
-                ? `No screenshots in primary group "${primaryGroup}". Upload some in the Catalogue first.`
-                : 'No screenshots available. Upload some in the Catalogue first.'
+              ? 'No screenshots available. Upload some in the Catalogue first.'
               : 'No screenshots match your filters.'}
           </div>
         ) : (
-          <>
+          <div className="catalogue-picker-body">
             <div className="catalogue-picker-toolbar">
               <button className="catalogue-picker-select-all" onClick={selectAll}>
                 {selected.size === filtered.length ? 'Deselect all' : 'Select all'}
@@ -222,7 +217,7 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
 
         <div className="catalogue-picker-footer">
