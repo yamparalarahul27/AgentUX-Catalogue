@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface DropdownOption {
   value: string;
@@ -17,6 +18,8 @@ interface DropdownProps {
 export function Dropdown({ value, options, placeholder = 'Select...', onChange, className }: DropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
 
   const selected = options.find((o) => o.value === value);
 
@@ -25,7 +28,10 @@ export function Dropdown({ value, options, placeholder = 'Select...', onChange, 
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) close();
+      if (
+        ref.current && !ref.current.contains(e.target as Node) &&
+        menuRef.current && !menuRef.current.contains(e.target as Node)
+      ) close();
     }
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') close();
@@ -37,6 +43,22 @@ export function Dropdown({ value, options, placeholder = 'Select...', onChange, 
       document.removeEventListener('keydown', handleKey);
     };
   }, [open, close]);
+
+  useLayoutEffect(() => {
+    if (!open || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < 260 && rect.top > spaceBelow;
+
+    setMenuStyle({
+      position: 'fixed',
+      left: rect.left,
+      width: Math.max(rect.width, 140),
+      ...(openUpward
+        ? { bottom: window.innerHeight - rect.top + 4 }
+        : { top: rect.bottom + 4 }),
+    });
+  }, [open]);
 
   return (
     <div ref={ref} className={`dropdown ${className || ''} ${open ? 'dropdown--open' : ''}`}>
@@ -53,8 +75,8 @@ export function Dropdown({ value, options, placeholder = 'Select...', onChange, 
         </svg>
       </button>
 
-      {open && (
-        <div className="dropdown__menu">
+      {open && createPortal(
+        <div ref={menuRef} className="dropdown__menu" style={menuStyle}>
           {placeholder && (
             <button
               type="button"
@@ -75,7 +97,8 @@ export function Dropdown({ value, options, placeholder = 'Select...', onChange, 
               {o.badge && <span className="dropdown__badge">{o.badge}</span>}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

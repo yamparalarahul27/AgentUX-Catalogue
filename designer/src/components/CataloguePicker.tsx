@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ScreenshotNode } from '../types';
 import { supabase } from '../lib/supabase';
 import { getGroupColor } from '../lib/naming';
+import { Dropdown } from './Dropdown';
 
 interface CataloguePickerProps {
   projectId: string;
@@ -14,6 +15,8 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
+  const [filterGroup, setFilterGroup] = useState<string | null>(null);
+  const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [primaryGroup, setPrimaryGroup] = useState<string | null>(null);
@@ -23,7 +26,6 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
   }, []);
 
   async function loadScreenshots() {
-    // Load project's primary group
     const { data: projectData } = await supabase
       .from('projects')
       .select('primary_group')
@@ -33,14 +35,12 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
     const pg = projectData?.primary_group || null;
     setPrimaryGroup(pg);
 
-    // Load screenshots not in current flow
     let query = supabase
       .from('screenshots')
       .select('*')
       .eq('project_id', projectId)
       .or(`flow_id.is.null,flow_id.neq.${flowId}`);
 
-    // Filter to primary group only if set
     if (pg) {
       query = query.eq('group', pg);
     }
@@ -59,15 +59,20 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
     setLoading(false);
   }
 
+  const allGroups = useMemo(() => {
+    return [...new Set(screenshots.map((s) => s.group).filter(Boolean))] as string[];
+  }, [screenshots]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return screenshots;
-    const q = search.toLowerCase();
-    return screenshots.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        (s.group && s.group.toLowerCase().includes(q)),
-    );
-  }, [screenshots, search]);
+    return screenshots.filter((s) => {
+      const matchesSearch = !search.trim() ||
+        s.name.toLowerCase().includes(search.toLowerCase()) ||
+        (s.group && s.group.toLowerCase().includes(search.toLowerCase()));
+      const matchesGroup = !filterGroup || s.group === filterGroup;
+      const matchesPlatform = !filterPlatform || s.platform === filterPlatform;
+      return matchesSearch && matchesGroup && matchesPlatform;
+    });
+  }, [screenshots, search, filterGroup, filterPlatform]);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -119,16 +124,41 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
           </button>
         </div>
 
-        <div className="catalogue-picker-search">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search screenshots..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+        <div className="catalogue-picker-filters">
+          <div className="catalogue-picker-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search screenshots..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <Dropdown
+            className="catalogue-picker-filter-dropdown"
+            value={filterGroup}
+            placeholder="All Groups"
+            options={allGroups.map((g) => ({
+              value: g,
+              label: g,
+              badge: g === primaryGroup ? 'Primary' : undefined,
+            }))}
+            onChange={setFilterGroup}
+          />
+
+          <Dropdown
+            className="catalogue-picker-filter-dropdown"
+            value={filterPlatform}
+            placeholder="All Platforms"
+            options={[
+              { value: 'mobile', label: 'Mobile' },
+              { value: 'web', label: 'Web' },
+            ]}
+            onChange={setFilterPlatform}
           />
         </div>
 
@@ -142,7 +172,7 @@ export function CataloguePicker({ projectId, flowId, onAdd, onClose }: Catalogue
               ? primaryGroup
                 ? `No screenshots in primary group "${primaryGroup}". Upload some in the Catalogue first.`
                 : 'No screenshots available. Upload some in the Catalogue first.'
-              : 'No screenshots match your search.'}
+              : 'No screenshots match your filters.'}
           </div>
         ) : (
           <>

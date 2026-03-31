@@ -31,6 +31,9 @@ export function Catalogue({ user }: CatalogueProps) {
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [assignModal, setAssignModal] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'assign' | 'group' | null>(null);
+  const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
 
   useEffect(() => {
@@ -339,6 +342,80 @@ export function Catalogue({ user }: CatalogueProps) {
     setUploadProjectId(null);
   }
 
+  // Selection handlers
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllVisible() {
+    if (selected.size === filteredScreenshots.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filteredScreenshots.map((s) => s.id)));
+    }
+  }
+
+  function clearSelection() {
+    setSelected(new Set());
+    setBulkAction(null);
+    setBulkGroupValue('');
+  }
+
+  async function handleBulkDelete() {
+    if (selected.size === 0) return;
+    if (!confirm(`Delete ${selected.size} screenshot${selected.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+
+    const ids = Array.from(selected);
+    const toDelete = screenshots.filter((s) => ids.includes(s.id));
+
+    await supabase.from('connections').delete().or(ids.map((id) => `source_id.eq.${id},target_id.eq.${id}`).join(','));
+    await supabase.from('screenshots').delete().in('id', ids);
+
+    const paths = toDelete.map((s) => s.storage_path).filter(Boolean);
+    if (paths.length) await supabase.storage.from('screenshots').remove(paths);
+
+    setScreenshots((prev) => prev.filter((s) => !selected.has(s.id)));
+    setToast({ message: `${selected.size} screenshot${selected.size > 1 ? 's' : ''} deleted`, type: 'success' });
+    clearSelection();
+  }
+
+  async function handleBulkAssignFlow(flowId: string | null) {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+
+    await supabase.from('screenshots').update({ flow_id: flowId }).in('id', ids);
+    setScreenshots((prev) => prev.map((s) => selected.has(s.id) ? { ...s, flow_id: flowId } : s));
+    setToast({
+      message: flowId
+        ? `${selected.size} assigned to ${flowMap[flowId] || 'flow'}`
+        : `${selected.size} unassigned from flow`,
+      type: 'success',
+    });
+    clearSelection();
+  }
+
+  async function handleBulkChangeGroup(group: string) {
+    if (selected.size === 0 || !group.trim()) return;
+    const ids = Array.from(selected);
+
+    await supabase.from('screenshots').update({ group: group.trim() }).in('id', ids);
+    setScreenshots((prev) => prev.map((s) => selected.has(s.id) ? { ...s, group: group.trim() } : s));
+    setToast({ message: `${selected.size} moved to "${group.trim()}"`, type: 'success' });
+    clearSelection();
+  }
+
+  // Flows available for bulk assign (from selected screenshots' projects)
+  const bulkFlows = useMemo(() => {
+    if (selected.size === 0) return [];
+    const projectIds = new Set(screenshots.filter((s) => selected.has(s.id)).map((s) => s.project_id));
+    return flows.filter((f) => projectIds.has(f.project_id));
+  }, [selected, screenshots, flows]);
+
   // Get flows for a specific screenshot's project
   function getProjectFlows(screenshotId: string): Flow[] {
     const s = screenshots.find((ss) => ss.id === screenshotId);
@@ -438,6 +515,8 @@ export function Catalogue({ user }: CatalogueProps) {
                       flowName={s.flow_id ? (flowMap[s.flow_id] || null) : null}
                       isPrimary={!!primaryGroup && s.group === primaryGroup}
                       isVs={vsGroups.includes(s.group || '')}
+                      isSelected={selected.has(s.id)}
+                      onToggleSelect={toggleSelect}
                       onRename={handleRename}
                       onChangeGroup={handleChangeGroup}
                       onDelete={handleDelete}
@@ -543,6 +622,118 @@ export function Catalogue({ user }: CatalogueProps) {
           onAssign={(flowId) => handleAssignFlow(assignModal, flowId)}
           onClose={() => setAssignModal(null)}
         />
+      )}
+
+      {/* Bulk Action Bar */}
+      {selected.size > 0 && (
+        <div className="catalogue-bulk-bar">
+          <div className="catalogue-bulk-left">
+            <button className="catalogue-bulk-check" onClick={selectAllVisible}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {selected.size === filteredScreenshots.length
+                  ? <><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" /><polyline points="9 11 12 14 20 6" stroke="#0f0f10" strokeWidth="3" /></>
+                  : <><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="8" y1="12" x2="16" y2="12" /></>}
+              </svg>
+            </button>
+            <span className="catalogue-bulk-count">{selected.size} selected</span>
+          </div>
+
+          <div className="catalogue-bulk-actions">
+            <button className="catalogue-bulk-btn" onClick={() => setBulkAction('group')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+              </svg>
+              Change Group
+            </button>
+            <button className="catalogue-bulk-btn" onClick={() => setBulkAction('assign')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="16 3 21 3 21 8" />
+                <line x1="4" y1="20" x2="21" y2="3" />
+              </svg>
+              Assign to Flow
+            </button>
+            <button className="catalogue-bulk-btn catalogue-bulk-btn-danger" onClick={handleBulkDelete}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+              Delete
+            </button>
+            <button className="catalogue-bulk-btn-close" onClick={clearSelection}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Assign to Flow Modal */}
+      {bulkAction === 'assign' && (
+        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
+          <div className="flow-assign-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Assign {selected.size} to Flow</h3>
+            <div className="flow-assign-options">
+              <label className="flow-assign-option">
+                <input type="radio" name="bulk-flow" defaultChecked onChange={() => {}} />
+                <span>Unassigned</span>
+              </label>
+              {bulkFlows.map((f) => (
+                <label key={f.id} className="flow-assign-option">
+                  <input type="radio" name="bulk-flow" onChange={() => handleBulkAssignFlow(f.id)} />
+                  <span>{f.name}</span>
+                </label>
+              ))}
+            </div>
+            {bulkFlows.length === 0 && (
+              <p className="flow-assign-empty">No flows available for selected screenshots.</p>
+            )}
+            <div className="flow-assign-actions">
+              <button className="btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
+              <button className="btn-primary" onClick={() => handleBulkAssignFlow(null)}>Unassign All</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Change Group Modal */}
+      {bulkAction === 'group' && (
+        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
+          <div className="flow-assign-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Move {selected.size} to Group</h3>
+            <div className="catalogue-upload-groups" style={{ marginTop: 12 }}>
+              {allGroups.map((g) => (
+                <button
+                  key={g}
+                  className={`catalogue-upload-group-chip ${bulkGroupValue === g ? 'active' : ''}`}
+                  onClick={() => setBulkGroupValue(g)}
+                >
+                  {g}
+                  {primaryGroup === g && <span className="catalogue-upload-group-primary">Primary</span>}
+                </button>
+              ))}
+            </div>
+            <input
+              className="catalogue-filter"
+              style={{ width: '100%', marginTop: 12 }}
+              type="text"
+              placeholder="Or type a new group name..."
+              value={bulkGroupValue}
+              onChange={(e) => setBulkGroupValue(e.target.value)}
+            />
+            <div className="flow-assign-actions">
+              <button className="btn-secondary" onClick={() => { setBulkAction(null); setBulkGroupValue(''); }}>Cancel</button>
+              <button
+                className="btn-primary"
+                disabled={!bulkGroupValue.trim()}
+                onClick={() => handleBulkChangeGroup(bulkGroupValue)}
+              >
+                Move to "{bulkGroupValue.trim() || '...'}"
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Toast */}

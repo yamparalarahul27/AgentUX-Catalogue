@@ -9,6 +9,8 @@ interface CatalogueCardProps {
   flowName: string | null;
   isPrimary: boolean;
   isVs: boolean;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onChangeGroup: (id: string, group: string | null) => void;
   onDelete: (id: string) => void;
@@ -23,6 +25,8 @@ export function CatalogueCard({
   flowName,
   isPrimary,
   isVs,
+  isSelected,
+  onToggleSelect,
   onRename,
   onChangeGroup,
   onDelete,
@@ -80,7 +84,7 @@ export function CatalogueCard({
   const groupColor = getGroupColor(screenshot.group);
 
   return (
-    <div className="catalogue-card">
+    <div className={`catalogue-card ${isSelected ? 'catalogue-card--selected' : ''}`}>
       <div className="catalogue-card-image">
         {screenshot.image_url ? (
           <img src={screenshot.image_url} alt={screenshot.name} draggable={false} />
@@ -93,6 +97,17 @@ export function CatalogueCard({
             </svg>
           </div>
         )}
+        <button
+          className={`catalogue-card-select ${isSelected ? 'catalogue-card-select--checked' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onToggleSelect(screenshot.id); }}
+          title="Select"
+        >
+          {isSelected && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </button>
         {(isPrimary || isVs) && (
           <span className={`catalogue-card-badge ${isPrimary ? 'catalogue-card-badge-primary' : 'catalogue-card-badge-vs'}`}>
             {isPrimary ? 'Primary' : 'Vs'}
@@ -104,10 +119,11 @@ export function CatalogueCard({
             title="Replace image"
             onClick={() => fileRef.current?.click()}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 16h5v5" />
             </svg>
           </button>
           <button

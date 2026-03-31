@@ -58,10 +58,6 @@ $success: #22c55e;
 }
 
 .dropdown__menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  min-width: 100%;
   max-height: 240px;
   overflow-y: auto;
   background: $surface;
@@ -1781,6 +1777,40 @@ body {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 
     .catalogue-card-actions { opacity: 1; }
+    .catalogue-card-select { opacity: 1; }
+  }
+
+  &--selected {
+    border-color: $accent;
+    box-shadow: 0 0 0 1px $accent;
+
+    .catalogue-card-select { opacity: 1; }
+  }
+}
+
+.catalogue-card-select {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+  z-index: 3;
+  color: #fff;
+
+  &--checked {
+    opacity: 1;
+    background: $accent;
+    border-color: $accent;
   }
 }
 
@@ -2137,11 +2167,27 @@ body {
   &:hover { color: $text; background: rgba(255, 255, 255, 0.05); }
 }
 
+.catalogue-picker-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 24px;
+}
+
+.catalogue-picker-filter-dropdown {
+  flex-shrink: 0;
+  .dropdown__trigger {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  .dropdown__chevron { width: 12px; height: 12px; }
+}
+
 .catalogue-picker-search {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 16px 24px;
+  flex: 1;
   padding: 8px 12px;
   background: $bg;
   border: 1px solid $border;
@@ -2445,4 +2491,104 @@ body {
   border-radius: 8px;
   color: $danger;
   font-size: 12px;
+}
+
+// ========================================
+// Bulk Action Bar
+// ========================================
+
+.catalogue-bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  animation: bulkBarSlideUp 0.2s ease-out;
+}
+
+@keyframes bulkBarSlideUp {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.catalogue-bulk-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalogue-bulk-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: $accent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.catalogue-bulk-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: $text;
+  white-space: nowrap;
+}
+
+.catalogue-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 1px solid $border;
+}
+
+.catalogue-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: $text-muted;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); color: $text; }
+}
+
+.catalogue-bulk-btn-danger {
+  &:hover { background: rgba($danger, 0.12); color: $danger; }
+}
+
+.catalogue-bulk-btn-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: $text-dim;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); color: $text; }
 }
