@@ -1125,6 +1125,25 @@ body {
   justify-content: space-between;
   padding: 16px 24px;
   border-bottom: 1px solid $border;
+
+  .header-left,
+  .header-right {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-right {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.flow-list-project-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: $text;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .flow-list-main {
@@ -1920,4 +1939,349 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+// ========================================
+// Catalogue Picker Modal
+// ========================================
+
+.catalogue-picker-modal {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 720px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.catalogue-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text;
+  }
+}
+
+.catalogue-picker-close {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+
+  &:hover { color: $text; background: rgba(255, 255, 255, 0.05); }
+}
+
+.catalogue-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 24px;
+  padding: 8px 12px;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+
+  input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: $text;
+    font-size: 13px;
+    font-family: inherit;
+
+    &::placeholder { color: $text-dim; }
+  }
+}
+
+.catalogue-picker-loading,
+.catalogue-picker-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: $text-muted;
+  font-size: 13px;
+}
+
+.catalogue-picker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px 8px;
+}
+
+.catalogue-picker-select-all {
+  background: none;
+  border: none;
+  color: $accent;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0;
+
+  &:hover { color: $accent-hover; }
+}
+
+.catalogue-picker-count {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+.catalogue-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 0 24px 16px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.catalogue-picker-card {
+  border: 2px solid $border;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: $text-dim; }
+  &.selected { border-color: $accent; background: rgba($accent, 0.05); }
+}
+
+.catalogue-picker-card-image {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: darken($surface, 2%);
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.catalogue-picker-card-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.catalogue-picker-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+
+  svg { opacity: 0; }
+
+  &.checked {
+    background: $accent;
+    border-color: $accent;
+    svg { opacity: 1; color: #fff; }
+  }
+}
+
+.catalogue-picker-card-info {
+  padding: 8px 10px;
+}
+
+.catalogue-picker-card-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: $text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalogue-picker-card-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: $text-muted;
+}
+
+.catalogue-picker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.catalogue-picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid $border;
+}
+
+// ========================================
+// Catalogue Group Config
+// ========================================
+
+.catalogue-toolbar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.catalogue-group-config {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 0;
+  border-bottom: 1px solid $border;
+}
+
+.catalogue-group-config-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalogue-group-config-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.catalogue-vs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.catalogue-vs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: $text-muted;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: $text-dim; color: $text; }
+
+  &.active {
+    background: rgba($accent, 0.1);
+    border-color: $accent;
+    color: $accent;
+  }
+}
+
+// ========================================
+// Catalogue Card Badges & Platform
+// ========================================
+
+.catalogue-card-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  z-index: 2;
+}
+
+.catalogue-card-badge-primary {
+  background: $accent;
+  color: #fff;
+}
+
+.catalogue-card-badge-vs {
+  background: rgba($text-muted, 0.2);
+  color: $text-muted;
+}
+
+.catalogue-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.catalogue-badge-primary {
+  background: $accent;
+  color: #fff;
+}
+
+.catalogue-badge-vs {
+  background: rgba($text-muted, 0.2);
+  color: $text-muted;
+}
+
+.catalogue-card-platform-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.catalogue-card-platform-select {
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 4px;
+  color: $text-muted;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 4px;
+  cursor: pointer;
+
+  &:focus { outline: none; border-color: $accent; }
+}
+
+// ========================================
+// Flow Assign Warning
+// ========================================
+
+.flow-assign-warning {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba($danger, 0.1);
+  border: 1px solid rgba($danger, 0.2);
+  border-radius: 8px;
+  color: $danger;
+  font-size: 12px;
 }

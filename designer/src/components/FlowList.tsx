@@ -112,8 +112,9 @@ export function FlowList({ user: _user }: FlowListProps) {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <h1>{project?.name || 'Project'}</h1>
         </div>
+        <h1 className="flow-list-project-name">{project?.name || 'Project'}</h1>
+        <div className="header-right" />
       </header>
 
       <main className="flow-list-main">

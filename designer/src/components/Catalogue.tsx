@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import type { User } from '@supabase/supabase-js';
 import type { Project, Flow, ScreenshotNode } from '../types';
 import { supabase } from '../lib/supabase';
@@ -15,7 +15,7 @@ interface CatalogueProps {
 }
 
 export function Catalogue({ user }: CatalogueProps) {
-  const navigate = useNavigate();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [flows, setFlows] = useState<Flow[]>([]);
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
@@ -26,6 +26,7 @@ export function Catalogue({ user }: CatalogueProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
+  const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [assignModal, setAssignModal] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
 
@@ -80,10 +81,22 @@ export function Catalogue({ user }: CatalogueProps) {
     setLoading(false);
   }
 
+  // Current filtered project
+  const currentProject = useMemo(() => {
+    if (!filterProject) return null;
+    return projects.find((p) => p.id === filterProject) || null;
+  }, [projects, filterProject]);
+
+  const primaryGroup = currentProject?.primary_group || null;
+  const vsGroups = currentProject?.vs_groups || [];
+
   // Derived data
   const allGroups = useMemo(() => {
-    return [...new Set(screenshots.map((s) => s.group).filter(Boolean))] as string[];
-  }, [screenshots]);
+    const filtered = filterProject
+      ? screenshots.filter((s) => s.project_id === filterProject)
+      : screenshots;
+    return [...new Set(filtered.map((s) => s.group).filter(Boolean))] as string[];
+  }, [screenshots, filterProject]);
 
   const filteredScreenshots = useMemo(() => {
     return screenshots.filter((s) => {
@@ -93,9 +106,10 @@ export function Catalogue({ user }: CatalogueProps) {
         s.file_name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesProject = !filterProject || s.project_id === filterProject;
       const matchesGroup = !filterGroup || s.group === filterGroup;
-      return matchesSearch && matchesProject && matchesGroup;
+      const matchesPlatform = !filterPlatform || s.platform === filterPlatform;
+      return matchesSearch && matchesProject && matchesGroup && matchesPlatform;
     });
-  }, [screenshots, searchQuery, filterProject, filterGroup]);
+  }, [screenshots, searchQuery, filterProject, filterGroup, filterPlatform]);
 
   const groupedScreenshots = useMemo(() => {
     const groups: Record<string, ScreenshotNode[]> = {};
@@ -118,6 +132,30 @@ export function Catalogue({ user }: CatalogueProps) {
     for (const f of flows) m[f.id] = f.name;
     return m;
   }, [flows]);
+
+  // Group config handlers
+  async function handlePrimaryGroupChange(group: string | null) {
+    if (!filterProject) return;
+    await supabase.from('projects').update({ primary_group: group }).eq('id', filterProject);
+    setProjects((prev) => prev.map((p) =>
+      p.id === filterProject ? { ...p, primary_group: group } : p
+    ));
+    setToast({ message: group ? `Primary group set to "${group}"` : 'Primary group cleared', type: 'success' });
+  }
+
+  async function handleVsGroupsChange(groups: string[]) {
+    if (!filterProject) return;
+    await supabase.from('projects').update({ vs_groups: groups }).eq('id', filterProject);
+    setProjects((prev) => prev.map((p) =>
+      p.id === filterProject ? { ...p, vs_groups: groups } : p
+    ));
+  }
+
+  // Platform handler
+  async function handlePlatformChange(id: string, platform: 'mobile' | 'web' | null) {
+    await supabase.from('screenshots').update({ platform }).eq('id', id);
+    setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, platform } : s)));
+  }
 
   // CRUD handlers
   async function handleRename(id: string, name: string) {
@@ -182,6 +220,16 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   async function handleAssignFlow(screenshotId: string, flowId: string | null) {
+    // Enforce primary-only assignment
+    if (flowId) {
+      const screenshot = screenshots.find((s) => s.id === screenshotId);
+      if (screenshot && primaryGroup && screenshot.group !== primaryGroup) {
+        setToast({ message: 'Only primary group screenshots can be assigned to flows', type: 'error' });
+        setAssignModal(null);
+        return;
+      }
+    }
+
     await supabase.from('screenshots').update({ flow_id: flowId }).eq('id', screenshotId);
     setScreenshots((prev) => prev.map((s) =>
       s.id === screenshotId ? { ...s, flow_id: flowId } : s
@@ -257,7 +305,7 @@ export function Catalogue({ user }: CatalogueProps) {
     <div className="catalogue-page">
       <header className="catalogue-header">
         <div className="header-left">
-          <button className="catalogue-back" onClick={() => navigate('/')} title="Back to projects">
+          <button className="catalogue-back" onClick={() => window.location.href = '/designer/'} title="Back to projects">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6" />
             </svg>
@@ -281,6 +329,13 @@ export function Catalogue({ user }: CatalogueProps) {
           filterGroup={filterGroup}
           onFilterGroupChange={setFilterGroup}
           groups={allGroups}
+          filterPlatform={filterPlatform}
+          onFilterPlatformChange={setFilterPlatform}
+          primaryGroup={primaryGroup}
+          vsGroups={vsGroups}
+          onPrimaryGroupChange={handlePrimaryGroupChange}
+          onVsGroupsChange={handleVsGroupsChange}
+          showGroupConfig={!!filterProject}
           onUploadClick={() => setShowUpload(true)}
           screenshotCount={filteredScreenshots.length}
         />
@@ -299,7 +354,7 @@ export function Catalogue({ user }: CatalogueProps) {
             </svg>
             <h2>No projects yet</h2>
             <p>Create a project first to start uploading screenshots.</p>
-            <button className="btn-primary" onClick={() => navigate('/')}>Go to Projects</button>
+            <button className="btn-primary" onClick={() => window.location.href = '/designer/'}>Go to Projects</button>
           </div>
         ) : filteredScreenshots.length === 0 ? (
           <div className="empty-state">
@@ -318,7 +373,15 @@ export function Catalogue({ user }: CatalogueProps) {
           <div className="catalogue-content">
             {Object.entries(groupedScreenshots).map(([groupName, items]) => (
               <section key={groupName} className="catalogue-section">
-                <h3 className="catalogue-section-title">{groupName}</h3>
+                <h3 className="catalogue-section-title">
+                  {groupName}
+                  {primaryGroup === groupName && (
+                    <span className="catalogue-badge catalogue-badge-primary">Primary</span>
+                  )}
+                  {vsGroups.includes(groupName) && (
+                    <span className="catalogue-badge catalogue-badge-vs">Vs</span>
+                  )}
+                </h3>
                 <div className="catalogue-grid">
                   {items.map((s) => (
                     <CatalogueCard
@@ -326,11 +389,14 @@ export function Catalogue({ user }: CatalogueProps) {
                       screenshot={s}
                       projectName={projectMap[s.project_id] || 'Unknown'}
                       flowName={s.flow_id ? (flowMap[s.flow_id] || null) : null}
+                      isPrimary={!!primaryGroup && s.group === primaryGroup}
+                      isVs={vsGroups.includes(s.group || '')}
                       onRename={handleRename}
                       onChangeGroup={handleChangeGroup}
                       onDelete={handleDelete}
                       onReplaceImage={handleReplaceImage}
                       onAssignFlow={setAssignModal}
+                      onPlatformChange={handlePlatformChange}
                     />
                   ))}
                 </div>
@@ -383,6 +449,8 @@ export function Catalogue({ user }: CatalogueProps) {
           screenshotName={assigningScreenshot.name}
           currentFlowId={assigningScreenshot.flow_id}
           flows={getProjectFlows(assignModal)}
+          primaryGroup={primaryGroup}
+          screenshotGroup={assigningScreenshot.group}
           onAssign={(flowId) => handleAssignFlow(assignModal, flowId)}
           onClose={() => setAssignModal(null)}
         />

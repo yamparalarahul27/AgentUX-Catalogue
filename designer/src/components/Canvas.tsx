@@ -28,6 +28,7 @@ import { UploadZone } from './UploadZone';
 import { FlowInput } from './FlowInput';
 import { EdgePopup, type ArrowDirection } from './EdgePopup';
 import { Toast } from './Toast';
+import { CataloguePicker } from './CataloguePicker';
 import { CompareModal } from './CompareModal';
 import { MobileFlowView } from './MobileFlowView';
 
@@ -135,6 +136,7 @@ export function Canvas({ user }: CanvasProps) {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showFlowInput, setShowFlowInput] = useState(false);
+  const [showCataloguePicker, setShowCataloguePicker] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [relayoutKey, setRelayoutKey] = useState(0);
   const [toolMode, setToolMode] = useState<ToolMode>('pointer');
@@ -449,6 +451,15 @@ export function Canvas({ user }: CanvasProps) {
     setUploading(false);
   }
 
+  // Add existing screenshots from catalogue
+  function handleAddFromCatalogue(added: ScreenshotNode[]) {
+    setShowCataloguePicker(false);
+    if (added.length > 0) {
+      setScreenshots((prev) => [...prev, ...added]);
+      setToast({ message: `Added ${added.length} screenshot${added.length > 1 ? 's' : ''} from catalogue`, type: 'success' });
+    }
+  }
+
   // Insert flow from text
   async function handleFlowInsert(text: string) {
     if (!flowId || !projectId) return;
@@ -564,7 +575,7 @@ export function Canvas({ user }: CanvasProps) {
   // Export markdown
   async function handleExport() {
     if (!flow) return;
-    const project = { id: flow.project_id, name: flow.name, user_id: '', created_at: '', updated_at: '' };
+    const project = { id: flow.project_id, name: flow.name, user_id: '', primary_group: null, vs_groups: null, created_at: '', updated_at: '' };
     const markdown = generateDesignerMarkdown(project, screenshots, connections);
     try {
       await navigator.clipboard.writeText(markdown);
@@ -602,7 +613,7 @@ export function Canvas({ user }: CanvasProps) {
   if (isMobile) {
     return (
       <MobileFlowView
-        project={{ id: flow.project_id, name: flow.name, user_id: '', created_at: '', updated_at: '' }}
+        project={{ id: flow.project_id, name: flow.name, user_id: '', primary_group: null, vs_groups: null, created_at: '', updated_at: '' }}
         screenshots={screenshots}
         connections={connections}
         onBack={() => navigate(`/project/${projectId}`)}
@@ -623,6 +634,7 @@ export function Canvas({ user }: CanvasProps) {
         toolMode={toolMode}
         onToolModeChange={setToolMode}
         onUploadClick={() => setShowUpload(true)}
+        onCatalogueAdd={() => setShowCataloguePicker(true)}
         onAddFlow={() => setShowFlowInput(true)}
         onAutoConnect={handleAutoConnect}
         onRelayout={handleRelayout}
@@ -712,6 +724,15 @@ export function Canvas({ user }: CanvasProps) {
               />
             )}
           </>
+        )}
+
+        {showCataloguePicker && projectId && flowId && (
+          <CataloguePicker
+            projectId={projectId}
+            flowId={flowId}
+            onAdd={handleAddFromCatalogue}
+            onClose={() => setShowCataloguePicker(false)}
+          />
         )}
 
         {uploading && (

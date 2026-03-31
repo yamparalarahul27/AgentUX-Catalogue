@@ -2,6 +2,8 @@ export interface Project {
   id: string;
   user_id: string;
   name: string;
+  primary_group: string | null;
+  vs_groups: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +26,7 @@ export interface ScreenshotNode {
   image_url?: string;
   sequence: number | null;
   group: string | null;
+  platform: 'mobile' | 'web' | null;
   position_x: number | null;
   position_y: number | null;
   metadata: Record<string, string>;

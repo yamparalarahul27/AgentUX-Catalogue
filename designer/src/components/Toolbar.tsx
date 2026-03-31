@@ -12,6 +12,7 @@ interface ToolbarProps {
   onAddFlow: () => void;
   onAutoConnect: () => void;
   onRelayout: () => void;
+  onCatalogueAdd: () => void;
   onExport: () => void;
   onBack: () => void;
 }
@@ -24,6 +25,7 @@ export function Toolbar({
   onToolModeChange,
   onUploadClick,
   onAddFlow,
+  onCatalogueAdd,
   onAutoConnect,
   onRelayout,
   onExport,
@@ -86,6 +88,16 @@ export function Toolbar({
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
           Upload
+        </button>
+
+        <button className="toolbar-btn" onClick={onCatalogueAdd} title="Add screenshots from catalogue">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+          </svg>
+          Add from Catalogue
         </button>
 
         <button className="toolbar-btn" onClick={onAddFlow} title="Add flow from text">

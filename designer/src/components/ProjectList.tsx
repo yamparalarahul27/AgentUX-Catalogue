@@ -142,6 +142,15 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
           <h1>Flow Builder</h1>
         </div>
         <div className="header-right">
+          <a href="/designer/catalogue" className="btn-secondary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            Catalogue
+          </a>
           <span className="user-email" title={user.email || ''}>{truncateEmail(user.email || '')}</span>
           <button className="btn-secondary" onClick={handleSignOut}>Sign Out</button>
         </div>

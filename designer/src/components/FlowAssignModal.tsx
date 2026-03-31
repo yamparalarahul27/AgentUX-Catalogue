@@ -5,6 +5,8 @@ interface FlowAssignModalProps {
   screenshotName: string;
   currentFlowId: string | null;
   flows: Flow[];
+  primaryGroup?: string | null;
+  screenshotGroup?: string | null;
   onAssign: (flowId: string | null) => void;
   onClose: () => void;
 }
@@ -13,9 +15,12 @@ export function FlowAssignModal({
   screenshotName,
   currentFlowId,
   flows,
+  primaryGroup,
+  screenshotGroup,
   onAssign,
   onClose,
 }: FlowAssignModalProps) {
+  const isNonPrimary = primaryGroup && screenshotGroup !== primaryGroup;
   const [selected, setSelected] = useState<string | null>(currentFlowId);
 
   return (
@@ -53,6 +58,12 @@ export function FlowAssignModal({
           <p className="flow-assign-empty">No flows in this project yet.</p>
         )}
 
+        {isNonPrimary && (
+          <p className="flow-assign-warning">
+            Only primary group screenshots can be assigned to flows.
+          </p>
+        )}
+
         <div className="flow-assign-actions">
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
           <button
@@ -61,7 +72,7 @@ export function FlowAssignModal({
               onAssign(selected);
               onClose();
             }}
-            disabled={selected === currentFlowId}
+            disabled={selected === currentFlowId || !!isNonPrimary}
           >
             Save
           </button>

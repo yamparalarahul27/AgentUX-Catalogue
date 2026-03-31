@@ -6,22 +6,28 @@ interface CatalogueCardProps {
   screenshot: ScreenshotNode;
   projectName: string;
   flowName: string | null;
+  isPrimary: boolean;
+  isVs: boolean;
   onRename: (id: string, name: string) => void;
   onChangeGroup: (id: string, group: string | null) => void;
   onDelete: (id: string) => void;
   onReplaceImage: (id: string, file: File) => void;
   onAssignFlow: (id: string) => void;
+  onPlatformChange: (id: string, platform: 'mobile' | 'web' | null) => void;
 }
 
 export function CatalogueCard({
   screenshot,
   projectName,
   flowName,
+  isPrimary,
+  isVs,
   onRename,
   onChangeGroup,
   onDelete,
   onReplaceImage,
   onAssignFlow,
+  onPlatformChange,
 }: CatalogueCardProps) {
   const [editingName, setEditingName] = useState(false);
   const [editingGroup, setEditingGroup] = useState(false);
@@ -85,6 +91,11 @@ export function CatalogueCard({
               <polyline points="21 15 16 10 5 21" />
             </svg>
           </div>
+        )}
+        {(isPrimary || isVs) && (
+          <span className={`catalogue-card-badge ${isPrimary ? 'catalogue-card-badge-primary' : 'catalogue-card-badge-vs'}`}>
+            {isPrimary ? 'Primary' : 'Vs'}
+          </span>
         )}
         <div className="catalogue-card-actions">
           <button
@@ -183,7 +194,18 @@ export function CatalogueCard({
           </button>
         </div>
 
-        <span className="catalogue-card-project">{projectName}</span>
+        <div className="catalogue-card-platform-row">
+          <select
+            className="catalogue-card-platform-select"
+            value={screenshot.platform || ''}
+            onChange={(e) => onPlatformChange(screenshot.id, (e.target.value || null) as 'mobile' | 'web' | null)}
+          >
+            <option value="">No platform</option>
+            <option value="mobile">Mobile</option>
+            <option value="web">Web</option>
+          </select>
+          <span className="catalogue-card-project">{projectName}</span>
+        </div>
       </div>
     </div>
   );
