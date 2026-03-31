@@ -635,6 +635,55 @@ body {
   }
 }
 
+// Canvas bulk action bar
+.canvas-bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  animation: bulkBarSlideUp 0.2s ease-out;
+}
+
+.canvas-bulk-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: $text;
+  white-space: nowrap;
+  padding-right: 8px;
+  border-right: 1px solid $border;
+}
+
+.canvas-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: $text-muted;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); color: $text; }
+}
+
+.canvas-bulk-btn-danger {
+  &:hover { background: rgba($danger, 0.12); color: $danger; }
+}
+
 .canvas-upload-overlay {
   position: fixed;
   inset: 0;

@@ -12,6 +12,7 @@ import {
   type Edge,
   type Connection as FlowConnection,
   MarkerType,
+  SelectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import dagre from '@dagrejs/dagre';
@@ -31,6 +32,7 @@ import { Toast } from './Toast';
 import { CataloguePicker } from './CataloguePicker';
 import { CompareModal } from './CompareModal';
 import { MobileFlowView } from './MobileFlowView';
+import { ConfirmModal } from './ConfirmModal';
 
 const THEME = {
   accent: '#6366f1',
@@ -137,6 +139,8 @@ export function Canvas({ user }: CanvasProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showFlowInput, setShowFlowInput] = useState(false);
   const [showCataloguePicker, setShowCataloguePicker] = useState(false);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [relayoutKey, setRelayoutKey] = useState(0);
   const [toolMode, setToolMode] = useState<ToolMode>('pointer');
@@ -302,6 +306,21 @@ export function Canvas({ user }: CanvasProps) {
   const handleNodesChange: typeof onNodesChange = useCallback(
     (changes) => {
       onNodesChange(changes);
+
+      // Track selection changes
+      const selectChanges = changes.filter((c) => c.type === 'select');
+      if (selectChanges.length > 0) {
+        setSelectedNodeIds((prev) => {
+          const next = new Set(prev);
+          for (const change of selectChanges) {
+            if ('selected' in change) {
+              if (change.selected) next.add(change.id);
+              else next.delete(change.id);
+            }
+          }
+          return next;
+        });
+      }
 
       const removeChanges = changes.filter((c) => c.type === 'remove');
       for (const change of removeChanges) {
@@ -609,6 +628,36 @@ export function Canvas({ user }: CanvasProps) {
     setEdges(laid.edges);
   }
 
+  // Bulk delete selected nodes
+  async function handleBulkDeleteNodes() {
+    const ids = Array.from(selectedNodeIds);
+    if (ids.length === 0) return;
+
+    const toDelete = screenshots.filter((s) => ids.includes(s.id));
+
+    // Delete connections referencing these nodes
+    await supabase.from('connections').delete().or(ids.map((id) => `source_id.eq.${id},target_id.eq.${id}`).join(','));
+
+    // Delete screenshots from DB
+    await supabase.from('screenshots').delete().in('id', ids);
+
+    // Delete from storage
+    const paths = toDelete.map((s) => s.storage_path).filter(Boolean);
+    if (paths.length) await supabase.storage.from('screenshots').remove(paths);
+
+    // Update local state
+    setScreenshots((prev) => prev.filter((s) => !selectedNodeIds.has(s.id)));
+    setConnections((prev) => prev.filter((c) => !selectedNodeIds.has(c.source_id) && !selectedNodeIds.has(c.target_id)));
+    setNodes((nds) => nds.filter((n) => !selectedNodeIds.has(n.id)));
+    setEdges((eds) => eds.filter((e) => !selectedNodeIds.has(e.source) && !selectedNodeIds.has(e.target)));
+    setSelectedNodeIds(new Set());
+    setShowBulkDeleteConfirm(false);
+
+    if (flowId) {
+      await supabase.from('flows').update({ updated_at: new Date().toISOString() }).eq('id', flowId);
+    }
+  }
+
   // Export markdown
   async function handleExport() {
     if (!flow) return;
@@ -718,7 +767,9 @@ export function Canvas({ user }: CanvasProps) {
               onEdgesChange={onEdgesChange}
               onConnect={isHand ? undefined : handleConnect}
               onEdgeClick={isHand ? undefined : handleEdgeClick}
-              onPaneClick={() => setSelectedEdge(null)}
+              onPaneClick={() => { setSelectedEdge(null); setSelectedNodeIds(new Set()); }}
+              selectionOnDrag
+              selectionMode={SelectionMode.Partial}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               nodesDraggable={!isHand}
@@ -786,6 +837,39 @@ export function Canvas({ user }: CanvasProps) {
           <FlowInput
             onInsert={handleFlowInsert}
             onCancel={() => setShowFlowInput(false)}
+          />
+        )}
+
+        {/* Canvas Bulk Action Bar */}
+        {selectedNodeIds.size > 1 && (
+          <div className="canvas-bulk-bar">
+            <span className="canvas-bulk-count">{selectedNodeIds.size} selected</span>
+            <button
+              className="canvas-bulk-btn canvas-bulk-btn-danger"
+              onClick={() => setShowBulkDeleteConfirm(true)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+              Delete
+            </button>
+            <button
+              className="canvas-bulk-btn"
+              onClick={() => setSelectedNodeIds(new Set())}
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
+        {/* Bulk Delete Confirm */}
+        {showBulkDeleteConfirm && (
+          <ConfirmModal
+            title={`Delete ${selectedNodeIds.size} Screenshots`}
+            message={`This will permanently delete ${selectedNodeIds.size} screenshots and their connections from this flow.`}
+            onConfirm={handleBulkDeleteNodes}
+            onCancel={() => setShowBulkDeleteConfirm(false)}
           />
         )}
 
