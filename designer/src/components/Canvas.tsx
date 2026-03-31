@@ -399,52 +399,84 @@ export function Canvas({ user }: CanvasProps) {
   }
 
   // Upload screenshots
+  function compressImage(file: File, maxWidth = 1600, quality = 0.82): Promise<File> {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+        resolve(file);
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        if (img.width <= maxWidth && file.size < 300_000) { resolve(file); return; }
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/webp' }) : file),
+          'image/webp',
+          quality,
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
   async function handleFilesSelected(files: File[]) {
     if (!flowId || !projectId) return;
     setUploading(true);
     setShowUpload(false);
 
-    const newScreenshots: ScreenshotNode[] = [];
+    const results = await Promise.allSettled(
+      files.map(async (file) => {
+        const compressed = await compressImage(file);
+        const parsed = parseScreenshotName(file.name);
+        const safeName = file.name.replace(/\s+/g, '-');
+        const storagePath = `${user.id}/${projectId}/${safeName}`;
 
-    for (const file of files) {
-      const parsed = parseScreenshotName(file.name);
-      const safeName = file.name.replace(/\s+/g, '-');
-      const storagePath = `${user.id}/${projectId}/${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('screenshots')
+          .upload(storagePath, compressed, { upsert: true });
 
-      const { error: uploadError } = await supabase.storage
-        .from('screenshots')
-        .upload(storagePath, file, { upsert: true });
+        if (uploadError) throw uploadError;
 
-      if (uploadError) {
-        setToast({ message: `Upload failed: ${uploadError.message}`, type: 'error' });
-        continue;
-      }
+        const imageUrl = supabase.storage
+          .from('screenshots')
+          .getPublicUrl(storagePath).data.publicUrl;
 
-      const imageUrl = supabase.storage
-        .from('screenshots')
-        .getPublicUrl(storagePath).data.publicUrl;
+        const { data, error } = await supabase
+          .from('screenshots')
+          .insert({
+            project_id: projectId,
+            flow_id: flowId,
+            name: parsed.name,
+            file_name: file.name,
+            storage_path: storagePath,
+            sequence: parsed.sequence,
+            group: parsed.group,
+          })
+          .select()
+          .single();
 
-      const { data, error } = await supabase
-        .from('screenshots')
-        .insert({
-          project_id: projectId,
-          flow_id: flowId,
-          name: parsed.name,
-          file_name: file.name,
-          storage_path: storagePath,
-          sequence: parsed.sequence,
-          group: parsed.group,
-        })
-        .select()
-        .single();
+        if (error || !data) throw error;
+        return { ...data, image_url: imageUrl } as ScreenshotNode;
+      }),
+    );
 
-      if (data && !error) {
-        newScreenshots.push({ ...data, image_url: imageUrl });
-      }
-    }
+    const newScreenshots = results
+      .filter((r): r is PromiseFulfilledResult<ScreenshotNode> => r.status === 'fulfilled')
+      .map((r) => r.value);
 
     if (newScreenshots.length > 0) {
       setScreenshots((prev) => [...prev, ...newScreenshots]);
+    }
+
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    if (failed) {
+      setToast({ message: `${failed} upload${failed > 1 ? 's' : ''} failed`, type: 'error' });
     }
 
     await supabase.from('flows').update({ updated_at: new Date().toISOString() }).eq('id', flowId);

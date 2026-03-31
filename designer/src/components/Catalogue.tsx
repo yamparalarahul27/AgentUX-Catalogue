@@ -23,6 +23,8 @@ export function Catalogue({ user }: CatalogueProps) {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null);
+  const [uploadGroup, setUploadGroup] = useState<string>('');
+  const [newGroupName, setNewGroupName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
@@ -97,6 +99,16 @@ export function Catalogue({ user }: CatalogueProps) {
       : screenshots;
     return [...new Set(filtered.map((s) => s.group).filter(Boolean))] as string[];
   }, [screenshots, filterProject]);
+
+  const uploadProjectGroups = useMemo(() => {
+    if (!uploadProjectId) return [];
+    return [...new Set(screenshots.filter((s) => s.project_id === uploadProjectId).map((s) => s.group).filter(Boolean))] as string[];
+  }, [screenshots, uploadProjectId]);
+
+  const uploadProjectPrimary = useMemo(() => {
+    if (!uploadProjectId) return null;
+    return projects.find((p) => p.id === uploadProjectId)?.primary_group || null;
+  }, [projects, uploadProjectId]);
 
   const filteredScreenshots = useMemo(() => {
     return screenshots.filter((s) => {
@@ -241,51 +253,85 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   // Upload handler
-  async function handleFilesSelected(files: File[]) {
-    if (!uploadProjectId) return;
+  function compressImage(file: File, maxWidth = 1600, quality = 0.82): Promise<File> {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+        resolve(file);
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        if (img.width <= maxWidth && file.size < 300_000) { resolve(file); return; }
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/webp' }) : file),
+          'image/webp',
+          quality,
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function handleFilesSelected(files: File[], groupOverride?: string) {
+    const groupToAssign = groupOverride || uploadGroup;
+    if (!uploadProjectId || !groupToAssign) return;
     setUploading(true);
     setShowUpload(false);
+    setUploadGroup('');
+    setNewGroupName('');
 
-    const newScreenshots: ScreenshotNode[] = [];
+    const results = await Promise.allSettled(
+      files.map(async (file) => {
+        const compressed = await compressImage(file);
+        const parsed = parseScreenshotName(file.name);
+        const safeName = file.name.replace(/\s+/g, '-');
+        const storagePath = `${user.id}/${uploadProjectId}/${safeName}`;
 
-    for (const file of files) {
-      const parsed = parseScreenshotName(file.name);
-      const safeName = file.name.replace(/\s+/g, '-');
-      const storagePath = `${user.id}/${uploadProjectId}/${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('screenshots')
+          .upload(storagePath, compressed, { upsert: true });
 
-      const { error: uploadError } = await supabase.storage
-        .from('screenshots')
-        .upload(storagePath, file, { upsert: true });
+        if (uploadError) throw uploadError;
 
-      if (uploadError) {
-        setToast({ message: `Upload failed: ${uploadError.message}`, type: 'error' });
-        continue;
-      }
+        const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
 
-      const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
+        const { data, error } = await supabase
+          .from('screenshots')
+          .insert({
+            project_id: uploadProjectId,
+            flow_id: null,
+            name: parsed.name,
+            file_name: file.name,
+            storage_path: storagePath,
+            sequence: parsed.sequence,
+            group: groupToAssign,
+          })
+          .select()
+          .single();
 
-      const { data, error } = await supabase
-        .from('screenshots')
-        .insert({
-          project_id: uploadProjectId,
-          flow_id: null,
-          name: parsed.name,
-          file_name: file.name,
-          storage_path: storagePath,
-          sequence: parsed.sequence,
-          group: parsed.group,
-        })
-        .select()
-        .single();
+        if (error || !data) throw error;
+        return { ...data, image_url: imageUrl } as ScreenshotNode;
+      }),
+    );
 
-      if (data && !error) {
-        newScreenshots.push({ ...data, image_url: imageUrl });
-      }
-    }
+    const newScreenshots = results
+      .filter((r): r is PromiseFulfilledResult<ScreenshotNode> => r.status === 'fulfilled')
+      .map((r) => r.value);
+
+    const failed = results.filter((r) => r.status === 'rejected').length;
 
     if (newScreenshots.length > 0) {
       setScreenshots((prev) => [...newScreenshots, ...prev]);
-      setToast({ message: `${newScreenshots.length} screenshot${newScreenshots.length > 1 ? 's' : ''} uploaded`, type: 'success' });
+      setToast({ message: `${newScreenshots.length} screenshot${newScreenshots.length > 1 ? 's' : ''} uploaded${failed ? `, ${failed} failed` : ''}`, type: failed ? 'info' : 'success' });
+    } else if (failed) {
+      setToast({ message: `Upload failed for ${failed} file${failed > 1 ? 's' : ''}`, type: 'error' });
     }
 
     setUploading(false);
@@ -408,15 +454,15 @@ export function Catalogue({ user }: CatalogueProps) {
 
       {/* Upload Modal */}
       {showUpload && (
-        <div className="catalogue-upload-overlay" onClick={() => { setShowUpload(false); setUploadProjectId(null); }}>
+        <div className="catalogue-upload-overlay" onClick={() => { setShowUpload(false); setUploadProjectId(null); setUploadGroup(''); setNewGroupName(''); }}>
           <div className="catalogue-upload-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Upload Screenshots</h3>
-            <p className="catalogue-upload-subtitle">Choose a project, then upload your screenshots.</p>
+            <p className="catalogue-upload-subtitle">Choose a project and group, then upload your screenshots.</p>
 
             <select
               className="catalogue-filter catalogue-upload-project-select"
               value={uploadProjectId || ''}
-              onChange={(e) => setUploadProjectId(e.target.value || null)}
+              onChange={(e) => { setUploadProjectId(e.target.value || null); setUploadGroup(''); setNewGroupName(''); }}
             >
               <option value="">Select a project...</option>
               {projects.map((p) => (
@@ -425,7 +471,52 @@ export function Catalogue({ user }: CatalogueProps) {
             </select>
 
             {uploadProjectId && (
-              <UploadZone onFilesSelected={handleFilesSelected} disabled={uploading} />
+              <>
+                <label className="catalogue-upload-label">Select or create a group</label>
+                <div className="catalogue-upload-groups">
+                  {uploadProjectGroups.map((g) => (
+                    <button
+                      key={g}
+                      className={`catalogue-upload-group-chip ${uploadGroup === g ? 'active' : ''}`}
+                      onClick={() => { setUploadGroup(g); setNewGroupName(''); }}
+                    >
+                      {g}
+                      {uploadProjectPrimary === g && <span className="catalogue-upload-group-primary">Primary</span>}
+                    </button>
+                  ))}
+                  <button
+                    className={`catalogue-upload-group-chip catalogue-upload-group-new ${uploadGroup === '__new__' ? 'active' : ''}`}
+                    onClick={() => setUploadGroup('__new__')}
+                  >
+                    + New Group
+                  </button>
+                </div>
+
+                {uploadGroup === '__new__' && (
+                  <input
+                    className="catalogue-filter catalogue-upload-project-select"
+                    type="text"
+                    placeholder="Enter group name..."
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                    autoFocus
+                  />
+                )}
+
+                {(uploadGroup && uploadGroup !== '__new__') || (uploadGroup === '__new__' && newGroupName.trim()) ? (
+                  <UploadZone
+                    onFilesSelected={(files) => {
+                      const finalGroup = uploadGroup === '__new__' ? newGroupName.trim() : uploadGroup;
+                      handleFilesSelected(files, finalGroup);
+                    }}
+                    disabled={uploading}
+                  />
+                ) : (
+                  <p className="catalogue-upload-hint">
+                    {!uploadGroup ? 'Select a group above to enable upload.' : 'Enter a group name to continue.'}
+                  </p>
+                )}
+              </>
             )}
 
             {!uploadProjectId && (

@@ -1868,6 +1868,63 @@ body {
   padding: 20px 0;
 }
 
+.catalogue-upload-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: $text-muted;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.catalogue-upload-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.catalogue-upload-group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid $border;
+  background: transparent;
+  color: $text-muted;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: $text-dim; color: $text; }
+
+  &.active {
+    border-color: $accent;
+    background: rgba($accent, 0.12);
+    color: $accent;
+  }
+}
+
+.catalogue-upload-group-new {
+  border-style: dashed;
+  color: $text-dim;
+  &:hover { border-color: $accent; color: $accent; }
+  &.active { border-style: solid; }
+}
+
+.catalogue-upload-group-primary {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: $accent;
+  background: rgba($accent, 0.15);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
 // Flow Assign Modal
 
 .flow-assign-overlay {
