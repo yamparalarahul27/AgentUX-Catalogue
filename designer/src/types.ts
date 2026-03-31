@@ -12,6 +12,7 @@ export interface Flow {
   id: string;
   project_id: string;
   name: string;
+  platform: 'mobile' | 'web' | null;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +28,7 @@ export interface ScreenshotNode {
   sequence: number | null;
   group: string | null;
   platform: 'mobile' | 'web' | null;
+  theme: 'light' | 'dark' | null;
   position_x: number | null;
   position_y: number | null;
   metadata: Record<string, string>;

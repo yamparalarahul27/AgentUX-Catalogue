@@ -26,10 +26,12 @@ export function Catalogue({ user }: CatalogueProps) {
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null);
   const [uploadGroup, setUploadGroup] = useState<string>('');
   const [newGroupName, setNewGroupName] = useState('');
+  const [uploadTheme, setUploadTheme] = useState<'light' | 'dark' | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
+  const [filterTheme, setFilterTheme] = useState<string | null>(null);
   const [assignModal, setAssignModal] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'assign' | 'group' | null>(null);
@@ -123,9 +125,10 @@ export function Catalogue({ user }: CatalogueProps) {
       const matchesProject = !filterProject || s.project_id === filterProject;
       const matchesGroup = !filterGroup || s.group === filterGroup;
       const matchesPlatform = !filterPlatform || s.platform === filterPlatform;
-      return matchesSearch && matchesProject && matchesGroup && matchesPlatform;
+      const matchesTheme = !filterTheme || s.theme === filterTheme;
+      return matchesSearch && matchesProject && matchesGroup && matchesPlatform && matchesTheme;
     });
-  }, [screenshots, searchQuery, filterProject, filterGroup, filterPlatform]);
+  }, [screenshots, searchQuery, filterProject, filterGroup, filterPlatform, filterTheme]);
 
   const groupedScreenshots = useMemo(() => {
     const groups: Record<string, ScreenshotNode[]> = {};
@@ -133,8 +136,20 @@ export function Catalogue({ user }: CatalogueProps) {
       const key = s.group || 'Ungrouped';
       (groups[key] ||= []).push(s);
     }
-    return groups;
-  }, [filteredScreenshots]);
+    // Sort: primary first, then vs groups, then the rest
+    const sorted: [string, ScreenshotNode[]][] = Object.entries(groups).sort(([a], [b]) => {
+      const aIsPrimary = a === primaryGroup;
+      const bIsPrimary = b === primaryGroup;
+      if (aIsPrimary && !bIsPrimary) return -1;
+      if (!aIsPrimary && bIsPrimary) return 1;
+      const aIsVs = vsGroups.includes(a);
+      const bIsVs = vsGroups.includes(b);
+      if (aIsVs && !bIsVs) return -1;
+      if (!aIsVs && bIsVs) return 1;
+      return 0;
+    });
+    return Object.fromEntries(sorted);
+  }, [filteredScreenshots, primaryGroup, vsGroups]);
 
   // Lookup helpers
   const projectMap = useMemo(() => {
@@ -172,6 +187,8 @@ export function Catalogue({ user }: CatalogueProps) {
     await supabase.from('screenshots').update({ platform }).eq('id', id);
     setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, platform } : s)));
   }
+
+
 
   // CRUD handlers
   async function handleRename(id: string, name: string) {
@@ -283,13 +300,15 @@ export function Catalogue({ user }: CatalogueProps) {
     });
   }
 
-  async function handleFilesSelected(files: File[], groupOverride?: string) {
+  async function handleFilesSelected(files: File[], groupOverride?: string, themeOverride?: 'light' | 'dark' | null) {
     const groupToAssign = groupOverride || uploadGroup;
+    const themeToAssign = themeOverride !== undefined ? themeOverride : uploadTheme;
     if (!uploadProjectId || !groupToAssign) return;
     setUploading(true);
     setShowUpload(false);
     setUploadGroup('');
     setNewGroupName('');
+    setUploadTheme(null);
 
     const results = await Promise.allSettled(
       files.map(async (file) => {
@@ -316,6 +335,7 @@ export function Catalogue({ user }: CatalogueProps) {
             storage_path: storagePath,
             sequence: parsed.sequence,
             group: groupToAssign,
+            theme: themeToAssign,
           })
           .select()
           .single();
@@ -455,6 +475,8 @@ export function Catalogue({ user }: CatalogueProps) {
           groups={allGroups}
           filterPlatform={filterPlatform}
           onFilterPlatformChange={setFilterPlatform}
+          filterTheme={filterTheme}
+          onFilterThemeChange={setFilterTheme}
           primaryGroup={primaryGroup}
           vsGroups={vsGroups}
           onPrimaryGroupChange={handlePrimaryGroupChange}
@@ -534,7 +556,7 @@ export function Catalogue({ user }: CatalogueProps) {
 
       {/* Upload Modal */}
       {showUpload && (
-        <div className="catalogue-upload-overlay" onClick={() => { setShowUpload(false); setUploadProjectId(null); setUploadGroup(''); setNewGroupName(''); }}>
+        <div className="catalogue-upload-overlay" onClick={() => { setShowUpload(false); setUploadProjectId(null); setUploadGroup(''); setNewGroupName(''); setUploadTheme(null); }}>
           <div className="catalogue-upload-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Upload Screenshots</h3>
             <p className="catalogue-upload-subtitle">Choose a project and group, then upload your screenshots.</p>
@@ -580,11 +602,24 @@ export function Catalogue({ user }: CatalogueProps) {
                   />
                 )}
 
+                <label className="catalogue-upload-label">Theme</label>
+                <div className="catalogue-upload-groups">
+                  {(['light', 'dark'] as const).map((t) => (
+                    <button
+                      key={t}
+                      className={`catalogue-upload-group-chip ${uploadTheme === t ? 'active' : ''}`}
+                      onClick={() => setUploadTheme(uploadTheme === t ? null : t)}
+                    >
+                      {t === 'light' ? '☀ Light' : '☾ Dark'}
+                    </button>
+                  ))}
+                </div>
+
                 {(uploadGroup && uploadGroup !== '__new__') || (uploadGroup === '__new__' && newGroupName.trim()) ? (
                   <UploadZone
                     onFilesSelected={(files) => {
                       const finalGroup = uploadGroup === '__new__' ? newGroupName.trim() : uploadGroup;
-                      handleFilesSelected(files, finalGroup);
+                      handleFilesSelected(files, finalGroup, uploadTheme);
                     }}
                     disabled={uploading}
                   />

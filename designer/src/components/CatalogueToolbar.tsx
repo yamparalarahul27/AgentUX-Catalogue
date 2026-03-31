@@ -11,6 +11,8 @@ interface CatalogueToolbarProps {
   groups: string[];
   filterPlatform: string | null;
   onFilterPlatformChange: (p: string | null) => void;
+  filterTheme: string | null;
+  onFilterThemeChange: (t: string | null) => void;
   primaryGroup: string | null;
   vsGroups: string[];
   onPrimaryGroupChange: (g: string | null) => void;
@@ -31,6 +33,8 @@ export function CatalogueToolbar({
   groups,
   filterPlatform,
   onFilterPlatformChange,
+  filterTheme,
+  onFilterThemeChange,
   primaryGroup,
   vsGroups,
   onPrimaryGroupChange,
@@ -88,6 +92,16 @@ export function CatalogueToolbar({
               { value: 'web', label: 'Web' },
             ]}
             onChange={onFilterPlatformChange}
+          />
+
+          <Dropdown
+            value={filterTheme}
+            placeholder="All Themes"
+            options={[
+              { value: 'light', label: 'Light' },
+              { value: 'dark', label: 'Dark' },
+            ]}
+            onChange={onFilterThemeChange}
           />
         </div>
 
