@@ -1,5 +1,6 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { getGroupColor } from '../lib/naming';
 
 export interface ScreenshotNodeData {
   label: string;
@@ -8,21 +9,6 @@ export interface ScreenshotNodeData {
   sequence: number | null;
   connectionType?: 'auto' | 'manual' | 'none';
   [key: string]: unknown;
-}
-
-const groupColors: Record<string, string> = {
-  auth: '#3b82f6',
-  dashboard: '#22c55e',
-  settings: '#f59e0b',
-  profile: '#a855f7',
-  home: '#ec4899',
-  checkout: '#06b6d4',
-  onboarding: '#84cc16',
-};
-
-function getGroupColor(group: string | null): string {
-  if (!group) return '#6b7280';
-  return groupColors[group.toLowerCase()] || '#6366f1';
 }
 
 export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {

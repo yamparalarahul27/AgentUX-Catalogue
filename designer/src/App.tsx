@@ -5,6 +5,7 @@ import { Auth } from './components/Auth';
 import { ProjectList } from './components/ProjectList';
 import { FlowList } from './components/FlowList';
 import { Canvas } from './components/Canvas';
+import { Catalogue } from './components/Catalogue';
 
 const STORAGE_KEY = 'agentux-designer-email';
 
@@ -49,6 +50,7 @@ export function App() {
       <Route path="/" element={<ProjectList user={user} onLogout={handleLogout} />} />
       <Route path="/project/:projectId" element={<FlowList user={user} />} />
       <Route path="/project/:projectId/flow/:flowId" element={<Canvas user={user} />} />
+      <Route path="/catalogue" element={<Catalogue user={user} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
