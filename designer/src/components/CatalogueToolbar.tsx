@@ -1,3 +1,5 @@
+import { Dropdown } from './Dropdown';
+
 interface CatalogueToolbarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -64,37 +66,29 @@ export function CatalogueToolbar({
             />
           </div>
 
-          <select
-            className="catalogue-filter"
-            value={filterProject || ''}
-            onChange={(e) => onFilterProjectChange(e.target.value || null)}
-          >
-            <option value="">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+          <Dropdown
+            value={filterProject}
+            placeholder="All Projects"
+            options={projects.map((p) => ({ value: p.id, label: p.name }))}
+            onChange={onFilterProjectChange}
+          />
 
-          <select
-            className="catalogue-filter"
-            value={filterGroup || ''}
-            onChange={(e) => onFilterGroupChange(e.target.value || null)}
-          >
-            <option value="">All Groups</option>
-            {groups.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
+          <Dropdown
+            value={filterGroup}
+            placeholder="All Groups"
+            options={groups.map((g) => ({ value: g, label: g, badge: g === primaryGroup ? 'Primary' : undefined }))}
+            onChange={onFilterGroupChange}
+          />
 
-          <select
-            className="catalogue-filter"
-            value={filterPlatform || ''}
-            onChange={(e) => onFilterPlatformChange(e.target.value || null)}
-          >
-            <option value="">All Platforms</option>
-            <option value="mobile">Mobile</option>
-            <option value="web">Web</option>
-          </select>
+          <Dropdown
+            value={filterPlatform}
+            placeholder="All Platforms"
+            options={[
+              { value: 'mobile', label: 'Mobile' },
+              { value: 'web', label: 'Web' },
+            ]}
+            onChange={onFilterPlatformChange}
+          />
         </div>
 
         <div className="catalogue-toolbar-right">
@@ -109,16 +103,12 @@ export function CatalogueToolbar({
         <div className="catalogue-group-config">
           <div className="catalogue-group-config-row">
             <label className="catalogue-group-config-label">Primary</label>
-            <select
-              className="catalogue-filter"
-              value={primaryGroup || ''}
-              onChange={(e) => onPrimaryGroupChange(e.target.value || null)}
-            >
-              <option value="">Select primary group...</option>
-              {groups.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
+            <Dropdown
+              value={primaryGroup}
+              placeholder="Select primary group..."
+              options={groups.map((g) => ({ value: g, label: g }))}
+              onChange={onPrimaryGroupChange}
+            />
           </div>
 
           {primaryGroup && nonPrimaryGroups.length > 0 && (

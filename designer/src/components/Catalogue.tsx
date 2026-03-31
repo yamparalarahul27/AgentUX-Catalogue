@@ -8,6 +8,7 @@ import { CatalogueCard } from './CatalogueCard';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { FlowAssignModal } from './FlowAssignModal';
 import { UploadZone } from './UploadZone';
+import { Dropdown } from './Dropdown';
 import { Toast } from './Toast';
 
 interface CatalogueProps {
@@ -459,16 +460,13 @@ export function Catalogue({ user }: CatalogueProps) {
             <h3>Upload Screenshots</h3>
             <p className="catalogue-upload-subtitle">Choose a project and group, then upload your screenshots.</p>
 
-            <select
-              className="catalogue-filter catalogue-upload-project-select"
-              value={uploadProjectId || ''}
-              onChange={(e) => { setUploadProjectId(e.target.value || null); setUploadGroup(''); setNewGroupName(''); }}
-            >
-              <option value="">Select a project...</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <Dropdown
+              className="catalogue-upload-project-dropdown"
+              value={uploadProjectId}
+              placeholder="Select a project..."
+              options={projects.map((p) => ({ value: p.id, label: p.name }))}
+              onChange={(v) => { setUploadProjectId(v); setUploadGroup(''); setNewGroupName(''); }}
+            />
 
             {uploadProjectId && (
               <>

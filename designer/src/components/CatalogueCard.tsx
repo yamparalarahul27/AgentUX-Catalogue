@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ScreenshotNode } from '../types';
 import { getGroupColor } from '../lib/naming';
+import { Dropdown } from './Dropdown';
 
 interface CatalogueCardProps {
   screenshot: ScreenshotNode;
@@ -195,15 +196,16 @@ export function CatalogueCard({
         </div>
 
         <div className="catalogue-card-platform-row">
-          <select
-            className="catalogue-card-platform-select"
-            value={screenshot.platform || ''}
-            onChange={(e) => onPlatformChange(screenshot.id, (e.target.value || null) as 'mobile' | 'web' | null)}
-          >
-            <option value="">No platform</option>
-            <option value="mobile">Mobile</option>
-            <option value="web">Web</option>
-          </select>
+          <Dropdown
+            className="catalogue-card-platform-dropdown"
+            value={screenshot.platform || null}
+            placeholder="No platform"
+            options={[
+              { value: 'mobile', label: 'Mobile' },
+              { value: 'web', label: 'Web' },
+            ]}
+            onChange={(v) => onPlatformChange(screenshot.id, (v || null) as 'mobile' | 'web' | null)}
+          />
           <span className="catalogue-card-project">{projectName}</span>
         </div>
       </div>
