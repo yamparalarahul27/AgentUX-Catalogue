@@ -16,14 +16,9 @@
   --max-width: 1180px;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-  overflow-x: hidden;
-}
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -45,25 +40,11 @@ body::before {
   background-size: 160px 160px;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
+img, svg { display: block; max-width: 100%; height: auto; }
+main, section, article, header, footer { min-width: 0; }
 
-img,
-svg {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-
-main,
-section,
-article,
-header,
-footer {
-  min-width: 0;
-}
+/* ─── Shell ─── */
 
 .site-shell {
   position: relative;
@@ -72,6 +53,8 @@ footer {
   margin: 0 auto;
   padding: 24px 0 48px;
 }
+
+/* ─── Topbar ─── */
 
 .topbar {
   display: flex;
@@ -101,67 +84,38 @@ footer {
   flex-wrap: wrap;
   gap: 18px;
   row-gap: 10px;
+  align-items: center;
   max-width: 100%;
   color: var(--muted);
   font-weight: 500;
 }
 
-.nav a {
-  white-space: nowrap;
+.nav a { white-space: nowrap; }
+.nav a:hover, .footer-links a:hover { color: var(--accent); }
+
+.nav-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--line);
 }
 
-.nav a:hover,
-.footer-links a:hover {
-  color: var(--accent);
+.nav-product-link {
+  color: var(--accent) !important;
+  font-weight: 600;
 }
 
-.hero {
-  display: grid;
-  grid-template-columns: 1.15fr 0.95fr;
-  gap: 28px;
-  padding: 34px 0 24px;
-  align-items: stretch;
+/* ─── Typography ─── */
+
+h1, h2, h3 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  text-wrap: balance;
 }
 
-.hero-copy,
-.hero-board,
-.feature-card,
-.loop-step,
-.scenario-card,
-.spec-note,
-.spec-block,
-.install-card,
-.footer {
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-}
-
-.hero-copy {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-xl);
-  padding: 42px;
-  min-width: 0;
-}
-
-.hero-copy::after {
-  content: "";
-  position: absolute;
-  right: -24px;
-  bottom: -24px;
-  width: 160px;
-  height: 160px;
-  border: 1px solid rgba(200, 91, 45, 0.25);
-  border-radius: 50%;
-}
-
-.hero-board {
-  display: grid;
-  gap: 16px;
-  border-radius: var(--radius-xl);
-  padding: 22px;
-}
+h1 { font-size: clamp(2.6rem, 5.5vw, 4.6rem); line-height: 0.98; }
+h2 { font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; max-width: 20ch; }
+h3 { font-size: 1.18rem; line-height: 1.15; }
+p, li { text-wrap: pretty; }
 
 .eyebrow {
   display: inline-block;
@@ -172,53 +126,37 @@ footer {
   text-transform: uppercase;
 }
 
-h1,
-h2,
-h3 {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  text-wrap: balance;
+/* ─── Buttons ─── */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-weight: 700;
 }
 
-h1 {
-  font-size: clamp(2.8rem, 6vw, 5.2rem);
-  line-height: 0.98;
-  max-width: 10ch;
+.button-primary { background: var(--accent); color: var(--accent-ink); }
+.button-secondary { border: 1px solid rgba(95, 108, 114, 0.18); background: #fff; }
+
+/* ─── Lists ─── */
+
+.check-list { margin: 0; padding: 0; list-style: none; }
+.check-list li { position: relative; padding-left: 18px; margin-top: 8px; color: var(--muted); }
+.check-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
 }
 
-h2 {
-  font-size: clamp(2rem, 4.2vw, 3rem);
-  line-height: 1.02;
-  max-width: 16ch;
-}
-
-h3 {
-  font-size: 1.18rem;
-  line-height: 1.15;
-}
-
-p,
-li {
-  text-wrap: pretty;
-}
-
-.hero-text,
-.section-heading,
-.spec-caption,
-.footer p,
-.feature-card p,
-.loop-step p,
-.scenario-card p,
-.spec-note li,
-.install-card li {
-  color: var(--muted);
-}
-
-.hero-text {
-  max-width: 34rem;
-  margin: 18px 0 0;
-  font-size: 1.1rem;
-}
+/* ─── Install Command ─── */
 
 .install-command {
   display: inline-flex;
@@ -235,143 +173,15 @@ li {
   overflow-x: auto;
 }
 
-.install-command code {
-  max-width: 100%;
+.install-command-sm {
+  margin-top: 0;
+  padding: 10px 14px;
+  font-size: 0.82rem;
 }
 
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin: 28px 0 24px;
-}
+/* ─── Section ─── */
 
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 50px;
-  padding: 0 20px;
-  border-radius: 999px;
-  font-weight: 700;
-}
-
-.button-primary {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-.button-secondary {
-  border: 1px solid rgba(95, 108, 114, 0.18);
-  background: #fff;
-}
-
-.signal-list,
-.check-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.signal-list {
-  display: grid;
-  gap: 10px;
-  color: var(--muted);
-}
-
-.signal-list li,
-.check-list li {
-  position: relative;
-  padding-left: 18px;
-}
-
-.signal-list li::before,
-.check-list li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.6em;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--accent);
-}
-
-.board-panel {
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  border-radius: var(--radius-lg);
-  padding: 18px;
-  background: #ffffff;
-}
-
-.board-panel-accent {
-  background: #fff5ec;
-}
-
-.panel-label,
-.stage-chip,
-.feature-index,
-.loop-number {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.panel-label,
-.stage-chip {
-  color: var(--accent);
-}
-
-.flow-stage {
-  margin-top: 12px;
-}
-
-.flow-card {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.flow-card-vertical {
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.flow-node {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 0 14px;
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  border-radius: 999px;
-  background: #fff;
-  font-weight: 600;
-}
-
-.flow-node-muted {
-  color: var(--muted);
-  border-style: dashed;
-}
-
-.flow-arrow {
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.flow-arrow-down {
-  text-align: center;
-}
-
-.spec-caption {
-  margin-top: 16px;
-}
-
-.section {
-  padding: 34px 0;
-}
+.section { padding: 34px 0; }
 
 .section-band {
   padding: 34px 28px;
@@ -386,47 +196,263 @@ li {
   margin-bottom: 22px;
 }
 
-.feature-grid,
-.loop-grid,
-.scenario-grid,
-.install-guide,
-.faq-list,
-.install-grid {
+/* ─── Hero ─── */
+
+.hero {
   display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 28px;
+  padding: 34px 0 24px;
+  align-items: stretch;
+}
+
+.hero-copy {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(95, 108, 114, 0.14);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius-xl);
+  padding: 42px;
+  min-width: 0;
+}
+
+.hero-copy::after {
+  content: "";
+  position: absolute;
+  right: -24px;
+  bottom: -24px;
+  width: 160px;
+  height: 160px;
+  border: 1px solid rgba(200, 91, 45, 0.25);
+  border-radius: 50%;
+}
+
+.hero-text {
+  max-width: 34rem;
+  margin: 18px 0 0;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 28px 0 0;
+}
+
+/* Hero Story (right side) */
+
+.hero-story {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid rgba(95, 108, 114, 0.14);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius-xl);
+  padding: 32px 22px;
+}
+
+.story-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.story-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #fff3ea;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.story-label {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.story-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.story-arrow {
+  color: var(--accent);
+  transform: rotate(90deg);
+}
+
+/* ─── Product Grid ─── */
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
-.feature-grid {
+.product-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(95, 108, 114, 0.14);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  min-width: 0;
+}
+
+.product-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.product-icon-dev { background: #eef2ff; color: #4f46e5; }
+.product-icon-builder { background: #fff3ea; color: var(--accent); }
+.product-icon-catalogue { background: #ecfdf5; color: #059669; }
+
+.product-card h3 { font-size: 1.3rem; }
+
+.product-tagline {
+  color: var(--muted);
+  margin: 8px 0 12px;
+  font-size: 0.95rem;
+}
+
+.product-audience {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 16px;
+  align-self: flex-start;
+}
+
+/* Product Accordion */
+
+.product-details {
+  border: 1px solid rgba(95, 108, 114, 0.12);
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.product-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+  background: rgba(255, 250, 244, 0.6);
+  transition: background 0.2s;
+  list-style: none;
+}
+
+.product-details summary::-webkit-details-marker { display: none; }
+
+.product-details summary::after {
+  content: "+";
+  font-size: 1.2rem;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: 12px;
+  transition: transform 0.2s;
+}
+
+.product-details[open] summary::after {
+  content: "\2212";
+}
+
+.product-details summary:hover { background: var(--surface-strong); }
+
+.product-details > :not(summary) {
+  padding: 0 16px 14px;
+}
+
+.product-details .check-list { margin-top: 0; }
+
+.product-code {
+  margin: 0;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: #132225;
+  color: #f9f2e8;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  max-width: 100%;
+}
+
+.product-code-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+}
+
+.product-naming-example {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.product-naming-example code {
+  padding: 2px 6px;
+  background: var(--surface-strong);
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.product-cta {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.product-cta .button { width: 100%; }
+
+/* ─── Steps Grid ─── */
+
+.steps-grid {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
 }
 
-.loop-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.scenario-grid,
-.install-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.install-guide,
-.faq-list {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.feature-card,
-.loop-step,
-.scenario-card,
-.install-step-card,
-.install-card,
-.spec-note,
-.faq-card {
+.step-card {
+  border: 1px solid rgba(95, 108, 114, 0.14);
+  background: var(--surface);
+  box-shadow: var(--shadow);
   border-radius: var(--radius-lg);
   padding: 22px;
+  min-width: 0;
 }
 
-.feature-index,
-.loop-number {
+.step-number {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -435,86 +461,81 @@ li {
   border-radius: 999px;
   background: #fff3ea;
   color: var(--accent);
-}
-
-.feature-card h3,
-.loop-step h3,
-.scenario-card h3,
-.install-step-card h3,
-.install-card h3,
-.spec-note h3,
-.faq-card h3 {
-  margin-top: 16px;
-}
-
-.step-kicker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
   font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
 }
 
-.spec-layout {
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  gap: 18px;
-  align-items: start;
+.step-card h3 { margin-top: 16px; }
+.step-card p { color: var(--muted); margin-top: 8px; }
+
+/* ─── FAQ Accordion ─── */
+
+.faq-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.spec-block {
+.faq-item {
+  border: 1px solid rgba(95, 108, 114, 0.14);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  cursor: pointer;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  list-style: none;
+  transition: background 0.2s;
+}
+
+.faq-item summary::-webkit-details-marker { display: none; }
+
+.faq-item summary::after {
+  content: "+";
+  font-size: 1.3rem;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+.faq-item[open] summary::after {
+  content: "\2212";
+}
+
+.faq-item summary:hover { background: rgba(241, 230, 215, 0.5); }
+
+.faq-item p {
+  padding: 0 22px 18px;
   margin: 0;
-  overflow-x: auto;
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  background: #132225;
-  color: #f9f2e8;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 0.92rem;
-  line-height: 1.6;
-  max-width: 100%;
+  color: var(--muted);
+  line-height: 1.65;
 }
 
-.install-card pre {
-  margin: 12px 0 0;
-  overflow-x: auto;
-  border-radius: var(--radius-md);
-  padding: 16px;
-  background: #132225;
-  color: #f9f2e8;
-  max-width: 100%;
-}
-
-.install-step-card pre {
-  margin: 14px 0 0;
-  overflow-x: auto;
-  border-radius: var(--radius-md);
-  padding: 16px;
-  background: #132225;
-  color: #f9f2e8;
-  max-width: 100%;
-}
-
-.install-card,
-.install-step-card,
-.feature-card,
-.loop-step,
-.scenario-card,
-.spec-note,
-.faq-card {
-  min-width: 0;
-}
+/* ─── Footer ─── */
 
 .footer {
   display: flex;
   justify-content: space-between;
   gap: 18px;
   margin-top: 22px;
+  border: 1px solid rgba(95, 108, 114, 0.14);
+  background: var(--surface);
+  box-shadow: var(--shadow);
   border-radius: var(--radius-xl);
   padding: 22px 24px;
 }
+
+.footer p { color: var(--muted); }
 
 .footer-links {
   display: flex;
@@ -524,17 +545,21 @@ li {
   font-weight: 600;
 }
 
+/* ─── Responsive ─── */
+
 @media (max-width: 1080px) {
   .hero,
-  .spec-layout,
-  .feature-grid,
-  .loop-grid,
-  .scenario-grid,
-  .install-guide,
-  .faq-list,
-  .install-grid {
+  .product-grid,
+  .steps-grid {
     grid-template-columns: 1fr;
   }
+
+  .hero-story {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .story-arrow { transform: none; }
 }
 
 @media (max-width: 960px) {
@@ -545,10 +570,8 @@ li {
     align-items: flex-start;
   }
 
-  .nav {
-    width: 100%;
-    gap: 12px;
-  }
+  .nav { width: 100%; gap: 12px; }
+  .nav-divider { display: none; }
 }
 
 @media (max-width: 720px) {
@@ -557,46 +580,30 @@ li {
     padding-top: 14px;
   }
 
+  .hero-copy, .section-band { padding: 22px; }
+  .hero-story { padding: 22px 16px; flex-direction: column; }
+  .story-arrow { transform: rotate(90deg); }
+
   .footer {
     border-radius: 28px;
     padding: 18px;
-  }
-
-  .footer {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .hero-copy,
-  .hero-board,
-  .section-band {
-    padding: 22px;
-  }
-
-  h1 {
-    max-width: 12ch;
-  }
-
-  .nav {
-    width: 100%;
-    gap: 12px;
-  }
-
-  .button {
-    width: 100%;
-  }
+  .button { width: 100%; }
 
   .install-command {
     width: 100%;
     border-radius: var(--radius-md);
   }
 
-  .install-command code,
-  .spec-block,
-  .install-card pre,
-  .install-step-card pre {
+  .install-command code, .product-code {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
+
+  .nav { width: 100%; gap: 12px; }
+  h1 { max-width: 12ch; }
 }
