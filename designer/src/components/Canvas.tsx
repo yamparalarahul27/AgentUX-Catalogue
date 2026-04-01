@@ -7,6 +7,7 @@ import {
   BackgroundVariant,
   useNodesState,
   useEdgesState,
+  type ReactFlowInstance,
   SelectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -49,6 +50,8 @@ interface CanvasProps {
 
 interface LoadFlowOptions {
   resetUndo?: boolean;
+  showLoading?: boolean;
+  preserveViewport?: boolean;
 }
 
 export function Canvas({ user }: CanvasProps) {
@@ -76,6 +79,7 @@ export function Canvas({ user }: CanvasProps) {
   const [undoDepth, setUndoDepth] = useState(0);
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reactFlowRef = useRef<ReactFlowInstance | null>(null);
   const undoStackRef = useRef<GraphSnapshot[]>([]);
   const applyingUndoRef = useRef(false);
   const localEditUntilRef = useRef(0);
@@ -116,9 +120,15 @@ export function Canvas({ user }: CanvasProps) {
     async (options?: LoadFlowOptions) => {
       if (!flowId) return;
 
-      const { resetUndo = true } = options || {};
+      const { resetUndo = true, showLoading = true, preserveViewport = false } = options || {};
+      const previousViewport =
+        preserveViewport && reactFlowRef.current
+          ? reactFlowRef.current.getViewport()
+          : null;
 
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
 
       try {
         const [flowRes, screenshotRes, connectionRes] = await Promise.all([
@@ -150,11 +160,19 @@ export function Canvas({ user }: CanvasProps) {
         if (resetUndo) {
           resetUndoHistory();
         }
+
+        if (previousViewport && reactFlowRef.current) {
+          window.requestAnimationFrame(() => {
+            reactFlowRef.current?.setViewport(previousViewport, { duration: 0 });
+          });
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unable to load flow data';
         setToast({ message, type: 'error' });
       } finally {
-        setLoading(false);
+        if (showLoading) {
+          setLoading(false);
+        }
       }
     },
     [flowId, resetUndoHistory],
@@ -282,7 +300,7 @@ export function Canvas({ user }: CanvasProps) {
         if (error || !data?.updated_at) return;
         if (data.updated_at === lastRemoteUpdatedAtRef.current) return;
 
-        await loadFlowData({ resetUndo: true });
+        await loadFlowData({ resetUndo: true, showLoading: false, preserveViewport: true });
         if (!cancelled) {
           setToast({ message: 'Canvas auto-refreshed with latest updates', type: 'info' });
         }
@@ -449,6 +467,9 @@ export function Canvas({ user }: CanvasProps) {
         ) : (
           <>
             <ReactFlow
+              onInit={(instance) => {
+                reactFlowRef.current = instance;
+              }}
               nodes={nodes}
               edges={edges}
               onNodesChange={handleNodesChange}
