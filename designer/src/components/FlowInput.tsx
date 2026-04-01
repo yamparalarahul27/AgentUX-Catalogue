@@ -8,8 +8,7 @@ interface FlowInputProps {
 export function FlowInput({ onInsert, onCancel }: FlowInputProps) {
   const [text, setText] = useState('');
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSubmit() {
     if (text.trim()) {
       onInsert(text.trim());
     }
@@ -20,26 +19,24 @@ export function FlowInput({ onInsert, onCancel }: FlowInputProps) {
       <div className="flow-input-modal" onClick={(e) => e.stopPropagation()}>
         <h3>Add Flow</h3>
         <p className="flow-input-hint">
-          Describe your flow using <code>-&gt;</code> to connect steps
+          Use <code>-&gt;</code> to connect steps. One path per line — duplicate steps merge automatically.
         </p>
-        <form onSubmit={handleSubmit}>
-          <input
-            className="flow-input-field"
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Login -> Enter email -> Email OTP -> Home"
-            autoFocus
-          />
-          <div className="flow-input-actions">
-            <button type="submit" className="btn-primary" disabled={!text.trim()}>
-              Insert
-            </button>
-            <button type="button" className="btn-secondary" onClick={onCancel}>
-              Cancel
-            </button>
-          </div>
-        </form>
+        <textarea
+          className="flow-input-field"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={"Login -> Enter email -> Email OTP -> Home\nLogin -> Enter email -> Forgot password -> Reset"}
+          rows={4}
+          autoFocus
+        />
+        <div className="flow-input-actions">
+          <button className="btn-primary" onClick={handleSubmit} disabled={!text.trim()}>
+            Insert
+          </button>
+          <button className="btn-secondary" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );

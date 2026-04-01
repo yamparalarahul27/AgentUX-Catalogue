@@ -21,6 +21,7 @@ import type { Flow, ScreenshotNode, Connection } from '../types';
 import { supabase } from '../lib/supabase';
 import { parseScreenshotName } from '../lib/naming';
 import { autoConnect } from '../lib/auto-connect';
+import { parseMultiPathFlow } from '../lib/parse-flow-paths';
 import { generateDesignerMarkdown } from '../lib/export-markdown';
 import { ScreenshotNodeComponent } from './ScreenshotNode';
 import { ConnectionEdgeComponent } from './ConnectionEdge';
@@ -536,61 +537,84 @@ export function Canvas({ user }: CanvasProps) {
     }
   }
 
-  // Insert flow from text
+  // Insert flow from text (supports multi-path with node deduplication)
   async function handleFlowInsert(text: string) {
     if (!flowId || !projectId) return;
     setShowFlowInput(false);
 
-    const steps = text.split('->').map((s) => s.trim()).filter(Boolean);
-    if (steps.length === 0) return;
+    const { nodeNames, edges: graphEdges } = parseMultiPathFlow(text);
+    if (nodeNames.length === 0) return;
 
-    // Calculate start position to the right of existing nodes
-    let startX = 0;
-    let startY = 0;
+    // Use dagre to compute positions for the new subgraph
+    const tempNodes: Node[] = nodeNames.map((name, i) => ({
+      id: `temp-${i}`,
+      type: 'screenshotNode',
+      position: { x: 0, y: 0 },
+      data: { label: name },
+    }));
+    const nameToTempId = new Map(nodeNames.map((name, i) => [name.toLowerCase(), `temp-${i}`]));
+    const tempEdges: Edge[] = graphEdges.map(([src, tgt], i) => ({
+      id: `temp-edge-${i}`,
+      source: nameToTempId.get(src.toLowerCase())!,
+      target: nameToTempId.get(tgt.toLowerCase())!,
+    }));
+
+    const laid = layoutElements(tempNodes, tempEdges, 'LR');
+
+    // Offset to place right of existing canvas content
+    let offsetX = 0;
+    let offsetY = 0;
     if (nodes.length > 0) {
       const maxX = Math.max(...nodes.map((n) => n.position.x + NODE_WIDTH));
-      startX = maxX + RANK_SEP;
-      // Vertically center relative to existing nodes
+      offsetX = maxX + RANK_SEP;
       const avgY = nodes.reduce((sum, n) => sum + n.position.y, 0) / nodes.length;
-      startY = avgY;
+      const newAvgY = laid.nodes.reduce((sum, n) => sum + n.position.y, 0) / laid.nodes.length;
+      offsetY = avgY - newAvgY;
     }
 
+    // Insert nodes into Supabase
+    const nameToDbId = new Map<string, string>();
     const newScreenshots: ScreenshotNode[] = [];
 
-    for (let i = 0; i < steps.length; i++) {
-      const posX = startX + i * (NODE_WIDTH + RANK_SEP);
-      const posY = startY;
-
+    for (let i = 0; i < nodeNames.length; i++) {
+      const name = nodeNames[i];
+      const pos = laid.nodes[i].position;
       const { data, error } = await supabase
         .from('screenshots')
         .insert({
           project_id: projectId,
           flow_id: flowId,
-          name: steps[i],
+          name,
           file_name: '',
           storage_path: '',
           sequence: i + 1,
           group: null,
-          position_x: posX,
-          position_y: posY,
+          position_x: pos.x + offsetX,
+          position_y: pos.y + offsetY,
         })
         .select()
         .single();
 
       if (data && !error) {
+        nameToDbId.set(name.toLowerCase(), data.id);
         newScreenshots.push({ ...data, image_url: '' });
       }
     }
 
+    // Insert edges into Supabase
     const newConnections: Connection[] = [];
-    for (let i = 0; i < newScreenshots.length - 1; i++) {
+    for (const [src, tgt] of graphEdges) {
+      const sourceId = nameToDbId.get(src.toLowerCase());
+      const targetId = nameToDbId.get(tgt.toLowerCase());
+      if (!sourceId || !targetId) continue;
+
       const { data, error } = await supabase
         .from('connections')
         .insert({
           project_id: projectId,
           flow_id: flowId,
-          source_id: newScreenshots[i].id,
-          target_id: newScreenshots[i + 1].id,
+          source_id: sourceId,
+          target_id: targetId,
           source_handle: 'right-source',
           target_handle: 'left-target',
           type: 'manual',
