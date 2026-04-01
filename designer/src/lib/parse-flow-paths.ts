@@ -14,7 +14,7 @@ export function parseMultiPathFlow(text: string): ParsedFlowGraph {
   const edges: [string, string][] = [];
 
   for (const line of lines) {
-    const steps = line.split('->').map((s) => s.trim()).filter(Boolean);
+    const steps = line.split(/\s*(?:->|>)\s*/).map((s) => s.trim()).filter(Boolean);
     const normalizedSteps = steps.map(normalizeFlowStep);
 
     for (const { display, key } of normalizedSteps) {

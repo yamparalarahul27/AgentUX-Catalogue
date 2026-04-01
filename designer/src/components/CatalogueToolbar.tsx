@@ -1,6 +1,8 @@
 import { Dropdown } from './Dropdown';
 
 interface CatalogueToolbarProps {
+  activeFlowCount: number;
+  activeFlowLabel: string;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   filterProject: string | null;
@@ -20,10 +22,13 @@ interface CatalogueToolbarProps {
   showGroupConfig: boolean;
   onUploadClick: () => void;
   onQuickUploadClick: () => void;
+  onToggleFlowSheet: () => void;
   screenshotCount: number;
 }
 
 export function CatalogueToolbar({
+  activeFlowCount,
+  activeFlowLabel,
   searchQuery,
   onSearchChange,
   filterProject,
@@ -43,6 +48,7 @@ export function CatalogueToolbar({
   showGroupConfig,
   onUploadClick,
   onQuickUploadClick,
+  onToggleFlowSheet,
   screenshotCount,
 }: CatalogueToolbarProps) {
   const nonPrimaryGroups = groups.filter((g) => g !== primaryGroup);
@@ -109,6 +115,13 @@ export function CatalogueToolbar({
 
         <div className="catalogue-toolbar-right">
           <span className="catalogue-count">{screenshotCount} screenshot{screenshotCount !== 1 ? 's' : ''}</span>
+          <button type="button" className="btn-secondary catalogue-flow-sheet-trigger" onClick={onToggleFlowSheet}>
+            <span className="catalogue-flow-sheet-trigger__copy">
+              <span className="catalogue-flow-sheet-trigger__label">Flow filter</span>
+              <span className="catalogue-flow-sheet-trigger__value">{activeFlowLabel}</span>
+            </span>
+            <span className="catalogue-flow-sheet-trigger__count">{activeFlowCount}</span>
+          </button>
           <button className="btn-secondary" onClick={onQuickUploadClick}>
             Quick Upload
           </button>

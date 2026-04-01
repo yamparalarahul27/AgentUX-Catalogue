@@ -5,6 +5,7 @@ import { Auth } from './components/Auth';
 import { ProjectList } from './components/ProjectList';
 import { FlowList } from './components/FlowList';
 import { Canvas } from './components/Canvas';
+import { TextFlowStudio } from './components/FlowTextStudio';
 
 export function App() {
   const { user, login, logout } = useAuth();
@@ -18,6 +19,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<ProjectList user={user} onLogout={logout} />} />
         <Route path="/project/:projectId" element={<FlowList user={user} />} />
+        <Route path="/project/:projectId/flow/:flowId/text" element={<TextFlowStudio user={user} />} />
         <Route path="/project/:projectId/flow/:flowId" element={<Canvas user={user} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

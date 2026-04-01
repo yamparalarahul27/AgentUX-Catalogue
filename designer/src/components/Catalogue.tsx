@@ -1,268 +1,174 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { User } from '@supabase/supabase-js';
-import type { Project, Flow, ScreenshotNode } from '../types';
+import type { Flow, ScreenshotNode } from '../types';
 import { supabase } from '../lib/supabase';
 import { parseScreenshotName } from '../lib/naming';
-import { CatalogueCard } from './CatalogueCard';
+import { CatalogueBulkBar, CatalogueContent, CatalogueOverlays } from './CatalogueContent';
+import { CatalogueFlowSidebar } from './CatalogueFlowSidebar';
 import { CatalogueToolbar } from './CatalogueToolbar';
-import { FlowAssignModal } from './FlowAssignModal';
-import { UploadZone } from './UploadZone';
-import { Dropdown } from './Dropdown';
-import { ConfirmModal } from './ConfirmModal';
-import { Toast } from './Toast';
+import { useCatalogueData } from '../hooks/use-catalogue-data';
+import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
 
 interface CatalogueProps {
   user: User;
 }
 
 export function Catalogue({ user }: CatalogueProps) {
+  const {
+    flows,
+    flowMap,
+    loading,
+    projectMap,
+    projects,
+    screenshots,
+    setProjects,
+    setScreenshots,
+  } = useCatalogueData();
+  const {
+    activeFlowCount,
+    activeFlowFilter,
+    activeFlowLabel,
+    allGroups,
+    filterGroup,
+    filterPlatform,
+    filterProject,
+    filterTheme,
+    filteredScreenshots,
+    flowItems,
+    groupedScreenshots,
+    primaryGroup,
+    searchQuery,
+    setActiveFlowFilter,
+    setFilterGroup,
+    setFilterPlatform,
+    setFilterProject,
+    setFilterTheme,
+    setSearchQuery,
+    vsGroups,
+  } = useCatalogueFilters({ flows, projects, screenshots });
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [flows, setFlows] = useState<Flow[]>([]);
-  const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
-  const [uploadProjectId, setUploadProjectId] = useState<string | null>(null);
-  const [uploadGroup, setUploadGroup] = useState<string>('');
-  const [newGroupName, setNewGroupName] = useState('');
-  const [uploadTheme, setUploadTheme] = useState<'light' | 'dark' | null>(null);
-  const [uploadRefFile, setUploadRefFile] = useState<File | null>(null);
-  const [uploadRefLabel, setUploadRefLabel] = useState('');
-  const [uploadRefPreview, setUploadRefPreview] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterProject, setFilterProject] = useState<string | null>(null);
-  const [filterGroup, setFilterGroup] = useState<string | null>(null);
-  const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
-  const [filterTheme, setFilterTheme] = useState<string | null>(null);
-  const [assignModal, setAssignModal] = useState<string | null>(null);
-  const [showQuickUpload, setShowQuickUpload] = useState(false);
-  const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<'assign' | 'group' | 'platform' | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<{ type: 'bulk' } | null>(null);
-  const [bulkGroupValue, setBulkGroupValue] = useState('');
-  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const [showUpload, setShowUpload] = useState(false), [uploadProjectId, setUploadProjectId] = useState<string | null>(null);
+  const [uploadGroup, setUploadGroup] = useState(''), [newGroupName, setNewGroupName] = useState('');
+  const [uploadTheme, setUploadTheme] = useState<'light' | 'dark' | null>(null), [uploadRefFile, setUploadRefFile] = useState<File | null>(null);
+  const [uploadRefLabel, setUploadRefLabel] = useState(''), [uploadRefPreview, setUploadRefPreview] = useState<string | null>(null);
+  const [assignModal, setAssignModal] = useState<string | null>(null), [showQuickUpload, setShowQuickUpload] = useState(false);
+  const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null), [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'assign' | 'group' | 'platform' | null>(null), [confirmDelete, setConfirmDelete] = useState<{ type: 'bulk' } | null>(null);
+  const [bulkGroupValue, setBulkGroupValue] = useState(''), [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const [isFlowSheetExpanded, setIsFlowSheetExpanded] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const uploadProjectGroups = useMemo(() => !uploadProjectId ? [] : [...new Set(
+    screenshots.filter((screenshot) => screenshot.project_id === uploadProjectId).map((screenshot) => screenshot.group).filter(Boolean),
+  )] as string[], [screenshots, uploadProjectId]);
+  const uploadProjectPrimary = useMemo(
+    () => !uploadProjectId ? null : projects.find((project) => project.id === uploadProjectId)?.primary_group || null,
+    [projects, uploadProjectId],
+  );
+  const selectedVisibleCount = useMemo(() => filteredScreenshots.filter((screenshot) => selected.has(screenshot.id)).length, [filteredScreenshots, selected]);
+  const bulkFlows = useMemo(() => {
+    if (selected.size === 0) return [];
+    const projectIds = new Set(screenshots.filter((screenshot) => selected.has(screenshot.id)).map((screenshot) => screenshot.project_id));
+    return flows.filter((flow) => projectIds.has(flow.project_id));
+  }, [flows, screenshots, selected]);
+  const assigningScreenshot = useMemo(
+    () => assignModal ? screenshots.find((screenshot) => screenshot.id === assignModal) ?? null : null,
+    [assignModal, screenshots],
+  );
 
-  async function loadData() {
-    setLoading(true);
+  function resetUploadState() {
+    setShowUpload(false);
+    setUploadProjectId(null);
+    setUploadGroup('');
+    setNewGroupName('');
+    setUploadTheme(null);
+    setUploadRefFile(null);
+    setUploadRefLabel('');
+    if (uploadRefPreview) {
+      URL.revokeObjectURL(uploadRefPreview);
+      setUploadRefPreview(null);
+    }
+  }
 
-    const { data: projectData } = await supabase
-      .from('projects')
-      .select('*')
-      .order('updated_at', { ascending: false });
+  function resetQuickUploadState() { setShowQuickUpload(false); setQuickUploadProjectId(null); }
 
-    if (!projectData || projectData.length === 0) {
-      setProjects([]);
-      setScreenshots([]);
-      setFlows([]);
-      setLoading(false);
+  async function handlePrimaryGroupChange(group: string | null) {
+    if (!filterProject) {
       return;
     }
 
-    setProjects(projectData);
-    const projectIds = projectData.map((p: Project) => p.id);
-
-    const [screenshotRes, flowRes] = await Promise.all([
-      supabase
-        .from('screenshots')
-        .select('*')
-        .in('project_id', projectIds)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('flows')
-        .select('*')
-        .in('project_id', projectIds)
-        .order('created_at'),
-    ]);
-
-    if (screenshotRes.data) {
-      // Load version + comment counts
-      const screenshotIds = screenshotRes.data.map((s: ScreenshotNode) => s.id);
-      const versionCounts: Record<string, number> = {};
-      const commentCounts: Record<string, number> = {};
-      if (screenshotIds.length > 0) {
-        const [versionRes, commentRes] = await Promise.all([
-          supabase.from('screenshot_versions').select('screenshot_id').in('screenshot_id', screenshotIds),
-          supabase.from('screenshot_comments').select('screenshot_id').in('screenshot_id', screenshotIds),
-        ]);
-        if (versionRes.data) {
-          for (const v of versionRes.data) {
-            versionCounts[v.screenshot_id] = (versionCounts[v.screenshot_id] || 0) + 1;
-          }
-        }
-        if (commentRes.data) {
-          for (const c of commentRes.data) {
-            commentCounts[c.screenshot_id] = (commentCounts[c.screenshot_id] || 0) + 1;
-          }
-        }
-      }
-
-      const withUrls = screenshotRes.data.map((s: ScreenshotNode) => ({
-        ...s,
-        image_url: s.storage_path
-          ? supabase.storage.from('screenshots').getPublicUrl(s.storage_path).data.publicUrl
-          : '',
-        version_count: versionCounts[s.id] || 0,
-        comment_count: commentCounts[s.id] || 0,
-      }));
-      setScreenshots(withUrls);
-    }
-
-    if (flowRes.data) setFlows(flowRes.data);
-    setLoading(false);
-  }
-
-  // Current filtered project
-  const currentProject = useMemo(() => {
-    if (!filterProject) return null;
-    return projects.find((p) => p.id === filterProject) || null;
-  }, [projects, filterProject]);
-
-  const primaryGroup = currentProject?.primary_group || null;
-  const vsGroups = currentProject?.vs_groups || [];
-
-  // Derived data
-  const allGroups = useMemo(() => {
-    const filtered = filterProject
-      ? screenshots.filter((s) => s.project_id === filterProject)
-      : screenshots;
-    return [...new Set(filtered.map((s) => s.group).filter(Boolean))] as string[];
-  }, [screenshots, filterProject]);
-
-  const uploadProjectGroups = useMemo(() => {
-    if (!uploadProjectId) return [];
-    return [...new Set(screenshots.filter((s) => s.project_id === uploadProjectId).map((s) => s.group).filter(Boolean))] as string[];
-  }, [screenshots, uploadProjectId]);
-
-  const uploadProjectPrimary = useMemo(() => {
-    if (!uploadProjectId) return null;
-    return projects.find((p) => p.id === uploadProjectId)?.primary_group || null;
-  }, [projects, uploadProjectId]);
-
-  const filteredScreenshots = useMemo(() => {
-    return screenshots.filter((s) => {
-      const matchesSearch = !searchQuery ||
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.group || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.file_name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesProject = !filterProject || s.project_id === filterProject;
-      const matchesGroup = !filterGroup || s.group === filterGroup;
-      const matchesPlatform = !filterPlatform || s.platform === filterPlatform;
-      const matchesTheme = !filterTheme || s.theme === filterTheme;
-      return matchesSearch && matchesProject && matchesGroup && matchesPlatform && matchesTheme;
-    });
-  }, [screenshots, searchQuery, filterProject, filterGroup, filterPlatform, filterTheme]);
-
-  const groupedScreenshots = useMemo(() => {
-    const groups: Record<string, ScreenshotNode[]> = {};
-    for (const s of filteredScreenshots) {
-      const key = s.group || 'Ungrouped';
-      (groups[key] ||= []).push(s);
-    }
-    // Sort: primary first, then vs groups, then the rest
-    const sorted: [string, ScreenshotNode[]][] = Object.entries(groups).sort(([a], [b]) => {
-      const aIsPrimary = a === primaryGroup;
-      const bIsPrimary = b === primaryGroup;
-      if (aIsPrimary && !bIsPrimary) return -1;
-      if (!aIsPrimary && bIsPrimary) return 1;
-      const aIsVs = vsGroups.includes(a);
-      const bIsVs = vsGroups.includes(b);
-      if (aIsVs && !bIsVs) return -1;
-      if (!aIsVs && bIsVs) return 1;
-      return 0;
-    });
-    return Object.fromEntries(sorted);
-  }, [filteredScreenshots, primaryGroup, vsGroups]);
-
-  // Lookup helpers
-  const projectMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const p of projects) m[p.id] = p.name;
-    return m;
-  }, [projects]);
-
-  const flowMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const f of flows) m[f.id] = f.name;
-    return m;
-  }, [flows]);
-
-  // Group config handlers
-  async function handlePrimaryGroupChange(group: string | null) {
-    if (!filterProject) return;
     await supabase.from('projects').update({ primary_group: group }).eq('id', filterProject);
-    setProjects((prev) => prev.map((p) =>
-      p.id === filterProject ? { ...p, primary_group: group } : p
-    ));
+    setProjects((previous) => previous.map((project) => (
+      project.id === filterProject ? { ...project, primary_group: group } : project
+    )));
     setToast({ message: group ? `Primary group set to "${group}"` : 'Primary group cleared', type: 'success' });
   }
 
   async function handleVsGroupsChange(groups: string[]) {
-    if (!filterProject) return;
+    if (!filterProject) {
+      return;
+    }
+
     await supabase.from('projects').update({ vs_groups: groups }).eq('id', filterProject);
-    setProjects((prev) => prev.map((p) =>
-      p.id === filterProject ? { ...p, vs_groups: groups } : p
-    ));
+    setProjects((previous) => previous.map((project) => (
+      project.id === filterProject ? { ...project, vs_groups: groups } : project
+    )));
   }
 
-  // Platform handler
   function handleCommentCountChange(screenshotId: string, delta: number) {
-    setScreenshots((prev) => prev.map((s) =>
-      s.id === screenshotId ? { ...s, comment_count: (s.comment_count ?? 0) + delta } : s
-    ));
+    setScreenshots((previous) => previous.map((screenshot) => screenshot.id === screenshotId
+      ? { ...screenshot, comment_count: (screenshot.comment_count ?? 0) + delta }
+      : screenshot));
   }
 
   async function handlePlatformChange(id: string, platform: 'mobile' | 'web' | null) {
     await supabase.from('screenshots').update({ platform }).eq('id', id);
-    setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, platform } : s)));
+    setScreenshots((previous) => previous.map((screenshot) => screenshot.id === id ? { ...screenshot, platform } : screenshot));
   }
 
-
-
-  // CRUD handlers
   async function handleRename(id: string, name: string) {
     await supabase.from('screenshots').update({ name }).eq('id', id);
-    setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
+    setScreenshots((previous) => previous.map((screenshot) => screenshot.id === id ? { ...screenshot, name } : screenshot));
   }
 
   async function handleChangeGroup(id: string, group: string | null) {
     await supabase.from('screenshots').update({ group }).eq('id', id);
-    setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, group } : s)));
+    setScreenshots((previous) => previous.map((screenshot) => screenshot.id === id ? { ...screenshot, group } : screenshot));
   }
 
   async function handleDelete(id: string) {
-    const screenshot = screenshots.find((s) => s.id === id);
-    if (!screenshot) return;
+    const screenshot = screenshots.find((item) => item.id === id);
+    if (!screenshot) {
+      return;
+    }
 
-    // Delete connections referencing this screenshot
     await supabase
       .from('connections')
       .delete()
       .or(`source_id.eq.${id},target_id.eq.${id}`);
 
-    // Delete from DB
     await supabase.from('screenshots').delete().eq('id', id);
 
-    // Delete from storage
     if (screenshot.storage_path) {
       await supabase.storage.from('screenshots').remove([screenshot.storage_path]);
     }
 
-    setScreenshots((prev) => prev.filter((s) => s.id !== id));
+    setScreenshots((previous) => previous.filter((item) => item.id !== id));
+    setSelected((previous) => {
+      const next = new Set(previous);
+      next.delete(id);
+      return next;
+    });
     setToast({ message: 'Screenshot deleted', type: 'success' });
   }
 
   async function handleReplaceImage(id: string, file: File) {
-    const screenshot = screenshots.find((s) => s.id === id);
-    if (!screenshot) return;
+    const screenshot = screenshots.find((item) => item.id === id);
+    if (!screenshot) {
+      return;
+    }
 
-    // Save current image as a version before replacing
     const { count } = await supabase
       .from('screenshot_versions')
       .select('*', { count: 'exact', head: true })
@@ -276,7 +182,6 @@ export function Catalogue({ user }: CatalogueProps) {
       file_name: screenshot.file_name,
     });
 
-    // Upload new image
     const compressed = await compressImage(file);
     const safeName = file.name.replace(/\s+/g, '-');
     const storagePath = `${user.id}/${screenshot.project_id}/${safeName}`;
@@ -297,16 +202,23 @@ export function Catalogue({ user }: CatalogueProps) {
       file_name: file.name,
     }).eq('id', id);
 
-    setScreenshots((prev) => prev.map((s) =>
-      s.id === id ? { ...s, storage_path: storagePath, file_name: file.name, image_url: imageUrl, version_count: nextVersion } : s
-    ));
+    setScreenshots((previous) => previous.map((item) => (
+      item.id === id
+        ? {
+          ...item,
+          storage_path: storagePath,
+          file_name: file.name,
+          image_url: imageUrl,
+          version_count: nextVersion,
+        }
+        : item
+    )));
     setToast({ message: `Image replaced (v${nextVersion + 1})`, type: 'success' });
   }
 
   async function handleAssignFlow(screenshotId: string, flowId: string | null) {
-    // Enforce primary-only assignment
     if (flowId) {
-      const screenshot = screenshots.find((s) => s.id === screenshotId);
+      const screenshot = screenshots.find((item) => item.id === screenshotId);
       if (screenshot && primaryGroup && screenshot.group !== primaryGroup) {
         setToast({ message: 'Only primary group screenshots can be assigned to flows', type: 'error' });
         setAssignModal(null);
@@ -315,31 +227,35 @@ export function Catalogue({ user }: CatalogueProps) {
     }
 
     await supabase.from('screenshots').update({ flow_id: flowId }).eq('id', screenshotId);
-    setScreenshots((prev) => prev.map((s) =>
-      s.id === screenshotId ? { ...s, flow_id: flowId } : s
-    ));
+    setScreenshots((previous) => previous.map((screenshot) => (
+      screenshot.id === screenshotId ? { ...screenshot, flow_id: flowId } : screenshot
+    )));
     setToast({
       message: flowId ? `Assigned to ${flowMap[flowId] || 'flow'}` : 'Unassigned from flow',
       type: 'success',
     });
   }
 
-  // Upload handler
   function compressImage(file: File, maxWidth = 1600, quality = 0.82): Promise<File> {
     return new Promise((resolve) => {
       if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
         resolve(file);
         return;
       }
+
       const img = new Image();
       img.onload = () => {
         URL.revokeObjectURL(img.src);
-        if (img.width <= maxWidth && file.size < 300_000) { resolve(file); return; }
+        if (img.width <= maxWidth && file.size < 300_000) {
+          resolve(file);
+          return;
+        }
+
         const scale = Math.min(1, maxWidth / img.width);
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(
           (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/webp' }) : file),
           'image/webp',
@@ -351,14 +267,20 @@ export function Catalogue({ user }: CatalogueProps) {
     });
   }
 
-  async function handleFilesSelected(files: File[], groupOverride?: string, themeOverride?: 'light' | 'dark' | null) {
+  async function handleFilesSelected(
+    files: File[],
+    groupOverride?: string,
+    themeOverride?: 'light' | 'dark' | null,
+  ) {
     const groupToAssign = groupOverride || uploadGroup;
     const themeToAssign = themeOverride !== undefined ? themeOverride : uploadTheme;
-    if (!uploadProjectId || !groupToAssign) return;
-    setUploading(true);
-    setShowUpload(false);
+    if (!uploadProjectId || !groupToAssign) {
+      return;
+    }
 
-    // Upload reference image if provided
+    setUploading(true);
+    resetUploadState();
+
     let refStoragePath: string | null = null;
     let refUrl: string | null = null;
     const refLabel = uploadRefLabel.trim() || null;
@@ -370,17 +292,11 @@ export function Catalogue({ user }: CatalogueProps) {
       const { error: refError } = await supabase.storage
         .from('screenshots')
         .upload(refStoragePath, refCompressed, { upsert: true });
+
       if (!refError) {
         refUrl = supabase.storage.from('screenshots').getPublicUrl(refStoragePath).data.publicUrl;
       }
     }
-
-    setUploadGroup('');
-    setNewGroupName('');
-    setUploadTheme(null);
-    setUploadRefFile(null);
-    setUploadRefLabel('');
-    if (uploadRefPreview) { URL.revokeObjectURL(uploadRefPreview); setUploadRefPreview(null); }
 
     const results = await Promise.allSettled(
       files.map(async (file) => {
@@ -393,7 +309,9 @@ export function Catalogue({ user }: CatalogueProps) {
           .from('screenshots')
           .upload(storagePath, compressed, { upsert: true });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          throw uploadError;
+        }
 
         const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
 
@@ -415,75 +333,109 @@ export function Catalogue({ user }: CatalogueProps) {
           .select()
           .single();
 
-        if (error || !data) throw error;
+        if (error || !data) {
+          throw error;
+        }
+
         return { ...data, image_url: imageUrl } as ScreenshotNode;
       }),
     );
 
     const newScreenshots = results
-      .filter((r): r is PromiseFulfilledResult<ScreenshotNode> => r.status === 'fulfilled')
-      .map((r) => r.value);
-
-    const failed = results.filter((r) => r.status === 'rejected').length;
+      .filter((result): result is PromiseFulfilledResult<ScreenshotNode> => result.status === 'fulfilled')
+      .map((result) => result.value);
+    const failed = results.filter((result) => result.status === 'rejected').length;
 
     if (newScreenshots.length > 0) {
-      setScreenshots((prev) => [...newScreenshots, ...prev]);
-      setToast({ message: `${newScreenshots.length} screenshot${newScreenshots.length > 1 ? 's' : ''} uploaded${failed ? `, ${failed} failed` : ''}`, type: failed ? 'info' : 'success' });
+      setScreenshots((previous) => [...newScreenshots, ...previous]);
+      setToast({
+        message: `${newScreenshots.length} screenshot${newScreenshots.length > 1 ? 's' : ''} uploaded${failed ? `, ${failed} failed` : ''}`,
+        type: failed ? 'info' : 'success',
+      });
     } else if (failed) {
       setToast({ message: `Upload failed for ${failed} file${failed > 1 ? 's' : ''}`, type: 'error' });
     }
 
     setUploading(false);
-    setUploadProjectId(null);
   }
 
-  // Selection handlers
   function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+    setSelected((previous) => {
+      const next = new Set(previous);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleGroupSelection(items: ScreenshotNode[]) {
+    setSelected((previous) => {
+      const next = new Set(previous);
+      const allSelected = items.every((item) => next.has(item.id));
+      for (const item of items) {
+        if (allSelected) {
+          next.delete(item.id);
+        } else {
+          next.add(item.id);
+        }
+      }
       return next;
     });
   }
 
   function selectAllVisible() {
-    if (selected.size === filteredScreenshots.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(filteredScreenshots.map((s) => s.id)));
-    }
+    setSelected((previous) => {
+      const next = new Set(previous);
+      const allVisibleSelected = filteredScreenshots.length > 0 && filteredScreenshots.every((item) => next.has(item.id));
+      for (const item of filteredScreenshots) {
+        if (allVisibleSelected) {
+          next.delete(item.id);
+        } else {
+          next.add(item.id);
+        }
+      }
+      return next;
+    });
   }
 
-  function clearSelection() {
-    setSelected(new Set());
-    setBulkAction(null);
-    setBulkGroupValue('');
-  }
+  function clearSelection() { setSelected(new Set()); setBulkAction(null); setBulkGroupValue(''); }
 
   async function handleBulkDelete() {
-    if (selected.size === 0) return;
+    if (selected.size === 0) {
+      return;
+    }
 
     const ids = Array.from(selected);
-    const toDelete = screenshots.filter((s) => ids.includes(s.id));
+    const toDelete = screenshots.filter((screenshot) => ids.includes(screenshot.id));
 
-    await supabase.from('connections').delete().or(ids.map((id) => `source_id.eq.${id},target_id.eq.${id}`).join(','));
+    await supabase.from('connections').delete().or(
+      ids.map((id) => `source_id.eq.${id},target_id.eq.${id}`).join(','),
+    );
     await supabase.from('screenshots').delete().in('id', ids);
 
-    const paths = toDelete.map((s) => s.storage_path).filter(Boolean);
-    if (paths.length) await supabase.storage.from('screenshots').remove(paths);
+    const paths = toDelete.map((screenshot) => screenshot.storage_path).filter(Boolean);
+    if (paths.length > 0) {
+      await supabase.storage.from('screenshots').remove(paths);
+    }
 
-    setScreenshots((prev) => prev.filter((s) => !selected.has(s.id)));
-    setToast({ message: `${selected.size} screenshot${selected.size > 1 ? 's' : ''} deleted`, type: 'success' });
+    setScreenshots((previous) => previous.filter((screenshot) => !selected.has(screenshot.id)));
+    setToast({
+      message: `${selected.size} screenshot${selected.size > 1 ? 's' : ''} deleted`,
+      type: 'success',
+    });
     clearSelection();
   }
 
   async function handleBulkAssignFlow(flowId: string | null) {
-    if (selected.size === 0) return;
+    if (selected.size === 0) {
+      return;
+    }
+
     const ids = Array.from(selected);
 
     await supabase.from('screenshots').update({ flow_id: flowId }).in('id', ids);
-    setScreenshots((prev) => prev.map((s) => selected.has(s.id) ? { ...s, flow_id: flowId } : s));
+    setScreenshots((previous) => previous.map((screenshot) => (
+      selected.has(screenshot.id) ? { ...screenshot, flow_id: flowId } : screenshot
+    )));
     setToast({
       message: flowId
         ? `${selected.size} assigned to ${flowMap[flowId] || 'flow'}`
@@ -494,37 +446,43 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   async function handleBulkChangeGroup(group: string) {
-    if (selected.size === 0 || !group.trim()) return;
+    const trimmedGroup = group.trim();
+    if (selected.size === 0 || !trimmedGroup) {
+      return;
+    }
+
     const ids = Array.from(selected);
 
-    await supabase.from('screenshots').update({ group: group.trim() }).in('id', ids);
-    setScreenshots((prev) => prev.map((s) => selected.has(s.id) ? { ...s, group: group.trim() } : s));
-    setToast({ message: `${selected.size} moved to "${group.trim()}"`, type: 'success' });
+    await supabase.from('screenshots').update({ group: trimmedGroup }).in('id', ids);
+    setScreenshots((previous) => previous.map((screenshot) => (
+      selected.has(screenshot.id) ? { ...screenshot, group: trimmedGroup } : screenshot
+    )));
+    setToast({ message: `${selected.size} moved to "${trimmedGroup}"`, type: 'success' });
     clearSelection();
   }
 
   async function handleBulkPlatform(platform: 'mobile' | 'web' | null) {
-    if (selected.size === 0) return;
+    if (selected.size === 0) {
+      return;
+    }
+
     const ids = Array.from(selected);
 
     await supabase.from('screenshots').update({ platform }).in('id', ids);
-    setScreenshots((prev) => prev.map((s) => selected.has(s.id) ? { ...s, platform } : s));
+    setScreenshots((previous) => previous.map((screenshot) => (
+      selected.has(screenshot.id) ? { ...screenshot, platform } : screenshot
+    )));
     setToast({ message: `${selected.size} set to ${platform || 'no platform'}`, type: 'success' });
     clearSelection();
   }
 
-  // Flows available for bulk assign (from selected screenshots' projects)
-  const bulkFlows = useMemo(() => {
-    if (selected.size === 0) return [];
-    const projectIds = new Set(screenshots.filter((s) => selected.has(s.id)).map((s) => s.project_id));
-    return flows.filter((f) => projectIds.has(f.project_id));
-  }, [selected, screenshots, flows]);
-
-  // Get flows for a specific screenshot's project
   async function handleQuickUpload(files: File[]) {
-    if (!quickUploadProjectId) return;
+    if (!quickUploadProjectId) {
+      return;
+    }
+
     setUploading(true);
-    setShowQuickUpload(false);
+    resetQuickUploadState();
 
     const results = await Promise.allSettled(
       files.map(async (file) => {
@@ -537,7 +495,9 @@ export function Catalogue({ user }: CatalogueProps) {
           .from('screenshots')
           .upload(storagePath, compressed, { upsert: true });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          throw uploadError;
+        }
 
         const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
 
@@ -555,43 +515,47 @@ export function Catalogue({ user }: CatalogueProps) {
           .select()
           .single();
 
-        if (error || !data) throw error;
+        if (error || !data) {
+          throw error;
+        }
+
         return { ...data, image_url: imageUrl } as ScreenshotNode;
       }),
     );
 
     const newScreenshots = results
-      .filter((r): r is PromiseFulfilledResult<ScreenshotNode> => r.status === 'fulfilled')
-      .map((r) => r.value);
-
-    const failed = results.filter((r) => r.status === 'rejected').length;
+      .filter((result): result is PromiseFulfilledResult<ScreenshotNode> => result.status === 'fulfilled')
+      .map((result) => result.value);
+    const failed = results.filter((result) => result.status === 'rejected').length;
 
     if (newScreenshots.length > 0) {
-      setScreenshots((prev) => [...newScreenshots, ...prev]);
-      // Auto-select all newly uploaded screenshots
-      setSelected(new Set(newScreenshots.map((s) => s.id)));
-      setToast({ message: `${newScreenshots.length} uploaded${failed ? `, ${failed} failed` : ''} — now assign them`, type: 'success' });
+      setScreenshots((previous) => [...newScreenshots, ...previous]);
+      setSelected(new Set(newScreenshots.map((screenshot) => screenshot.id)));
+      setToast({
+        message: `${newScreenshots.length} uploaded${failed ? `, ${failed} failed` : ''} — now assign them`,
+        type: 'success',
+      });
     } else if (failed) {
       setToast({ message: `Upload failed for ${failed} file${failed > 1 ? 's' : ''}`, type: 'error' });
     }
 
     setUploading(false);
-    setQuickUploadProjectId(null);
   }
 
   function getProjectFlows(screenshotId: string): Flow[] {
-    const s = screenshots.find((ss) => ss.id === screenshotId);
-    if (!s) return [];
-    return flows.filter((f) => f.project_id === s.project_id);
+    const screenshot = screenshots.find((item) => item.id === screenshotId);
+    return screenshot ? flows.filter((flow) => flow.project_id === screenshot.project_id) : [];
   }
-
-  const assigningScreenshot = assignModal ? screenshots.find((s) => s.id === assignModal) : null;
 
   return (
     <div className="catalogue-page">
       <header className="catalogue-header">
         <div className="header-left">
-          <button className="catalogue-back" onClick={() => window.location.href = '/designer/'} title="Back to projects">
+          <button
+            className="catalogue-back"
+            onClick={() => { window.location.href = '/designer/'; }}
+            title="Back to projects"
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6" />
             </svg>
@@ -606,463 +570,20 @@ export function Catalogue({ user }: CatalogueProps) {
       </header>
 
       <main className="catalogue-main">
-        <CatalogueToolbar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          filterProject={filterProject}
-          onFilterProjectChange={setFilterProject}
-          projects={projects.map((p) => ({ id: p.id, name: p.name }))}
-          filterGroup={filterGroup}
-          onFilterGroupChange={setFilterGroup}
-          groups={allGroups}
-          filterPlatform={filterPlatform}
-          onFilterPlatformChange={setFilterPlatform}
-          filterTheme={filterTheme}
-          onFilterThemeChange={setFilterTheme}
-          primaryGroup={primaryGroup}
-          vsGroups={vsGroups}
-          onPrimaryGroupChange={handlePrimaryGroupChange}
-          onVsGroupsChange={handleVsGroupsChange}
-          showGroupConfig={!!filterProject}
-          onUploadClick={() => setShowUpload(true)}
-          onQuickUploadClick={() => setShowQuickUpload(true)}
-          screenshotCount={filteredScreenshots.length}
-        />
+        <div className="catalogue-shell">
+          <CatalogueFlowSidebar activeFlowCount={activeFlowCount} activeFlowFilter={activeFlowFilter} activeFlowLabel={activeFlowLabel} items={flowItems} mobileExpanded={isFlowSheetExpanded} onFlowFilterChange={setActiveFlowFilter} onMobileExpandedChange={setIsFlowSheetExpanded} />
 
-        {loading ? (
-          <div className="empty-state">
-            <div className="loading-spinner" />
-            <p>Loading catalogue...</p>
+          <div className="catalogue-body">
+            <CatalogueToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} filterProject={filterProject} onFilterProjectChange={setFilterProject} projects={projects.map((project) => ({ id: project.id, name: project.name }))} filterGroup={filterGroup} onFilterGroupChange={setFilterGroup} groups={allGroups} filterPlatform={filterPlatform} onFilterPlatformChange={setFilterPlatform} filterTheme={filterTheme} onFilterThemeChange={setFilterTheme} primaryGroup={primaryGroup} vsGroups={vsGroups} onPrimaryGroupChange={handlePrimaryGroupChange} onVsGroupsChange={handleVsGroupsChange} showGroupConfig={Boolean(filterProject)} onUploadClick={() => setShowUpload(true)} onQuickUploadClick={() => setShowQuickUpload(true)} screenshotCount={filteredScreenshots.length} activeFlowCount={activeFlowCount} activeFlowLabel={activeFlowLabel} onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)} />
+
+            <CatalogueContent activeFlowFilter={activeFlowFilter} filterGroup={filterGroup} filterPlatform={filterPlatform} filterProject={filterProject} filterTheme={filterTheme} filteredScreenshots={filteredScreenshots} flowMap={flowMap} groupedScreenshots={groupedScreenshots} loading={loading} primaryGroup={primaryGroup} projectMap={projectMap} projectsCount={projects.length} searchQuery={searchQuery} selected={selected} userEmail={user.email || ''} vsGroups={vsGroups} onAssignFlow={setAssignModal} onChangeGroup={handleChangeGroup} onCommentCountChange={handleCommentCountChange} onDelete={handleDelete} onRename={handleRename} onReplaceImage={handleReplaceImage} onToggleGroupSelect={toggleGroupSelection} onToggleSelect={toggleSelect} onPlatformChange={handlePlatformChange} />
           </div>
-        ) : projects.length === 0 ? (
-          <div className="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <h2>No projects yet</h2>
-            <p>Create a project first to start uploading screenshots.</p>
-            <button className="btn-primary" onClick={() => window.location.href = '/designer/'}>Go to Projects</button>
-          </div>
-        ) : filteredScreenshots.length === 0 ? (
-          <div className="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <h2>{searchQuery || filterProject || filterGroup ? 'No matching screenshots' : 'No screenshots yet'}</h2>
-            <p>{searchQuery || filterProject || filterGroup
-              ? 'Try adjusting your search or filters.'
-              : 'Upload screenshots to get started.'}
-            </p>
-          </div>
-        ) : (
-          <div className="catalogue-content">
-            {Object.entries(groupedScreenshots).map(([groupName, items]) => (
-              <section key={groupName} className="catalogue-section">
-                <h3 className="catalogue-section-title">
-                  <button
-                    className="catalogue-section-select"
-                    title={items.every((s) => selected.has(s.id)) ? 'Deselect group' : 'Select group'}
-                    onClick={() => {
-                      const allSelected = items.every((s) => selected.has(s.id));
-                      setSelected((prev) => {
-                        const next = new Set(prev);
-                        for (const s of items) {
-                          if (allSelected) next.delete(s.id);
-                          else next.add(s.id);
-                        }
-                        return next;
-                      });
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      {items.every((s) => selected.has(s.id))
-                        ? <><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" /><polyline points="9 11 12 14 20 6" stroke="#0f0f10" strokeWidth="3" /></>
-                        : <rect x="3" y="3" width="18" height="18" rx="2" />}
-                    </svg>
-                  </button>
-                  {groupName}
-                  <span className="catalogue-section-count">{items.length}</span>
-                  {primaryGroup === groupName && (
-                    <span className="catalogue-badge catalogue-badge-primary">Primary</span>
-                  )}
-                  {vsGroups.includes(groupName) && (
-                    <span className="catalogue-badge catalogue-badge-vs">Vs</span>
-                  )}
-                </h3>
-                <div className="catalogue-grid">
-                  {items.map((s) => (
-                    <CatalogueCard
-                      key={s.id}
-                      screenshot={s}
-                      projectName={projectMap[s.project_id] || 'Unknown'}
-                      flowName={s.flow_id ? (flowMap[s.flow_id] || null) : null}
-                      isPrimary={!!primaryGroup && s.group === primaryGroup}
-                      isVs={vsGroups.includes(s.group || '')}
-                      isSelected={selected.has(s.id)}
-                      onToggleSelect={toggleSelect}
-                      onRename={handleRename}
-                      onChangeGroup={handleChangeGroup}
-                      onDelete={handleDelete}
-                      onReplaceImage={handleReplaceImage}
-                      onAssignFlow={setAssignModal}
-                      onPlatformChange={handlePlatformChange}
-                      userEmail={user.email || ''}
-                      onCommentCountChange={handleCommentCountChange}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
+        </div>
       </main>
 
-      {/* Upload Modal */}
-      {showUpload && (
-        <div className="catalogue-upload-overlay" onClick={() => { setShowUpload(false); setUploadProjectId(null); setUploadGroup(''); setNewGroupName(''); setUploadTheme(null); setUploadRefFile(null); setUploadRefLabel(''); if (uploadRefPreview) { URL.revokeObjectURL(uploadRefPreview); setUploadRefPreview(null); } }}>
-          <div className="catalogue-upload-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Upload Screenshots</h3>
-            <p className="catalogue-upload-subtitle">Choose a project and group, then upload your screenshots.</p>
+      <CatalogueOverlays allGroups={allGroups} assignModalOpen={Boolean(assignModal)} assigningFlows={assignModal ? getProjectFlows(assignModal) : []} assigningScreenshot={assigningScreenshot} bulkAction={bulkAction} bulkFlows={bulkFlows} bulkGroupValue={bulkGroupValue} confirmDeleteOpen={Boolean(confirmDelete)} newGroupName={newGroupName} primaryGroup={primaryGroup} projects={projects.map((project) => ({ id: project.id, name: project.name }))} quickUploadProjectId={quickUploadProjectId} selectedCount={selected.size} showQuickUpload={showQuickUpload} showUpload={showUpload} toast={toast} uploadGroup={uploadGroup} uploadProjectGroups={uploadProjectGroups} uploadProjectId={uploadProjectId} uploadProjectPrimary={uploadProjectPrimary} uploadRefLabel={uploadRefLabel} uploadRefPreview={uploadRefPreview} uploadTheme={uploadTheme} uploading={uploading} onAssignFlow={(flowId) => { if (assignModal) void handleAssignFlow(assignModal, flowId); }} onBulkActionChange={setBulkAction} onBulkAssignFlow={(flowId) => void handleBulkAssignFlow(flowId)} onBulkChangeGroup={(group) => void handleBulkChangeGroup(group)} onBulkGroupValueChange={setBulkGroupValue} onBulkPlatform={(platform) => void handleBulkPlatform(platform)} onCloseAssignModal={() => setAssignModal(null)} onCloseConfirmDelete={() => setConfirmDelete(null)} onCloseQuickUpload={resetQuickUploadState} onCloseToast={() => setToast(null)} onCloseUpload={resetUploadState} onConfirmBulkDelete={() => { setConfirmDelete(null); void handleBulkDelete(); }} onQuickUploadFilesSelected={(files) => void handleQuickUpload(files)} onQuickUploadProjectChange={setQuickUploadProjectId} onRemoveUploadReference={() => { if (uploadRefPreview) URL.revokeObjectURL(uploadRefPreview); setUploadRefFile(null); setUploadRefPreview(null); }} onSelectUploadReference={(file) => { if (uploadRefPreview) { URL.revokeObjectURL(uploadRefPreview); setUploadRefPreview(null); } if (file && file.type.startsWith('image/')) { setUploadRefFile(file); setUploadRefPreview(URL.createObjectURL(file)); } else { setUploadRefFile(null); } }} onUploadFilesSelected={(files, group, theme) => void handleFilesSelected(files, group, theme)} onUploadGroupChange={(value) => { setUploadGroup(value); if (value !== '__new__') setNewGroupName(''); }} onUploadProjectChange={(value) => { setUploadProjectId(value); setUploadGroup(''); setNewGroupName(''); }} onUploadRefLabelChange={setUploadRefLabel} onUploadThemeChange={setUploadTheme} onNewGroupNameChange={setNewGroupName} />
 
-            <Dropdown
-              className="catalogue-upload-project-dropdown"
-              value={uploadProjectId}
-              placeholder="Select a project..."
-              options={projects.map((p) => ({ value: p.id, label: p.name }))}
-              onChange={(v) => { setUploadProjectId(v); setUploadGroup(''); setNewGroupName(''); }}
-            />
-
-            {uploadProjectId && (
-              <>
-                <label className="catalogue-upload-label">Select or create a group</label>
-                <div className="catalogue-upload-groups">
-                  {uploadProjectGroups.map((g) => (
-                    <button
-                      key={g}
-                      className={`catalogue-upload-group-chip ${uploadGroup === g ? 'active' : ''}`}
-                      onClick={() => { setUploadGroup(g); setNewGroupName(''); }}
-                    >
-                      {g}
-                      {uploadProjectPrimary === g && <span className="catalogue-upload-group-primary">Primary</span>}
-                    </button>
-                  ))}
-                  <button
-                    className={`catalogue-upload-group-chip catalogue-upload-group-new ${uploadGroup === '__new__' ? 'active' : ''}`}
-                    onClick={() => setUploadGroup('__new__')}
-                  >
-                    + New Group
-                  </button>
-                </div>
-
-                {uploadGroup === '__new__' && (
-                  <input
-                    className="catalogue-filter catalogue-upload-project-select"
-                    type="text"
-                    placeholder="Enter group name..."
-                    value={newGroupName}
-                    onChange={(e) => setNewGroupName(e.target.value)}
-                    autoFocus
-                  />
-                )}
-
-                <label className="catalogue-upload-label">Theme</label>
-                <div className="catalogue-upload-groups">
-                  {(['light', 'dark'] as const).map((t) => (
-                    <button
-                      key={t}
-                      className={`catalogue-upload-group-chip ${uploadTheme === t ? 'active' : ''}`}
-                      onClick={() => setUploadTheme(uploadTheme === t ? null : t)}
-                    >
-                      {t === 'light' ? '☀ Light' : '☾ Dark'}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="catalogue-upload-label">Reference (optional)</label>
-                <div className="catalogue-upload-ref">
-                  {uploadRefPreview ? (
-                    <div className="catalogue-upload-ref-preview">
-                      <img src={uploadRefPreview} alt="Reference" />
-                      <button
-                        className="catalogue-upload-ref-remove"
-                        onClick={() => {
-                          URL.revokeObjectURL(uploadRefPreview);
-                          setUploadRefFile(null);
-                          setUploadRefPreview(null);
-                        }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="catalogue-upload-ref-picker">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <polyline points="21 15 16 10 5 21" />
-                      </svg>
-                      <span>Add reference image</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file && file.type.startsWith('image/')) {
-                            setUploadRefFile(file);
-                            setUploadRefPreview(URL.createObjectURL(file));
-                          }
-                          e.target.value = '';
-                        }}
-                      />
-                    </label>
-                  )}
-                  <input
-                    className="catalogue-upload-ref-label"
-                    type="text"
-                    placeholder="Label (e.g., Binance, Dribbble)"
-                    value={uploadRefLabel}
-                    onChange={(e) => setUploadRefLabel(e.target.value)}
-                  />
-                </div>
-
-                {(uploadGroup && uploadGroup !== '__new__') || (uploadGroup === '__new__' && newGroupName.trim()) ? (
-                  <UploadZone
-                    onFilesSelected={(files) => {
-                      const finalGroup = uploadGroup === '__new__' ? newGroupName.trim() : uploadGroup;
-                      handleFilesSelected(files, finalGroup, uploadTheme);
-                    }}
-                    disabled={uploading}
-                  />
-                ) : (
-                  <p className="catalogue-upload-hint">
-                    {!uploadGroup ? 'Select a group above to enable upload.' : 'Enter a group name to continue.'}
-                  </p>
-                )}
-              </>
-            )}
-
-            {!uploadProjectId && (
-              <p className="catalogue-upload-hint">Select a project above to enable upload.</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Quick Upload Modal */}
-      {showQuickUpload && (
-        <div className="catalogue-upload-overlay" onClick={() => { setShowQuickUpload(false); setQuickUploadProjectId(null); }}>
-          <div className="catalogue-upload-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Quick Upload</h3>
-            <p className="catalogue-upload-subtitle">Select a project and drop files. Groups auto-assigned from filenames.</p>
-
-            <Dropdown
-              className="catalogue-upload-project-dropdown"
-              value={quickUploadProjectId}
-              placeholder="Select a project..."
-              options={projects.map((p) => ({ value: p.id, label: p.name }))}
-              onChange={setQuickUploadProjectId}
-            />
-
-            {quickUploadProjectId ? (
-              <UploadZone onFilesSelected={handleQuickUpload} disabled={uploading} />
-            ) : (
-              <p className="catalogue-upload-hint">Select a project above to enable upload.</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Uploading indicator */}
-      {uploading && (
-        <div className="canvas-uploading">
-          <div className="loading-spinner" />
-          Uploading screenshots...
-        </div>
-      )}
-
-      {/* Flow Assign Modal */}
-      {assignModal && assigningScreenshot && (
-        <FlowAssignModal
-          screenshotName={assigningScreenshot.name}
-          currentFlowId={assigningScreenshot.flow_id}
-          flows={getProjectFlows(assignModal)}
-          primaryGroup={primaryGroup}
-          screenshotGroup={assigningScreenshot.group}
-          onAssign={(flowId) => handleAssignFlow(assignModal, flowId)}
-          onClose={() => setAssignModal(null)}
-        />
-      )}
-
-      {/* Bulk Action Bar */}
-      {selected.size > 0 && (
-        <div className="catalogue-bulk-bar">
-          <div className="catalogue-bulk-left">
-            <button className="catalogue-bulk-check" onClick={selectAllVisible}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                {selected.size === filteredScreenshots.length
-                  ? <><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" /><polyline points="9 11 12 14 20 6" stroke="#0f0f10" strokeWidth="3" /></>
-                  : <><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="8" y1="12" x2="16" y2="12" /></>}
-              </svg>
-            </button>
-            <span className="catalogue-bulk-count">{selected.size} selected</span>
-          </div>
-
-          <div className="catalogue-bulk-actions">
-            <button className="catalogue-bulk-btn" onClick={() => setBulkAction('group')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-              </svg>
-              Change Group
-            </button>
-            <button className="catalogue-bulk-btn" onClick={() => setBulkAction('platform')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-                <line x1="12" y1="18" x2="12.01" y2="18" />
-              </svg>
-              Set Platform
-            </button>
-            <button className="catalogue-bulk-btn" onClick={() => setBulkAction('assign')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="16 3 21 3 21 8" />
-                <line x1="4" y1="20" x2="21" y2="3" />
-              </svg>
-              Assign to Flow
-            </button>
-            <button className="catalogue-bulk-btn catalogue-bulk-btn-danger" onClick={() => setConfirmDelete({ type: 'bulk' })}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-              </svg>
-              Delete
-            </button>
-            <button className="catalogue-bulk-btn-close" onClick={clearSelection}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Assign to Flow Modal */}
-      {bulkAction === 'assign' && (
-        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
-          <div className="flow-assign-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Assign {selected.size} to Flow</h3>
-            <div className="flow-assign-options">
-              <label className="flow-assign-option">
-                <input type="radio" name="bulk-flow" defaultChecked onChange={() => {}} />
-                <span>Unassigned</span>
-              </label>
-              {bulkFlows.map((f) => (
-                <label key={f.id} className="flow-assign-option">
-                  <input type="radio" name="bulk-flow" onChange={() => handleBulkAssignFlow(f.id)} />
-                  <span>{f.name}</span>
-                </label>
-              ))}
-            </div>
-            {bulkFlows.length === 0 && (
-              <p className="flow-assign-empty">No flows available for selected screenshots.</p>
-            )}
-            <div className="flow-assign-actions">
-              <button className="btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
-              <button className="btn-primary" onClick={() => handleBulkAssignFlow(null)}>Unassign All</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Set Platform Modal */}
-      {bulkAction === 'platform' && (
-        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
-          <div className="flow-assign-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Set Platform for {selected.size}</h3>
-            <div className="flow-assign-options">
-              <label className="flow-assign-option">
-                <input type="radio" name="bulk-platform" onChange={() => handleBulkPlatform('mobile')} />
-                <span>Mobile</span>
-              </label>
-              <label className="flow-assign-option">
-                <input type="radio" name="bulk-platform" onChange={() => handleBulkPlatform('web')} />
-                <span>Web</span>
-              </label>
-              <label className="flow-assign-option">
-                <input type="radio" name="bulk-platform" onChange={() => handleBulkPlatform(null)} />
-                <span>No platform</span>
-              </label>
-            </div>
-            <div className="flow-assign-actions">
-              <button className="btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Change Group Modal */}
-      {bulkAction === 'group' && (
-        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
-          <div className="flow-assign-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Move {selected.size} to Group</h3>
-            <div className="catalogue-upload-groups" style={{ marginTop: 12 }}>
-              {allGroups.map((g) => (
-                <button
-                  key={g}
-                  className={`catalogue-upload-group-chip ${bulkGroupValue === g ? 'active' : ''}`}
-                  onClick={() => setBulkGroupValue(g)}
-                >
-                  {g}
-                  {primaryGroup === g && <span className="catalogue-upload-group-primary">Primary</span>}
-                </button>
-              ))}
-            </div>
-            <input
-              className="catalogue-filter"
-              style={{ width: '100%', marginTop: 12 }}
-              type="text"
-              placeholder="Or type a new group name..."
-              value={bulkGroupValue}
-              onChange={(e) => setBulkGroupValue(e.target.value)}
-            />
-            <div className="flow-assign-actions">
-              <button className="btn-secondary" onClick={() => { setBulkAction(null); setBulkGroupValue(''); }}>Cancel</button>
-              <button
-                className="btn-primary"
-                disabled={!bulkGroupValue.trim()}
-                onClick={() => handleBulkChangeGroup(bulkGroupValue)}
-              >
-                Move to "{bulkGroupValue.trim() || '...'}"
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm Delete */}
-      {confirmDelete && (
-        <ConfirmModal
-          title={`Delete ${selected.size} Screenshot${selected.size > 1 ? 's' : ''}`}
-          message={`This will permanently delete ${selected.size} screenshot${selected.size > 1 ? 's' : ''} and remove them from any flows. This cannot be undone.`}
-          onConfirm={() => { setConfirmDelete(null); handleBulkDelete(); }}
-          onCancel={() => setConfirmDelete(null)}
-        />
-      )}
-
-      {/* Toast */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      <CatalogueBulkBar filteredScreenshotsCount={filteredScreenshots.length} selectedCount={selected.size} selectedVisibleCount={selectedVisibleCount} onClearSelection={clearSelection} onOpenDeleteConfirm={() => setConfirmDelete({ type: 'bulk' })} onSelectAllVisible={selectAllVisible} onSetBulkAction={setBulkAction} />
     </div>
   );
 }

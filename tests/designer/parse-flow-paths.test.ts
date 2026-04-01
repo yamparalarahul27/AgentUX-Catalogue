@@ -54,4 +54,23 @@ describe('parseMultiPathFlow', () => {
       ['Review', 'Done'],
     ]);
   });
+
+  it('supports both -> and > connectors in the same flow text', () => {
+    const graph = parseMultiPathFlow(`
+      Start > Review -> Done
+      Start -> Review > Publish
+    `);
+
+    expect(graph.nodeNames).toEqual([
+      'Start',
+      'Review',
+      'Done',
+      'Publish',
+    ]);
+    expect(graph.edges).toEqual([
+      ['Start', 'Review'],
+      ['Review', 'Done'],
+      ['Review', 'Publish'],
+    ]);
+  });
 });

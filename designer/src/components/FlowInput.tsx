@@ -19,13 +19,13 @@ export function FlowInput({ onInsert, onCancel }: FlowInputProps) {
       <div className="flow-input-modal" onClick={(e) => e.stopPropagation()}>
         <h3>Add Flow</h3>
         <p className="flow-input-hint">
-          Use <code>-&gt;</code> to connect steps. One path per line — duplicate steps merge automatically.
+          Use <code>-&gt;</code> or <code>&gt;</code> to connect steps. One path per line — duplicate steps merge automatically.
         </p>
         <textarea
           className="flow-input-field"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={"Login -> Enter email -> Email OTP -> Home\nLogin -> Enter email -> Forgot password -> Reset"}
+          placeholder={"Login > Enter email > Email OTP > Home\nLogin > Enter email > Forgot password > Reset"}
           rows={4}
           autoFocus
         />
