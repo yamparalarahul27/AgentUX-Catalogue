@@ -54,7 +54,6 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
     const { data } = await supabase
       .from('projects')
       .select('*')
-      .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
     if (data) {

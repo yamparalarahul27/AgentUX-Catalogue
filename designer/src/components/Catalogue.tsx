@@ -55,7 +55,6 @@ export function Catalogue({ user }: CatalogueProps) {
     const { data: projectData } = await supabase
       .from('projects')
       .select('*')
-      .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
     if (!projectData || projectData.length === 0) {
@@ -83,17 +82,23 @@ export function Catalogue({ user }: CatalogueProps) {
     ]);
 
     if (screenshotRes.data) {
-      // Load version counts
+      // Load version + comment counts
       const screenshotIds = screenshotRes.data.map((s: ScreenshotNode) => s.id);
       const versionCounts: Record<string, number> = {};
+      const commentCounts: Record<string, number> = {};
       if (screenshotIds.length > 0) {
-        const { data: versionData } = await supabase
-          .from('screenshot_versions')
-          .select('screenshot_id')
-          .in('screenshot_id', screenshotIds);
-        if (versionData) {
-          for (const v of versionData) {
+        const [versionRes, commentRes] = await Promise.all([
+          supabase.from('screenshot_versions').select('screenshot_id').in('screenshot_id', screenshotIds),
+          supabase.from('screenshot_comments').select('screenshot_id').in('screenshot_id', screenshotIds),
+        ]);
+        if (versionRes.data) {
+          for (const v of versionRes.data) {
             versionCounts[v.screenshot_id] = (versionCounts[v.screenshot_id] || 0) + 1;
+          }
+        }
+        if (commentRes.data) {
+          for (const c of commentRes.data) {
+            commentCounts[c.screenshot_id] = (commentCounts[c.screenshot_id] || 0) + 1;
           }
         }
       }
@@ -104,6 +109,7 @@ export function Catalogue({ user }: CatalogueProps) {
           ? supabase.storage.from('screenshots').getPublicUrl(s.storage_path).data.publicUrl
           : '',
         version_count: versionCounts[s.id] || 0,
+        comment_count: commentCounts[s.id] || 0,
       }));
       setScreenshots(withUrls);
     }
@@ -206,6 +212,12 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   // Platform handler
+  function handleCommentCountChange(screenshotId: string, delta: number) {
+    setScreenshots((prev) => prev.map((s) =>
+      s.id === screenshotId ? { ...s, comment_count: (s.comment_count ?? 0) + delta } : s
+    ));
+  }
+
   async function handlePlatformChange(id: string, platform: 'mobile' | 'web' | null) {
     await supabase.from('screenshots').update({ platform }).eq('id', id);
     setScreenshots((prev) => prev.map((s) => (s.id === id ? { ...s, platform } : s)));
@@ -698,6 +710,8 @@ export function Catalogue({ user }: CatalogueProps) {
                       onReplaceImage={handleReplaceImage}
                       onAssignFlow={setAssignModal}
                       onPlatformChange={handlePlatformChange}
+                      userEmail={user.email || ''}
+                      onCommentCountChange={handleCommentCountChange}
                     />
                   ))}
                 </div>

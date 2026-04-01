@@ -33,6 +33,7 @@ export interface ScreenshotNode {
   reference_storage_path: string | null;
   reference_label: string | null;
   version_count?: number;
+  comment_count?: number;
   position_x: number | null;
   position_y: number | null;
   metadata: Record<string, string>;
@@ -70,6 +71,14 @@ export interface ScreenshotVersion {
   file_name: string;
   image_url?: string;
   created_at?: string;
+}
+
+export interface ScreenshotComment {
+  id: string;
+  screenshot_id: string;
+  user_email: string;
+  text: string;
+  created_at: string;
 }
 
 export interface ParsedScreenshotName {

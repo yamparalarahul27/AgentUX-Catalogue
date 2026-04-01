@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import type { ScreenshotNode, ScreenshotVersion } from '../types';
+import type { ScreenshotNode, ScreenshotVersion, ScreenshotComment } from '../types';
 import { supabase } from '../lib/supabase';
 import { getGroupColor } from '../lib/naming';
 import { Dropdown } from './Dropdown';
@@ -20,6 +20,8 @@ interface CatalogueCardProps {
   onReplaceImage: (id: string, file: File) => void;
   onAssignFlow: (id: string) => void;
   onPlatformChange: (id: string, platform: 'mobile' | 'web' | null) => void;
+  userEmail: string;
+  onCommentCountChange?: (screenshotId: string, delta: number) => void;
 }
 
 export function CatalogueCard({
@@ -36,6 +38,8 @@ export function CatalogueCard({
   onReplaceImage,
   onAssignFlow,
   onPlatformChange,
+  userEmail,
+  onCommentCountChange,
 }: CatalogueCardProps) {
   const [editingName, setEditingName] = useState(false);
   const [editingGroup, setEditingGroup] = useState(false);
@@ -43,6 +47,9 @@ export function CatalogueCard({
   const [showVersions, setShowVersions] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [comments, setComments] = useState<ScreenshotComment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [loadingComments, setLoadingComments] = useState(false);
   const [versions, setVersions] = useState<ScreenshotVersion[]>([]);
   const [name, setName] = useState(screenshot.name);
   const [group, setGroup] = useState(screenshot.group || '');
@@ -79,6 +86,41 @@ export function CatalogueCard({
       }
     })();
   }, [showVersions, screenshot.id]);
+
+  useEffect(() => {
+    if (!showLightbox) return;
+    setLoadingComments(true);
+    supabase
+      .from('screenshot_comments')
+      .select('*')
+      .eq('screenshot_id', screenshot.id)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        if (data) setComments(data);
+        setLoadingComments(false);
+      });
+  }, [showLightbox, screenshot.id]);
+
+  async function addComment() {
+    const trimmed = newComment.trim();
+    if (!trimmed) return;
+    const { data } = await supabase
+      .from('screenshot_comments')
+      .insert({ screenshot_id: screenshot.id, user_email: userEmail, text: trimmed })
+      .select()
+      .single();
+    if (data) {
+      setComments((prev) => [...prev, data]);
+      setNewComment('');
+      onCommentCountChange?.(screenshot.id, 1);
+    }
+  }
+
+  async function deleteComment(commentId: string) {
+    await supabase.from('screenshot_comments').delete().eq('id', commentId);
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    onCommentCountChange?.(screenshot.id, -1);
+  }
 
   function commitName() {
     const trimmed = name.trim();
@@ -162,6 +204,14 @@ export function CatalogueCard({
             >
               v{(screenshot.version_count ?? 0) + 1}
             </button>
+          )}
+          {(screenshot.comment_count ?? 0) > 0 && (
+            <span className="catalogue-card-comment-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              {screenshot.comment_count}
+            </span>
           )}
         </div>
         <div className="catalogue-card-actions">
@@ -338,12 +388,62 @@ export function CatalogueCard({
               </svg>
             </button>
           </div>
-          <img
-            src={screenshot.image_url}
-            alt={screenshot.name}
-            className="catalogue-lightbox-img"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="catalogue-lightbox-body" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={screenshot.image_url}
+              alt={screenshot.name}
+              className="catalogue-lightbox-img"
+            />
+            <div className="catalogue-lightbox-comments">
+              <div className="catalogue-lightbox-comments-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Comments ({comments.length})
+              </div>
+              <div className="catalogue-lightbox-comments-list">
+                {loadingComments ? (
+                  <div className="catalogue-lightbox-comments-empty"><div className="loading-spinner" /></div>
+                ) : comments.length === 0 ? (
+                  <p className="catalogue-lightbox-comments-empty">No comments yet</p>
+                ) : (
+                  comments.map((c) => (
+                    <div key={c.id} className="catalogue-lightbox-comment">
+                      <div className="catalogue-lightbox-comment-top">
+                        <span className="catalogue-lightbox-comment-email">{c.user_email}</span>
+                        <span className="catalogue-lightbox-comment-time">
+                          {new Date(c.created_at).toLocaleDateString()} {new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {c.user_email === userEmail && (
+                          <button className="catalogue-lightbox-comment-delete" onClick={() => deleteComment(c.id)} title="Delete comment">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      <p className="catalogue-lightbox-comment-text">{c.text}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="catalogue-lightbox-comment-input">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addComment()}
+                  placeholder="Add a comment..."
+                />
+                <button onClick={addComment} disabled={!newComment.trim()}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>,
         document.body,
       )}

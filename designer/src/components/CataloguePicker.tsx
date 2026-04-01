@@ -30,7 +30,6 @@ export function CataloguePicker({ projectId, flowId, userId, onAdd, onClose }: C
     const { data: projectData } = await supabase
       .from('projects')
       .select('id, primary_group')
-      .eq('user_id', userId)
       .order('updated_at', { ascending: false });
 
     const pg = projectData?.find((p: { id: string }) => p.id === projectId)?.primary_group || null;
