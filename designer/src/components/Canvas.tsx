@@ -511,7 +511,27 @@ export function Canvas({ user }: CanvasProps) {
   function handleAddFromCatalogue(added: ScreenshotNode[]) {
     setShowCataloguePicker(false);
     if (added.length > 0) {
-      setScreenshots((prev) => [...prev, ...added]);
+      // Position new screenshots to the right of existing ones
+      let startX = 0;
+      let startY = 0;
+      if (nodes.length > 0) {
+        const maxX = Math.max(...nodes.map((n) => n.position.x + NODE_WIDTH));
+        startX = maxX + RANK_SEP;
+        startY = nodes.reduce((sum, n) => sum + n.position.y, 0) / nodes.length;
+      }
+
+      const positioned = added.map((s, i) => ({
+        ...s,
+        position_x: startX + i * (NODE_WIDTH + RANK_SEP),
+        position_y: startY,
+      }));
+
+      // Save positions to DB
+      for (const s of positioned) {
+        supabase.from('screenshots').update({ position_x: s.position_x, position_y: s.position_y }).eq('id', s.id).then(() => {});
+      }
+
+      setScreenshots((prev) => [...prev, ...positioned]);
       setToast({ message: `Added ${added.length} screenshot${added.length > 1 ? 's' : ''} from catalogue`, type: 'success' });
     }
   }
@@ -524,9 +544,23 @@ export function Canvas({ user }: CanvasProps) {
     const steps = text.split('->').map((s) => s.trim()).filter(Boolean);
     if (steps.length === 0) return;
 
+    // Calculate start position to the right of existing nodes
+    let startX = 0;
+    let startY = 0;
+    if (nodes.length > 0) {
+      const maxX = Math.max(...nodes.map((n) => n.position.x + NODE_WIDTH));
+      startX = maxX + RANK_SEP;
+      // Vertically center relative to existing nodes
+      const avgY = nodes.reduce((sum, n) => sum + n.position.y, 0) / nodes.length;
+      startY = avgY;
+    }
+
     const newScreenshots: ScreenshotNode[] = [];
 
     for (let i = 0; i < steps.length; i++) {
+      const posX = startX + i * (NODE_WIDTH + RANK_SEP);
+      const posY = startY;
+
       const { data, error } = await supabase
         .from('screenshots')
         .insert({
@@ -537,6 +571,8 @@ export function Canvas({ user }: CanvasProps) {
           storage_path: '',
           sequence: i + 1,
           group: null,
+          position_x: posX,
+          position_y: posY,
         })
         .select()
         .single();
@@ -555,6 +591,8 @@ export function Canvas({ user }: CanvasProps) {
           flow_id: flowId,
           source_id: newScreenshots[i].id,
           target_id: newScreenshots[i + 1].id,
+          source_handle: 'right-source',
+          target_handle: 'left-target',
           type: 'manual',
         })
         .select()
@@ -567,7 +605,6 @@ export function Canvas({ user }: CanvasProps) {
 
     setScreenshots((prev) => [...prev, ...newScreenshots]);
     setConnections((prev) => [...prev, ...newConnections]);
-    setRelayoutKey((k) => k + 1);
 
     await supabase.from('flows').update({ updated_at: new Date().toISOString() }).eq('id', flowId);
   }
