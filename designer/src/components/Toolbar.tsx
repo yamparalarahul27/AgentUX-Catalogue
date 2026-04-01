@@ -10,7 +10,9 @@ interface ToolbarProps {
   onToolModeChange: (mode: ToolMode) => void;
   onUploadClick: () => void;
   onAddFlow: () => void;
-  onAutoConnect: () => void;
+  onAddPlaceholder?: () => void;
+  canUndo?: boolean;
+  onUndo?: () => void;
   onRelayout: () => void;
   onCatalogueAdd: () => void;
   onExport: () => void;
@@ -25,8 +27,10 @@ export function Toolbar({
   onToolModeChange,
   onUploadClick,
   onAddFlow,
+  onAddPlaceholder,
   onCatalogueAdd,
-  onAutoConnect,
+  canUndo,
+  onUndo,
   onRelayout,
   onExport,
   onBack,
@@ -108,13 +112,31 @@ export function Toolbar({
           Add Flow
         </button>
 
-        <button className="toolbar-btn" onClick={onAutoConnect} title="Auto-connect based on naming">
+        <button
+          className="toolbar-btn"
+          onClick={onAddPlaceholder}
+          title="Add placeholder node"
+          disabled={!onAddPlaceholder}
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-            <polyline points="15 3 21 3 21 9" />
-            <line x1="10" y1="14" x2="21" y2="3" />
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="16" />
           </svg>
-          Auto-Connect
+          Add Placeholder
+        </button>
+
+        <button
+          className="toolbar-btn toolbar-btn-undo"
+          onClick={onUndo}
+          title="Undo last change"
+          disabled={!canUndo || !onUndo}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 7v6h6" />
+            <path d="M3 13a9 9 0 1 0 3-6.7L3 7" />
+          </svg>
+          Undo
         </button>
 
         <button className="toolbar-btn" onClick={onRelayout} title="Re-layout nodes">

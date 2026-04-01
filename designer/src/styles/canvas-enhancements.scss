@@ -1,0 +1,33 @@
+.toolbar-btn-undo:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: none;
+  color: #7f8596;
+}
+
+.edge-popup-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  background: #0f1118;
+  border: 1px solid #242833;
+  border-radius: 6px;
+  color: #a9afbf;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edge-popup-action-btn:hover {
+  color: #f5f6f8;
+  border-color: #6366f1;
+}
+
+.edge-popup-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: #7f8596;
+  border-color: #242833;
+}

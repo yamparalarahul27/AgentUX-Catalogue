@@ -9,6 +9,7 @@ interface EdgePopupProps {
   arrowDirection: ArrowDirection;
   onChangeArrow: (dir: ArrowDirection) => void;
   onChangeLabel: (label: string) => void;
+  onInsertPlaceholder?: () => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -20,6 +21,7 @@ export function EdgePopup({
   arrowDirection,
   onChangeArrow,
   onChangeLabel,
+  onInsertPlaceholder,
   onDelete,
   onClose,
 }: EdgePopupProps) {
@@ -118,6 +120,17 @@ export function EdgePopup({
           </button>
         )}
       </div>
+
+      <div className="edge-popup-divider" />
+
+      <button className="edge-popup-action-btn" onClick={onInsertPlaceholder} disabled={!onInsertPlaceholder}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <path d="M8 12h8" />
+          <path d="M12 8v8" />
+        </svg>
+        Insert Placeholder
+      </button>
 
       <div className="edge-popup-divider" />
 

@@ -12,7 +12,7 @@ interface CataloguePickerProps {
   onClose: () => void;
 }
 
-export function CataloguePicker({ projectId, flowId, userId, onAdd, onClose }: CataloguePickerProps) {
+export function CataloguePicker({ projectId, flowId, userId: _userId, onAdd, onClose }: CataloguePickerProps) {
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
