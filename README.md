@@ -1,11 +1,66 @@
 # AgentUX
 
-An agent-agnostic visual feedback tool. Map all screens of your app, correct flows, and copy structured output that helps AI coding agents find the exact code you're referring to.
+AgentUX is a UX flow workspace for AI-built apps.
+
+It helps teams do two core things:
+
+1. Install a **Dev Module** inside their app to detect routes and runtime navigation.
+2. Use a browser-based **Flow Builder** to shape user journeys from screenshots and text.
 
 ![npm](https://img.shields.io/npm/v/@yamparala27/agentux)
 ![license](https://img.shields.io/npm/l/@yamparala27/agentux)
 
-## Installation
+## Product Overview
+
+### 1. AgentUX Dev Module (npm package)
+
+Install `@yamparala27/agentux` in your React or Next.js app to:
+
+- detect routes from code
+- track runtime navigation while using the app
+- visualize screen-to-screen flow with `<AppMap />`
+- export flow context as structured markdown/json for AI handoff
+
+### 2. AgentUX Flow Builder (web app)
+
+Flow Builder lives in `designer/` and runs in the browser (`/designer`).
+
+Key capabilities:
+
+- project + flow workspace
+- canvas with pan/zoom, relayout, and **undo**
+- add flows from screenshots or text (`>` and `->` supported)
+- publish text draft to canvas data from **Text Flow Studio**
+- placeholder screenshot nodes for planning before uploads
+- screenshot and flow comparison workflows
+- periodic data refresh while preserving current viewport context
+
+### 3. Catalogue (inside Flow Builder suite)
+
+Catalogue lives at `/designer/catalogue` and shares the same backend data as Flow Builder.
+
+Key capabilities:
+
+- central screenshot library across projects
+- flow-based filtering with desktop sidebar + mobile bottom sheet
+- sticky toolbar for filters/actions
+- search + sort (latest, oldest, A-Z)
+- assign, regroup, rename, replace, and bulk operations
+
+## Repository Structure
+
+```text
+.
+├── src/            # AgentUX dev module + CLI (published package)
+├── designer/       # Flow Builder + Catalogue React app (Vite)
+├── site/           # Landing page and built static output
+├── docs/           # PRD and implementation notes
+└── tests/          # Package and designer tests
+```
+
+## Quick Start
+
+### A) Use the Dev Module in your app
 
 ```bash
 npm install @yamparala27/agentux -D
@@ -13,22 +68,14 @@ npx agentux init
 npx agentux scan
 ```
 
-`agentux init` finds your app root and mounts `<AppMap />` automatically in one of these files:
+`agentux init` attempts to mount `<AppMap />` automatically in common React/Next entry files.
 
-- `app/layout.*` for Next.js App Router
-- `pages/_app.*` for Next.js Pages Router
-- `src/App.*` or `src/main.*` for standard React apps
-
-If you prefer, you can still wire it in manually:
-
-## Usage
-
-Add the `<AppMap />` component to your application. A floating button appears in the bottom-right corner. Click it to open an interactive map of your entire app.
+Manual usage is also supported:
 
 ```tsx
 import { AppMap } from '@yamparala27/agentux';
 
-function App() {
+export default function App() {
   return (
     <>
       <YourApp />
@@ -38,147 +85,80 @@ function App() {
 }
 ```
 
-When you click the floating button, AgentUX now starts with a `Run AgentUX` panel:
-
-- `Load agentux.json` loads the project structure from `public/agentux.json`
-- `Restart runtime capture` refreshes the runtime flow map
-- `Refresh all` reloads both the structure scan and runtime state
-
-The default view is the UX flow map, and the `Structure` view groups main screens and nested sub-screens by route path.
-
-## Features
-
-- **Route Auto-Detection** — Automatically scans your file structure to discover every screen. Supports Next.js App Router (`app/`), Next.js Pages Router (`pages/`), and React Router v6 (`createBrowserRouter`).
-
-- **Navigation Flow Mapping** — Detects `<Link>`, `<NavLink>`, `useNavigate()`, and `router.push()` calls across your codebase to map how screens connect to each other.
-
-- **Runtime Tracking** — Tracks live navigation events as you use your app. Discovers routes and flows that static analysis alone might miss.
-
-- **Interactive Canvas** — Drag-and-drop node graph powered by React Flow. Rearrange screens, zoom, pan, and auto-layout to get the view you need.
-
-- **Structured Export** — One-click copy to clipboard. Generates Markdown with screen names, route paths, component file paths, and navigation flows — optimized for AI coding agents.
-
-- **Static Analysis** — Parses your source files using Babel AST to find route definitions and navigation links. No guessing, no regex — accurate detection across TypeScript and JSX.
-
-- **Zero Config** — Drop `<AppMap />` into your app and it works. No config files, no build plugins, no setup scripts.
-
-## How It Works
-
-Instead of telling an AI agent "fix the button on the settings page", AgentUX gives the agent a complete map of your app — every screen, every route path, every component file, and how they connect.
-
-The agent gets structured output like:
-
-```markdown
-## Screens
-### Dashboard
-- **Path**: `/dashboard`
-- **Component**: `app/dashboard/page.tsx`
-
-### User Detail
-- **Path**: `/users/:id`
-- **Component**: `app/users/[id]/page.tsx`
-
-## Navigation Flows
-- Home → Dashboard (`<Link>` in `app/page.tsx:7`)
-- Dashboard → Users (`useNavigate` in `app/dashboard/page.tsx:12`)
-- Users → User Detail (`<Link>` in `app/users/page.tsx:9`)
-```
-
-This lets the agent search your codebase for the exact file and line number, rather than guessing which component you mean.
-
-## Static Analysis (Recommended)
-
-For a complete map without needing to visit every page, run static analysis first:
-
-```ts
-import { analyzeProject } from '@yamparala27/agentux/analysis';
-import { writeFileSync } from 'fs';
-
-const data = await analyzeProject('./');
-writeFileSync('agentux.json', JSON.stringify(data, null, 2));
-```
-
-Or use the CLI, which writes `public/agentux.json` for you:
+### B) Run Flow Builder locally
 
 ```bash
-npx agentux scan
+cd designer
+npm install
+npm run dev
 ```
 
-Then pass the result to the component:
+Create `designer/.env` before using real project data:
 
-```tsx
-import { AppMap } from '@yamparala27/agentux';
-import mapData from '../agentux.json';
-
-function App() {
-  return (
-    <>
-      <YourApp />
-      <AppMap data={mapData} />
-    </>
-  );
-}
+```bash
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-## Configuration
+Local URLs:
 
-```tsx
-<AppMap
-  data={mapData}                // Pre-computed data from static analysis
-  position="bottom-right"       // Floating button position
-  runtimeDetection={true}       // Track live navigation events
-  devOnly={true}                // Hide in production (default: true)
-/>
+- Flow Builder: `http://localhost:5173/designer/`
+- Catalogue: `http://localhost:5173/designer/catalogue`
+
+### C) Build the deployable site bundle
+
+From repo root:
+
+```bash
+npm run build:site
 ```
 
-## Supported Frameworks
+This builds `designer/` and outputs static assets into `site/`.
 
-| Framework | Route Detection | Link Detection |
-|---|---|---|
-| Next.js App Router | `app/` directory scanning | `<Link href>` |
-| Next.js Pages Router | `pages/` directory scanning | `<Link href>` |
-| React Router v6 | `createBrowserRouter` config | `<Link to>`, `useNavigate` |
+## CLI Reference
 
-## Requirements
+```bash
+agentux init [project-path]
+agentux scan [project-path] [--output public/agentux.json]
+```
 
-- React 18 or newer
-- Desktop browsers (development tool)
+Examples:
+
+```bash
+agentux init
+agentux scan
+agentux scan ../my-app --output public/agentux.json
+```
+
+## Supported Frameworks (Dev Module)
+
+- Next.js App Router
+- Next.js Pages Router
+- React Router
 
 ## Development
 
+From repo root:
+
 ```bash
 npm install
-npm test          # Run tests
-npm run build     # Build package
-npm run dev       # Watch mode
+npm test
+npm run build
 ```
 
-## Local Install In Another Project
-
-To use AgentUX locally without publishing it to npm, package a tarball and install it via a `file:` link:
+For designer-only build check:
 
 ```bash
-npm run pack:local
+cd designer
+npm run build
 ```
 
-That command builds the package, creates a `.tgz`, and prints an installable local link like:
+## Deployment Notes
 
-```bash
-npm install file:/absolute/path/to/yamparala27-agentux-0.1.0.tgz
-npx agentux init
-```
-
-You can also paste the same `file:` link into another project's `package.json`:
-
-```json
-{
-  "devDependencies": {
-    "@yamparala27/agentux": "file:/absolute/path/to/yamparala27-agentux-0.1.0.tgz"
-  }
-}
-```
-
-This is the safest local workflow for a React component package because it avoids the duplicate-React issues that can happen with `npm link`.
+- Vercel config is in `vercel.json`
+- Build command: `npm run build:site`
+- Output directory: `site`
+- Rewrites map `/designer` and `/designer/catalogue` to their SPA entry files
 
 ## License
 
