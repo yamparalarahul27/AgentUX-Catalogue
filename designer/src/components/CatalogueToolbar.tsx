@@ -1,4 +1,5 @@
 import { Dropdown } from './Dropdown';
+import type { CatalogueSortOption } from '../lib/catalogue-sort';
 
 interface CatalogueToolbarProps {
   activeFlowCount: number;
@@ -15,6 +16,8 @@ interface CatalogueToolbarProps {
   onFilterPlatformChange: (p: string | null) => void;
   filterTheme: string | null;
   onFilterThemeChange: (t: string | null) => void;
+  sortBy: CatalogueSortOption;
+  onSortByChange: (sort: CatalogueSortOption) => void;
   primaryGroup: string | null;
   vsGroups: string[];
   onPrimaryGroupChange: (g: string | null) => void;
@@ -23,7 +26,6 @@ interface CatalogueToolbarProps {
   onUploadClick: () => void;
   onQuickUploadClick: () => void;
   onToggleFlowSheet: () => void;
-  screenshotCount: number;
 }
 
 export function CatalogueToolbar({
@@ -41,6 +43,8 @@ export function CatalogueToolbar({
   onFilterPlatformChange,
   filterTheme,
   onFilterThemeChange,
+  sortBy,
+  onSortByChange,
   primaryGroup,
   vsGroups,
   onPrimaryGroupChange,
@@ -49,7 +53,6 @@ export function CatalogueToolbar({
   onUploadClick,
   onQuickUploadClick,
   onToggleFlowSheet,
-  screenshotCount,
 }: CatalogueToolbarProps) {
   const nonPrimaryGroups = groups.filter((g) => g !== primaryGroup);
 
@@ -111,10 +114,20 @@ export function CatalogueToolbar({
             ]}
             onChange={onFilterThemeChange}
           />
+
+          <Dropdown
+            value={sortBy}
+            placeholder="Sort"
+            options={[
+              { value: 'date-desc', label: 'Date: Latest' },
+              { value: 'date-asc', label: 'Date: Oldest' },
+              { value: 'name-asc', label: 'Name: A-Z' },
+            ]}
+            onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
+          />
         </div>
 
         <div className="catalogue-toolbar-right">
-          <span className="catalogue-count">{screenshotCount} screenshot{screenshotCount !== 1 ? 's' : ''}</span>
           <button type="button" className="btn-secondary catalogue-flow-sheet-trigger" onClick={onToggleFlowSheet}>
             <span className="catalogue-flow-sheet-trigger__copy">
               <span className="catalogue-flow-sheet-trigger__label">Flow filter</span>

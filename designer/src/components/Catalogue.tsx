@@ -44,7 +44,9 @@ export function Catalogue({ user }: CatalogueProps) {
     setFilterPlatform,
     setFilterProject,
     setFilterTheme,
+    setSortBy,
     setSearchQuery,
+    sortBy,
     vsGroups,
   } = useCatalogueFilters({ flows, projects, screenshots });
 
@@ -574,7 +576,7 @@ export function Catalogue({ user }: CatalogueProps) {
           <CatalogueFlowSidebar activeFlowCount={activeFlowCount} activeFlowFilter={activeFlowFilter} activeFlowLabel={activeFlowLabel} items={flowItems} mobileExpanded={isFlowSheetExpanded} onFlowFilterChange={setActiveFlowFilter} onMobileExpandedChange={setIsFlowSheetExpanded} />
 
           <div className="catalogue-body">
-            <CatalogueToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} filterProject={filterProject} onFilterProjectChange={setFilterProject} projects={projects.map((project) => ({ id: project.id, name: project.name }))} filterGroup={filterGroup} onFilterGroupChange={setFilterGroup} groups={allGroups} filterPlatform={filterPlatform} onFilterPlatformChange={setFilterPlatform} filterTheme={filterTheme} onFilterThemeChange={setFilterTheme} primaryGroup={primaryGroup} vsGroups={vsGroups} onPrimaryGroupChange={handlePrimaryGroupChange} onVsGroupsChange={handleVsGroupsChange} showGroupConfig={Boolean(filterProject)} onUploadClick={() => setShowUpload(true)} onQuickUploadClick={() => setShowQuickUpload(true)} screenshotCount={filteredScreenshots.length} activeFlowCount={activeFlowCount} activeFlowLabel={activeFlowLabel} onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)} />
+            <CatalogueToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} filterProject={filterProject} onFilterProjectChange={setFilterProject} projects={projects.map((project) => ({ id: project.id, name: project.name }))} filterGroup={filterGroup} onFilterGroupChange={setFilterGroup} groups={allGroups} filterPlatform={filterPlatform} onFilterPlatformChange={setFilterPlatform} filterTheme={filterTheme} onFilterThemeChange={setFilterTheme} sortBy={sortBy} onSortByChange={setSortBy} primaryGroup={primaryGroup} vsGroups={vsGroups} onPrimaryGroupChange={handlePrimaryGroupChange} onVsGroupsChange={handleVsGroupsChange} showGroupConfig={Boolean(filterProject)} onUploadClick={() => setShowUpload(true)} onQuickUploadClick={() => setShowQuickUpload(true)} activeFlowCount={activeFlowCount} activeFlowLabel={activeFlowLabel} onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)} />
 
             <CatalogueContent activeFlowFilter={activeFlowFilter} filterGroup={filterGroup} filterPlatform={filterPlatform} filterProject={filterProject} filterTheme={filterTheme} filteredScreenshots={filteredScreenshots} flowMap={flowMap} groupedScreenshots={groupedScreenshots} loading={loading} primaryGroup={primaryGroup} projectMap={projectMap} projectsCount={projects.length} searchQuery={searchQuery} selected={selected} userEmail={user.email || ''} vsGroups={vsGroups} onAssignFlow={setAssignModal} onChangeGroup={handleChangeGroup} onCommentCountChange={handleCommentCountChange} onDelete={handleDelete} onRename={handleRename} onReplaceImage={handleReplaceImage} onToggleGroupSelect={toggleGroupSelection} onToggleSelect={toggleSelect} onPlatformChange={handlePlatformChange} />
           </div>

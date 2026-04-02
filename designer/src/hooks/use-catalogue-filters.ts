@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import type { Flow, Project, ScreenshotNode } from '../types';
+import {
+  DEFAULT_CATALOGUE_SORT,
+  sortCatalogueScreenshots,
+  type CatalogueSortOption,
+} from '../lib/catalogue-sort';
 
 export const FLOW_FILTER_ALL = '__catalogue_flow_all__';
 export const FLOW_FILTER_UNASSIGNED = '__catalogue_flow_unassigned__';
@@ -27,6 +32,7 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [filterTheme, setFilterTheme] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<CatalogueSortOption>(DEFAULT_CATALOGUE_SORT);
   const [activeFlowFilter, setActiveFlowFilter] = useState<CatalogueFlowFilter>(FLOW_FILTER_ALL);
 
   const currentProject = useMemo(() => {
@@ -142,7 +148,8 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
   }), [activeFlowFilter, baseScreenshots]);
 
   const groupedScreenshots = useMemo(() => {
-    const grouped = filteredScreenshots.reduce<Record<string, ScreenshotNode[]>>((accumulator, screenshot) => {
+    const sortedScreenshots = sortCatalogueScreenshots(filteredScreenshots, sortBy);
+    const grouped = sortedScreenshots.reduce<Record<string, ScreenshotNode[]>>((accumulator, screenshot) => {
       const key = screenshot.group || 'Ungrouped';
       (accumulator[key] ||= []).push(screenshot);
       return accumulator;
@@ -165,7 +172,7 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
     });
 
     return Object.fromEntries(sortedEntries);
-  }, [filteredScreenshots, primaryGroup, vsGroups]);
+  }, [filteredScreenshots, primaryGroup, sortBy, vsGroups]);
 
   const activeFlowItem = flowItems.find((item) => item.value === activeFlowFilter) ?? flowItems[0];
 
@@ -189,7 +196,9 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
     setFilterPlatform,
     setFilterProject,
     setFilterTheme,
+    setSortBy,
     setSearchQuery,
+    sortBy,
     vsGroups,
   };
 }
