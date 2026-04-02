@@ -13,9 +13,17 @@ interface DropdownProps {
   placeholder?: string;
   onChange: (value: string | null) => void;
   className?: string;
+  disabled?: boolean;
 }
 
-export function Dropdown({ value, options, placeholder = 'Select...', onChange, className }: DropdownProps) {
+export function Dropdown({
+  value,
+  options,
+  placeholder = 'Select...',
+  onChange,
+  className,
+  disabled = false,
+}: DropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -65,7 +73,8 @@ export function Dropdown({ value, options, placeholder = 'Select...', onChange, 
       <button
         type="button"
         className="dropdown__trigger"
-        onClick={() => setOpen(!open)}
+        onClick={() => !disabled && setOpen(!open)}
+        disabled={disabled}
       >
         <span className={`dropdown__label ${!selected ? 'dropdown__label--placeholder' : ''}`}>
           {selected ? selected.label : placeholder}
@@ -75,7 +84,7 @@ export function Dropdown({ value, options, placeholder = 'Select...', onChange, 
         </svg>
       </button>
 
-      {open && createPortal(
+      {open && !disabled && createPortal(
         <div ref={menuRef} className="dropdown__menu" style={menuStyle}>
           {placeholder && (
             <button

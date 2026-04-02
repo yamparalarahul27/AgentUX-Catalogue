@@ -59,12 +59,13 @@ export function Catalogue({ user }: CatalogueProps) {
     setFilterPlatform,
     setFilterProject,
     setFilterTheme,
-    setSortBy,
+    setSortBy, setViewBy,
     setSearchQuery,
     sortBy,
+    isSortLocked,
+    viewBy,
     vsGroups,
   } = useCatalogueFilters({ flows, projects, screenshots });
-
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false), [uploadProjectId, setUploadProjectId] = useState<string | null>(null);
   const [uploadGroup, setUploadGroup] = useState(''), [newGroupName, setNewGroupName] = useState('');
@@ -84,7 +85,6 @@ export function Catalogue({ user }: CatalogueProps) {
     }
   });
   const [isFlowSheetExpanded, setIsFlowSheetExpanded] = useState(false);
-
   const uploadProjectGroups = useMemo(() => !uploadProjectId ? [] : [...new Set(
     screenshots.filter((screenshot) => screenshot.project_id === uploadProjectId).map((screenshot) => screenshot.group).filter(Boolean),
   )] as string[], [screenshots, uploadProjectId]);
@@ -114,7 +114,6 @@ export function Catalogue({ user }: CatalogueProps) {
     () => assignModal ? screenshots.find((screenshot) => screenshot.id === assignModal) ?? null : null,
     [assignModal, screenshots],
   );
-
   useEffect(() => {
     try {
       window.localStorage.setItem(CATALOGUE_VIEW_MODE_KEY, viewMode);
@@ -122,7 +121,6 @@ export function Catalogue({ user }: CatalogueProps) {
       // ignore write errors
     }
   }, [viewMode]);
-
   function resetUploadState() {
     setShowUpload(false);
     setUploadProjectId(null);
@@ -136,7 +134,6 @@ export function Catalogue({ user }: CatalogueProps) {
       setUploadRefPreview(null);
     }
   }
-
   function resetQuickUploadState() {
     setShowQuickUpload(false);
     setQuickUploadProjectId(null);
@@ -145,19 +142,16 @@ export function Catalogue({ user }: CatalogueProps) {
     setQuickUploadExistingGroup(null);
     setQuickUploadNewGroup('');
   }
-
   function handleQuickUploadProjectChange(projectId: string | null) {
     setQuickUploadProjectId(projectId);
     setQuickUploadExistingGroup(null);
   }
-
   function handleQuickUploadGroupModeChange(mode: QuickUploadGroupMode) {
     setQuickUploadGroupMode(mode);
     if (mode === 'existing') {
       setQuickUploadExistingGroup((previous) => previous || quickUploadProjectGroups[0] || null);
     }
   }
-
   function handleQuickUploadQueueAdd(files: File[]) {
     setQuickUploadQueue((previous) => {
       const seen = new Set(previous.map((item) => `${item.file.name}:${item.file.size}:${item.file.lastModified}`));
@@ -210,9 +204,15 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   function handleCommentCountChange(screenshotId: string, delta: number) {
-    setScreenshots((previous) => previous.map((screenshot) => screenshot.id === screenshotId
-      ? { ...screenshot, comment_count: (screenshot.comment_count ?? 0) + delta }
-      : screenshot));
+    setScreenshots((previous) => previous.map((screenshot) => {
+      if (screenshot.id !== screenshotId) return screenshot;
+      const nextCount = Math.max(0, (screenshot.comment_count ?? 0) + delta);
+      return {
+        ...screenshot,
+        comment_count: nextCount,
+        comment_last_added_at: delta > 0 ? new Date().toISOString() : (nextCount > 0 ? screenshot.comment_last_added_at : null),
+      };
+    }));
   }
 
   async function handlePlatformChange(id: string, platform: 'mobile' | 'web' | null) {
@@ -684,7 +684,7 @@ export function Catalogue({ user }: CatalogueProps) {
           <CatalogueFlowSidebar activeFlowCount={activeFlowCount} activeFlowFilter={activeFlowFilter} activeFlowLabel={activeFlowLabel} items={flowItems} mobileExpanded={isFlowSheetExpanded} onFlowFilterChange={setActiveFlowFilter} onMobileExpandedChange={setIsFlowSheetExpanded} />
 
           <div className="catalogue-body">
-            <CatalogueToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} filterProject={filterProject} onFilterProjectChange={setFilterProject} projects={projects.map((project) => ({ id: project.id, name: project.name }))} filterGroup={filterGroup} onFilterGroupChange={setFilterGroup} groups={allGroups} filterPlatform={filterPlatform} onFilterPlatformChange={setFilterPlatform} filterTheme={filterTheme} onFilterThemeChange={setFilterTheme} sortBy={sortBy} onSortByChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode} primaryGroup={primaryGroup} vsGroups={vsGroups} onPrimaryGroupChange={handlePrimaryGroupChange} onVsGroupsChange={handleVsGroupsChange} showGroupConfig={Boolean(filterProject)} onUploadClick={() => setShowUpload(true)} onQuickUploadClick={() => setShowQuickUpload(true)} activeFlowCount={activeFlowCount} activeFlowLabel={activeFlowLabel} onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)} />
+            <CatalogueToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} filterProject={filterProject} onFilterProjectChange={setFilterProject} projects={projects.map((project) => ({ id: project.id, name: project.name }))} filterGroup={filterGroup} onFilterGroupChange={setFilterGroup} groups={allGroups} filterPlatform={filterPlatform} onFilterPlatformChange={setFilterPlatform} filterTheme={filterTheme} onFilterThemeChange={setFilterTheme} viewBy={viewBy} onViewByChange={setViewBy} sortBy={sortBy} onSortByChange={setSortBy} isSortLocked={isSortLocked} viewMode={viewMode} onViewModeChange={setViewMode} primaryGroup={primaryGroup} vsGroups={vsGroups} onPrimaryGroupChange={handlePrimaryGroupChange} onVsGroupsChange={handleVsGroupsChange} showGroupConfig={Boolean(filterProject)} onUploadClick={() => setShowUpload(true)} onQuickUploadClick={() => setShowQuickUpload(true)} activeFlowCount={activeFlowCount} activeFlowLabel={activeFlowLabel} onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)} />
 
             <CatalogueContent activeFlowFilter={activeFlowFilter} filterGroup={filterGroup} filterPlatform={filterPlatform} filterProject={filterProject} filterTheme={filterTheme} filteredScreenshots={filteredScreenshots} flowMap={flowMap} groupedScreenshots={groupedScreenshots} loading={loading} viewMode={viewMode} sortBy={sortBy} primaryGroup={primaryGroup} projectMap={projectMap} projectsCount={projects.length} searchQuery={searchQuery} selected={selected} userEmail={user.email || ''} vsGroups={vsGroups} onAssignFlow={setAssignModal} onChangeGroup={handleChangeGroup} onCommentCountChange={handleCommentCountChange} onDelete={handleDelete} onRename={handleRename} onReplaceImage={handleReplaceImage} onToggleGroupSelect={toggleGroupSelection} onToggleSelect={toggleSelect} onPlatformChange={handlePlatformChange} />
           </div>

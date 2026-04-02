@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { Flow, Project, ScreenshotNode } from '../types';
 import {
+  DEFAULT_CATALOGUE_VIEW_BY,
+  sortByAnnotationActivity,
+  sortByCommentActivity,
+  type CatalogueViewBy,
+} from '../lib/catalogue-activity';
+import {
   DEFAULT_CATALOGUE_SORT,
   sortCatalogueScreenshots,
   type CatalogueSortOption,
@@ -33,6 +39,7 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [filterTheme, setFilterTheme] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<CatalogueSortOption>(DEFAULT_CATALOGUE_SORT);
+  const [viewBy, setViewBy] = useState<CatalogueViewBy>(DEFAULT_CATALOGUE_VIEW_BY);
   const [activeFlowFilter, setActiveFlowFilter] = useState<CatalogueFlowFilter>(FLOW_FILTER_ALL);
 
   const currentProject = useMemo(() => {
@@ -102,23 +109,38 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
     return matchesSearch && matchesProject && matchesGroup && matchesPlatform && matchesTheme;
   }), [filterGroup, filterPlatform, filterProject, filterTheme, screenshots, searchQuery]);
 
+  const viewByScreenshots = useMemo(() => {
+    if (viewBy === 'comments-added') {
+      return baseScreenshots.filter((screenshot) => (screenshot.comment_count ?? 0) > 0);
+    }
+
+    if (viewBy === 'annotations-added') {
+      return baseScreenshots.filter((screenshot) => (screenshot.annotation_count ?? 0) > 0);
+    }
+
+    return baseScreenshots;
+  }, [baseScreenshots, viewBy]);
+
   const flowCounts = useMemo(() => {
     const counts: Record<string, number> = {};
 
-    for (const screenshot of baseScreenshots) {
+    for (const screenshot of viewByScreenshots) {
       if (screenshot.flow_id) {
         counts[screenshot.flow_id] = (counts[screenshot.flow_id] || 0) + 1;
       }
     }
 
     return counts;
-  }, [baseScreenshots]);
+  }, [viewByScreenshots]);
 
-  const unassignedCount = useMemo(() => baseScreenshots.filter((screenshot) => !screenshot.flow_id).length, [baseScreenshots]);
+  const unassignedCount = useMemo(
+    () => viewByScreenshots.filter((screenshot) => !screenshot.flow_id).length,
+    [viewByScreenshots],
+  );
 
   const flowItems = useMemo<FlowSidebarItem[]>(() => {
     const defaultItems: FlowSidebarItem[] = [
-      { count: baseScreenshots.length, kind: 'all', label: 'All Screens', value: FLOW_FILTER_ALL },
+      { count: viewByScreenshots.length, kind: 'all', label: 'All Screens', value: FLOW_FILTER_ALL },
       { count: unassignedCount, kind: 'unassigned', label: 'Unassigned', value: FLOW_FILTER_UNASSIGNED },
     ];
 
@@ -133,9 +155,9 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
     }));
 
     return [...defaultItems, ...flowEntries];
-  }, [baseScreenshots.length, filterProject, flowCounts, projects, scopedFlows, unassignedCount]);
+  }, [filterProject, flowCounts, projects, scopedFlows, unassignedCount, viewByScreenshots.length]);
 
-  const filteredScreenshots = useMemo(() => baseScreenshots.filter((screenshot) => {
+  const filteredScreenshots = useMemo(() => viewByScreenshots.filter((screenshot) => {
     if (activeFlowFilter === FLOW_FILTER_ALL) {
       return true;
     }
@@ -145,10 +167,14 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
     }
 
     return screenshot.flow_id === activeFlowFilter;
-  }), [activeFlowFilter, baseScreenshots]);
+  }), [activeFlowFilter, viewByScreenshots]);
 
   const groupedScreenshots = useMemo(() => {
-    const sortedScreenshots = sortCatalogueScreenshots(filteredScreenshots, sortBy);
+    const sortedScreenshots = viewBy === 'comments-added'
+      ? sortByCommentActivity(filteredScreenshots)
+      : viewBy === 'annotations-added'
+        ? sortByAnnotationActivity(filteredScreenshots)
+        : sortCatalogueScreenshots(filteredScreenshots, sortBy);
     const grouped = sortedScreenshots.reduce<Record<string, ScreenshotNode[]>>((accumulator, screenshot) => {
       const key = screenshot.group || 'Ungrouped';
       (accumulator[key] ||= []).push(screenshot);
@@ -172,9 +198,10 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
     });
 
     return Object.fromEntries(sortedEntries);
-  }, [filteredScreenshots, primaryGroup, sortBy, vsGroups]);
+  }, [filteredScreenshots, primaryGroup, sortBy, viewBy, vsGroups]);
 
   const activeFlowItem = flowItems.find((item) => item.value === activeFlowFilter) ?? flowItems[0];
+  const isSortLocked = viewBy !== 'all';
 
   return {
     activeFlowCount: activeFlowItem?.count ?? 0,
@@ -197,8 +224,11 @@ export function useCatalogueFilters({ flows, projects, screenshots }: UseCatalog
     setFilterProject,
     setFilterTheme,
     setSortBy,
+    setViewBy,
     setSearchQuery,
     sortBy,
+    isSortLocked,
+    viewBy,
     vsGroups,
   };
 }

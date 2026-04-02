@@ -25,6 +25,10 @@ interface GalleryComment {
 
 type GalleryPanel = 'comments' | 'annotations';
 
+const GALLERY_ZOOM_MIN = 1;
+const GALLERY_ZOOM_MAX = 3;
+const GALLERY_ZOOM_STEP = 0.25;
+
 function formatDateTime(value?: string): string {
   if (!value) return '—';
   const date = new Date(value);
@@ -45,6 +49,7 @@ export function CatalogueGalleryView({
 }: CatalogueGalleryViewProps) {
   const [activeId, setActiveId] = useState<string | null>(screenshots[0]?.id ?? null);
   const [panel, setPanel] = useState<GalleryPanel>('comments');
+  const [zoom, setZoom] = useState(GALLERY_ZOOM_MIN);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [comments, setComments] = useState<GalleryComment[]>([]);
@@ -69,11 +74,15 @@ export function CatalogueGalleryView({
     [activeId, screenshots],
   );
   const active = activeIndex >= 0 ? screenshots[activeIndex] : null;
+  const zoomPercent = Math.round(zoom * 100);
+  const canZoomIn = zoom < GALLERY_ZOOM_MAX;
+  const canZoomOut = zoom > GALLERY_ZOOM_MIN;
 
   useEffect(() => {
     if (!active) return;
     setNameDraft(active.name);
     setEditingName(false);
+    setZoom(GALLERY_ZOOM_MIN);
   }, [active?.id, active?.name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -194,12 +203,68 @@ export function CatalogueGalleryView({
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
 
+  function handleZoomIn() {
+    setZoom((current) => Math.min(GALLERY_ZOOM_MAX, Number((current + GALLERY_ZOOM_STEP).toFixed(2))));
+  }
+
+  function handleZoomOut() {
+    setZoom((current) => Math.max(GALLERY_ZOOM_MIN, Number((current - GALLERY_ZOOM_STEP).toFixed(2))));
+  }
+
+  function handleZoomReset() {
+    setZoom(GALLERY_ZOOM_MIN);
+  }
+
   return (
     <div className="catalogue-gallery">
       <div className="catalogue-gallery-main">
         <div className="catalogue-gallery-preview">
+          {active.image_url && (
+            <div className="catalogue-gallery-preview-toolbar">
+              <button
+                type="button"
+                className="catalogue-gallery-preview-action"
+                onClick={handleZoomOut}
+                disabled={!canZoomOut}
+                aria-label="Zoom out"
+                title="Zoom out"
+              >
+                -
+              </button>
+              <span className="catalogue-gallery-preview-zoom">{zoomPercent}%</span>
+              <button
+                type="button"
+                className="catalogue-gallery-preview-action"
+                onClick={handleZoomIn}
+                disabled={!canZoomIn}
+                aria-label="Zoom in"
+                title="Zoom in"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                className="catalogue-gallery-preview-reset"
+                onClick={handleZoomReset}
+                disabled={!canZoomOut}
+              >
+                Reset
+              </button>
+            </div>
+          )}
+
           {active.image_url ? (
-            <img src={active.image_url} alt={active.name} />
+            <div className="catalogue-gallery-preview-stage">
+              <img
+                src={active.image_url}
+                alt={active.name}
+                style={{
+                  width: zoom > GALLERY_ZOOM_MIN ? `${zoom * 100}%` : undefined,
+                  maxWidth: zoom > GALLERY_ZOOM_MIN ? 'none' : undefined,
+                  maxHeight: zoom > GALLERY_ZOOM_MIN ? 'none' : undefined,
+                }}
+              />
+            </div>
           ) : (
             <div className="catalogue-gallery-preview-empty">No image available</div>
           )}

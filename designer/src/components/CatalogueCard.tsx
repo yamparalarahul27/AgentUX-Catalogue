@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { ScreenshotNode, ScreenshotVersion, ScreenshotComment } from '../types';
+import { ANNOTATION_METADATA_KEY, getLightboxAnnotationEntries } from '../lib/catalogue-activity';
 import { supabase } from '../lib/supabase';
 import { getGroupColor } from '../lib/naming';
 import { Dropdown } from './Dropdown';
@@ -27,8 +28,6 @@ interface ImageLayout {
   height: number;
 }
 
-const ANNOTATION_STORAGE_KEY = 'lightbox_annotations';
-
 function getAnnotationId() {
   return globalThis.crypto?.randomUUID?.() ?? `annotation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -40,25 +39,18 @@ function formatDateTime(value?: string) {
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-function parseAnnotations(metadata: Record<string, string> | undefined): LightboxAnnotation[] {
-  const raw = metadata?.[ANNOTATION_STORAGE_KEY];
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((item) => ({
-        id: String((item as LightboxAnnotation).id || getAnnotationId()),
-        x: Number((item as LightboxAnnotation).x),
-        y: Number((item as LightboxAnnotation).y),
-        text: String((item as LightboxAnnotation).text || ''),
-        user_email: String((item as LightboxAnnotation).user_email || 'Unknown'),
-        created_at: String((item as LightboxAnnotation).created_at || new Date().toISOString()),
-      }))
-      .filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y) && item.text.trim().length > 0);
-  } catch {
-    return [];
-  }
+function parseAnnotations(metadata: Record<string, unknown> | undefined): LightboxAnnotation[] {
+  const entries = getLightboxAnnotationEntries(metadata);
+  return entries
+    .map((entry) => ({
+      id: String(entry.id || getAnnotationId()),
+      x: Number(entry.x),
+      y: Number(entry.y),
+      text: String(entry.text || ''),
+      user_email: String(entry.user_email || 'Unknown'),
+      created_at: String(entry.created_at || entry.createdAt || new Date().toISOString()),
+    }))
+    .filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y) && item.text.trim().length > 0);
 }
 
 function getContainLayout(container: ImageSize | null, image: ImageSize | null): ImageLayout | null {
@@ -121,7 +113,7 @@ export function CatalogueCard({
   const [newComment, setNewComment] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
   const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]);
-  const [annotationMetadata, setAnnotationMetadata] = useState<Record<string, string>>(screenshot.metadata || {});
+  const [annotationMetadata, setAnnotationMetadata] = useState<Record<string, unknown>>(screenshot.metadata || {});
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [annotationMode, setAnnotationMode] = useState(false);
   const [annotationDraftText, setAnnotationDraftText] = useState('');
@@ -254,7 +246,7 @@ export function CatalogueCard({
   }
 
   async function saveAnnotations(nextAnnotations: LightboxAnnotation[]) {
-    const nextMetadata = { ...annotationMetadata, [ANNOTATION_STORAGE_KEY]: JSON.stringify(nextAnnotations) };
+    const nextMetadata = { ...annotationMetadata, [ANNOTATION_METADATA_KEY]: JSON.stringify(nextAnnotations) };
     setAnnotations(nextAnnotations);
     setAnnotationMetadata(nextMetadata);
     setAnnotationError('');

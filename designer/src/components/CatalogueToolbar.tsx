@@ -1,7 +1,38 @@
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { Dropdown } from './Dropdown';
+import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
+
+type ToolbarFilterKey = 'project' | 'group' | 'platform' | 'theme' | 'view';
+
+const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
+const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['project', 'group', 'platform', 'theme', 'view'];
+
+const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
+  { key: 'project', label: 'Projects' },
+  { key: 'group', label: 'Groups' },
+  { key: 'platform', label: 'Platforms' },
+  { key: 'theme', label: 'Themes' },
+  { key: 'view', label: 'View' },
+];
+
+function parseVisibleFilters(value: string | null): Set<ToolbarFilterKey> {
+  if (!value) return new Set(DEFAULT_VISIBLE_FILTERS);
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return new Set(DEFAULT_VISIBLE_FILTERS);
+    const next = parsed.filter(
+      (item): item is ToolbarFilterKey => FILTER_OPTIONS.some((option) => option.key === item),
+    );
+    return new Set(next);
+  } catch {
+    return new Set(DEFAULT_VISIBLE_FILTERS);
+  }
+}
 
 interface CatalogueToolbarProps {
   activeFlowCount: number;
@@ -18,8 +49,11 @@ interface CatalogueToolbarProps {
   onFilterPlatformChange: (p: string | null) => void;
   filterTheme: string | null;
   onFilterThemeChange: (t: string | null) => void;
+  viewBy: CatalogueViewBy;
+  onViewByChange: (mode: CatalogueViewBy) => void;
   sortBy: CatalogueSortOption;
   onSortByChange: (sort: CatalogueSortOption) => void;
+  isSortLocked: boolean;
   viewMode: CatalogueViewMode;
   onViewModeChange: (view: CatalogueViewMode) => void;
   primaryGroup: string | null;
@@ -47,8 +81,11 @@ export function CatalogueToolbar({
   onFilterPlatformChange,
   filterTheme,
   onFilterThemeChange,
+  viewBy,
+  onViewByChange,
   sortBy,
   onSortByChange,
+  isSortLocked,
   viewMode,
   onViewModeChange,
   primaryGroup,
@@ -61,6 +98,17 @@ export function CatalogueToolbar({
   onToggleFlowSheet,
 }: CatalogueToolbarProps) {
   const nonPrimaryGroups = groups.filter((g) => g !== primaryGroup);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [visibleFilters, setVisibleFilters] = useState<Set<ToolbarFilterKey>>(() => {
+    try {
+      return parseVisibleFilters(window.localStorage.getItem(TOOLBAR_FILTER_KEY));
+    } catch {
+      return new Set(DEFAULT_VISIBLE_FILTERS);
+    }
+  });
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
 
   function toggleVsGroup(g: string) {
     if (vsGroups.includes(g)) {
@@ -68,6 +116,79 @@ export function CatalogueToolbar({
     } else {
       onVsGroupsChange([...vsGroups, g]);
     }
+  }
+
+  useEffect(() => {
+    if (!filterMenuOpen) return;
+
+    function handleClick(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        menuRef.current && !menuRef.current.contains(target)
+      ) {
+        setFilterMenuOpen(false);
+      }
+    }
+
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setFilterMenuOpen(false);
+    }
+
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [filterMenuOpen]);
+
+  useLayoutEffect(() => {
+    if (!filterMenuOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const preferredWidth = 220;
+    const left = Math.min(
+      Math.max(12, rect.left),
+      Math.max(12, viewportWidth - preferredWidth - 12),
+    );
+    setMenuStyle({
+      position: 'fixed',
+      top: rect.bottom + 8,
+      left,
+      width: preferredWidth,
+    });
+  }, [filterMenuOpen]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TOOLBAR_FILTER_KEY, JSON.stringify(Array.from(visibleFilters)));
+    } catch {
+      // ignore persistence failures
+    }
+  }, [visibleFilters]);
+
+  function toggleVisibleFilter(key: ToolbarFilterKey) {
+    const isVisible = visibleFilters.has(key);
+
+    if (isVisible) {
+      if (key === 'project') onFilterProjectChange(null);
+      if (key === 'group') onFilterGroupChange(null);
+      if (key === 'platform') onFilterPlatformChange(null);
+      if (key === 'theme') onFilterThemeChange(null);
+      if (key === 'view') onViewByChange('all');
+    }
+
+    setVisibleFilters((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function isFilterVisible(key: ToolbarFilterKey) {
+    return visibleFilters.has(key);
   }
 
   return (
@@ -87,49 +208,80 @@ export function CatalogueToolbar({
             />
           </div>
 
-          <Dropdown
-            value={filterProject}
-            placeholder="All Projects"
-            options={projects.map((p) => ({ value: p.id, label: p.name }))}
-            onChange={onFilterProjectChange}
-          />
+          <button
+            ref={triggerRef}
+            type="button"
+            className={`btn-secondary catalogue-filter-toggle ${filterMenuOpen ? 'is-open' : ''}`}
+            onClick={() => setFilterMenuOpen((previous) => !previous)}
+          >
+            + Filter
+          </button>
 
-          <Dropdown
-            value={filterGroup}
-            placeholder="All Groups"
-            options={groups.map((g) => ({ value: g, label: g, badge: g === primaryGroup ? 'Primary' : undefined }))}
-            onChange={onFilterGroupChange}
-          />
+          {isFilterVisible('project') && (
+            <Dropdown
+              value={filterProject}
+              placeholder="Project"
+              options={projects.map((p) => ({ value: p.id, label: p.name }))}
+              onChange={onFilterProjectChange}
+            />
+          )}
 
-          <Dropdown
-            value={filterPlatform}
-            placeholder="All Platforms"
-            options={[
-              { value: 'mobile', label: 'Mobile' },
-              { value: 'web', label: 'Web' },
-            ]}
-            onChange={onFilterPlatformChange}
-          />
+          {isFilterVisible('group') && (
+            <Dropdown
+              value={filterGroup}
+              placeholder="Group"
+              options={groups.map((g) => ({ value: g, label: g, badge: g === primaryGroup ? 'Primary' : undefined }))}
+              onChange={onFilterGroupChange}
+            />
+          )}
 
-          <Dropdown
-            value={filterTheme}
-            placeholder="All Themes"
-            options={[
-              { value: 'light', label: 'Light' },
-              { value: 'dark', label: 'Dark' },
-            ]}
-            onChange={onFilterThemeChange}
-          />
+          {isFilterVisible('platform') && (
+            <Dropdown
+              value={filterPlatform}
+              placeholder="Platform"
+              options={[
+                { value: 'mobile', label: 'Mobile' },
+                { value: 'web', label: 'Web' },
+              ]}
+              onChange={onFilterPlatformChange}
+            />
+          )}
+
+          {isFilterVisible('theme') && (
+            <Dropdown
+              value={filterTheme}
+              placeholder="Theme"
+              options={[
+                { value: 'light', label: 'Light' },
+                { value: 'dark', label: 'Dark' },
+              ]}
+              onChange={onFilterThemeChange}
+            />
+          )}
+
+          {isFilterVisible('view') && (
+            <Dropdown
+              value={viewBy}
+              placeholder="View by"
+              options={[
+                { value: 'all', label: 'All screenshots' },
+                { value: 'comments-added', label: 'Comments added' },
+                { value: 'annotations-added', label: 'Annotations added' },
+              ]}
+              onChange={(value) => onViewByChange((value || 'all') as CatalogueViewBy)}
+            />
+          )}
 
           <Dropdown
             value={sortBy}
-            placeholder="Sort"
+            placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
             options={[
               { value: 'date-desc', label: 'Date: Latest' },
               { value: 'date-asc', label: 'Date: Oldest' },
               { value: 'name-asc', label: 'Name: A-Z' },
             ]}
             onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
+            disabled={isSortLocked}
           />
 
           <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
@@ -151,6 +303,29 @@ export function CatalogueToolbar({
           </button>
         </div>
       </div>
+
+      {filterMenuOpen && createPortal(
+        <div ref={menuRef} className="catalogue-filter-menu" style={menuStyle}>
+          <div className="catalogue-filter-menu__title">Visible filters</div>
+          <div className="catalogue-filter-menu__list">
+            {FILTER_OPTIONS.map((option) => {
+              const selected = visibleFilters.has(option.key);
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  className={`catalogue-filter-menu__item ${selected ? 'is-selected' : ''}`}
+                  onClick={() => toggleVisibleFilter(option.key)}
+                >
+                  <span>{option.label}</span>
+                  <span className="catalogue-filter-menu__check">{selected ? '✓' : ''}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {showGroupConfig && (
         <div className="catalogue-group-config">

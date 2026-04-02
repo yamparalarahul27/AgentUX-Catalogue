@@ -4,6 +4,7 @@ import { CatalogueApp } from './CatalogueApp';
 import './styles/designer.scss';
 import './styles/catalogue-sidebar.scss';
 import './styles/catalogue-views.scss';
+import './styles/catalogue-gallery-zoom.scss';
 import './styles/catalogue-lightbox-annotations.scss';
 import './styles/canvas-enhancements.scss';
 

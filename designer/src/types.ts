@@ -34,9 +34,12 @@ export interface ScreenshotNode {
   reference_label: string | null;
   version_count?: number;
   comment_count?: number;
+  comment_last_added_at?: string | null;
+  annotation_count?: number;
+  annotation_last_added_at?: string | null;
   position_x: number | null;
   position_y: number | null;
-  metadata: Record<string, string>;
+  metadata: Record<string, unknown>;
   created_at?: string;
 }
 

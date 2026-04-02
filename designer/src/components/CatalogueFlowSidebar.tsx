@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import {
   FLOW_FILTER_ALL,
   type CatalogueFlowFilter,
@@ -23,12 +25,33 @@ export function CatalogueFlowSidebar({
   onFlowFilterChange,
   onMobileExpandedChange,
 }: CatalogueFlowSidebarProps) {
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const summaryItems = items.filter((item) => item.kind !== 'flow');
   const flowItems = items.filter((item) => item.kind === 'flow');
 
   function handleSelect(value: CatalogueFlowFilter) {
     onFlowFilterChange(value);
     onMobileExpandedChange(false);
+  }
+
+  function PanelLeftCloseIcon() {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M9 4v16" />
+        <path d="m14 9-3 3 3 3" />
+      </svg>
+    );
+  }
+
+  function PanelRightCloseIcon() {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M15 4v16" />
+        <path d="m10 9 3 3-3 3" />
+      </svg>
+    );
   }
 
   function renderItem(item: FlowSidebarItem) {
@@ -52,10 +75,23 @@ export function CatalogueFlowSidebar({
 
   return (
     <>
-      <aside className="catalogue-flow-sidebar" aria-label="Flow filters">
+      <aside className={`catalogue-flow-sidebar ${desktopCollapsed ? 'is-collapsed' : ''}`} aria-label="Flow filters">
         <div className="catalogue-flow-sidebar__header">
-          <p className="catalogue-flow-sidebar__eyebrow">Navigate</p>
-          <h2>Flows</h2>
+          <div className="catalogue-flow-sidebar__header-top">
+            <div>
+              <p className="catalogue-flow-sidebar__eyebrow">Navigate</p>
+              <h2>Flows</h2>
+            </div>
+            <button
+              type="button"
+              className="catalogue-flow-sidebar__toggle"
+              title="Close flow navigation"
+              aria-label="Close flow navigation"
+              onClick={() => setDesktopCollapsed(true)}
+            >
+              <PanelLeftCloseIcon />
+            </button>
+          </div>
           <p className="catalogue-flow-sidebar__description">Filter the catalogue by assigned journey, or jump straight to anything still unassigned.</p>
         </div>
 
@@ -70,6 +106,18 @@ export function CatalogueFlowSidebar({
           )}
         </div>
       </aside>
+
+      {desktopCollapsed && (
+        <button
+          type="button"
+          className="catalogue-flow-sidebar__opener"
+          title="Open flow navigation"
+          aria-label="Open flow navigation"
+          onClick={() => setDesktopCollapsed(false)}
+        >
+          <PanelRightCloseIcon />
+        </button>
+      )}
 
       <div className={`catalogue-mobile-flow-sheet ${mobileExpanded ? 'is-expanded' : ''}`}>
         <button

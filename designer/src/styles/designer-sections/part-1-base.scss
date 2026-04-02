@@ -39,6 +39,11 @@ $success: #22c55e;
 
   &:hover { border-color: $text-dim; }
   .dropdown--open & { border-color: $accent; }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
 }
 
 .dropdown__label {
@@ -64,7 +69,7 @@ $success: #22c55e;
   border: 1px solid $border;
   border-radius: 8px;
   padding: 4px;
-  z-index: 100;
+  z-index: 260;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 
   &::-webkit-scrollbar { width: 4px; }
@@ -585,4 +590,3 @@ body {
 
   &:hover .project-delete { opacity: 1; }
 }
-
