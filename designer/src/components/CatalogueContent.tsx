@@ -7,6 +7,7 @@ import { CatalogueCard } from './CatalogueCard';
 import { ConfirmModal } from './ConfirmModal';
 import { Dropdown } from './Dropdown';
 import { FlowAssignModal } from './FlowAssignModal';
+import { CatalogueQuickUploadPanel } from './CatalogueQuickUploadPanel';
 import { Toast } from './Toast';
 import { UploadZone } from './UploadZone';
 
@@ -179,6 +180,16 @@ interface CatalogueOverlaysProps {
   primaryGroup: string | null;
   projects: { id: string; name: string }[];
   quickUploadProjectId: string | null;
+  quickUploadGroupMode: 'auto' | 'existing' | 'new';
+  quickUploadExistingGroup: string | null;
+  quickUploadNewGroup: string;
+  quickUploadProjectGroups: string[];
+  quickUploadQueue: {
+    id: string;
+    fileName: string;
+    parsedName: string;
+    parsedGroup: string | null;
+  }[];
   selectedCount: number;
   showQuickUpload: boolean;
   showUpload: boolean;
@@ -205,6 +216,12 @@ interface CatalogueOverlaysProps {
   onConfirmBulkDelete: () => void;
   onQuickUploadFilesSelected: (files: File[]) => void;
   onQuickUploadProjectChange: (value: string | null) => void;
+  onQuickUploadGroupModeChange: (mode: 'auto' | 'existing' | 'new') => void;
+  onQuickUploadExistingGroupChange: (value: string | null) => void;
+  onQuickUploadNewGroupChange: (value: string) => void;
+  onQuickUploadRemoveQueuedFile: (id: string) => void;
+  onQuickUploadClearQueue: () => void;
+  onQuickUploadUploadAll: () => void;
   onRemoveUploadReference: () => void;
   onSelectUploadReference: (file: File | null) => void;
   onUploadFilesSelected: (files: File[], group: string, theme: 'light' | 'dark' | null) => void;
@@ -228,6 +245,11 @@ export function CatalogueOverlays({
   primaryGroup,
   projects,
   quickUploadProjectId,
+  quickUploadGroupMode,
+  quickUploadExistingGroup,
+  quickUploadNewGroup,
+  quickUploadProjectGroups,
+  quickUploadQueue,
   selectedCount,
   showQuickUpload,
   showUpload,
@@ -254,6 +276,12 @@ export function CatalogueOverlays({
   onConfirmBulkDelete,
   onQuickUploadFilesSelected,
   onQuickUploadProjectChange,
+  onQuickUploadGroupModeChange,
+  onQuickUploadExistingGroupChange,
+  onQuickUploadNewGroupChange,
+  onQuickUploadRemoveQueuedFile,
+  onQuickUploadClearQueue,
+  onQuickUploadUploadAll,
   onRemoveUploadReference,
   onSelectUploadReference,
   onUploadFilesSelected,
@@ -391,9 +419,9 @@ export function CatalogueOverlays({
 
       {showQuickUpload && (
         <div className="catalogue-upload-overlay" onClick={onCloseQuickUpload}>
-          <div className="catalogue-upload-modal" onClick={(event) => event.stopPropagation()}>
+          <div className="catalogue-upload-modal catalogue-upload-modal-quick" onClick={(event) => event.stopPropagation()}>
             <h3>Quick Upload</h3>
-            <p className="catalogue-upload-subtitle">Select a project and drop files. Groups auto-assigned from filenames.</p>
+            <p className="catalogue-upload-subtitle">Select a project, configure group assignment, queue files, then upload all.</p>
 
             <Dropdown
               className="catalogue-upload-project-dropdown"
@@ -404,7 +432,21 @@ export function CatalogueOverlays({
             />
 
             {quickUploadProjectId ? (
-              <UploadZone onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />
+              <CatalogueQuickUploadPanel
+                uploading={uploading}
+                quickUploadGroupMode={quickUploadGroupMode}
+                quickUploadExistingGroup={quickUploadExistingGroup}
+                quickUploadNewGroup={quickUploadNewGroup}
+                quickUploadProjectGroups={quickUploadProjectGroups}
+                quickUploadQueue={quickUploadQueue}
+                onQuickUploadFilesSelected={onQuickUploadFilesSelected}
+                onQuickUploadGroupModeChange={onQuickUploadGroupModeChange}
+                onQuickUploadExistingGroupChange={onQuickUploadExistingGroupChange}
+                onQuickUploadNewGroupChange={onQuickUploadNewGroupChange}
+                onQuickUploadRemoveQueuedFile={onQuickUploadRemoveQueuedFile}
+                onQuickUploadClearQueue={onQuickUploadClearQueue}
+                onQuickUploadUploadAll={onQuickUploadUploadAll}
+              />
             ) : (
               <p className="catalogue-upload-hint">Select a project above to enable upload.</p>
             )}

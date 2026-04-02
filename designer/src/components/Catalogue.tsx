@@ -14,6 +14,14 @@ interface CatalogueProps {
   user: User;
 }
 
+type QuickUploadGroupMode = 'auto' | 'existing' | 'new';
+
+interface QuickUploadQueueItem {
+  id: string;
+  file: File;
+  parsed: ReturnType<typeof parseScreenshotName>;
+}
+
 export function Catalogue({ user }: CatalogueProps) {
   const {
     flows,
@@ -56,7 +64,9 @@ export function Catalogue({ user }: CatalogueProps) {
   const [uploadTheme, setUploadTheme] = useState<'light' | 'dark' | null>(null), [uploadRefFile, setUploadRefFile] = useState<File | null>(null);
   const [uploadRefLabel, setUploadRefLabel] = useState(''), [uploadRefPreview, setUploadRefPreview] = useState<string | null>(null);
   const [assignModal, setAssignModal] = useState<string | null>(null), [showQuickUpload, setShowQuickUpload] = useState(false);
-  const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null), [selected, setSelected] = useState<Set<string>>(new Set());
+  const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null), [quickUploadQueue, setQuickUploadQueue] = useState<QuickUploadQueueItem[]>([]);
+  const [quickUploadGroupMode, setQuickUploadGroupMode] = useState<QuickUploadGroupMode>('auto'), [quickUploadExistingGroup, setQuickUploadExistingGroup] = useState<string | null>(null);
+  const [quickUploadNewGroup, setQuickUploadNewGroup] = useState(''), [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'assign' | 'group' | 'platform' | null>(null), [confirmDelete, setConfirmDelete] = useState<{ type: 'bulk' } | null>(null);
   const [bulkGroupValue, setBulkGroupValue] = useState(''), [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [isFlowSheetExpanded, setIsFlowSheetExpanded] = useState(false);
@@ -67,6 +77,18 @@ export function Catalogue({ user }: CatalogueProps) {
   const uploadProjectPrimary = useMemo(
     () => !uploadProjectId ? null : projects.find((project) => project.id === uploadProjectId)?.primary_group || null,
     [projects, uploadProjectId],
+  );
+  const quickUploadProjectGroups = useMemo(() => !quickUploadProjectId ? [] : [...new Set(
+    screenshots.filter((screenshot) => screenshot.project_id === quickUploadProjectId).map((screenshot) => screenshot.group).filter(Boolean),
+  )] as string[], [screenshots, quickUploadProjectId]);
+  const quickUploadQueuePreview = useMemo(
+    () => quickUploadQueue.map((item) => ({
+      id: item.id,
+      fileName: item.file.name,
+      parsedName: item.parsed.name,
+      parsedGroup: item.parsed.group,
+    })),
+    [quickUploadQueue],
   );
   const selectedVisibleCount = useMemo(() => filteredScreenshots.filter((screenshot) => selected.has(screenshot.id)).length, [filteredScreenshots, selected]);
   const bulkFlows = useMemo(() => {
@@ -93,7 +115,54 @@ export function Catalogue({ user }: CatalogueProps) {
     }
   }
 
-  function resetQuickUploadState() { setShowQuickUpload(false); setQuickUploadProjectId(null); }
+  function resetQuickUploadState() {
+    setShowQuickUpload(false);
+    setQuickUploadProjectId(null);
+    setQuickUploadQueue([]);
+    setQuickUploadGroupMode('auto');
+    setQuickUploadExistingGroup(null);
+    setQuickUploadNewGroup('');
+  }
+
+  function handleQuickUploadProjectChange(projectId: string | null) {
+    setQuickUploadProjectId(projectId);
+    setQuickUploadExistingGroup(null);
+  }
+
+  function handleQuickUploadGroupModeChange(mode: QuickUploadGroupMode) {
+    setQuickUploadGroupMode(mode);
+    if (mode === 'existing') {
+      setQuickUploadExistingGroup((previous) => previous || quickUploadProjectGroups[0] || null);
+    }
+  }
+
+  function handleQuickUploadQueueAdd(files: File[]) {
+    setQuickUploadQueue((previous) => {
+      const seen = new Set(previous.map((item) => `${item.file.name}:${item.file.size}:${item.file.lastModified}`));
+      const additions: QuickUploadQueueItem[] = [];
+
+      for (const file of files) {
+        const signature = `${file.name}:${file.size}:${file.lastModified}`;
+        if (seen.has(signature)) continue;
+        seen.add(signature);
+        additions.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name}`,
+          file,
+          parsed: parseScreenshotName(file.name),
+        });
+      }
+
+      return additions.length ? [...previous, ...additions] : previous;
+    });
+  }
+
+  function handleQuickUploadQueueRemove(id: string) {
+    setQuickUploadQueue((previous) => previous.filter((item) => item.id !== id));
+  }
+
+  function handleQuickUploadQueueClear() {
+    setQuickUploadQueue([]);
+  }
 
   async function handlePrimaryGroupChange(group: string | null) {
     if (!filterProject) {
@@ -478,8 +547,24 @@ export function Catalogue({ user }: CatalogueProps) {
     clearSelection();
   }
 
-  async function handleQuickUpload(files: File[]) {
-    if (!quickUploadProjectId) {
+  async function handleQuickUpload() {
+    if (!quickUploadProjectId || quickUploadQueue.length === 0) {
+      return;
+    }
+
+    const projectId = quickUploadProjectId;
+    const queue = [...quickUploadQueue];
+    const mode = quickUploadGroupMode;
+    const existingGroup = quickUploadExistingGroup?.trim() || null;
+    const newGroup = quickUploadNewGroup.trim();
+
+    if (mode === 'existing' && !existingGroup) {
+      setToast({ message: 'Select an existing group before uploading', type: 'error' });
+      return;
+    }
+
+    if (mode === 'new' && !newGroup) {
+      setToast({ message: 'Enter a group name before uploading', type: 'error' });
       return;
     }
 
@@ -487,11 +572,12 @@ export function Catalogue({ user }: CatalogueProps) {
     resetQuickUploadState();
 
     const results = await Promise.allSettled(
-      files.map(async (file) => {
+      queue.map(async (item) => {
+        const { file, parsed } = item;
         const compressed = await compressImage(file);
-        const parsed = parseScreenshotName(file.name);
+        const group = mode === 'existing' ? existingGroup : mode === 'new' ? newGroup : parsed.group;
         const safeName = file.name.replace(/\s+/g, '-');
-        const storagePath = `${user.id}/${quickUploadProjectId}/${safeName}`;
+        const storagePath = `${user.id}/${projectId}/${safeName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('screenshots')
@@ -506,13 +592,13 @@ export function Catalogue({ user }: CatalogueProps) {
         const { data, error } = await supabase
           .from('screenshots')
           .insert({
-            project_id: quickUploadProjectId,
+            project_id: projectId,
             flow_id: null,
             name: parsed.name,
             file_name: file.name,
             storage_path: storagePath,
             sequence: parsed.sequence,
-            group: parsed.group,
+            group,
           })
           .select()
           .single();
@@ -535,7 +621,7 @@ export function Catalogue({ user }: CatalogueProps) {
       setSelected(new Set(newScreenshots.map((screenshot) => screenshot.id)));
       setToast({
         message: `${newScreenshots.length} uploaded${failed ? `, ${failed} failed` : ''} — now assign them`,
-        type: 'success',
+        type: failed ? 'info' : 'success',
       });
     } else if (failed) {
       setToast({ message: `Upload failed for ${failed} file${failed > 1 ? 's' : ''}`, type: 'error' });
@@ -583,7 +669,7 @@ export function Catalogue({ user }: CatalogueProps) {
         </div>
       </main>
 
-      <CatalogueOverlays allGroups={allGroups} assignModalOpen={Boolean(assignModal)} assigningFlows={assignModal ? getProjectFlows(assignModal) : []} assigningScreenshot={assigningScreenshot} bulkAction={bulkAction} bulkFlows={bulkFlows} bulkGroupValue={bulkGroupValue} confirmDeleteOpen={Boolean(confirmDelete)} newGroupName={newGroupName} primaryGroup={primaryGroup} projects={projects.map((project) => ({ id: project.id, name: project.name }))} quickUploadProjectId={quickUploadProjectId} selectedCount={selected.size} showQuickUpload={showQuickUpload} showUpload={showUpload} toast={toast} uploadGroup={uploadGroup} uploadProjectGroups={uploadProjectGroups} uploadProjectId={uploadProjectId} uploadProjectPrimary={uploadProjectPrimary} uploadRefLabel={uploadRefLabel} uploadRefPreview={uploadRefPreview} uploadTheme={uploadTheme} uploading={uploading} onAssignFlow={(flowId) => { if (assignModal) void handleAssignFlow(assignModal, flowId); }} onBulkActionChange={setBulkAction} onBulkAssignFlow={(flowId) => void handleBulkAssignFlow(flowId)} onBulkChangeGroup={(group) => void handleBulkChangeGroup(group)} onBulkGroupValueChange={setBulkGroupValue} onBulkPlatform={(platform) => void handleBulkPlatform(platform)} onCloseAssignModal={() => setAssignModal(null)} onCloseConfirmDelete={() => setConfirmDelete(null)} onCloseQuickUpload={resetQuickUploadState} onCloseToast={() => setToast(null)} onCloseUpload={resetUploadState} onConfirmBulkDelete={() => { setConfirmDelete(null); void handleBulkDelete(); }} onQuickUploadFilesSelected={(files) => void handleQuickUpload(files)} onQuickUploadProjectChange={setQuickUploadProjectId} onRemoveUploadReference={() => { if (uploadRefPreview) URL.revokeObjectURL(uploadRefPreview); setUploadRefFile(null); setUploadRefPreview(null); }} onSelectUploadReference={(file) => { if (uploadRefPreview) { URL.revokeObjectURL(uploadRefPreview); setUploadRefPreview(null); } if (file && file.type.startsWith('image/')) { setUploadRefFile(file); setUploadRefPreview(URL.createObjectURL(file)); } else { setUploadRefFile(null); } }} onUploadFilesSelected={(files, group, theme) => void handleFilesSelected(files, group, theme)} onUploadGroupChange={(value) => { setUploadGroup(value); if (value !== '__new__') setNewGroupName(''); }} onUploadProjectChange={(value) => { setUploadProjectId(value); setUploadGroup(''); setNewGroupName(''); }} onUploadRefLabelChange={setUploadRefLabel} onUploadThemeChange={setUploadTheme} onNewGroupNameChange={setNewGroupName} />
+      <CatalogueOverlays allGroups={allGroups} assignModalOpen={Boolean(assignModal)} assigningFlows={assignModal ? getProjectFlows(assignModal) : []} assigningScreenshot={assigningScreenshot} bulkAction={bulkAction} bulkFlows={bulkFlows} bulkGroupValue={bulkGroupValue} confirmDeleteOpen={Boolean(confirmDelete)} newGroupName={newGroupName} primaryGroup={primaryGroup} projects={projects.map((project) => ({ id: project.id, name: project.name }))} quickUploadProjectId={quickUploadProjectId} quickUploadGroupMode={quickUploadGroupMode} quickUploadExistingGroup={quickUploadExistingGroup} quickUploadNewGroup={quickUploadNewGroup} quickUploadProjectGroups={quickUploadProjectGroups} quickUploadQueue={quickUploadQueuePreview} selectedCount={selected.size} showQuickUpload={showQuickUpload} showUpload={showUpload} toast={toast} uploadGroup={uploadGroup} uploadProjectGroups={uploadProjectGroups} uploadProjectId={uploadProjectId} uploadProjectPrimary={uploadProjectPrimary} uploadRefLabel={uploadRefLabel} uploadRefPreview={uploadRefPreview} uploadTheme={uploadTheme} uploading={uploading} onAssignFlow={(flowId) => { if (assignModal) void handleAssignFlow(assignModal, flowId); }} onBulkActionChange={setBulkAction} onBulkAssignFlow={(flowId) => void handleBulkAssignFlow(flowId)} onBulkChangeGroup={(group) => void handleBulkChangeGroup(group)} onBulkGroupValueChange={setBulkGroupValue} onBulkPlatform={(platform) => void handleBulkPlatform(platform)} onCloseAssignModal={() => setAssignModal(null)} onCloseConfirmDelete={() => setConfirmDelete(null)} onCloseQuickUpload={resetQuickUploadState} onCloseToast={() => setToast(null)} onCloseUpload={resetUploadState} onConfirmBulkDelete={() => { setConfirmDelete(null); void handleBulkDelete(); }} onQuickUploadFilesSelected={handleQuickUploadQueueAdd} onQuickUploadProjectChange={handleQuickUploadProjectChange} onQuickUploadGroupModeChange={handleQuickUploadGroupModeChange} onQuickUploadExistingGroupChange={setQuickUploadExistingGroup} onQuickUploadNewGroupChange={setQuickUploadNewGroup} onQuickUploadRemoveQueuedFile={handleQuickUploadQueueRemove} onQuickUploadClearQueue={handleQuickUploadQueueClear} onQuickUploadUploadAll={() => void handleQuickUpload()} onRemoveUploadReference={() => { if (uploadRefPreview) URL.revokeObjectURL(uploadRefPreview); setUploadRefFile(null); setUploadRefPreview(null); }} onSelectUploadReference={(file) => { if (uploadRefPreview) { URL.revokeObjectURL(uploadRefPreview); setUploadRefPreview(null); } if (file && file.type.startsWith('image/')) { setUploadRefFile(file); setUploadRefPreview(URL.createObjectURL(file)); } else { setUploadRefFile(null); } }} onUploadFilesSelected={(files, group, theme) => void handleFilesSelected(files, group, theme)} onUploadGroupChange={(value) => { setUploadGroup(value); if (value !== '__new__') setNewGroupName(''); }} onUploadProjectChange={(value) => { setUploadProjectId(value); setUploadGroup(''); setNewGroupName(''); }} onUploadRefLabelChange={setUploadRefLabel} onUploadThemeChange={setUploadTheme} onNewGroupNameChange={setNewGroupName} />
 
       <CatalogueBulkBar filteredScreenshotsCount={filteredScreenshots.length} selectedCount={selected.size} selectedVisibleCount={selectedVisibleCount} onClearSelection={clearSelection} onOpenDeleteConfirm={() => setConfirmDelete({ type: 'bulk' })} onSelectAllVisible={selectAllVisible} onSetBulkAction={setBulkAction} />
     </div>

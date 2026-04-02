@@ -42,6 +42,7 @@ export function CatalogueCard({
   onCommentCountChange,
 }: CatalogueCardProps) {
   const [editingName, setEditingName] = useState(false);
+  const [editingLightboxName, setEditingLightboxName] = useState(false);
   const [editingGroup, setEditingGroup] = useState(false);
   const [showRef, setShowRef] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
@@ -54,6 +55,7 @@ export function CatalogueCard({
   const [name, setName] = useState(screenshot.name);
   const [group, setGroup] = useState(screenshot.group || '');
   const nameRef = useRef<HTMLInputElement>(null);
+  const lightboxNameRef = useRef<HTMLInputElement>(null);
   const groupRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -63,6 +65,13 @@ export function CatalogueCard({
   useEffect(() => {
     if (editingName && nameRef.current) { nameRef.current.focus(); nameRef.current.select(); }
   }, [editingName]);
+
+  useEffect(() => {
+    if (editingLightboxName && lightboxNameRef.current) {
+      lightboxNameRef.current.focus();
+      lightboxNameRef.current.select();
+    }
+  }, [editingLightboxName]);
 
   useEffect(() => {
     if (editingGroup && groupRef.current) { groupRef.current.focus(); groupRef.current.select(); }
@@ -130,6 +139,7 @@ export function CatalogueCard({
       setName(screenshot.name);
     }
     setEditingName(false);
+    setEditingLightboxName(false);
   }
 
   function commitGroup() {
@@ -151,6 +161,22 @@ export function CatalogueCard({
   }, [screenshot.id, onReplaceImage]);
 
   const groupColor = getGroupColor(screenshot.group);
+
+  function openCardNameEditor() {
+    setEditingLightboxName(false);
+    setEditingName(true);
+  }
+
+  function openLightboxNameEditor() {
+    setName(screenshot.name);
+    setEditingName(false);
+    setEditingLightboxName(true);
+  }
+
+  function closeLightbox() {
+    setShowLightbox(false);
+    setEditingLightboxName(false);
+  }
 
   return (
     <div className={`catalogue-card ${isSelected ? 'catalogue-card--selected' : ''}`}>
@@ -264,7 +290,7 @@ export function CatalogueCard({
           ) : (
             <span
               className="catalogue-card-label"
-              onDoubleClick={() => setEditingName(true)}
+              onDoubleClick={openCardNameEditor}
               title="Double-click to rename"
             >
               {screenshot.name}
@@ -376,13 +402,45 @@ export function CatalogueCard({
 
       {/* Lightbox */}
       {showLightbox && screenshot.image_url && createPortal(
-        <div className="catalogue-lightbox" onClick={() => setShowLightbox(false)}>
-          <div className="catalogue-lightbox-header">
-            <span className="catalogue-lightbox-name">{screenshot.name}</span>
+        <div className="catalogue-lightbox" onClick={closeLightbox}>
+          <div className="catalogue-lightbox-header" onClick={(event) => event.stopPropagation()}>
+            <div className="catalogue-lightbox-name-wrap">
+              {editingLightboxName ? (
+                <input
+                  ref={lightboxNameRef}
+                  className="catalogue-lightbox-name-input"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  onBlur={commitName}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') commitName();
+                    if (event.key === 'Escape') {
+                      setName(screenshot.name);
+                      setEditingLightboxName(false);
+                    }
+                  }}
+                />
+              ) : (
+                <>
+                  <span className="catalogue-lightbox-name">{screenshot.name}</span>
+                  <button
+                    type="button"
+                    className="catalogue-lightbox-name-edit"
+                    title="Edit screenshot name"
+                    onClick={openLightboxNameEditor}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                </>
+              )}
+            </div>
             {screenshot.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}>{screenshot.group}</span>}
             {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
             {screenshot.theme && <span className="catalogue-lightbox-tag">{screenshot.theme}</span>}
-            <button className="catalogue-lightbox-close" onClick={() => setShowLightbox(false)}>
+            <button className="catalogue-lightbox-close" onClick={closeLightbox}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
