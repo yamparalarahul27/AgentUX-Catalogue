@@ -1,0 +1,681 @@
+// ---- React Flow Controls Dark Theme ----
+
+.react-flow__controls {
+  button {
+    background: $surface;
+    border: 1px solid $border;
+    color: $text-muted;
+    fill: $text-muted;
+
+    &:hover {
+      background: $border;
+      color: $text;
+      fill: $text;
+    }
+
+    svg {
+      fill: inherit;
+    }
+  }
+}
+
+// ---- Flow Input Modal ----
+
+.flow-input-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.flow-input-modal {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 28px;
+  width: 500px;
+  max-width: 90vw;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+}
+
+.flow-input-hint {
+  color: $text-muted;
+  font-size: 13px;
+  margin-bottom: 16px;
+
+  code {
+    background: $bg;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: $accent;
+  }
+}
+
+.flow-input-field {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid $border;
+  background: $bg;
+  color: $text;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  resize: vertical;
+  min-height: 80px;
+
+  &::placeholder { color: $text-dim; }
+  &:focus { border-color: $accent; }
+  &::placeholder { color: $text-dim; }
+}
+
+.flow-input-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// ---- Placeholder Node ----
+
+.screenshot-node-placeholder {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover {
+    background: rgba($accent, 0.05);
+
+    svg { stroke: $accent; }
+    .screenshot-node-placeholder-text { color: $accent; }
+  }
+}
+
+.screenshot-node-placeholder-text {
+  font-size: 11px;
+  color: $text-dim;
+  transition: color 0.2s;
+}
+
+// ---- Hand cursor ----
+
+.canvas-hand {
+  cursor: grab;
+  &:active { cursor: grabbing; }
+}
+
+// ---- Edge Popup ----
+
+.edge-popup {
+  position: fixed;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 12px;
+  z-index: 200;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -100%) translateY(-12px);
+}
+
+.edge-popup-section {
+  margin-bottom: 8px;
+}
+
+.edge-popup-label {
+  font-size: 11px;
+  color: $text-dim;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.edge-popup-arrows {
+  display: flex;
+  gap: 4px;
+}
+
+.edge-popup-arrow-btn {
+  flex: 1;
+  padding: 6px;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $text-muted;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover { color: $text; border-color: $accent; }
+  &.active {
+    background: $accent;
+    color: #fff;
+    border-color: $accent;
+  }
+}
+
+.edge-popup-text-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $text-muted;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover { color: $text; border-color: $accent; }
+}
+
+.edge-popup-label-input input {
+  width: 100%;
+  padding: 6px 8px;
+  background: $bg;
+  border: 1px solid $accent;
+  border-radius: 6px;
+  color: $text;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.edge-popup-divider {
+  height: 1px;
+  background: $border;
+  margin: 8px 0;
+}
+
+.edge-popup-delete {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: $danger;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover { background: rgba($danger, 0.1); }
+}
+
+// ---- Edge Label ----
+
+.edge-label {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: $text-muted;
+  white-space: nowrap;
+  z-index: 50;
+}
+
+// ---- Flow List ----
+
+.flow-list-page {
+  min-height: 100vh;
+}
+
+.flow-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid $border;
+
+  .header-left,
+  .header-right {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-right {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.flow-list-project-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: $text;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.flow-list-main {
+  padding: 32px 24px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.flow-list-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.flow-list-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.flow-list-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 280px;
+  padding: 8px 12px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 8px;
+  transition: border-color 0.15s;
+
+  &:focus-within { border-color: $accent; }
+
+  svg { flex-shrink: 0; color: $text-dim; }
+
+  input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: $text;
+    font-size: 13px;
+    font-family: inherit;
+
+    &::placeholder { color: $text-dim; }
+  }
+}
+
+.flow-list-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+// ---- Toast ----
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 300;
+  animation: toast-in 0.3s ease;
+
+  &-error {
+    background: #7f1d1d;
+    border: 1px solid #991b1b;
+    color: #fecaca;
+  }
+
+  &-success {
+    background: #14532d;
+    border: 1px solid #166534;
+    color: #bbf7d0;
+  }
+
+  &-info {
+    background: $surface;
+    border: 1px solid $border;
+    color: $text;
+  }
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0 4px;
+
+  &:hover { opacity: 1; }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+// ---- Project Rename ----
+
+.project-card-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  h3 { margin: 0; }
+}
+
+.project-rename-btn {
+  background: none;
+  border: none;
+  color: $text-dim;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 1;
+
+  &:hover { color: $accent; background: rgba($accent, 0.1); }
+}
+
+.project-card:hover .project-rename-btn { opacity: 1; }
+
+.project-rename-input {
+  width: 100%;
+  padding: 4px 8px;
+  background: $bg;
+  border: 1px solid $accent;
+  border-radius: 4px;
+  color: $text;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  box-sizing: border-box;
+}
+
+// ---- Compare Modal ----
+
+.compare-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.compare-modal {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  width: 80vw;
+  max-width: 1200px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.compare-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid $border;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+  }
+}
+
+.compare-close {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+
+  &:hover { color: $text; background: rgba(255, 255, 255, 0.05); }
+}
+
+.compare-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.compare-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow: auto;
+}
+
+.compare-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: $text-dim;
+  margin-bottom: 12px;
+}
+
+.compare-image,
+.compare-image-draggable {
+  aspect-ratio: 4 / 3;
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #111;
+  user-select: none;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+  }
+}
+
+.compare-name {
+  font-size: 12px;
+  color: $text-muted;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compare-rename-input {
+  background: $bg;
+  border: 1px solid $accent;
+  border-radius: 4px;
+  color: $text;
+  font-size: 12px;
+  padding: 2px 6px;
+  outline: none;
+  flex: 1;
+}
+
+.compare-change {
+  background: none;
+  border: none;
+  color: $accent;
+  font-size: 12px;
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+}
+
+.compare-divider {
+  width: 1px;
+  background: $border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.compare-vs {
+  position: absolute;
+  background: #f59e0b;
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.compare-adding {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .compare-image-preview {
+    flex: 0 0 auto;
+    max-height: 40vh;
+    opacity: 0.8;
+    border-style: dashed;
+  }
+}
+
+.compare-name-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.loading-spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+
+.compare-name-prompt {
+  color: $text-muted;
+  font-size: 13px;
+}
+
+.compare-name-input {
+  width: 280px;
+  padding: 10px 14px;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  color: $text;
+  font-size: 14px;
+  outline: none;
+  text-align: center;
+
+  &:focus { border-color: $accent; }
+  &::placeholder { color: $text-dim; }
+}
+
+.compare-name-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.compare-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.compare-nav-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $border;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover { background: $text-dim; color: $text; }
+  &.active { background: $accent; color: #fff; border-color: $accent-hover; }
+}
+
+.compare-nav-add {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: none;
+  border: 2px dashed $border;
+  color: $text-muted;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+
+  &:hover { border-color: $accent; color: $accent; }
+}
+
+.compare-upload {
+  flex: 1;
+  border: 2px dashed $border;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  color: $text-dim;
+  font-size: 13px;
+  min-height: 300px;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $accent;
+    color: $accent;
+
+    svg { stroke: $accent; }
+  }
+}
+

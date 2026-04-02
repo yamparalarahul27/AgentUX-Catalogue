@@ -4,13 +4,20 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AppMapConfig, AppMapData, Workspace } from '../types';
 import { DEFAULT_POSITION, DEFAULT_THEME } from '../constants';
 import { BUTTON_SIZE, FloatingButton, type ButtonPosition } from './FloatingButton';
-import { Modal, computeModalFrame } from './Modal';
+import { Modal } from './Modal';
 import { Toolbar } from './Toolbar';
 import { SetupGuide, type DataSourceStatus, type ProjectStructureStatus } from './SetupGuide';
 import { JourneyManager } from './JourneyManager';
 import { Legend } from './Legend';
 import { CanvasEditBar, type CanvasEditMode } from './CanvasEditBar';
 import { StructureTree } from './StructureTree';
+import {
+  formatDataSourceLabel,
+  PanelToggleButton,
+  secondaryButtonStyle,
+  ViewButton,
+} from './AppMapControls';
+import { getDockedButtonPosition } from './docking';
 import { AppMapCanvas } from '../visualization';
 import { generateJson, generateMarkdown, copyToClipboard } from '../export';
 import { useRuntimeRoutes } from '../runtime';
@@ -303,33 +310,24 @@ export function AppMap({
 
   const handleExportMarkdown = useCallback(() => {
     if (!mergedData) return;
-    const markdown = generateMarkdown(mergedData, {
+    copyToClipboard(generateMarkdown(mergedData, {
       workspace: workspaceState,
       journeyId: activeJourney?.id ?? selectedJourneyId,
-    });
-    copyToClipboard(markdown);
+    }));
   }, [mergedData, workspaceState, activeJourney, selectedJourneyId]);
 
   const handleExportJson = useCallback(() => {
     if (!mergedData) return;
-    const json = generateJson(mergedData, {
+    copyToClipboard(generateJson(mergedData, {
       workspace: workspaceState,
       journeyId: activeJourney?.id ?? selectedJourneyId,
-    });
-    copyToClipboard(json);
+    }));
   }, [mergedData, workspaceState, activeJourney, selectedJourneyId]);
 
-  const handleRelayout = useCallback(() => {
-    setRelayoutKey((k) => k + 1);
-  }, []);
-
-  const handleButtonPositionChange = useCallback((pos: ButtonPosition) => {
-    setButtonPos(pos);
-  }, []);
-
+  const handleRelayout = useCallback(() => setRelayoutKey((k) => k + 1), []);
+  const handleButtonPositionChange = useCallback((pos: ButtonPosition) => setButtonPos(pos), []);
   const handleInspectFirstVisible = useCallback(() => {
-    if (!filteredData || filteredData.routes.length === 0) return;
-    setSelectedRouteId(filteredData.routes[0].id);
+    if (filteredData?.routes.length) setSelectedRouteId(filteredData.routes[0].id);
   }, [filteredData]);
 
   const handleCreateJourneyDraft = useCallback(() => {
@@ -345,18 +343,12 @@ export function AppMap({
     });
   }, [mergedData, workspaceState]);
 
-  const handleSelectJourney = useCallback((journeyId: string) => {
-    setSelectedJourneyId(journeyId);
+  const handleSelectJourney = useCallback((journeyId: string) => setSelectedJourneyId(journeyId), []);
+  const handleRenameJourney = useCallback((journeyId: string, name: string) => {
+    setWorkspaceState((currentWorkspace) =>
+      currentWorkspace ? renameJourney(currentWorkspace, journeyId, name) : currentWorkspace,
+    );
   }, []);
-
-  const handleRenameJourney = useCallback(
-    (journeyId: string, name: string) => {
-      setWorkspaceState((currentWorkspace) =>
-        currentWorkspace ? renameJourney(currentWorkspace, journeyId, name) : currentWorkspace,
-      );
-    },
-    [],
-  );
 
   useEffect(() => {
     if (!activeJourney && canvasEditMode !== 'inspect') {
@@ -364,58 +356,32 @@ export function AppMap({
     }
   }, [activeJourney, canvasEditMode]);
 
-  const handleToggleJourneyBoundary = useCallback(
-    (routeId: string, boundary: 'start' | 'end') => {
-      if (!activeJourney) return;
-      setWorkspaceState((currentWorkspace) =>
-        currentWorkspace
-          ? toggleJourneyBoundary(currentWorkspace, activeJourney.id, routeId, boundary)
-          : currentWorkspace,
-      );
-    },
-    [activeJourney],
-  );
+  const handleToggleJourneyBoundary = useCallback((routeId: string, boundary: 'start' | 'end') => {
+    if (!activeJourney) return;
+    setWorkspaceState((currentWorkspace) =>
+      currentWorkspace ? toggleJourneyBoundary(currentWorkspace, activeJourney.id, routeId, boundary) : currentWorkspace,
+    );
+  }, [activeJourney]);
 
-  const handleToggleJourneyEdgeChange = useCallback(
-    (sourceRouteId: string, targetRouteId: string, change: 'add' | 'remove') => {
-      if (!activeJourney) return;
-      setWorkspaceState((currentWorkspace) =>
-        currentWorkspace
-          ? toggleJourneyEdgeChange(
-              currentWorkspace,
-              activeJourney.id,
-              sourceRouteId,
-              targetRouteId,
-              change,
-            )
-          : currentWorkspace,
-      );
-    },
-    [activeJourney],
-  );
+  const handleToggleJourneyEdgeChange = useCallback((sourceRouteId: string, targetRouteId: string, change: 'add' | 'remove') => {
+    if (!activeJourney) return;
+    setWorkspaceState((currentWorkspace) =>
+      currentWorkspace
+        ? toggleJourneyEdgeChange(currentWorkspace, activeJourney.id, sourceRouteId, targetRouteId, change)
+        : currentWorkspace,
+    );
+  }, [activeJourney]);
 
-  const handleCanvasConnect = useCallback(
-    (sourceRouteId: string, targetRouteId: string) => {
-      if (!activeJourney || sourceRouteId === targetRouteId) return;
-      handleToggleJourneyEdgeChange(sourceRouteId, targetRouteId, 'add');
-      setSelectedRouteId(targetRouteId);
-    },
-    [activeJourney, handleToggleJourneyEdgeChange],
-  );
+  const handleCanvasConnect = useCallback((sourceRouteId: string, targetRouteId: string) => {
+    if (!activeJourney || sourceRouteId === targetRouteId) return;
+    handleToggleJourneyEdgeChange(sourceRouteId, targetRouteId, 'add');
+    setSelectedRouteId(targetRouteId);
+  }, [activeJourney, handleToggleJourneyEdgeChange]);
 
-  const handleCanvasEdgeToggle = useCallback(
-    (edge: { sourceRouteId: string; targetRouteId: string; state: 'current' | 'intended' | 'removed' }) => {
-      if (!activeJourney) return;
-
-      if (edge.state === 'intended') {
-        handleToggleJourneyEdgeChange(edge.sourceRouteId, edge.targetRouteId, 'add');
-        return;
-      }
-
-      handleToggleJourneyEdgeChange(edge.sourceRouteId, edge.targetRouteId, 'remove');
-    },
-    [activeJourney, handleToggleJourneyEdgeChange],
-  );
+  const handleCanvasEdgeToggle = useCallback((edge: { sourceRouteId: string; targetRouteId: string; state: 'current' | 'intended' | 'removed' }) => {
+    if (!activeJourney) return;
+    handleToggleJourneyEdgeChange(edge.sourceRouteId, edge.targetRouteId, edge.state === 'intended' ? 'add' : 'remove');
+  }, [activeJourney, handleToggleJourneyEdgeChange]);
 
   const structureRoutes = useMemo(
     () => resolvedStaticData?.routes ?? mergedData?.routes ?? [],
@@ -423,95 +389,28 @@ export function AppMap({
   );
 
   const graphData = graphView?.data ?? filteredData ?? null;
-  const dockedButtonPos = useMemo(() => {
-    if (!isOpen || !buttonPos) return null;
+  const dockedButtonPos = useMemo(
+    () =>
+      getDockedButtonPosition({
+        buttonPos,
+        isOpen,
+        buttonRadius: BUTTON_RADIUS,
+        buttonSize: BUTTON_SIZE,
+        dockOffset: DOCK_OFFSET,
+      }),
+    [buttonPos, isOpen],
+  );
 
-    const frame = computeModalFrame(buttonPos);
-    const buttonCenterX = buttonPos.x + BUTTON_RADIUS;
-    const buttonCenterY = buttonPos.y + BUTTON_RADIUS;
-    const edges = [
-      {
-        edge: 'left' as const,
-        distance: Math.abs(buttonCenterX - frame.left),
-      },
-      {
-        edge: 'right' as const,
-        distance: Math.abs(buttonCenterX - (frame.left + frame.width)),
-      },
-      {
-        edge: 'top' as const,
-        distance: Math.abs(buttonCenterY - frame.top),
-      },
-      {
-        edge: 'bottom' as const,
-        distance: Math.abs(buttonCenterY - (frame.top + frame.height)),
-      },
-    ];
-
-    const nearestEdge = edges.sort((left, right) => left.distance - right.distance)[0]?.edge ?? 'right';
-    const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
-    switch (nearestEdge) {
-      case 'left':
-        return {
-          x: frame.left - BUTTON_RADIUS,
-          y: clamp(
-            buttonCenterY - BUTTON_RADIUS,
-            frame.top + DOCK_OFFSET,
-            frame.top + frame.height - BUTTON_SIZE - DOCK_OFFSET,
-          ),
-        };
-      case 'top':
-        return {
-          x: clamp(
-            buttonCenterX - BUTTON_RADIUS,
-            frame.left + DOCK_OFFSET,
-            frame.left + frame.width - BUTTON_SIZE - DOCK_OFFSET,
-          ),
-          y: frame.top - BUTTON_RADIUS,
-        };
-      case 'bottom':
-        return {
-          x: clamp(
-            buttonCenterX - BUTTON_RADIUS,
-            frame.left + DOCK_OFFSET,
-            frame.left + frame.width - BUTTON_SIZE - DOCK_OFFSET,
-          ),
-          y: frame.top + frame.height - BUTTON_RADIUS,
-        };
-      case 'right':
-      default:
-        return {
-          x: frame.left + frame.width - BUTTON_RADIUS,
-          y: clamp(
-            buttonCenterY - BUTTON_RADIUS,
-            frame.top + DOCK_OFFSET,
-            frame.top + frame.height - BUTTON_SIZE - DOCK_OFFSET,
-          ),
-        };
-    }
-  }, [buttonPos, isOpen]);
-
-  const handleRunProjectStructure = useCallback(() => {
-    setStaticReloadKey((current) => current + 1);
-    setActiveView('structure');
-  }, []);
-
-  const handleCopyScanCommand = useCallback(() => {
-    copyToClipboard(DEFAULT_SCAN_COMMAND);
-  }, []);
-
+  const handleRunProjectStructure = useCallback(() => { setStaticReloadKey((current) => current + 1); setActiveView('structure'); }, []);
+  const handleCopyScanCommand = useCallback(() => copyToClipboard(DEFAULT_SCAN_COMMAND), []);
   const handleRestartRuntime = useCallback(() => {
     if (!runtimeDetection) return;
     setRuntimeRefreshKey((current) => current + 1);
     setActiveView('flow');
   }, [runtimeDetection]);
-
   const handleRefreshAll = useCallback(() => {
     setStaticReloadKey((current) => current + 1);
-    if (runtimeDetection) {
-      setRuntimeRefreshKey((current) => current + 1);
-    }
+    if (runtimeDetection) setRuntimeRefreshKey((current) => current + 1);
   }, [runtimeDetection]);
 
   // Dev-only guard — after all hooks
@@ -781,90 +680,3 @@ export function AppMap({
     </>
   );
 }
-
-function formatDataSourceLabel(status: DataSourceStatus): string {
-  switch (status) {
-    case 'static-plus-runtime':
-      return 'Static + Runtime';
-    case 'static-only':
-      return 'Static only';
-    case 'no-data':
-      return 'No data yet';
-    default:
-      return 'Runtime only';
-  }
-}
-
-function PanelToggleButton({
-  label,
-  meta,
-  isOpen,
-  onClick,
-}: {
-  label: string;
-  meta: string;
-  isOpen: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-expanded={isOpen}
-      onClick={onClick}
-      style={{
-        display: 'grid',
-        gap: '4px',
-        minWidth: 220,
-        padding: '10px 12px',
-        borderRadius: '12px',
-        border: `1px solid ${isOpen ? DEFAULT_THEME.accentColor : DEFAULT_THEME.nodeBorderColor}`,
-        background: isOpen ? 'rgba(99, 102, 241, 0.12)' : '#111113',
-        color: DEFAULT_THEME.textColor,
-        textAlign: 'left',
-      }}
-    >
-      <span style={{ fontSize: '12px', fontWeight: 700 }}>{label}</span>
-      <span style={{ color: '#a1a1aa', fontSize: '11px', lineHeight: 1.4 }}>{meta}</span>
-    </button>
-  );
-}
-
-function ViewButton({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        minHeight: '36px',
-        padding: '0 12px',
-        borderRadius: '999px',
-        border: `1px solid ${active ? DEFAULT_THEME.accentColor : DEFAULT_THEME.nodeBorderColor}`,
-        background: active ? DEFAULT_THEME.accentColor : '#18181b',
-        color: active ? '#ffffff' : '#d4d4d8',
-        fontSize: '12px',
-        fontWeight: 600,
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-const secondaryButtonStyle: React.CSSProperties = {
-  minHeight: '36px',
-  padding: '0 12px',
-  borderRadius: '10px',
-  border: `1px solid ${DEFAULT_THEME.nodeBorderColor}`,
-  background: '#18181b',
-  color: '#f4f4f5',
-  fontSize: '12px',
-  fontWeight: 600,
-};

@@ -25,16 +25,17 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "npm run check:max-lines && tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
+    "check:max-lines": "node scripts/check-max-lines.mjs src designer/src --max 700",
     "prepack": "npm run build",
     "pack:local": "node scripts/pack-local.mjs",
     "prepublishOnly": "npm run build",
-    "build:site": "cd designer && npm install && npx vite build"
+    "build:site": "cd designer && npm install && npm run build"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

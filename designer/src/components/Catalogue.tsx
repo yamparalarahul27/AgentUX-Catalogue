@@ -1,8 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { User } from '@supabase/supabase-js';
 import type { Flow, ScreenshotNode } from '../types';
 import { supabase } from '../lib/supabase';
+import {
+  DEFAULT_CATALOGUE_VIEW_MODE,
+  parseCatalogueViewMode,
+  type CatalogueViewMode,
+} from '../lib/catalogue-view';
 import { parseScreenshotName } from '../lib/naming';
 import { CatalogueBulkBar, CatalogueContent, CatalogueOverlays } from './CatalogueContent';
 import { CatalogueFlowSidebar } from './CatalogueFlowSidebar';
@@ -13,6 +18,8 @@ import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
 interface CatalogueProps {
   user: User;
 }
+
+const CATALOGUE_VIEW_MODE_KEY = 'catalogue:view-mode';
 
 type QuickUploadGroupMode = 'auto' | 'existing' | 'new';
 
@@ -69,6 +76,13 @@ export function Catalogue({ user }: CatalogueProps) {
   const [quickUploadNewGroup, setQuickUploadNewGroup] = useState(''), [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'assign' | 'group' | 'platform' | null>(null), [confirmDelete, setConfirmDelete] = useState<{ type: 'bulk' } | null>(null);
   const [bulkGroupValue, setBulkGroupValue] = useState(''), [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const [viewMode, setViewMode] = useState<CatalogueViewMode>(() => {
+    try {
+      return parseCatalogueViewMode(window.localStorage.getItem(CATALOGUE_VIEW_MODE_KEY));
+    } catch {
+      return DEFAULT_CATALOGUE_VIEW_MODE;
+    }
+  });
   const [isFlowSheetExpanded, setIsFlowSheetExpanded] = useState(false);
 
   const uploadProjectGroups = useMemo(() => !uploadProjectId ? [] : [...new Set(
@@ -100,6 +114,14 @@ export function Catalogue({ user }: CatalogueProps) {
     () => assignModal ? screenshots.find((screenshot) => screenshot.id === assignModal) ?? null : null,
     [assignModal, screenshots],
   );
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CATALOGUE_VIEW_MODE_KEY, viewMode);
+    } catch {
+      // ignore write errors
+    }
+  }, [viewMode]);
 
   function resetUploadState() {
     setShowUpload(false);
@@ -662,9 +684,9 @@ export function Catalogue({ user }: CatalogueProps) {
           <CatalogueFlowSidebar activeFlowCount={activeFlowCount} activeFlowFilter={activeFlowFilter} activeFlowLabel={activeFlowLabel} items={flowItems} mobileExpanded={isFlowSheetExpanded} onFlowFilterChange={setActiveFlowFilter} onMobileExpandedChange={setIsFlowSheetExpanded} />
 
           <div className="catalogue-body">
-            <CatalogueToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} filterProject={filterProject} onFilterProjectChange={setFilterProject} projects={projects.map((project) => ({ id: project.id, name: project.name }))} filterGroup={filterGroup} onFilterGroupChange={setFilterGroup} groups={allGroups} filterPlatform={filterPlatform} onFilterPlatformChange={setFilterPlatform} filterTheme={filterTheme} onFilterThemeChange={setFilterTheme} sortBy={sortBy} onSortByChange={setSortBy} primaryGroup={primaryGroup} vsGroups={vsGroups} onPrimaryGroupChange={handlePrimaryGroupChange} onVsGroupsChange={handleVsGroupsChange} showGroupConfig={Boolean(filterProject)} onUploadClick={() => setShowUpload(true)} onQuickUploadClick={() => setShowQuickUpload(true)} activeFlowCount={activeFlowCount} activeFlowLabel={activeFlowLabel} onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)} />
+            <CatalogueToolbar searchQuery={searchQuery} onSearchChange={setSearchQuery} filterProject={filterProject} onFilterProjectChange={setFilterProject} projects={projects.map((project) => ({ id: project.id, name: project.name }))} filterGroup={filterGroup} onFilterGroupChange={setFilterGroup} groups={allGroups} filterPlatform={filterPlatform} onFilterPlatformChange={setFilterPlatform} filterTheme={filterTheme} onFilterThemeChange={setFilterTheme} sortBy={sortBy} onSortByChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode} primaryGroup={primaryGroup} vsGroups={vsGroups} onPrimaryGroupChange={handlePrimaryGroupChange} onVsGroupsChange={handleVsGroupsChange} showGroupConfig={Boolean(filterProject)} onUploadClick={() => setShowUpload(true)} onQuickUploadClick={() => setShowQuickUpload(true)} activeFlowCount={activeFlowCount} activeFlowLabel={activeFlowLabel} onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)} />
 
-            <CatalogueContent activeFlowFilter={activeFlowFilter} filterGroup={filterGroup} filterPlatform={filterPlatform} filterProject={filterProject} filterTheme={filterTheme} filteredScreenshots={filteredScreenshots} flowMap={flowMap} groupedScreenshots={groupedScreenshots} loading={loading} primaryGroup={primaryGroup} projectMap={projectMap} projectsCount={projects.length} searchQuery={searchQuery} selected={selected} userEmail={user.email || ''} vsGroups={vsGroups} onAssignFlow={setAssignModal} onChangeGroup={handleChangeGroup} onCommentCountChange={handleCommentCountChange} onDelete={handleDelete} onRename={handleRename} onReplaceImage={handleReplaceImage} onToggleGroupSelect={toggleGroupSelection} onToggleSelect={toggleSelect} onPlatformChange={handlePlatformChange} />
+            <CatalogueContent activeFlowFilter={activeFlowFilter} filterGroup={filterGroup} filterPlatform={filterPlatform} filterProject={filterProject} filterTheme={filterTheme} filteredScreenshots={filteredScreenshots} flowMap={flowMap} groupedScreenshots={groupedScreenshots} loading={loading} viewMode={viewMode} sortBy={sortBy} primaryGroup={primaryGroup} projectMap={projectMap} projectsCount={projects.length} searchQuery={searchQuery} selected={selected} userEmail={user.email || ''} vsGroups={vsGroups} onAssignFlow={setAssignModal} onChangeGroup={handleChangeGroup} onCommentCountChange={handleCommentCountChange} onDelete={handleDelete} onRename={handleRename} onReplaceImage={handleReplaceImage} onToggleGroupSelect={toggleGroupSelection} onToggleSelect={toggleSelect} onPlatformChange={handlePlatformChange} />
           </div>
         </div>
       </main>

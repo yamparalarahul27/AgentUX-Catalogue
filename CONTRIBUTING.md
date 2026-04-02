@@ -19,12 +19,19 @@ npm run dev    # Watch mode
 2. Create a feature branch: `git checkout -b feat/your-feature`
 3. Make your changes
 4. Run tests: `npm test`
-5. Run the build: `npm run build`
-6. Commit using conventional commits:
+5. Run line-limit audit: `npm run check:max-lines`
+6. Run the build: `npm run build`
+7. Commit using conventional commits:
    - `feat: add new feature`
    - `fix: resolve bug`
    - `docs: update readme`
-7. Open a pull request
+8. Open a pull request
+
+## File Size Rule
+
+- Source files must stay at or under `700` lines.
+- Automated check: `npm run check:max-lines`
+- If a file grows above 700 lines, split it into smaller modules before merge.
 
 ## Commit Convention
 

@@ -1,5 +1,7 @@
 .catalogue-main {
-  max-width: 1440px;
+  max-width: none;
+  width: 100%;
+  margin: 0;
 }
 
 .catalogue-shell {
@@ -7,10 +9,13 @@
   grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+  width: 100%;
 }
 
 .catalogue-body {
   min-width: 0;
+  width: 100%;
+  max-width: none;
 }
 
 .catalogue-toolbar-wrapper {

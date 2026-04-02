@@ -1,16 +1,20 @@
+import { useMemo } from 'react';
 import type { Flow, ScreenshotNode } from '../types';
 import {
   FLOW_FILTER_ALL,
   type CatalogueFlowFilter,
 } from '../hooks/use-catalogue-filters';
+import { sortCatalogueScreenshots, type CatalogueSortOption } from '../lib/catalogue-sort';
+import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueCard } from './CatalogueCard';
+import { CatalogueGalleryView } from './CatalogueGalleryView';
+import { CatalogueListView } from './CatalogueListView';
 import { ConfirmModal } from './ConfirmModal';
 import { Dropdown } from './Dropdown';
 import { FlowAssignModal } from './FlowAssignModal';
 import { CatalogueQuickUploadPanel } from './CatalogueQuickUploadPanel';
 import { Toast } from './Toast';
 import { UploadZone } from './UploadZone';
-
 interface CatalogueContentProps {
   activeFlowFilter: CatalogueFlowFilter;
   filterGroup: string | null;
@@ -21,6 +25,8 @@ interface CatalogueContentProps {
   flowMap: Record<string, string>;
   groupedScreenshots: Record<string, ScreenshotNode[]>;
   loading: boolean;
+  viewMode: CatalogueViewMode;
+  sortBy: CatalogueSortOption;
   primaryGroup: string | null;
   projectMap: Record<string, string>;
   projectsCount: number;
@@ -38,7 +44,6 @@ interface CatalogueContentProps {
   onToggleSelect: (id: string) => void;
   onPlatformChange: (id: string, platform: 'mobile' | 'web' | null) => Promise<void>;
 }
-
 export function CatalogueContent({
   activeFlowFilter,
   filterGroup,
@@ -49,6 +54,8 @@ export function CatalogueContent({
   flowMap,
   groupedScreenshots,
   loading,
+  viewMode,
+  sortBy,
   primaryGroup,
   projectMap,
   projectsCount,
@@ -66,6 +73,10 @@ export function CatalogueContent({
   onToggleSelect,
   onPlatformChange,
 }: CatalogueContentProps) {
+  const orderedScreenshots = useMemo(
+    () => sortCatalogueScreenshots(filteredScreenshots, sortBy),
+    [filteredScreenshots, sortBy],
+  );
   const hasActiveFilters = Boolean(
     searchQuery ||
     filterProject ||
@@ -110,6 +121,38 @@ export function CatalogueContent({
         <h2>{hasActiveFilters ? 'No matching screenshots' : 'No screenshots yet'}</h2>
         <p>{hasActiveFilters ? 'Try adjusting your search, filters, or selected flow.' : 'Upload screenshots to get started.'}</p>
       </div>
+    );
+  }
+
+  if (viewMode === 'list') {
+    return (
+      <CatalogueListView
+        screenshots={orderedScreenshots}
+        selected={selected}
+        flowMap={flowMap}
+        projectMap={projectMap}
+        onToggleSelect={onToggleSelect}
+        onAssignFlow={onAssignFlow}
+        onRename={onRename}
+        onDelete={onDelete}
+        onPlatformChange={onPlatformChange}
+      />
+    );
+  }
+
+  if (viewMode === 'gallery') {
+    return (
+      <CatalogueGalleryView
+        screenshots={orderedScreenshots}
+        flowMap={flowMap}
+        projectMap={projectMap}
+        userEmail={userEmail}
+        onCommentCountChange={onCommentCountChange}
+        onAssignFlow={onAssignFlow}
+        onRename={onRename}
+        onDelete={onDelete}
+        onPlatformChange={onPlatformChange}
+      />
     );
   }
 
@@ -184,12 +227,7 @@ interface CatalogueOverlaysProps {
   quickUploadExistingGroup: string | null;
   quickUploadNewGroup: string;
   quickUploadProjectGroups: string[];
-  quickUploadQueue: {
-    id: string;
-    fileName: string;
-    parsedName: string;
-    parsedGroup: string | null;
-  }[];
+  quickUploadQueue: { id: string; fileName: string; parsedName: string; parsedGroup: string | null }[];
   selectedCount: number;
   showQuickUpload: boolean;
   showUpload: boolean;

@@ -1,5 +1,7 @@
 import { Dropdown } from './Dropdown';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
+import type { CatalogueViewMode } from '../lib/catalogue-view';
+import { CatalogueViewToggle } from './CatalogueViewToggle';
 
 interface CatalogueToolbarProps {
   activeFlowCount: number;
@@ -18,6 +20,8 @@ interface CatalogueToolbarProps {
   onFilterThemeChange: (t: string | null) => void;
   sortBy: CatalogueSortOption;
   onSortByChange: (sort: CatalogueSortOption) => void;
+  viewMode: CatalogueViewMode;
+  onViewModeChange: (view: CatalogueViewMode) => void;
   primaryGroup: string | null;
   vsGroups: string[];
   onPrimaryGroupChange: (g: string | null) => void;
@@ -45,6 +49,8 @@ export function CatalogueToolbar({
   onFilterThemeChange,
   sortBy,
   onSortByChange,
+  viewMode,
+  onViewModeChange,
   primaryGroup,
   vsGroups,
   onPrimaryGroupChange,
@@ -125,6 +131,8 @@ export function CatalogueToolbar({
             ]}
             onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
           />
+
+          <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
         </div>
 
         <div className="catalogue-toolbar-right">

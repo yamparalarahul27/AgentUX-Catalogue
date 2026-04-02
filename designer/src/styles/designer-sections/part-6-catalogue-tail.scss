@@ -1,0 +1,307 @@
+// Lightbox comments panel
+.catalogue-lightbox-comments {
+  width: 320px;
+  flex-shrink: 0;
+  background: $surface;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid $border;
+}
+
+.catalogue-lightbox-comments-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+
+  svg { color: $text-muted; }
+}
+
+.catalogue-lightbox-comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
+}
+
+.catalogue-lightbox-comments-empty {
+  color: $text-dim;
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.catalogue-lightbox-comment {
+  padding: 10px 12px;
+  background: $bg;
+  border-radius: 8px;
+  border: 1px solid $border;
+}
+
+.catalogue-lightbox-comment-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.catalogue-lightbox-comment-email {
+  font-size: 12px;
+  font-weight: 600;
+  color: $accent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.catalogue-lightbox-comment-time {
+  font-size: 10px;
+  color: $text-dim;
+  flex: 1;
+}
+
+.catalogue-lightbox-comment-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: $text-dim;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+
+  .catalogue-lightbox-comment:hover & { opacity: 1; }
+  &:hover { color: $danger; }
+}
+
+.catalogue-lightbox-comment-text {
+  font-size: 13px;
+  color: $text;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.catalogue-lightbox-comment-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid $border;
+  flex-shrink: 0;
+
+  input {
+    flex: 1;
+    background: $bg;
+    border: 1px solid $border;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: $text;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+
+    &:focus { border-color: $accent; }
+    &::placeholder { color: $text-dim; }
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: $accent;
+    color: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+
+    &:hover { background: $accent-hover; }
+    &:disabled { opacity: 0.4; cursor: default; }
+  }
+}
+
+.catalogue-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.catalogue-badge-primary {
+  background: $accent;
+  color: #fff;
+}
+
+.catalogue-badge-vs {
+  background: rgba($text-muted, 0.2);
+  color: $text-muted;
+}
+
+.catalogue-card-platform-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.catalogue-card-platform-dropdown {
+  .dropdown__trigger {
+    background: $bg;
+    border-radius: 4px;
+    padding: 2px 6px 2px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .dropdown__chevron { width: 10px; height: 10px; }
+  .dropdown__menu { font-size: 11px; min-width: 100px; }
+  .dropdown__item { padding: 5px 8px; font-size: 11px; }
+}
+
+.catalogue-upload-project-dropdown {
+  width: 100%;
+  .dropdown__trigger { width: 100%; }
+}
+
+// ========================================
+// Flow Assign Warning
+// ========================================
+
+.flow-assign-warning {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba($danger, 0.1);
+  border: 1px solid rgba($danger, 0.2);
+  border-radius: 8px;
+  color: $danger;
+  font-size: 12px;
+}
+
+// ========================================
+// Bulk Action Bar
+// ========================================
+
+.catalogue-bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  animation: bulkBarSlideUp 0.2s ease-out;
+}
+
+@keyframes bulkBarSlideUp {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.catalogue-bulk-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalogue-bulk-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: $accent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.catalogue-bulk-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: $text;
+  white-space: nowrap;
+}
+
+.catalogue-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 1px solid $border;
+}
+
+.catalogue-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: $text-muted;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); color: $text; }
+}
+
+.catalogue-bulk-btn-danger {
+  &:hover { background: rgba($danger, 0.12); color: $danger; }
+}
+
+.catalogue-bulk-btn-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: $text-dim;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); color: $text; }
+}

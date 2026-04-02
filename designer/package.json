@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "check:max-lines": "node ../scripts/check-max-lines.mjs src --max 700",
+    "build": "npm run check:max-lines && tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

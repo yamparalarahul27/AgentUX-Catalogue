@@ -1,0 +1,684 @@
+// Flow Assign Modal
+
+.flow-assign-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.flow-assign-modal {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+}
+
+.flow-assign-subtitle {
+  color: $text-muted;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.flow-assign-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.flow-assign-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover { border-color: $accent; background: rgba($accent, 0.05); }
+
+  input[type="radio"] {
+    accent-color: $accent;
+  }
+}
+
+.flow-assign-empty {
+  color: $text-dim;
+  font-size: 13px;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.flow-assign-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+// ========================================
+// Catalogue Picker Modal
+// ========================================
+
+.catalogue-picker-modal {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 720px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.catalogue-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text;
+  }
+}
+
+.catalogue-picker-close {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+
+  &:hover { color: $text; background: rgba(255, 255, 255, 0.05); }
+}
+
+.catalogue-picker-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 24px;
+}
+
+.catalogue-picker-filter-dropdown {
+  flex-shrink: 0;
+  .dropdown__trigger {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  .dropdown__chevron { width: 12px; height: 12px; }
+}
+
+.catalogue-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 8px 12px;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+
+  input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: $text;
+    font-size: 13px;
+    font-family: inherit;
+
+    &::placeholder { color: $text-dim; }
+  }
+}
+
+.catalogue-picker-loading,
+.catalogue-picker-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: $text-muted;
+  font-size: 13px;
+}
+
+.catalogue-picker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px 8px;
+}
+
+.catalogue-picker-select-all {
+  background: none;
+  border: none;
+  color: $accent;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0;
+
+  &:hover { color: $accent-hover; }
+}
+
+.catalogue-picker-count {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+.catalogue-picker-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.catalogue-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 0 24px 16px;
+}
+
+.catalogue-picker-card {
+  border: 2px solid $border;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: $text-dim; }
+  &.selected { border-color: $accent; background: rgba($accent, 0.05); }
+}
+
+.catalogue-picker-card-image {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: darken($surface, 2%);
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.catalogue-picker-card-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.catalogue-picker-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+
+  svg { opacity: 0; }
+
+  &.checked {
+    background: $accent;
+    border-color: $accent;
+    svg { opacity: 1; color: #fff; }
+  }
+}
+
+.catalogue-picker-card-info {
+  padding: 8px 10px;
+}
+
+.catalogue-picker-card-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: $text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalogue-picker-card-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: $text-muted;
+}
+
+.catalogue-picker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.catalogue-picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid $border;
+}
+
+// ========================================
+// Catalogue Group Config
+// ========================================
+
+.catalogue-toolbar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.catalogue-group-config {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 0;
+  border-bottom: 1px solid $border;
+}
+
+.catalogue-group-config-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalogue-group-config-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.catalogue-vs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.catalogue-vs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: $text-muted;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: $text-dim; color: $text; }
+
+  &.active {
+    background: rgba($accent, 0.1);
+    border-color: $accent;
+    color: $accent;
+  }
+}
+
+// ========================================
+// Catalogue Card Badges & Platform
+// ========================================
+
+.catalogue-card-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  z-index: 2;
+}
+
+.catalogue-card-badge-primary {
+  background: $accent;
+  color: #fff;
+}
+
+.catalogue-card-badge-vs {
+  background: rgba($text-muted, 0.2);
+  color: $text-muted;
+}
+
+// Card indicators (Ref + Version)
+.catalogue-card-indicators {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 3;
+}
+
+.catalogue-card-ref-btn,
+.catalogue-card-version-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s;
+}
+
+.catalogue-card-ref-btn {
+  background: rgba(99, 102, 241, 0.75);
+  color: #fff;
+  &:hover { background: rgba(99, 102, 241, 0.9); }
+}
+
+.catalogue-card-version-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  &:hover { background: rgba(255, 255, 255, 0.25); }
+}
+
+.catalogue-card-comment-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+// Reference popover
+.catalogue-card-ref-popover {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $surface;
+  border-top: 1px solid $border;
+  border-radius: 0 0 12px 12px;
+  z-index: 10;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    background: $bg;
+  }
+}
+
+.catalogue-card-ref-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+
+  span {
+    font-size: 11px;
+    font-weight: 600;
+    color: $accent;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    border: none;
+    background: none;
+    color: $text-dim;
+    cursor: pointer;
+    padding: 0;
+    &:hover { color: $text; }
+  }
+}
+
+// Version history panel
+.catalogue-card-versions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: $surface;
+  border-radius: 12px;
+  z-index: 10;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+.catalogue-card-versions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid $border;
+  position: sticky;
+  top: 0;
+  background: $surface;
+
+  span {
+    font-size: 12px;
+    font-weight: 600;
+    color: $text;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    border: none;
+    background: none;
+    color: $text-dim;
+    cursor: pointer;
+    padding: 0;
+    &:hover { color: $text; }
+  }
+}
+
+.catalogue-card-versions-current,
+.catalogue-card-versions-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+
+  img {
+    width: 48px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid $border;
+  }
+
+  span {
+    font-size: 11px;
+    color: $text-muted;
+  }
+}
+
+.catalogue-card-versions-current span {
+  color: $accent;
+  font-weight: 500;
+}
+
+.catalogue-card-versions-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: $text-dim;
+}
+
+// Lightbox
+.catalogue-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: lightboxFadeIn 0.15s ease-out;
+}
+
+@keyframes lightboxFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.catalogue-lightbox-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 24px;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), transparent);
+}
+
+.catalogue-lightbox-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalogue-lightbox-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: min(52vw, 560px);
+}
+
+.catalogue-lightbox-name-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.34);
+  }
+}
+
+.catalogue-lightbox-name-input {
+  width: min(52vw, 560px);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+
+  &:focus {
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.catalogue-lightbox-group {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 10px;
+}
+
+.catalogue-lightbox-tag {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: capitalize;
+}
+
+.catalogue-lightbox-close {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.2); }
+}
+
+.catalogue-lightbox-body {
+  display: flex;
+  max-height: 85vh;
+  max-width: 95vw;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.catalogue-lightbox-img {
+  flex: 1;
+  min-width: 0;
+  max-height: 85vh;
+  object-fit: contain;
+  cursor: default;
+  background: #000;
+}
+
