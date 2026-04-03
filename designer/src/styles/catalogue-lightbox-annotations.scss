@@ -85,26 +85,29 @@
 .catalogue-lightbox-grabber {
   display: block;
   width: 100%;
-  padding: 10px 0 6px;
+  min-height: 44px;
+  padding: 16px 0;
   border: none;
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 
   &::after {
     content: '';
     display: block;
-    width: 36px;
-    height: 4px;
+    width: 40px;
+    height: 5px;
     margin: 0 auto;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.22);
     transition: background 0.15s ease, width 0.15s ease;
   }
 
-  &:hover::after {
-    background: rgba(255, 255, 255, 0.35);
-    width: 48px;
+  &:hover::after,
+  &:active::after {
+    background: rgba(255, 255, 255, 0.45);
+    width: 52px;
   }
 }
 
