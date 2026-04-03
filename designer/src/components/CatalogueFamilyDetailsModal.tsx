@@ -377,16 +377,16 @@ export function CatalogueFamilyDetailsModal({
             <p className="catalogue-family-details-note">
               Flow ownership stays at the family level. Variant comments and annotations stay attached to the currently selected screenshot variant.
             </p>
-
-            <div className="catalogue-family-details-actions">
-              <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>
-                Cancel
-              </button>
-              <button type="button" className="btn-primary" onClick={() => void handleSave()} disabled={saving}>
-                {saving ? 'Saving...' : 'Save details'}
-              </button>
-            </div>
           </div>
+        </div>
+
+        <div className="catalogue-family-details-actions">
+          <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>
+            Cancel
+          </button>
+          <button type="button" className="btn-primary" onClick={() => void handleSave()} disabled={saving}>
+            {saving ? 'Saving...' : 'Save details'}
+          </button>
         </div>
       </div>
     </div>,
