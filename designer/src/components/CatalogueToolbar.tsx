@@ -57,15 +57,6 @@ function CloseIcon() {
   );
 }
 
-function SearchIcon({ size = 16, strokeWidth = 2 }: { size?: number; strokeWidth?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth}>
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
 export function CatalogueToolbar({
   allFlows,
   allMobileOs,
@@ -102,18 +93,18 @@ export function CatalogueToolbar({
 }: CatalogueToolbarProps) {
   const nonPrimaryGroups = groups.filter((group) => group !== primaryGroup);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-  const [searchExpanded, setSearchExpanded] = useState(false);
-  const floatingInputRef = useRef<HTMLInputElement>(null);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
 
-  function expandSearch() {
-    setSearchExpanded(true);
-    requestAnimationFrame(() => floatingInputRef.current?.focus());
+  function openMobileSearch() {
+    setMobileSearchOpen(true);
+    requestAnimationFrame(() => mobileSearchRef.current?.focus());
   }
 
-  function collapseSearch() {
-    setSearchExpanded(false);
+  function closeMobileSearch() {
+    setMobileSearchOpen(false);
     onSearchChange('');
-    floatingInputRef.current?.blur();
+    mobileSearchRef.current?.blur();
   }
 
   const activeFilterCount = [
@@ -159,9 +150,12 @@ export function CatalogueToolbar({
     <div className="catalogue-toolbar-wrapper">
       <div className="catalogue-toolbar">
         <div className="catalogue-toolbar-left">
-          {/* Desktop only - hidden on mobile via CSS */}
+          {/* Desktop search - hidden on mobile */}
           <div className="catalogue-search catalogue-search--desktop">
-            <SearchIcon />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
             <input
               type="text"
               placeholder="Search screen families..."
@@ -197,15 +191,52 @@ export function CatalogueToolbar({
         </div>
 
         <div className="catalogue-toolbar-right">
-          {/* Desktop only - hidden on mobile via CSS */}
-          <button className="btn-secondary catalogue-toolbar-quick-upload" onClick={onQuickUploadClick}>
+          {/* Desktop buttons - hidden on mobile */}
+          <button className="btn-secondary catalogue-toolbar--desktop-only" onClick={onQuickUploadClick}>
             Quick Upload
           </button>
-          <button className="btn-primary" onClick={onUploadClick}>
+          <button className="btn-primary catalogue-toolbar--desktop-only" onClick={onUploadClick}>
             + Upload
+          </button>
+
+          {/* Mobile pills - hidden on desktop */}
+          <button type="button" className="catalogue-toolbar-pill catalogue-toolbar--mobile-only" onClick={openMobileSearch}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            {searchQuery && <span className="catalogue-toolbar-pill__dot" />}
+          </button>
+          <button type="button" className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only" onClick={onUploadClick}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
           </button>
         </div>
       </div>
+
+      {/* Mobile expandable search row - below toolbar */}
+      {mobileSearchOpen && (
+        <div className="catalogue-mobile-search-row">
+          <div className="catalogue-mobile-search-input">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              ref={mobileSearchRef}
+              type="text"
+              placeholder="Search screen families..."
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.target.value)}
+            />
+            <button type="button" className="catalogue-mobile-search-cancel" onClick={closeMobileSearch}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {activePills.length > 0 && (
         <div className="catalogue-filter-pills">
@@ -217,27 +248,6 @@ export function CatalogueToolbar({
           ))}
         </div>
       )}
-
-      {/* Mobile only floating search - hidden on desktop via CSS */}
-      <div className={`catalogue-mobile-search ${searchExpanded ? 'is-expanded' : ''}`}>
-        <button type="button" className="catalogue-mobile-search__pill" onClick={expandSearch}>
-          <SearchIcon size={18} strokeWidth={2.5} />
-          {searchQuery && <span className="catalogue-mobile-search__dot" />}
-        </button>
-        <div className="catalogue-mobile-search__bar">
-          <SearchIcon />
-          <input
-            ref={floatingInputRef}
-            type="text"
-            placeholder="Search screen families..."
-            value={searchQuery}
-            onChange={(event) => onSearchChange(event.target.value)}
-          />
-          <button type="button" className="catalogue-mobile-search__cancel" onClick={collapseSearch}>
-            Cancel
-          </button>
-        </div>
-      </div>
 
       <CatalogueFilterSheet
         isOpen={filterSheetOpen}
