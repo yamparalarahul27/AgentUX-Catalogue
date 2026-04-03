@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-
 import { getActiveFamilyVariant, getVariantKey, type CatalogueFamilyView } from '../lib/catalogue-families';
 import type { MobileOs, WebPreset } from '../types';
-
 interface CatalogueGalleryViewProps {
   activeVariantKeys: Record<string, string>;
   families: CatalogueFamilyView[];
@@ -11,6 +9,7 @@ interface CatalogueGalleryViewProps {
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenPreview: (familyId: string) => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
+  onRemoveReference: (screenshotId: string) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onUpdateVariantDetails: (
@@ -24,12 +23,10 @@ interface CatalogueGalleryViewProps {
   ) => Promise<boolean>;
   webPresets: WebPreset[];
 }
-
 const GALLERY_ZOOM_MIN = 1;
 const GALLERY_ZOOM_MAX = 3;
 const GALLERY_ZOOM_STEP = 0.25;
 const GALLERY_DOUBLE_CLICK_ZOOM = 2;
-
 interface GalleryPanState {
   pointerId: number;
   startX: number;
@@ -37,7 +34,6 @@ interface GalleryPanState {
   scrollLeft: number;
   scrollTop: number;
 }
-
 interface GalleryInlineDraft {
   familyName: string;
   groupName: string;
@@ -48,14 +44,12 @@ interface GalleryInlineDraft {
   webPresetKey: string | null;
   mobileOs: MobileOs | null;
 }
-
 function formatDateTime(value?: string): string {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
-
 function buildInlineDraft(
   family: CatalogueFamilyView,
   variantKey: string | null | undefined,
@@ -63,7 +57,6 @@ function buildInlineDraft(
   const activeVariant = getActiveFamilyVariant(family, variantKey);
   const screenshot = activeVariant?.screenshot ?? null;
   if (!screenshot) return null;
-
   return {
     familyName: family.name,
     groupName: family.group || '',
@@ -75,7 +68,6 @@ function buildInlineDraft(
     mobileOs: screenshot.mobile_os || null,
   };
 }
-
 function isInlineDraftValid(draft: GalleryInlineDraft | null): boolean {
   if (!draft) return false;
   if (!draft.familyName.trim()) return false;
@@ -84,7 +76,6 @@ function isInlineDraftValid(draft: GalleryInlineDraft | null): boolean {
   if (draft.platform === 'mobile') return Boolean(draft.mobileOs);
   return false;
 }
-
 export function CatalogueGalleryView({
   activeVariantKeys,
   families,
@@ -93,6 +84,7 @@ export function CatalogueGalleryView({
   onDeleteFamily,
   onOpenPreview,
   onRenameFamily,
+  onRemoveReference,
   onReplaceVariantImage,
   onSetFlowLabel,
   onUpdateVariantDetails,
@@ -108,18 +100,15 @@ export function CatalogueGalleryView({
   const [isInlineEditing, setIsInlineEditing] = useState(false);
   const [inlineDraft, setInlineDraft] = useState<GalleryInlineDraft | null>(null);
   const [isSavingInline, setIsSavingInline] = useState(false);
-
   useEffect(() => {
     if (families.length === 0) {
       setActiveFamilyId(null);
       return;
     }
-
     if (!activeFamilyId || !families.some((family) => family.id === activeFamilyId)) {
       setActiveFamilyId(families[0].id);
     }
   }, [activeFamilyId, families]);
-
   const activeFamilyIndex = useMemo(
     () => families.findIndex((family) => family.id === activeFamilyId),
     [activeFamilyId, families],
@@ -131,7 +120,6 @@ export function CatalogueGalleryView({
   );
   const screenshot = activeVariant?.screenshot ?? null;
   const zoomPercent = Math.round(zoom * 100);
-
   useEffect(() => {
     if (!activeFamily) return;
     setZoom(GALLERY_ZOOM_MIN);
@@ -144,7 +132,6 @@ export function CatalogueGalleryView({
       previewRef.current?.scrollTo({ top: 0, left: 0 });
     });
   }, [activeFamily?.id]);
-
   useEffect(() => {
     if (!activeFamily || !activeVariant || !isInlineEditing) return;
     setInlineDraft((previous) => {
@@ -159,7 +146,6 @@ export function CatalogueGalleryView({
       };
     });
   }, [activeFamily, activeVariant, isInlineEditing]);
-
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (!activeFamily || families.length <= 1) return;
@@ -174,43 +160,38 @@ export function CatalogueGalleryView({
         setActiveFamilyId(families[activeFamilyIndex + 1].id);
       }
     }
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeFamily, activeFamilyIndex, families]);
-
   if (!activeFamily || !activeVariant || !screenshot) {
     return null;
   }
-
   const family = activeFamily;
   const variant = activeVariant;
   const activeScreenshot = screenshot;
   const canSaveInline = isInlineDraftValid(inlineDraft) && !isSavingInline;
-  const gestureHint = zoom > GALLERY_ZOOM_MIN
-    ? 'Scroll to move / Pinch to zoom / Drag to pan / Click for full preview'
-    : 'Scroll to move / Pinch to zoom / Click for full preview';
-
   async function requestDeleteCurrent() {
     const shouldDelete = window.confirm(`Delete "${family.name}" and all of its variants?`);
     if (!shouldDelete) return;
     await onDeleteFamily(family.id);
   }
-
+  async function requestRemoveReference() {
+    if (!activeScreenshot.reference_url && !activeScreenshot.reference_storage_path) return;
+    const shouldRemove = window.confirm('Remove this reference image from the screenshot?');
+    if (!shouldRemove) return;
+    await onRemoveReference(activeScreenshot.id);
+  }
   function beginInlineEdit() {
     setInlineDraft(buildInlineDraft(family, variant.key));
     setIsInlineEditing(true);
   }
-
   function cancelInlineEdit() {
     setInlineDraft(buildInlineDraft(family, variant.key));
     setIsInlineEditing(false);
   }
-
   function handlePlatformDraftChange(platform: 'mobile' | 'web' | null) {
     setInlineDraft((previous) => {
       if (!previous) return previous;
-
       if (platform === 'web') {
         return {
           ...previous,
@@ -219,7 +200,6 @@ export function CatalogueGalleryView({
           webPresetKey: previous.webPresetKey || webPresets[0]?.key || null,
         };
       }
-
       if (platform === 'mobile') {
         return {
           ...previous,
@@ -228,7 +208,6 @@ export function CatalogueGalleryView({
           mobileOs: previous.mobileOs || 'ios',
         };
       }
-
       return {
         ...previous,
         platform,
@@ -237,36 +216,29 @@ export function CatalogueGalleryView({
       };
     });
   }
-
   async function saveInlineEdit() {
     if (!inlineDraft || !isInlineDraftValid(inlineDraft)) return;
-
     setIsSavingInline(true);
     try {
       const trimmedName = inlineDraft.familyName.trim();
       const trimmedGroup = inlineDraft.groupName.trim();
       const trimmedFlow = inlineDraft.flowLabel.trim();
-
       if (trimmedName !== family.name) {
         await onRenameFamily(family.id, trimmedName);
       }
-
       if (trimmedGroup !== (family.group || '')) {
         await onChangeFamilyGroup(family.id, trimmedGroup || null);
       }
-
       if (trimmedFlow !== (family.flow_label || '')) {
         const flowUpdated = await onSetFlowLabel(family.id, trimmedFlow || null);
         if (!flowUpdated) return;
       }
-
       const variantChanged = (
         inlineDraft.theme !== activeScreenshot.theme
         || inlineDraft.platform !== activeScreenshot.platform
         || inlineDraft.webPresetKey !== activeScreenshot.web_preset_key
         || inlineDraft.mobileOs !== activeScreenshot.mobile_os
       );
-
       if (variantChanged) {
         const variantUpdated = await onUpdateVariantDetails(inlineDraft.screenshotId, {
           theme: inlineDraft.theme,
@@ -275,7 +247,6 @@ export function CatalogueGalleryView({
           mobile_os: inlineDraft.mobileOs,
         });
         if (!variantUpdated) return;
-
         const nextVariantKey = getVariantKey({
           ...activeScreenshot,
           theme: inlineDraft.theme,
@@ -285,47 +256,44 @@ export function CatalogueGalleryView({
         });
         onActiveVariantChange(family.id, nextVariantKey);
       }
-
       setIsInlineEditing(false);
     } finally {
       setIsSavingInline(false);
     }
   }
-
   function handleZoomIn() {
     setZoom((current) => Math.min(GALLERY_ZOOM_MAX, Number((current + GALLERY_ZOOM_STEP).toFixed(2))));
   }
-
+  function handleZoomOut() {
+    setZoom((current) => {
+      const nextZoom = Math.max(GALLERY_ZOOM_MIN, Number((current - GALLERY_ZOOM_STEP).toFixed(2)));
+      if (nextZoom === GALLERY_ZOOM_MIN) {
+        requestAnimationFrame(() => {
+          previewRef.current?.scrollTo({ top: 0, left: 0 });
+        });
+      }
+      return nextZoom;
+    });
+  }
   function handleZoomReset() {
     setZoom(GALLERY_ZOOM_MIN);
     requestAnimationFrame(() => {
       previewRef.current?.scrollTo({ top: 0, left: 0 });
     });
   }
-
   function handlePreviewWheel(event: React.WheelEvent<HTMLDivElement>) {
     if (!activeScreenshot.image_url || !event.ctrlKey || event.deltaY === 0) return;
     event.preventDefault();
-
     if (event.deltaY < 0) {
       handleZoomIn();
       return;
     }
-
-    const nextZoom = Math.max(GALLERY_ZOOM_MIN, Number((zoom - GALLERY_ZOOM_STEP).toFixed(2)));
-    setZoom(nextZoom);
-    if (nextZoom === GALLERY_ZOOM_MIN) {
-      requestAnimationFrame(() => {
-        previewRef.current?.scrollTo({ top: 0, left: 0 });
-      });
-    }
+    handleZoomOut();
   }
-
   function handlePreviewPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (!activeScreenshot.image_url || zoom <= GALLERY_ZOOM_MIN || event.button !== 0) return;
     const preview = previewRef.current;
     if (!preview) return;
-
     panStateRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -337,22 +305,18 @@ export function CatalogueGalleryView({
     preview.setPointerCapture(event.pointerId);
     setIsPanning(true);
   }
-
   function handlePreviewPointerMove(event: React.PointerEvent<HTMLDivElement>) {
     const preview = previewRef.current;
     const panState = panStateRef.current;
     if (!preview || !panState || panState.pointerId !== event.pointerId) return;
-
     const deltaX = event.clientX - panState.startX;
     const deltaY = event.clientY - panState.startY;
     if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
       panMovedRef.current = true;
     }
-
     preview.scrollLeft = panState.scrollLeft - deltaX;
     preview.scrollTop = panState.scrollTop - deltaY;
   }
-
   function finishPan(pointerId?: number) {
     const preview = previewRef.current;
     if (preview && typeof pointerId === 'number' && preview.hasPointerCapture(pointerId)) {
@@ -361,33 +325,27 @@ export function CatalogueGalleryView({
     panStateRef.current = null;
     setIsPanning(false);
   }
-
   function handlePreviewDoubleClick() {
     if (!activeScreenshot.image_url) return;
-
     if (zoom > GALLERY_ZOOM_MIN) {
       handleZoomReset();
       return;
     }
-
     setZoom(Math.min(GALLERY_ZOOM_MAX, GALLERY_DOUBLE_CLICK_ZOOM));
   }
-
   function handlePreviewKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (!activeScreenshot.image_url) return;
-
     if (event.key === '+' || event.key === '=') {
       event.preventDefault();
       handleZoomIn();
     } else if (event.key === '-' || event.key === '_') {
       event.preventDefault();
-      setZoom((current) => Math.max(GALLERY_ZOOM_MIN, Number((current - GALLERY_ZOOM_STEP).toFixed(2))));
+      handleZoomOut();
     } else if (event.key === '0') {
       event.preventDefault();
       handleZoomReset();
     }
   }
-
   function handlePreviewClick() {
     if (panMovedRef.current) {
       panMovedRef.current = false;
@@ -395,14 +353,11 @@ export function CatalogueGalleryView({
     }
     onOpenPreview(family.id);
   }
-
   function handleVariantSelect(variantKey: string) {
     onActiveVariantChange(family.id, variantKey);
-
     if (!isInlineEditing) return;
     const selectedVariant = family.variants.find((item) => item.key === variantKey);
     if (!selectedVariant) return;
-
     setInlineDraft((previous) => {
       if (!previous) return previous;
       return {
@@ -415,7 +370,6 @@ export function CatalogueGalleryView({
       };
     });
   }
-
   return (
     <div className="catalogue-gallery">
       <input
@@ -431,7 +385,6 @@ export function CatalogueGalleryView({
           event.target.value = '';
         }}
       />
-
       <div className="catalogue-gallery-main">
         <div
           ref={previewRef}
@@ -449,12 +402,49 @@ export function CatalogueGalleryView({
           aria-label={activeScreenshot.image_url ? 'Preview image. Scroll to move, pinch to zoom, drag to pan when zoomed in, and click to open the full preview.' : undefined}
         >
           {activeScreenshot.image_url && (
-            <div className="catalogue-gallery-preview-toolbar">
-              <span className="catalogue-gallery-preview-zoom">{zoomPercent}%</span>
-              <span className="catalogue-gallery-preview-toolbar-copy">{gestureHint}</span>
+            <div
+              className="catalogue-gallery-preview-toolbar"
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <div className="catalogue-gallery-preview-controls">
+                <button
+                  type="button"
+                  className="catalogue-gallery-preview-btn"
+                  disabled={zoom <= GALLERY_ZOOM_MIN}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleZoomOut();
+                  }}
+                >
+                  -
+                </button>
+                <span className="catalogue-gallery-preview-zoom">{zoomPercent}%</span>
+                <button
+                  type="button"
+                  className="catalogue-gallery-preview-btn"
+                  disabled={zoom >= GALLERY_ZOOM_MAX}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleZoomIn();
+                  }}
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  className="catalogue-gallery-preview-btn"
+                  disabled={zoom <= GALLERY_ZOOM_MIN}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleZoomReset();
+                  }}
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           )}
-
           {activeScreenshot.image_url ? (
             <div className="catalogue-gallery-preview-stage">
               <img
@@ -472,7 +462,6 @@ export function CatalogueGalleryView({
             <div className="catalogue-gallery-preview-empty">No image available</div>
           )}
         </div>
-
         <div className="catalogue-gallery-strip">
           {families.map((item) => {
             const currentVariant = getActiveFamilyVariant(item, activeVariantKeys[item.id]);
@@ -491,7 +480,6 @@ export function CatalogueGalleryView({
           })}
         </div>
       </div>
-
       <aside className="catalogue-gallery-meta catalogue-gallery-meta--family">
         <div className="catalogue-gallery-meta-head catalogue-gallery-meta-head--stack">
           <div className="catalogue-gallery-meta-copy">
@@ -504,14 +492,12 @@ export function CatalogueGalleryView({
             {family.flow_label || 'Unassigned'}
           </span>
         </div>
-
         {isInlineEditing && inlineDraft ? (
           <div className="catalogue-gallery-inline-editor">
             <div className="catalogue-list-inline-editor__head">
               <strong>Editing {variant.label}</strong>
               <span>Changes apply to this screenshot.</span>
             </div>
-
             <div className="catalogue-list-inline-editor__grid">
               <label className="catalogue-list-inline-editor__field">
                 <span>Screenshot name</span>
@@ -521,7 +507,6 @@ export function CatalogueGalleryView({
                   onChange={(event) => setInlineDraft((previous) => previous ? { ...previous, familyName: event.target.value } : previous)}
                 />
               </label>
-
               <label className="catalogue-list-inline-editor__field">
                 <span>Group</span>
                 <input
@@ -530,7 +515,6 @@ export function CatalogueGalleryView({
                   onChange={(event) => setInlineDraft((previous) => previous ? { ...previous, groupName: event.target.value } : previous)}
                 />
               </label>
-
               <label className="catalogue-list-inline-editor__field">
                 <span>Flow</span>
                 <input
@@ -540,7 +524,6 @@ export function CatalogueGalleryView({
                   placeholder="Type a flow label"
                 />
               </label>
-
               <div className="catalogue-list-inline-editor__field">
                 <span>Theme</span>
                 <div className="catalogue-list-inline-editor__chips">
@@ -556,7 +539,6 @@ export function CatalogueGalleryView({
                   ))}
                 </div>
               </div>
-
               <div className="catalogue-list-inline-editor__field">
                 <span>Platform</span>
                 <div className="catalogue-list-inline-editor__chips">
@@ -572,7 +554,6 @@ export function CatalogueGalleryView({
                   ))}
                 </div>
               </div>
-
               {inlineDraft.platform === 'web' ? (
                 <label className="catalogue-list-inline-editor__field">
                   <span>Web preset</span>
@@ -595,7 +576,6 @@ export function CatalogueGalleryView({
                   </select>
                 </label>
               ) : null}
-
               {inlineDraft.platform === 'mobile' ? (
                 <div className="catalogue-list-inline-editor__field">
                   <span>Mobile OS</span>
@@ -616,7 +596,6 @@ export function CatalogueGalleryView({
             </div>
           </div>
         ) : null}
-
         <div className="catalogue-family-card__variants catalogue-family-card__variants--gallery">
           {family.variants.map((item) => (
             <button
@@ -629,7 +608,6 @@ export function CatalogueGalleryView({
             </button>
           ))}
         </div>
-
         <div className="catalogue-gallery-meta-grid">
           <div className="catalogue-gallery-meta-row">
             <span>Variant</span>
@@ -648,7 +626,6 @@ export function CatalogueGalleryView({
             <strong>{formatDateTime(activeScreenshot.created_at || family.created_at)}</strong>
           </div>
         </div>
-
         <div className="catalogue-gallery-actions">
           {isInlineEditing ? (
             <>
@@ -681,13 +658,19 @@ export function CatalogueGalleryView({
             Delete
           </button>
         </div>
-
         <div className="catalogue-gallery-reference">
           <h4>Reference Image</h4>
           {activeScreenshot.reference_url ? (
             <>
               <img src={activeScreenshot.reference_url} alt={activeScreenshot.reference_label || 'Reference'} draggable={false} />
               <p>{activeScreenshot.reference_label || 'Reference'}</p>
+              <button
+                type="button"
+                className="catalogue-gallery-reference-remove"
+                onClick={() => void requestRemoveReference()}
+              >
+                Remove reference
+              </button>
             </>
           ) : (
             <p className="catalogue-gallery-reference-empty">No reference image</p>

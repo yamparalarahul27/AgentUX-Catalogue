@@ -26,6 +26,7 @@ interface CatalogueContentProps {
   onOpenDetails: (familyId: string) => void;
   onOpenPreview: (familyId: string) => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
+  onRemoveReference: (screenshotId: string) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onToggleGroupSelect: (familyIds: string[]) => void;
@@ -64,6 +65,7 @@ export function CatalogueContent({
   onOpenDetails,
   onOpenPreview,
   onRenameFamily,
+  onRemoveReference,
   onReplaceVariantImage,
   onSetFlowLabel,
   onToggleGroupSelect,
@@ -133,6 +135,7 @@ export function CatalogueContent({
         onDeleteFamily={onDeleteFamily}
         onOpenPreview={onOpenPreview}
         onRenameFamily={onRenameFamily}
+        onRemoveReference={onRemoveReference}
         onReplaceVariantImage={onReplaceVariantImage}
         onSetFlowLabel={onSetFlowLabel}
         onUpdateVariantDetails={onUpdateVariantDetails}

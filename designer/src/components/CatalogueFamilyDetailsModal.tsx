@@ -17,6 +17,7 @@ interface CatalogueFamilyDetailsModalProps {
   onClose: () => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
+  onRemoveReference: (screenshotId: string) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onUpdateVariantDetails: (
@@ -79,6 +80,7 @@ export function CatalogueFamilyDetailsModal({
   onClose,
   onDeleteFamily,
   onRenameFamily,
+  onRemoveReference,
   onReplaceVariantImage,
   onSetFlowLabel,
   onUpdateVariantDetails,
@@ -206,6 +208,13 @@ export function CatalogueFamilyDetailsModal({
     onClose();
   }
 
+  async function requestReferenceRemove() {
+    if (!currentScreenshot.reference_url && !currentScreenshot.reference_storage_path) return;
+    const shouldRemove = window.confirm('Remove this reference image from the screenshot?');
+    if (!shouldRemove) return;
+    await onRemoveReference(currentScreenshot.id);
+  }
+
   return createPortal(
     <div className="catalogue-family-details-overlay" onClick={onClose}>
       <div
@@ -258,6 +267,11 @@ export function CatalogueFamilyDetailsModal({
                 <button type="button" className="catalogue-family-details-action" onClick={() => fileRef.current?.click()}>
                   Reupload image
                 </button>
+                {currentScreenshot.reference_url && (
+                  <button type="button" className="catalogue-family-details-action" onClick={() => void requestReferenceRemove()}>
+                    Remove reference
+                  </button>
+                )}
                 <button type="button" className="catalogue-family-details-action is-danger" onClick={() => void requestDelete()}>
                   Delete screenshot
                 </button>

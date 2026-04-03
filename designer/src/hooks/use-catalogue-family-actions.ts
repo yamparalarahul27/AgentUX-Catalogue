@@ -371,6 +371,43 @@ export function useCatalogueFamilyActions({
     setToast({ message: 'Variant image replaced', type: 'success' });
   }, [screenshots, setScreenshots, setToast, userId]);
 
+  const handleRemoveReference = useCallback(async (screenshotId: string) => {
+    const screenshot = screenshots.find((item) => item.id === screenshotId);
+    if (!screenshot) return false;
+
+    const patch: Pick<ScreenshotNode, 'reference_label' | 'reference_storage_path' | 'reference_url'> = {
+      reference_label: null,
+      reference_storage_path: null,
+      reference_url: null,
+    };
+
+    const { error } = await supabase.from('screenshots').update(patch).eq('id', screenshotId);
+    if (error) {
+      setToast({ message: `Could not remove reference image: ${error.message}`, type: 'error' });
+      return false;
+    }
+
+    let cleanupError: string | null = null;
+    if (screenshot.reference_storage_path) {
+      const { error: storageError } = await supabase.storage
+        .from('screenshots')
+        .remove([screenshot.reference_storage_path]);
+      if (storageError) cleanupError = storageError.message;
+    }
+
+    setScreenshots((previous) => previous.map((item) => (
+      item.id === screenshotId ? { ...item, ...patch } : item
+    )));
+
+    setToast({
+      message: cleanupError
+        ? `Reference removed, but cleanup failed: ${cleanupError}`
+        : 'Reference image removed',
+      type: cleanupError ? 'info' : 'success',
+    });
+    return true;
+  }, [screenshots, setScreenshots, setToast]);
+
   const handleAssignFlow = useCallback(async (familyId: string, flowId: string | null) => {
     const family = familyById[familyId];
     if (!family) return;
@@ -391,6 +428,7 @@ export function useCatalogueFamilyActions({
     handleDeleteFamily,
     handlePrimaryGroupChange,
     handleRenameFamily,
+    handleRemoveReference,
     handleReplaceImage,
     handleSetFlowLabel,
     handleUpdateVariantDetails,

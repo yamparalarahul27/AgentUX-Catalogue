@@ -128,6 +128,7 @@ export function Catalogue({ user }: CatalogueProps) {
     handleDeleteFamily,
     handlePrimaryGroupChange,
     handleRenameFamily,
+    handleRemoveReference,
     handleReplaceImage,
     handleSetFlowLabel,
     handleUpdateVariantDetails,
@@ -368,6 +369,7 @@ export function Catalogue({ user }: CatalogueProps) {
                 onOpenDetails={openDetails}
                 onOpenPreview={openPreview}
                 onRenameFamily={handleRenameFamily}
+                onRemoveReference={handleRemoveReference}
                 onReplaceVariantImage={handleReplaceImage}
                 onSetFlowLabel={handleSetFlowLabel}
                 onToggleGroupSelect={toggleGroupSelection}
@@ -495,6 +497,7 @@ export function Catalogue({ user }: CatalogueProps) {
         onClose={() => setDetailsFamilyId(null)}
         onDeleteFamily={handleDeleteFamily}
         onRenameFamily={handleRenameFamily}
+        onRemoveReference={handleRemoveReference}
         onReplaceVariantImage={handleReplaceImage}
         onSetFlowLabel={handleSetFlowLabel}
         onUpdateVariantDetails={handleUpdateVariantDetails}
