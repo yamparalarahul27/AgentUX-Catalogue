@@ -167,6 +167,7 @@ export function CatalogueContent({
         onDeleteFamily={onDeleteFamily}
         onOpenDetails={onOpenDetails}
         onOpenPreview={onOpenPreview}
+        onRenameFamily={onRenameFamily}
         onReplaceVariantImage={onReplaceVariantImage}
       />
     );

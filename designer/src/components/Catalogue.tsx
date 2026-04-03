@@ -488,6 +488,7 @@ export function Catalogue({ user }: CatalogueProps) {
           onCommentCountChange={handleCommentCountChange}
           onDeleteFamily={handleDeleteFamily}
           onOpenDetails={openDetails}
+          onRenameFamily={handleRenameFamily}
           onReplaceVariantImage={handleReplaceImage}
         />
       )}

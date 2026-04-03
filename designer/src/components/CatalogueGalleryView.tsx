@@ -13,6 +13,7 @@ interface CatalogueGalleryViewProps {
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenDetails: (familyId: string) => void;
   onOpenPreview: (familyId: string) => void;
+  onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
 }
 
@@ -46,15 +47,19 @@ export function CatalogueGalleryView({
   onDeleteFamily,
   onOpenDetails,
   onOpenPreview,
+  onRenameFamily,
   onReplaceVariantImage,
 }: CatalogueGalleryViewProps) {
   const previewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const panStateRef = useRef<GalleryPanState | null>(null);
   const panMovedRef = useRef(false);
   const [activeFamilyId, setActiveFamilyId] = useState<string | null>(families[0]?.id ?? null);
   const [zoom, setZoom] = useState(GALLERY_ZOOM_MIN);
   const [isPanning, setIsPanning] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
 
   useEffect(() => {
     if (families.length === 0) {
@@ -82,13 +87,21 @@ export function CatalogueGalleryView({
   useEffect(() => {
     if (!activeFamily) return;
     setZoom(GALLERY_ZOOM_MIN);
+    setEditingTitle(false);
+    setTitleDraft(activeFamily.name);
     panStateRef.current = null;
     panMovedRef.current = false;
     setIsPanning(false);
     requestAnimationFrame(() => {
       previewRef.current?.scrollTo({ top: 0, left: 0 });
     });
-  }, [activeFamily?.id]);
+  }, [activeFamily?.id, activeFamily?.name]);
+
+  useEffect(() => {
+    if (!editingTitle) return;
+    titleInputRef.current?.focus();
+    titleInputRef.current?.select();
+  }, [editingTitle]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -124,6 +137,16 @@ export function CatalogueGalleryView({
     const shouldDelete = window.confirm(`Delete "${family.name}" and all of its variants?`);
     if (!shouldDelete) return;
     await onDeleteFamily(family.id);
+  }
+
+  async function commitTitleRename() {
+    const trimmed = titleDraft.trim();
+    setEditingTitle(false);
+    if (!trimmed || trimmed === family.name) {
+      setTitleDraft(family.name);
+      return;
+    }
+    await onRenameFamily(family.id, trimmed);
   }
 
   function handleZoomIn() {
@@ -309,7 +332,33 @@ export function CatalogueGalleryView({
       <aside className="catalogue-gallery-meta catalogue-gallery-meta--family">
         <div className="catalogue-gallery-meta-head catalogue-gallery-meta-head--stack">
           <div className="catalogue-gallery-meta-copy">
-            <h3 className="catalogue-gallery-title">{family.name}</h3>
+            {editingTitle ? (
+              <input
+                ref={titleInputRef}
+                className="catalogue-gallery-title-input"
+                value={titleDraft}
+                onChange={(event) => setTitleDraft(event.target.value)}
+                onBlur={() => void commitTitleRename()}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void commitTitleRename();
+                  if (event.key === 'Escape') {
+                    setEditingTitle(false);
+                    setTitleDraft(family.name);
+                  }
+                }}
+                aria-label="Edit title"
+              />
+            ) : (
+              <h3 className="catalogue-gallery-title">
+                <button
+                  type="button"
+                  className="catalogue-gallery-title-button"
+                  onClick={() => setEditingTitle(true)}
+                >
+                  {family.name}
+                </button>
+              </h3>
+            )}
             <p className="catalogue-gallery-subtitle">
               {projectMap[family.project_id] || 'Unknown project'} · {family.group || 'No group'}
             </p>

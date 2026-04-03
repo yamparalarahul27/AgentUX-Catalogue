@@ -400,9 +400,6 @@ export function CatalogueFamilyListView({
                       </>
                     ) : (
                       <>
-                        <button type="button" className="catalogue-list-action" onClick={() => onOpenPreview(family.id)}>
-                          Preview
-                        </button>
                         <button type="button" className="catalogue-list-action" onClick={() => beginInlineEdit(family)}>
                           Edit
                         </button>

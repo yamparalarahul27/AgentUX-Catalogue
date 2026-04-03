@@ -22,6 +22,7 @@ interface CatalogueFamilyLightboxProps {
   onCommentCountChange?: (screenshotId: string, delta: number) => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenDetails: (familyId: string) => void;
+  onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
 }
 
@@ -48,12 +49,16 @@ export function CatalogueFamilyLightbox({
   onCommentCountChange,
   onDeleteFamily,
   onOpenDetails,
+  onRenameFamily,
   onReplaceVariantImage,
 }: CatalogueFamilyLightboxProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const annotationInputRef = useRef<HTMLInputElement>(null);
+  const lightboxNameRef = useRef<HTMLInputElement>(null);
   const [lightboxPanel, setLightboxPanel] = useState<LightboxPanel>('comments');
+  const [editingLightboxName, setEditingLightboxName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(family.name);
   const [comments, setComments] = useState<ScreenshotComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
@@ -114,6 +119,17 @@ export function CatalogueFamilyLightbox({
       cancelled = true;
     };
   }, [isOpen, screenshot]);
+
+  useEffect(() => {
+    setNameDraft(family.name);
+    setEditingLightboxName(false);
+  }, [family.id, family.name]);
+
+  useEffect(() => {
+    if (!editingLightboxName) return;
+    lightboxNameRef.current?.focus();
+    lightboxNameRef.current?.select();
+  }, [editingLightboxName]);
 
   useEffect(() => {
     if (!isOpen || !mediaRef.current) return;
@@ -272,6 +288,21 @@ export function CatalogueFamilyLightbox({
     onOpenDetails(family.id);
   }
 
+  async function commitName() {
+    const trimmed = nameDraft.trim();
+    setEditingLightboxName(false);
+    if (!trimmed || trimmed === family.name) {
+      setNameDraft(family.name);
+      return;
+    }
+    await onRenameFamily(family.id, trimmed);
+  }
+
+  function openLightboxNameEditor() {
+    setNameDraft(family.name);
+    setEditingLightboxName(true);
+  }
+
   if (!isOpen || !screenshot || !activeVariant) {
     return null;
   }
@@ -280,13 +311,37 @@ export function CatalogueFamilyLightbox({
     <div className="catalogue-lightbox" onClick={onClose}>
       <div className="catalogue-lightbox-header" onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-name-wrap">
-          <span className="catalogue-lightbox-name">{family.name}</span>
-          <button type="button" className="catalogue-lightbox-name-edit" title="Edit details" onClick={openDetails}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-            </svg>
-          </button>
+          {editingLightboxName ? (
+            <input
+              ref={lightboxNameRef}
+              className="catalogue-lightbox-name-input"
+              value={nameDraft}
+              onChange={(event) => setNameDraft(event.target.value)}
+              onBlur={() => { void commitName(); }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void commitName();
+                if (event.key === 'Escape') {
+                  setNameDraft(family.name);
+                  setEditingLightboxName(false);
+                }
+              }}
+            />
+          ) : (
+            <>
+              <span className="catalogue-lightbox-name">{family.name}</span>
+              <button
+                type="button"
+                className="catalogue-lightbox-name-edit"
+                title="Edit family name"
+                onClick={openLightboxNameEditor}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+              </button>
+            </>
+          )}
         </div>
         {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}>{family.group}</span>}
         {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
