@@ -68,7 +68,7 @@ export function CatalogueFamilyLightbox({
   const mediaRef = useRef<HTMLDivElement>(null);
   const annotationInputRef = useRef<HTMLInputElement>(null);
   const [lightboxPanel, setLightboxPanel] = useState<LightboxPanel>('comments');
-  const [sheetMinimized, setSheetMinimized] = useState(false);
+  const [sheetMinimized, setSheetMinimized] = useState(true);
   const [isInlineEditing, setIsInlineEditing] = useState(startInlineEdit);
   const [isSavingInline, setIsSavingInline] = useState(false);
   const [nameDraft, setNameDraft] = useState(family.name);
