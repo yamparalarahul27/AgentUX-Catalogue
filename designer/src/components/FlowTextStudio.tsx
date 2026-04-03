@@ -235,6 +235,7 @@ export function TextFlowStudio({ user }: FlowTextStudioProps) {
       const { newScreenshots, newConnections } = await insertFlowFromText({
         supabase,
         userId: user.id,
+        userEmail: user.email || null,
         projectId,
         flowId,
         text,
@@ -262,7 +263,7 @@ export function TextFlowStudio({ user }: FlowTextStudioProps) {
     } finally {
       setPublishing(false);
     }
-  }, [connections, currentGraph.nodes, draft, flowId, loadFlowData, projectId, screenshots, user.id]);
+  }, [connections, currentGraph.nodes, draft, flowId, loadFlowData, projectId, screenshots, user.email, user.id]);
 
   if (loading) {
     return (

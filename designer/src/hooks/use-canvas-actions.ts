@@ -22,6 +22,7 @@ interface UseCanvasActionsParams {
   flowId?: string;
   projectId?: string;
   userId: string;
+  userEmail?: string | null;
   flow: Flow | null;
   screenshots: ScreenshotNode[];
   connections: Connection[];
@@ -74,6 +75,7 @@ export function useCanvasActions({
   flowId,
   projectId,
   userId,
+  userEmail,
   flow,
   screenshots,
   connections,
@@ -329,6 +331,7 @@ export function useCanvasActions({
       const { placeholder, createdConnections } = await insertPlaceholderBetweenConnection({
         supabase,
         userId,
+        userEmail,
         projectId,
         flowId,
         connection,
@@ -364,6 +367,7 @@ export function useCanvasActions({
     setToast,
     touchFlow,
     userId,
+    userEmail,
   ]);
 
   const handleFilesSelected = useCallback(
@@ -379,6 +383,7 @@ export function useCanvasActions({
         const { added, failed } = await uploadFilesToFlow({
           supabase,
           userId,
+          userEmail,
           projectId,
           flowId,
           files,
@@ -407,7 +412,7 @@ export function useCanvasActions({
         setUploading(false);
       }
     },
-    [flowId, markLocalEdit, projectId, pushUndoSnapshot, setScreenshots, setShowUpload, setToast, setUploading, touchFlow, userId],
+    [flowId, markLocalEdit, projectId, pushUndoSnapshot, setScreenshots, setShowUpload, setToast, setUploading, touchFlow, userEmail, userId],
   );
 
   const handleAddFromCatalogue = useCallback(
@@ -456,6 +461,7 @@ export function useCanvasActions({
         const { newScreenshots, newConnections } = await insertFlowFromText({
           supabase,
           userId,
+          userEmail,
           projectId,
           flowId,
           text,
@@ -496,6 +502,7 @@ export function useCanvasActions({
       setShowFlowInput,
       setToast,
       touchFlow,
+      userEmail,
       userId,
     ],
   );
@@ -511,6 +518,8 @@ export function useCanvasActions({
     try {
       const placeholder = await createPlaceholderNode({
         supabase,
+        userId,
+        userEmail,
         projectId,
         flowId,
         name: getNextPlaceholderName(screenshots),
@@ -526,7 +535,7 @@ export function useCanvasActions({
       const message = error instanceof Error ? error.message : 'Unable to add placeholder node';
       setToast({ message, type: 'error' });
     }
-  }, [flowId, markLocalEdit, nodes, projectId, pushUndoSnapshot, screenshots, setScreenshots, setToast, touchFlow]);
+  }, [flowId, markLocalEdit, nodes, projectId, pushUndoSnapshot, screenshots, setScreenshots, setToast, touchFlow, userEmail, userId]);
 
   const handleCanvasDrop = useCallback(
     (event: React.DragEvent) => {

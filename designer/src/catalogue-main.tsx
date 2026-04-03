@@ -10,6 +10,7 @@ import './styles/catalogue-family-overlays.scss';
 import './styles/catalogue-family-details-modal.scss';
 import './styles/catalogue-gallery-zoom.scss';
 import './styles/catalogue-lightbox-annotations.scss';
+import './styles/catalogue-team.scss';
 import './styles/canvas-enhancements.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

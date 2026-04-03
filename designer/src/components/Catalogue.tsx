@@ -17,6 +17,7 @@ import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueFlowSidebar } from './CatalogueFlowSidebar';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
+import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -30,6 +31,7 @@ interface CatalogueProps {
 const CATALOGUE_VIEW_MODE_KEY = 'catalogue:view-mode';
 
 type BulkAction = 'assign' | 'group' | null;
+type CatalogueSection = 'catalogue' | 'team';
 
 function defaultViewMode() {
   try {
@@ -115,6 +117,8 @@ export function Catalogue({ user }: CatalogueProps) {
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
   const [isFlowSheetExpanded, setIsFlowSheetExpanded] = useState(false);
+  const canViewTeamSection = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
+  const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
 
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(screenshots, screenFamilies, presetByKey),
@@ -183,9 +187,20 @@ export function Catalogue({ user }: CatalogueProps) {
     setScreenFamilies,
     setScreenshots,
     setToast,
+    userEmail: user.email || null,
     userId: user.id,
     webPresets,
   });
+  const isAnyModalOpen = Boolean(
+    upload.showUpload ||
+    showSettings ||
+    assigningFamily ||
+    previewFamily ||
+    detailsFamily ||
+    bulkAction ||
+    confirmDeleteOpen ||
+    upload.duplicateState,
+  );
 
   useEffect(() => {
     try {
@@ -206,6 +221,30 @@ export function Catalogue({ user }: CatalogueProps) {
       setDetailsFamilyId(null);
     }
   }, [detailsFamilyId, familyById]);
+
+  useEffect(() => {
+    if (!canViewTeamSection && activeSection === 'team') {
+      setActiveSection('catalogue');
+    }
+  }, [activeSection, canViewTeamSection]);
+
+  useEffect(() => {
+    if (!isAnyModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, [isAnyModalOpen]);
 
   function openPreview(familyId: string) {
     setDetailsFamilyId(null);
@@ -296,103 +335,113 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   return (
-    <div className="catalogue-page">
+    <div className={`catalogue-page ${canViewTeamSection ? 'catalogue-page--team-enabled' : ''}`}>
       <CatalogueHeader
+        activeSection={activeSection}
+        canViewTeam={canViewTeamSection}
         onBack={() => { window.location.href = '/designer/'; }}
         onOpenSettings={() => setShowSettings(true)}
+        onSectionChange={setActiveSection}
       />
-
-      <main className="catalogue-main">
-        <div className="catalogue-shell">
-          <CatalogueFlowSidebar
-            activeFlowCount={activeFlowCount}
-            activeFlowFilter={activeFlowFilter}
-            activeFlowLabel={activeFlowLabel}
-            items={flowItems}
-            mobileExpanded={isFlowSheetExpanded}
-            onFlowFilterChange={setActiveFlowFilter}
-            onMobileExpandedChange={setIsFlowSheetExpanded}
-          />
-
-          <div className="catalogue-body">
-            <CatalogueToolbar
-              activeFlowCount={activeFlowCount}
-              activeFlowLabel={activeFlowLabel}
-              allMobileOs={allMobileOs}
-              allScreenFamilies={allScreenFamilies}
-              allWebPresets={allWebPresets}
-              filterGroup={filterGroup}
-              filterMobileOs={filterMobileOs}
-              filterPlatform={filterPlatform}
-              filterProject={filterProject}
-              filterScreenFamily={filterScreenFamily}
-              filterTheme={filterTheme}
-              filterWebPreset={filterWebPreset}
-              groups={allGroups}
-              isSortLocked={isSortLocked}
-              onFilterGroupChange={setFilterGroup}
-              onFilterMobileOsChange={setFilterMobileOs}
-              onFilterPlatformChange={setFilterPlatform}
-              onFilterProjectChange={setFilterProject}
-              onFilterScreenFamilyChange={setFilterScreenFamily}
-              onFilterThemeChange={setFilterTheme}
-              onFilterWebPresetChange={setFilterWebPreset}
-              onPrimaryGroupChange={handlePrimaryGroupChange}
-              onQuickUploadClick={() => upload.setShowUpload(true)}
-              onSearchChange={setSearchQuery}
-              onSortByChange={setSortBy}
-              onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)}
-              onUploadClick={() => upload.setShowUpload(true)}
-              onViewByChange={setViewBy}
-              onViewModeChange={setViewMode}
-              onVsGroupsChange={handleVsGroupsChange}
-              primaryGroup={primaryGroup}
-              projects={projects.map((project) => ({ id: project.id, name: project.name }))}
-              searchQuery={searchQuery}
-              showGroupConfig={Boolean(filterProject)}
-              sortBy={sortBy}
-              viewBy={viewBy}
-              viewMode={viewMode}
-              vsGroups={vsGroups}
-            />
-
-            <CatalogueContent
-              activeFlowFilter={activeFlowFilter}
-              activeVariantKeys={upload.activeVariantKeys}
-              filterGroup={filterGroup}
-              filterMobileOs={filterMobileOs}
-              filterPlatform={filterPlatform}
-              filterProject={filterProject}
-              filterScreenFamily={filterScreenFamily}
-              filterTheme={filterTheme}
-              filterWebPreset={filterWebPreset}
-              filteredFamilies={filteredFamilies}
-              flowMap={flowMap}
-              groupedFamilies={groupedFamilies}
-              loading={loading}
-              primaryGroup={primaryGroup}
-              projectMap={projectMap}
-              projectsCount={projects.length}
-              searchQuery={searchQuery}
-              selected={selected}
-              viewMode={viewMode}
-              vsGroups={vsGroups}
-              onActiveVariantChange={upload.updateActiveVariant}
-              onAssignFlow={setAssignModal}
-              onChangeFamilyGroup={handleChangeFamilyGroup}
-              onDeleteFamily={handleDeleteFamily}
-              onOpenDetails={openDetails}
-              onOpenPreview={openPreview}
-              onRenameFamily={handleRenameFamily}
-              onReplaceVariantImage={handleReplaceImage}
-              onToggleGroupSelect={toggleGroupSelection}
-              onToggleSelect={toggleSelect}
-              onUpdateVariantDetails={handleUpdateVariantDetails}
-              webPresets={webPresets}
-            />
+      {activeSection === 'team' && canViewTeamSection ? (
+        <main className="catalogue-main">
+          <div className="catalogue-shell catalogue-shell--team">
+            <CatalogueTeamSection projects={projects} screenshots={screenshots} />
           </div>
-        </div>
-      </main>
+        </main>
+      ) : (
+        <main className="catalogue-main">
+          <div className="catalogue-shell">
+            <CatalogueFlowSidebar
+              activeFlowCount={activeFlowCount}
+              activeFlowFilter={activeFlowFilter}
+              activeFlowLabel={activeFlowLabel}
+              items={flowItems}
+              mobileExpanded={isFlowSheetExpanded}
+              onFlowFilterChange={setActiveFlowFilter}
+              onMobileExpandedChange={setIsFlowSheetExpanded}
+            />
+
+            <div className="catalogue-body">
+              <CatalogueToolbar
+                activeFlowCount={activeFlowCount}
+                activeFlowLabel={activeFlowLabel}
+                allMobileOs={allMobileOs}
+                allScreenFamilies={allScreenFamilies}
+                allWebPresets={allWebPresets}
+                filterGroup={filterGroup}
+                filterMobileOs={filterMobileOs}
+                filterPlatform={filterPlatform}
+                filterProject={filterProject}
+                filterScreenFamily={filterScreenFamily}
+                filterTheme={filterTheme}
+                filterWebPreset={filterWebPreset}
+                groups={allGroups}
+                isSortLocked={isSortLocked}
+                onFilterGroupChange={setFilterGroup}
+                onFilterMobileOsChange={setFilterMobileOs}
+                onFilterPlatformChange={setFilterPlatform}
+                onFilterProjectChange={setFilterProject}
+                onFilterScreenFamilyChange={setFilterScreenFamily}
+                onFilterThemeChange={setFilterTheme}
+                onFilterWebPresetChange={setFilterWebPreset}
+                onPrimaryGroupChange={handlePrimaryGroupChange}
+                onQuickUploadClick={() => upload.setShowUpload(true)}
+                onSearchChange={setSearchQuery}
+                onSortByChange={setSortBy}
+                onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)}
+                onUploadClick={() => upload.setShowUpload(true)}
+                onViewByChange={setViewBy}
+                onViewModeChange={setViewMode}
+                onVsGroupsChange={handleVsGroupsChange}
+                primaryGroup={primaryGroup}
+                projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+                searchQuery={searchQuery}
+                showGroupConfig={Boolean(filterProject)}
+                sortBy={sortBy}
+                viewBy={viewBy}
+                viewMode={viewMode}
+                vsGroups={vsGroups}
+              />
+
+              <CatalogueContent
+                activeFlowFilter={activeFlowFilter}
+                activeVariantKeys={upload.activeVariantKeys}
+                filterGroup={filterGroup}
+                filterMobileOs={filterMobileOs}
+                filterPlatform={filterPlatform}
+                filterProject={filterProject}
+                filterScreenFamily={filterScreenFamily}
+                filterTheme={filterTheme}
+                filterWebPreset={filterWebPreset}
+                filteredFamilies={filteredFamilies}
+                flowMap={flowMap}
+                groupedFamilies={groupedFamilies}
+                loading={loading}
+                primaryGroup={primaryGroup}
+                projectMap={projectMap}
+                projectsCount={projects.length}
+                searchQuery={searchQuery}
+                selected={selected}
+                viewMode={viewMode}
+                vsGroups={vsGroups}
+                onActiveVariantChange={upload.updateActiveVariant}
+                onAssignFlow={setAssignModal}
+                onChangeFamilyGroup={handleChangeFamilyGroup}
+                onDeleteFamily={handleDeleteFamily}
+                onOpenDetails={openDetails}
+                onOpenPreview={openPreview}
+                onRenameFamily={handleRenameFamily}
+                onReplaceVariantImage={handleReplaceImage}
+                onToggleGroupSelect={toggleGroupSelection}
+                onToggleSelect={toggleSelect}
+                onUpdateVariantDetails={handleUpdateVariantDetails}
+                webPresets={webPresets}
+              />
+            </div>
+          </div>
+        </main>
+      )}
 
       <CatalogueUploadModal
         existingFamilies={upload.uploadProjectFamilies}
@@ -607,15 +656,17 @@ export function Catalogue({ user }: CatalogueProps) {
         />
       )}
 
-      <CatalogueBulkBar
-        filteredFamiliesCount={filteredFamilies.length}
-        selectedCount={selected.size}
-        selectedVisibleCount={selectedVisibleCount}
-        onClearSelection={clearSelection}
-        onOpenDeleteConfirm={() => setConfirmDeleteOpen(true)}
-        onSelectAllVisible={selectAllVisible}
-        onSetBulkAction={setBulkAction}
-      />
+      {activeSection === 'catalogue' && (
+        <CatalogueBulkBar
+          filteredFamiliesCount={filteredFamilies.length}
+          selectedCount={selected.size}
+          selectedVisibleCount={selectedVisibleCount}
+          onClearSelection={clearSelection}
+          onOpenDeleteConfirm={() => setConfirmDeleteOpen(true)}
+          onSelectAllVisible={selectAllVisible}
+          onSetBulkAction={setBulkAction}
+        />
+      )}
     </div>
   );
 }

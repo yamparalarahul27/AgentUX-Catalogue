@@ -4,6 +4,7 @@ import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getScreenshotFamilyId, getVariantKey, getVariantLabel } from '../lib/catalogue-families';
 import { compressImage } from '../lib/catalogue-image';
 import { parseScreenshotName } from '../lib/naming';
+import { insertScreenshotWithUploader } from '../lib/screenshot-write';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, ScreenFamily, ScreenshotNode, WebPreset } from '../types';
 
@@ -29,6 +30,7 @@ interface UseCatalogueUploadArgs {
   setScreenFamilies: React.Dispatch<React.SetStateAction<ScreenFamily[]>>;
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
+  userEmail?: string | null;
   userId: string;
   webPresets: WebPreset[];
 }
@@ -42,6 +44,7 @@ export function useCatalogueUpload({
   setScreenFamilies,
   setScreenshots,
   setToast,
+  userEmail,
   userId,
   webPresets,
 }: UseCatalogueUploadArgs) {
@@ -265,9 +268,9 @@ export function useCatalogueUpload({
         }
 
         const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
-        const { data, error } = await supabase
-          .from('screenshots')
-          .insert({
+        const { data, error } = await insertScreenshotWithUploader({
+          supabase,
+          payload: {
             project_id: uploadProjectId,
             flow_id: family.flow_id,
             screen_family_id: family.id,
@@ -283,9 +286,9 @@ export function useCatalogueUpload({
             reference_url: reference.referenceUrl,
             reference_storage_path: reference.referenceStoragePath,
             reference_label: reference.referenceLabel,
-          })
-          .select()
-          .single();
+          },
+          uploader: { userEmail, userId },
+        });
 
         if (error || !data) {
           throw error;

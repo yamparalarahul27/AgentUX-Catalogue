@@ -336,6 +336,7 @@ export function Canvas({ user }: CanvasProps) {
     flowId,
     projectId,
     userId: user.id,
+    userEmail: user.email || null,
     flow,
     screenshots,
     connections,

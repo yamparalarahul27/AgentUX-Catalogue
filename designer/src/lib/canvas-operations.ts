@@ -4,11 +4,13 @@ import { parseScreenshotName } from './naming';
 import { parseMultiPathFlow } from './parse-flow-paths';
 import { normalizeFlowStep } from './flow-step-normalizer';
 import { layoutElements, NODE_WIDTH, RANK_SEP } from './canvas-graph';
+import { insertScreenshotWithUploader } from './screenshot-write';
 import type { Connection, ScreenshotNode } from '../types';
 
 interface FlowContext {
   supabase: SupabaseClient;
   userId: string;
+  userEmail?: string | null;
   projectId: string;
   flowId: string;
 }
@@ -33,6 +35,8 @@ interface InsertPlaceholderBetweenParams extends FlowContext {
 
 interface CreatePlaceholderNodeParams {
   supabase: SupabaseClient;
+  userId: string;
+  userEmail?: string | null;
   projectId: string;
   flowId: string;
   name: string;
@@ -98,6 +102,7 @@ export function compressImage(
 export async function uploadFilesToFlow({
   supabase,
   userId,
+  userEmail,
   projectId,
   flowId,
   files,
@@ -115,9 +120,9 @@ export async function uploadFilesToFlow({
 
       if (uploadError) throw uploadError;
 
-      const { data, error } = await supabase
-        .from('screenshots')
-        .insert({
+      const { data, error } = await insertScreenshotWithUploader({
+        supabase,
+        payload: {
           project_id: projectId,
           flow_id: flowId,
           name: parsed.name,
@@ -125,9 +130,9 @@ export async function uploadFilesToFlow({
           storage_path: storagePath,
           sequence: parsed.sequence,
           group: parsed.group,
-        })
-        .select('*')
-        .single();
+        },
+        uploader: { userEmail, userId },
+      });
 
       if (error || !data) throw error;
 
@@ -246,6 +251,8 @@ function computeLayoutOffset(
 
 export async function insertFlowFromText({
   supabase,
+  userId,
+  userEmail,
   projectId,
   flowId,
   text,
@@ -289,9 +296,9 @@ export async function insertFlowFromText({
     const x = (laidNode?.position.x || 0) + offset.x;
     const y = (laidNode?.position.y || 0) + offset.y;
 
-    const { data, error } = await supabase
-      .from('screenshots')
-      .insert({
+    const { data, error } = await insertScreenshotWithUploader({
+      supabase,
+      payload: {
         project_id: projectId,
         flow_id: flowId,
         name: item.display,
@@ -301,9 +308,9 @@ export async function insertFlowFromText({
         group: null,
         position_x: x,
         position_y: y,
-      })
-      .select('*')
-      .single();
+      },
+      uploader: { userEmail, userId },
+    });
 
     if (error || !data) {
       throw error;
@@ -365,15 +372,17 @@ export async function insertFlowFromText({
 
 export async function createPlaceholderNode({
   supabase,
+  userId,
+  userEmail,
   projectId,
   flowId,
   name,
   positionX,
   positionY,
 }: CreatePlaceholderNodeParams): Promise<ScreenshotNode> {
-  const { data, error } = await supabase
-    .from('screenshots')
-    .insert({
+  const { data, error } = await insertScreenshotWithUploader({
+    supabase,
+    payload: {
       project_id: projectId,
       flow_id: flowId,
       name,
@@ -383,9 +392,9 @@ export async function createPlaceholderNode({
       group: null,
       position_x: positionX,
       position_y: positionY,
-    })
-    .select('*')
-    .single();
+    },
+    uploader: { userEmail, userId },
+  });
 
   if (error || !data) {
     throw error;
@@ -399,6 +408,8 @@ export async function createPlaceholderNode({
 
 export async function insertPlaceholderBetweenConnection({
   supabase,
+  userId,
+  userEmail,
   projectId,
   flowId,
   connection,
@@ -414,6 +425,8 @@ export async function insertPlaceholderBetweenConnection({
 
   const placeholder = await createPlaceholderNode({
     supabase,
+    userId,
+    userEmail,
     projectId,
     flowId,
     name: placeholderName,

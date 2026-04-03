@@ -1,9 +1,20 @@
+type CatalogueSection = 'catalogue' | 'team';
+
 interface CatalogueHeaderProps {
+  activeSection: CatalogueSection;
+  canViewTeam: boolean;
   onBack: () => void;
   onOpenSettings: () => void;
+  onSectionChange: (section: CatalogueSection) => void;
 }
 
-export function CatalogueHeader({ onBack, onOpenSettings }: CatalogueHeaderProps) {
+export function CatalogueHeader({
+  activeSection,
+  canViewTeam,
+  onBack,
+  onOpenSettings,
+  onSectionChange,
+}: CatalogueHeaderProps) {
   return (
     <header className="catalogue-header catalogue-header--centered">
       <button className="catalogue-back" onClick={onBack} title="Back to projects">
@@ -20,6 +31,29 @@ export function CatalogueHeader({ onBack, onOpenSettings }: CatalogueHeaderProps
         </svg>
         <h1>Catalogue</h1>
       </div>
+
+      {canViewTeam && (
+        <div className="catalogue-header__tabs" role="tablist" aria-label="Catalogue sections">
+          <button
+            type="button"
+            role="tab"
+            className={`catalogue-header__tab ${activeSection === 'catalogue' ? 'is-active' : ''}`}
+            aria-selected={activeSection === 'catalogue'}
+            onClick={() => onSectionChange('catalogue')}
+          >
+            Catalogue
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={`catalogue-header__tab ${activeSection === 'team' ? 'is-active' : ''}`}
+            aria-selected={activeSection === 'team'}
+            onClick={() => onSectionChange('team')}
+          >
+            Team
+          </button>
+        </div>
+      )}
 
       <button
         type="button"

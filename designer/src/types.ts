@@ -68,6 +68,8 @@ export interface ScreenshotNode {
   position_x: number | null;
   position_y: number | null;
   metadata: Record<string, unknown>;
+  uploader_user_id?: string | null;
+  uploader_email?: string | null;
   created_at?: string;
 }
 
