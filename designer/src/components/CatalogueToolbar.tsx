@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -93,28 +93,18 @@ export function CatalogueToolbar({
 }: CatalogueToolbarProps) {
   const nonPrimaryGroups = groups.filter((group) => group !== primaryGroup);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-  const [searchCollapsed, setSearchCollapsed] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const floatingInputRef = useRef<HTMLInputElement>(null);
-  const lastScrollY = useRef(0);
-
-  const handleScroll = useCallback(() => {
-    const y = window.scrollY;
-    const delta = y - lastScrollY.current;
-    if (delta > 20 && y > 80) setSearchCollapsed(true);
-    else if (delta < -10) setSearchCollapsed(false);
-    lastScrollY.current = y;
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
 
   function expandSearch() {
-    setSearchCollapsed(false);
-    setSearchFocused(true);
+    setSearchExpanded(true);
     requestAnimationFrame(() => floatingInputRef.current?.focus());
+  }
+
+  function collapseSearch() {
+    setSearchExpanded(false);
+    onSearchChange('');
+    floatingInputRef.current?.blur();
   }
 
   const activeFilterCount = [
@@ -225,7 +215,7 @@ export function CatalogueToolbar({
         </div>
       )}
 
-      <div className={`catalogue-floating-search ${searchCollapsed && !searchFocused ? 'is-collapsed' : ''}`}>
+      <div className={`catalogue-floating-search ${searchExpanded ? '' : 'is-collapsed'}`}>
         {activePills.length > 0 && (
           <div className="catalogue-filter-pills catalogue-filter-pills--floating">
             {activePills.map((pill) => (
@@ -247,14 +237,10 @@ export function CatalogueToolbar({
             placeholder="Search screen families..."
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
           />
-          {searchFocused && (
-            <button type="button" className="catalogue-search__cancel" onClick={() => { onSearchChange(''); floatingInputRef.current?.blur(); }}>
-              Cancel
-            </button>
-          )}
+          <button type="button" className="catalogue-search__cancel" onClick={collapseSearch}>
+            Cancel
+          </button>
         </div>
         <button type="button" className="catalogue-search-pill" onClick={expandSearch}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
