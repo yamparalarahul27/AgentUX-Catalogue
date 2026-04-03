@@ -304,10 +304,12 @@
     padding-top: 12px;
     padding-bottom: 8px;
     gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .catalogue-toolbar-left {
     gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .catalogue-toolbar-left > .catalogue-search {
@@ -316,6 +318,8 @@
 
   .catalogue-toolbar-right {
     gap: 8px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
   }
 
   .catalogue-toolbar-wrapper > .catalogue-filter-pills {
@@ -370,7 +374,7 @@
     display: none;
     position: absolute;
     left: 50%;
-    bottom: max(14px, env(safe-area-inset-bottom));
+    bottom: max(20px, calc(12px + env(safe-area-inset-bottom)));
     transform: translateX(-50%);
     width: 48px;
     height: 48px;
