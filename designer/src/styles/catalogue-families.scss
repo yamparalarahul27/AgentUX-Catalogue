@@ -35,6 +35,26 @@
   }
 }
 
+.catalogue-card-meta-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.catalogue-card-platform-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #c4c4cc;
+  flex-shrink: 0;
+}
+
 .catalogue-grid--families {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }

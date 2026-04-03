@@ -1,8 +1,6 @@
 .catalogue-header__tabs {
-  position: absolute;
-  left: 50%;
-  bottom: -22px;
-  transform: translateX(-50%);
+  position: static;
+  margin-left: 12px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -35,7 +33,7 @@
 }
 
 .catalogue-page--team-enabled .catalogue-main {
-  padding-top: 28px;
+  padding-top: 0;
 }
 
 .catalogue-shell--team {
@@ -135,14 +133,19 @@
 }
 
 @media (max-width: 900px) {
+  .catalogue-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
   .catalogue-header__tabs {
     position: static;
-    transform: none;
-    margin-top: 10px;
+    margin-top: 0;
+    margin-left: 0;
   }
 
   .catalogue-page--team-enabled .catalogue-main {
-    padding-top: 16px;
+    padding-top: 0;
   }
 
   .catalogue-team {

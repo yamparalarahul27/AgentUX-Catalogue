@@ -38,6 +38,7 @@ export function CatalogueFamilyCard({
   );
   const screenshot = activeVariant?.screenshot ?? null;
   const groupColor = getGroupColor(family.group);
+  const platform = screenshot?.platform;
 
   async function requestDelete() {
     const shouldDelete = window.confirm(`Delete screenshot "${family.name}"?`);
@@ -172,9 +173,28 @@ export function CatalogueFamilyCard({
             <span className="catalogue-card-dot" style={{ background: groupColor }} />
             <span className="catalogue-family-card__group">{family.group || 'No group'}</span>
           </div>
-          <span className="catalogue-card-flow-pill">
-            {flowName || 'Unassigned'}
-          </span>
+          <div className="catalogue-card-meta-right">
+            {platform === 'mobile' && (
+              <span className="catalogue-card-platform-pill" title="Mobile" aria-label="Mobile">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="7" y="2" width="10" height="20" rx="2" ry="2" />
+                  <line x1="12" y1="18" x2="12.01" y2="18" />
+                </svg>
+              </span>
+            )}
+            {platform === 'web' && (
+              <span className="catalogue-card-platform-pill" title="Web" aria-label="Web">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+              </span>
+            )}
+            <span className="catalogue-card-flow-pill">
+              {flowName || 'Unassigned'}
+            </span>
+          </div>
         </div>
 
       </div>
