@@ -445,13 +445,18 @@
     gap: 8px;
   }
 
-  .catalogue-family-lightbox__actions {
+  .catalogue-lightbox-icon-bar {
     gap: 6px;
+    justify-content: center;
   }
 
-  .catalogue-family-lightbox__action {
-    flex: 1 1 calc(50% - 3px);
-    justify-content: center;
+  .catalogue-lightbox-icon-bar__spacer {
+    display: none;
+  }
+
+  .catalogue-lightbox-icon-btn {
+    width: 40px;
+    height: 40px;
   }
 
   .catalogue-family-lightbox__panel {
@@ -538,8 +543,9 @@
     gap: 6px;
   }
 
-  .catalogue-family-lightbox__action {
-    flex: 1 1 100%;
+  .catalogue-lightbox-icon-btn {
+    width: 36px;
+    height: 36px;
   }
 
   .catalogue-lightbox-panel-tabs {

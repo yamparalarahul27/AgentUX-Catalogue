@@ -126,29 +126,118 @@
   gap: 8px;
 }
 
-.catalogue-family-lightbox__meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+.catalogue-lightbox-meta-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.catalogue-family-lightbox__meta-row {
+.catalogue-lightbox-meta-sep {
+  color: #52525b;
+  font-size: 12px;
+}
+
+.catalogue-lightbox-meta-chip {
+  font-size: 12px;
+  font-weight: 500;
+  color: #a1a1aa;
+  white-space: nowrap;
+
+  &--flow {
+    color: #818cf8;
+  }
+
+  &--variant {
+    color: #9ca3af;
+  }
+}
+
+.catalogue-lightbox-variant-dots {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   gap: 6px;
+  padding: 4px 0;
+}
 
-  span {
-    color: #8a8a94;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+.catalogue-lightbox-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 1px solid #52525b;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: #a5b4fc;
+    transform: scale(1.2);
   }
 
-  strong {
+  &.is-active {
+    background: #6366f1;
+    border-color: #6366f1;
+  }
+}
+
+.catalogue-lightbox-icon-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.catalogue-lightbox-icon-bar__spacer {
+  flex: 1;
+}
+
+.catalogue-lightbox-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #303038;
+  border-radius: 10px;
+  background: #15151a;
+  color: #d4d4d8;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(99, 102, 241, 0.42);
+    background: rgba(99, 102, 241, 0.12);
     color: #f4f4f5;
-    font-size: 13px;
-    font-weight: 600;
   }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  &.is-danger:hover {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.12);
+    color: #fecaca;
+  }
+}
+
+.catalogue-lightbox-icon-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
 }
 
 .catalogue-family-lightbox {
