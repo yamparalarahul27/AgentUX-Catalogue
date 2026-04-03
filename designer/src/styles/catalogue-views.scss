@@ -102,6 +102,7 @@
 .catalogue-list-thumb {
   width: 72px;
   height: 44px;
+  padding: 0;
   border-radius: 8px;
   border: 1px solid #303038;
   background: #09090b;
@@ -109,6 +110,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 
   img {
     width: 100%;
@@ -183,6 +185,7 @@
 .catalogue-list-actions {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .catalogue-list-action {
@@ -227,8 +230,11 @@
   align-items: center;
   justify-content: center;
   padding: 18px;
+  border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: linear-gradient(180deg, #111113, #0b0b0d);
+  width: 100%;
+  text-align: left;
 
   img {
     max-width: 100%;

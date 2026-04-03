@@ -1,21 +1,33 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Dropdown } from './Dropdown';
+
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
+import { Dropdown } from './Dropdown';
 
-type ToolbarFilterKey = 'project' | 'group' | 'platform' | 'theme' | 'view';
+type ToolbarFilterKey =
+  | 'project'
+  | 'group'
+  | 'screenFamily'
+  | 'platform'
+  | 'theme'
+  | 'webPreset'
+  | 'mobileOs'
+  | 'view';
 
 const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
-const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['project', 'group', 'platform', 'theme', 'view'];
+const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['project', 'group', 'screenFamily', 'platform', 'theme', 'view'];
 
 const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
   { key: 'project', label: 'Projects' },
   { key: 'group', label: 'Groups' },
+  { key: 'screenFamily', label: 'Screen families' },
   { key: 'platform', label: 'Platforms' },
   { key: 'theme', label: 'Themes' },
+  { key: 'webPreset', label: 'Web presets' },
+  { key: 'mobileOs', label: 'Mobile OS' },
   { key: 'view', label: 'View' },
 ];
 
@@ -37,67 +49,85 @@ function parseVisibleFilters(value: string | null): Set<ToolbarFilterKey> {
 interface CatalogueToolbarProps {
   activeFlowCount: number;
   activeFlowLabel: string;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
-  filterProject: string | null;
-  onFilterProjectChange: (p: string | null) => void;
-  projects: { id: string; name: string }[];
+  allMobileOs: { id: string; label: string }[];
+  allScreenFamilies: { id: string; name: string }[];
+  allWebPresets: { id: string; label: string }[];
   filterGroup: string | null;
-  onFilterGroupChange: (g: string | null) => void;
-  groups: string[];
+  filterMobileOs: string | null;
   filterPlatform: string | null;
-  onFilterPlatformChange: (p: string | null) => void;
+  filterProject: string | null;
+  filterScreenFamily: string | null;
   filterTheme: string | null;
-  onFilterThemeChange: (t: string | null) => void;
-  viewBy: CatalogueViewBy;
-  onViewByChange: (mode: CatalogueViewBy) => void;
-  sortBy: CatalogueSortOption;
-  onSortByChange: (sort: CatalogueSortOption) => void;
+  filterWebPreset: string | null;
+  groups: string[];
   isSortLocked: boolean;
-  viewMode: CatalogueViewMode;
-  onViewModeChange: (view: CatalogueViewMode) => void;
-  primaryGroup: string | null;
-  vsGroups: string[];
-  onPrimaryGroupChange: (g: string | null) => void;
-  onVsGroupsChange: (gs: string[]) => void;
-  showGroupConfig: boolean;
-  onUploadClick: () => void;
+  onFilterGroupChange: (value: string | null) => void;
+  onFilterMobileOsChange: (value: string | null) => void;
+  onFilterPlatformChange: (value: string | null) => void;
+  onFilterProjectChange: (value: string | null) => void;
+  onFilterScreenFamilyChange: (value: string | null) => void;
+  onFilterThemeChange: (value: string | null) => void;
+  onFilterWebPresetChange: (value: string | null) => void;
+  onPrimaryGroupChange: (value: string | null) => void;
   onQuickUploadClick: () => void;
+  onSearchChange: (value: string) => void;
+  onSortByChange: (value: CatalogueSortOption) => void;
   onToggleFlowSheet: () => void;
+  onUploadClick: () => void;
+  onViewByChange: (value: CatalogueViewBy) => void;
+  onViewModeChange: (value: CatalogueViewMode) => void;
+  onVsGroupsChange: (value: string[]) => void;
+  primaryGroup: string | null;
+  projects: { id: string; name: string }[];
+  searchQuery: string;
+  showGroupConfig: boolean;
+  sortBy: CatalogueSortOption;
+  viewBy: CatalogueViewBy;
+  viewMode: CatalogueViewMode;
+  vsGroups: string[];
 }
 
 export function CatalogueToolbar({
   activeFlowCount,
   activeFlowLabel,
-  searchQuery,
-  onSearchChange,
-  filterProject,
-  onFilterProjectChange,
-  projects,
+  allMobileOs,
+  allScreenFamilies,
+  allWebPresets,
   filterGroup,
-  onFilterGroupChange,
-  groups,
+  filterMobileOs,
   filterPlatform,
-  onFilterPlatformChange,
+  filterProject,
+  filterScreenFamily,
   filterTheme,
-  onFilterThemeChange,
-  viewBy,
-  onViewByChange,
-  sortBy,
-  onSortByChange,
+  filterWebPreset,
+  groups,
   isSortLocked,
-  viewMode,
-  onViewModeChange,
-  primaryGroup,
-  vsGroups,
+  onFilterGroupChange,
+  onFilterMobileOsChange,
+  onFilterPlatformChange,
+  onFilterProjectChange,
+  onFilterScreenFamilyChange,
+  onFilterThemeChange,
+  onFilterWebPresetChange,
   onPrimaryGroupChange,
-  onVsGroupsChange,
-  showGroupConfig,
-  onUploadClick,
   onQuickUploadClick,
+  onSearchChange,
+  onSortByChange,
   onToggleFlowSheet,
+  onUploadClick,
+  onViewByChange,
+  onViewModeChange,
+  onVsGroupsChange,
+  primaryGroup,
+  projects,
+  searchQuery,
+  showGroupConfig,
+  sortBy,
+  viewBy,
+  viewMode,
+  vsGroups,
 }: CatalogueToolbarProps) {
-  const nonPrimaryGroups = groups.filter((g) => g !== primaryGroup);
+  const nonPrimaryGroups = groups.filter((group) => group !== primaryGroup);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
@@ -110,16 +140,16 @@ export function CatalogueToolbar({
   });
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
 
-  function toggleVsGroup(g: string) {
-    if (vsGroups.includes(g)) {
-      onVsGroupsChange(vsGroups.filter((v) => v !== g));
-    } else {
-      onVsGroupsChange([...vsGroups, g]);
+  function toggleVsGroup(group: string) {
+    if (vsGroups.includes(group)) {
+      onVsGroupsChange(vsGroups.filter((value) => value !== group));
+      return;
     }
+    onVsGroupsChange([...vsGroups, group]);
   }
 
   useEffect(() => {
-    if (!filterMenuOpen) return;
+    if (!filterMenuOpen) return undefined;
 
     function handleClick(event: MouseEvent) {
       const target = event.target as Node;
@@ -148,10 +178,7 @@ export function CatalogueToolbar({
     const rect = triggerRef.current.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const preferredWidth = 220;
-    const left = Math.min(
-      Math.max(12, rect.left),
-      Math.max(12, viewportWidth - preferredWidth - 12),
-    );
+    const left = Math.min(Math.max(12, rect.left), Math.max(12, viewportWidth - preferredWidth - 12));
     setMenuStyle({
       position: 'fixed',
       top: rect.bottom + 8,
@@ -174,8 +201,11 @@ export function CatalogueToolbar({
     if (isVisible) {
       if (key === 'project') onFilterProjectChange(null);
       if (key === 'group') onFilterGroupChange(null);
+      if (key === 'screenFamily') onFilterScreenFamilyChange(null);
       if (key === 'platform') onFilterPlatformChange(null);
       if (key === 'theme') onFilterThemeChange(null);
+      if (key === 'webPreset') onFilterWebPresetChange(null);
+      if (key === 'mobileOs') onFilterMobileOsChange(null);
       if (key === 'view') onViewByChange('all');
     }
 
@@ -202,9 +232,9 @@ export function CatalogueToolbar({
             </svg>
             <input
               type="text"
-              placeholder="Search screenshots..."
+              placeholder="Search screen families..."
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(event) => onSearchChange(event.target.value)}
             />
           </div>
 
@@ -212,6 +242,8 @@ export function CatalogueToolbar({
             ref={triggerRef}
             type="button"
             className={`btn-secondary catalogue-filter-toggle ${filterMenuOpen ? 'is-open' : ''}`}
+            aria-expanded={filterMenuOpen}
+            aria-controls="catalogue-filter-menu"
             onClick={() => setFilterMenuOpen((previous) => !previous)}
           >
             + Filter
@@ -221,7 +253,7 @@ export function CatalogueToolbar({
             <Dropdown
               value={filterProject}
               placeholder="Project"
-              options={projects.map((p) => ({ value: p.id, label: p.name }))}
+              options={projects.map((project) => ({ value: project.id, label: project.name }))}
               onChange={onFilterProjectChange}
             />
           )}
@@ -230,8 +262,17 @@ export function CatalogueToolbar({
             <Dropdown
               value={filterGroup}
               placeholder="Group"
-              options={groups.map((g) => ({ value: g, label: g, badge: g === primaryGroup ? 'Primary' : undefined }))}
+              options={groups.map((group) => ({ value: group, label: group, badge: group === primaryGroup ? 'Primary' : undefined }))}
               onChange={onFilterGroupChange}
+            />
+          )}
+
+          {isFilterVisible('screenFamily') && (
+            <Dropdown
+              value={filterScreenFamily}
+              placeholder="Screen family"
+              options={allScreenFamilies.map((family) => ({ value: family.id, label: family.name }))}
+              onChange={onFilterScreenFamilyChange}
             />
           )}
 
@@ -259,12 +300,30 @@ export function CatalogueToolbar({
             />
           )}
 
+          {isFilterVisible('webPreset') && filterPlatform === 'web' && (
+            <Dropdown
+              value={filterWebPreset}
+              placeholder="Web preset"
+              options={allWebPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
+              onChange={onFilterWebPresetChange}
+            />
+          )}
+
+          {isFilterVisible('mobileOs') && filterPlatform === 'mobile' && (
+            <Dropdown
+              value={filterMobileOs}
+              placeholder="Mobile OS"
+              options={allMobileOs.map((item) => ({ value: item.id, label: item.label }))}
+              onChange={onFilterMobileOsChange}
+            />
+          )}
+
           {isFilterVisible('view') && (
             <Dropdown
               value={viewBy}
               placeholder="View by"
               options={[
-                { value: 'all', label: 'All screenshots' },
+                { value: 'all', label: 'All screen families' },
                 { value: 'comments-added', label: 'Comments added' },
                 { value: 'annotations-added', label: 'Annotations added' },
               ]}
@@ -305,7 +364,7 @@ export function CatalogueToolbar({
       </div>
 
       {filterMenuOpen && createPortal(
-        <div ref={menuRef} className="catalogue-filter-menu" style={menuStyle}>
+        <div ref={menuRef} id="catalogue-filter-menu" className="catalogue-filter-menu" style={menuStyle}>
           <div className="catalogue-filter-menu__title">Visible filters</div>
           <div className="catalogue-filter-menu__list">
             {FILTER_OPTIONS.map((option) => {
@@ -334,7 +393,7 @@ export function CatalogueToolbar({
             <Dropdown
               value={primaryGroup}
               placeholder="Select primary group..."
-              options={groups.map((g) => ({ value: g, label: g }))}
+              options={groups.map((group) => ({ value: group, label: group }))}
               onChange={onPrimaryGroupChange}
             />
           </div>
@@ -343,14 +402,14 @@ export function CatalogueToolbar({
             <div className="catalogue-group-config-row">
               <label className="catalogue-group-config-label">Vs</label>
               <div className="catalogue-vs-chips">
-                {nonPrimaryGroups.map((g) => (
+                {nonPrimaryGroups.map((group) => (
                   <button
-                    key={g}
-                    className={`catalogue-vs-chip ${vsGroups.includes(g) ? 'active' : ''}`}
-                    onClick={() => toggleVsGroup(g)}
+                    key={group}
+                    className={`catalogue-vs-chip ${vsGroups.includes(group) ? 'active' : ''}`}
+                    onClick={() => toggleVsGroup(group)}
                   >
-                    {g}
-                    {vsGroups.includes(g) && (
+                    {group}
+                    {vsGroups.includes(group) && (
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />

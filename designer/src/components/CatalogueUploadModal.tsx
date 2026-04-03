@@ -1,0 +1,308 @@
+import { createPortal } from 'react-dom';
+
+import { Dropdown } from './Dropdown';
+import { UploadZone } from './UploadZone';
+import type { MobileOs, ScreenFamily, WebPreset } from '../types';
+
+interface CatalogueUploadModalProps {
+  existingFamilies: ScreenFamily[];
+  isOpen: boolean;
+  newFamilyGroup: string;
+  newFamilyMode: boolean;
+  newFamilyName: string;
+  platform: 'mobile' | 'web' | null;
+  projectGroups: string[];
+  projectId: string | null;
+  projects: { id: string; name: string }[];
+  referenceLabel: string;
+  referencePreview: string | null;
+  selectedFamilyId: string | null;
+  theme: 'light' | 'dark' | null;
+  uploading: boolean;
+  webPresetKey: string | null;
+  webPresets: WebPreset[];
+  mobileOs: MobileOs | null;
+  onClose: () => void;
+  onFilesSelected: (files: File[]) => void;
+  onNewFamilyGroupChange: (value: string) => void;
+  onNewFamilyModeChange: (value: boolean) => void;
+  onNewFamilyNameChange: (value: string) => void;
+  onProjectIdChange: (value: string | null) => void;
+  onReferenceLabelChange: (value: string) => void;
+  onReferenceRemove: () => void;
+  onReferenceSelect: (file: File | null) => void;
+  onSelectedFamilyIdChange: (value: string | null) => void;
+  onThemeChange: (value: 'light' | 'dark' | null) => void;
+  onPlatformChange: (value: 'mobile' | 'web' | null) => void;
+  onWebPresetKeyChange: (value: string | null) => void;
+  onMobileOsChange: (value: MobileOs | null) => void;
+}
+
+function isReadyToUpload({
+  newFamilyGroup,
+  newFamilyMode,
+  newFamilyName,
+  platform,
+  theme,
+  projectId,
+  selectedFamilyId,
+  webPresetKey,
+  mobileOs,
+}: Pick<
+  CatalogueUploadModalProps,
+  'newFamilyGroup' | 'newFamilyMode' | 'newFamilyName' | 'platform' | 'projectId' | 'selectedFamilyId' | 'theme' | 'webPresetKey' | 'mobileOs'
+>) {
+  if (!projectId) return false;
+  if (newFamilyMode) {
+    if (!newFamilyName.trim() || !newFamilyGroup.trim()) return false;
+  } else if (!selectedFamilyId) {
+    return false;
+  }
+  if (!theme) return false;
+
+  if (platform === 'web') return Boolean(webPresetKey);
+  if (platform === 'mobile') return Boolean(mobileOs);
+  return false;
+}
+
+export function CatalogueUploadModal({
+  existingFamilies,
+  isOpen,
+  mobileOs,
+  newFamilyGroup,
+  newFamilyMode,
+  newFamilyName,
+  platform,
+  projectGroups,
+  projectId,
+  projects,
+  referenceLabel,
+  referencePreview,
+  selectedFamilyId,
+  theme,
+  uploading,
+  webPresetKey,
+  webPresets,
+  onClose,
+  onFilesSelected,
+  onMobileOsChange,
+  onNewFamilyGroupChange,
+  onNewFamilyModeChange,
+  onNewFamilyNameChange,
+  onPlatformChange,
+  onProjectIdChange,
+  onReferenceLabelChange,
+  onReferenceRemove,
+  onReferenceSelect,
+  onSelectedFamilyIdChange,
+  onThemeChange,
+  onWebPresetKeyChange,
+}: CatalogueUploadModalProps) {
+  if (!isOpen) {
+    return null;
+  }
+
+  const uploadReady = isReadyToUpload({
+    mobileOs,
+    newFamilyGroup,
+    newFamilyMode,
+    newFamilyName,
+    platform,
+    projectId,
+    selectedFamilyId,
+    theme,
+    webPresetKey,
+  });
+
+  return createPortal(
+    <div
+      className="catalogue-upload-overlay"
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 1300 }}
+    >
+      <div
+        className="catalogue-upload-modal catalogue-upload-modal--family"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="catalogue-upload-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h3 id="catalogue-upload-title">Upload Screenshot Variant</h3>
+        <p className="catalogue-upload-subtitle">Choose a family, then classify the variant by theme, platform, and preset.</p>
+
+        <Dropdown
+          className="catalogue-upload-project-dropdown"
+          value={projectId}
+          placeholder="Select a project..."
+          options={projects.map((project) => ({ value: project.id, label: project.name }))}
+          onChange={onProjectIdChange}
+        />
+
+        {projectId ? (
+          <>
+            <label className="catalogue-upload-label">Screen family</label>
+            <div className="catalogue-upload-groups">
+              <button
+                type="button"
+                className={`catalogue-upload-group-chip ${!newFamilyMode ? 'active' : ''}`}
+                onClick={() => onNewFamilyModeChange(false)}
+              >
+                Existing family
+              </button>
+              <button
+                type="button"
+                className={`catalogue-upload-group-chip ${newFamilyMode ? 'active' : ''}`}
+                onClick={() => onNewFamilyModeChange(true)}
+              >
+                New family
+              </button>
+            </div>
+
+            {newFamilyMode ? (
+              <div className="catalogue-upload-stack">
+                <input
+                  className="catalogue-filter catalogue-upload-project-select"
+                  type="text"
+                  placeholder="Screen family name"
+                  value={newFamilyName}
+                  onChange={(event) => onNewFamilyNameChange(event.target.value)}
+                />
+                <input
+                  className="catalogue-filter catalogue-upload-project-select"
+                  type="text"
+                  placeholder={projectGroups.length > 0 ? `Group (for example: ${projectGroups[0]})` : 'Group'}
+                  value={newFamilyGroup}
+                  onChange={(event) => onNewFamilyGroupChange(event.target.value)}
+                />
+              </div>
+            ) : (
+              <Dropdown
+                className="catalogue-upload-project-dropdown"
+                value={selectedFamilyId}
+                placeholder="Select a screen family..."
+                options={existingFamilies.map((family) => ({ value: family.id, label: family.name }))}
+                onChange={onSelectedFamilyIdChange}
+              />
+            )}
+
+            <label className="catalogue-upload-label">Theme</label>
+            <div className="catalogue-upload-groups">
+              {(['light', 'dark'] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`catalogue-upload-group-chip ${theme === item ? 'active' : ''}`}
+                  onClick={() => onThemeChange(theme === item ? null : item)}
+                >
+                  {item === 'light' ? 'Light' : 'Dark'}
+                </button>
+              ))}
+            </div>
+
+            <label className="catalogue-upload-label">Platform</label>
+            <div className="catalogue-upload-groups">
+              {(['web', 'mobile'] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`catalogue-upload-group-chip ${platform === item ? 'active' : ''}`}
+                  onClick={() => onPlatformChange(platform === item ? null : item)}
+                >
+                  {item === 'web' ? 'Web' : 'Mobile'}
+                </button>
+              ))}
+            </div>
+
+            {platform === 'web' && (
+              <>
+                <label className="catalogue-upload-label">Web preset</label>
+                <div className="catalogue-upload-groups">
+                  {webPresets.map((preset) => (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      className={`catalogue-upload-group-chip ${webPresetKey === preset.key ? 'active' : ''}`}
+                      onClick={() => onWebPresetKeyChange(webPresetKey === preset.key ? null : preset.key)}
+                    >
+                      {preset.label}
+                      <span className="catalogue-upload-group-primary">{preset.width}px</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {platform === 'mobile' && (
+              <>
+                <label className="catalogue-upload-label">Mobile OS</label>
+                <div className="catalogue-upload-groups">
+                  {(['ios', 'android'] as const).map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`catalogue-upload-group-chip ${mobileOs === item ? 'active' : ''}`}
+                      onClick={() => onMobileOsChange(mobileOs === item ? null : item)}
+                    >
+                      {item === 'ios' ? 'iOS' : 'Android'}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <label className="catalogue-upload-label">Reference (optional)</label>
+            <div className="catalogue-upload-ref">
+              {referencePreview ? (
+                <div className="catalogue-upload-ref-preview">
+                  <img src={referencePreview} alt="Reference" />
+                  <button type="button" className="catalogue-upload-ref-remove" onClick={onReferenceRemove}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <label className="catalogue-upload-ref-picker">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <span>Add reference image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(event) => {
+                      onReferenceSelect(event.target.files?.[0] ?? null);
+                      event.target.value = '';
+                    }}
+                  />
+                </label>
+              )}
+              <input
+                className="catalogue-upload-ref-label"
+                type="text"
+                placeholder="Label (e.g. Binance Web)"
+                value={referenceLabel}
+                onChange={(event) => onReferenceLabelChange(event.target.value)}
+              />
+            </div>
+
+            {uploadReady ? (
+              <UploadZone onFilesSelected={onFilesSelected} disabled={uploading} />
+            ) : (
+              <p className="catalogue-upload-hint">
+                Choose a family and classification before uploading.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="catalogue-upload-hint">Select a project above to continue.</p>
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}

@@ -1,0 +1,309 @@
+.catalogue-family-card {
+  min-width: 0;
+}
+
+.catalogue-family-card__media {
+  position: relative;
+}
+
+.catalogue-family-card__preview {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: zoom-in;
+}
+
+.catalogue-family-card__head,
+.catalogue-family-card__submeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.catalogue-family-card__submeta {
+  margin-top: 4px;
+}
+
+.catalogue-family-card__name {
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #f4f4f5;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    color: #ffffff;
+  }
+}
+
+.catalogue-family-card__count {
+  color: #c4c4cc;
+  font-size: 10px;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.catalogue-family-card__group,
+.catalogue-family-list__group {
+  min-width: 0;
+  color: #a1a1aa;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalogue-family-card__variant-copy {
+  min-width: 0;
+  color: #8a8a94;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalogue-family-card__variants,
+.catalogue-family-list__variants,
+.catalogue-family-lightbox__variant-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.catalogue-family-card__variant,
+.catalogue-family-details-variant {
+  border: 1px solid #303038;
+  border-radius: 999px;
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 11px;
+  padding: 5px 9px;
+  cursor: pointer;
+  flex: 0 0 auto;
+
+  &.is-active {
+    border-color: rgba(99, 102, 241, 0.55);
+    background: rgba(99, 102, 241, 0.14);
+    color: #e0e7ff;
+  }
+}
+
+.catalogue-family-card__actions-row,
+.catalogue-family-lightbox__actions,
+.catalogue-gallery-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalogue-family-card__actions-row {
+  margin-top: 12px;
+}
+
+.catalogue-family-card__action {
+  border: 1px solid #303038;
+  border-radius: 8px;
+  background: #15151a;
+  color: #d4d4d8;
+  font-size: 11px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(99, 102, 241, 0.42);
+    background: rgba(99, 102, 241, 0.12);
+    color: #f4f4f5;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  &.is-danger:hover {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.12);
+    color: #fecaca;
+  }
+}
+
+.catalogue-family-lightbox__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.catalogue-family-lightbox__meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  span {
+    color: #8a8a94;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  strong {
+    color: #f4f4f5;
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+.catalogue-family-lightbox__actions {
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.catalogue-list-header--family,
+.catalogue-list-row--family {
+  grid-template-columns:
+    30px
+    72px
+    minmax(180px, 1.2fr)
+    minmax(120px, 0.8fr)
+    minmax(240px, 1.6fr)
+    minmax(110px, 0.8fr)
+    minmax(120px, 0.8fr)
+    100px
+    minmax(170px, 1fr);
+}
+
+.catalogue-list-thumb--button {
+  padding: 0;
+  cursor: zoom-in;
+}
+
+.catalogue-family-list__summary {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catalogue-family-list__activity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #a1a1aa;
+  font-size: 12px;
+}
+
+.catalogue-gallery-meta--family {
+  justify-content: flex-start;
+}
+
+.catalogue-gallery-meta-head--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.catalogue-gallery-meta-copy {
+  min-width: 0;
+}
+
+.catalogue-gallery-title {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.catalogue-gallery-subtitle {
+  margin: 4px 0 0;
+  color: #8a8a94;
+  font-size: 13px;
+}
+
+.catalogue-gallery-actions {
+  flex-wrap: wrap;
+}
+
+.catalogue-gallery-actions .catalogue-list-action {
+  flex: 1 1 calc(50% - 4px);
+}
+
+@media (max-width: 1200px) {
+  .catalogue-list-header--family,
+  .catalogue-list-row--family {
+    grid-template-columns:
+      30px
+      72px
+      minmax(180px, 1.2fr)
+      minmax(120px, 0.8fr)
+      minmax(220px, 1.4fr)
+      minmax(110px, 0.8fr)
+      minmax(150px, 0.8fr);
+  }
+
+  .catalogue-list-row--family > :nth-child(7),
+  .catalogue-list-row--family > :nth-child(8),
+  .catalogue-list-header--family > :nth-child(7),
+  .catalogue-list-header--family > :nth-child(8) {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .catalogue-family-lightbox__meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .catalogue-list-header--family {
+    display: none;
+  }
+
+  .catalogue-list-row--family {
+    grid-template-columns: 26px 56px minmax(130px, 1fr) minmax(90px, auto);
+    grid-template-areas:
+      'check thumb summary actions'
+      'check thumb flow flow'
+      'check thumb variants variants'
+      'check thumb activity project'
+      'check thumb created created';
+    row-gap: 6px;
+    padding: 10px;
+  }
+
+  .catalogue-list-row--family > :nth-child(1) { grid-area: check; }
+  .catalogue-list-row--family > :nth-child(2) { grid-area: thumb; width: 56px; height: 56px; }
+  .catalogue-list-row--family > :nth-child(3) { grid-area: summary; }
+  .catalogue-list-row--family > :nth-child(4) { grid-area: flow; }
+  .catalogue-list-row--family > :nth-child(5) { grid-area: variants; }
+  .catalogue-list-row--family > :nth-child(6) { grid-area: activity; }
+  .catalogue-list-row--family > :nth-child(7) { grid-area: project; display: block; }
+  .catalogue-list-row--family > :nth-child(8) { grid-area: created; display: block; }
+  .catalogue-list-row--family > :nth-child(9) { grid-area: actions; justify-content: flex-end; }
+
+  .catalogue-gallery-actions .catalogue-list-action {
+    flex-basis: 100%;
+  }
+}

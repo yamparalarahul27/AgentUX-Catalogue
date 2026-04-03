@@ -17,10 +17,36 @@ export interface Flow {
   updated_at: string;
 }
 
+export type MobileOs = 'ios' | 'android';
+
+export interface ScreenFamily {
+  id: string;
+  project_id: string;
+  name: string;
+  group: string | null;
+  flow_id: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface WebPreset {
+  key: string;
+  label: string;
+  width: number;
+}
+
+export interface CatalogueSettingsRecord {
+  user_id: string;
+  web_presets: WebPreset[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ScreenshotNode {
   id: string;
   project_id: string;
   flow_id: string | null;
+  screen_family_id: string | null;
   name: string;
   file_name: string;
   storage_path: string;
@@ -28,6 +54,8 @@ export interface ScreenshotNode {
   sequence: number | null;
   group: string | null;
   platform: 'mobile' | 'web' | null;
+  web_preset_key: string | null;
+  mobile_os: MobileOs | null;
   theme: 'light' | 'dark' | null;
   reference_url: string | null;
   reference_storage_path: string | null;

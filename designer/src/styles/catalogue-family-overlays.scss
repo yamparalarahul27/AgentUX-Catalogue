@@ -1,0 +1,156 @@
+.catalogue-upload-overlay,
+.catalogue-settings-overlay,
+.flow-assign-overlay,
+.catalogue-family-detail-overlay,
+.catalogue-family-details-overlay {
+  z-index: 1300;
+}
+
+.catalogue-lightbox {
+  z-index: 1250;
+}
+
+.catalogue-family-lightbox__meta,
+.catalogue-family-lightbox__actions,
+.catalogue-family-detail-modal__meta,
+.catalogue-family-detail-modal__tools {
+  display: flex;
+  gap: 12px;
+}
+
+.catalogue-family-lightbox__meta,
+.catalogue-family-detail-modal__meta {
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.catalogue-family-lightbox__meta-row,
+.catalogue-family-detail-modal__meta-row {
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  span {
+    color: #8a8a94;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: #f4f4f5;
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+.catalogue-family-lightbox__variant-strip {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.catalogue-family-lightbox__actions {
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.catalogue-family-detail-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 6, 10, 0.76);
+}
+
+.catalogue-family-detail-modal {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid #27272a;
+  background: #101014;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.catalogue-family-detail-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.catalogue-family-detail-modal__eyebrow {
+  margin: 0 0 6px;
+  color: #8a8a94;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalogue-family-detail-modal__subtitle {
+  margin: 4px 0 0;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.catalogue-family-detail-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.catalogue-family-detail-modal__field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  span {
+    color: #8a8a94;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  input {
+    width: 100%;
+    border: 1px solid #303038;
+    border-radius: 10px;
+    background: #0f1014;
+    color: #fff;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+.catalogue-family-detail-modal__meta {
+  margin: 18px 0 14px;
+}
+
+.catalogue-family-detail-modal__tools {
+  margin-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .catalogue-family-detail-modal {
+    padding: 20px;
+  }
+
+  .catalogue-family-detail-modal__grid {
+    grid-template-columns: 1fr;
+  }
+}

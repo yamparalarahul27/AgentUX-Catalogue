@@ -5,6 +5,7 @@
 }
 
 .catalogue-shell {
+  --catalogue-flow-sidebar-top: 84px;
   display: grid;
   grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
   gap: 24px;
@@ -155,7 +156,7 @@
 
 .catalogue-flow-sidebar {
   position: sticky;
-  top: 92px;
+  top: var(--catalogue-flow-sidebar-top);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -213,7 +214,7 @@
 
 .catalogue-flow-sidebar__opener {
   position: sticky;
-  top: 92px;
+  top: var(--catalogue-flow-sidebar-top);
   align-self: start;
   width: 48px;
   background: linear-gradient(180deg, rgba(24, 24, 27, 0.96) 0%, rgba(24, 24, 27, 0.9) 100%);

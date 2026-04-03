@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Flow } from '../types';
 
 interface FlowAssignModalProps {
@@ -23,8 +24,12 @@ export function FlowAssignModal({
   const isNonPrimary = primaryGroup && screenshotGroup !== primaryGroup;
   const [selected, setSelected] = useState<string | null>(currentFlowId);
 
-  return (
-    <div className="flow-assign-overlay" onClick={onClose}>
+  return createPortal(
+    <div
+      className="flow-assign-overlay"
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 1300 }}
+    >
       <div className="flow-assign-modal" onClick={(e) => e.stopPropagation()}>
         <h3>Assign to Flow</h3>
         <p className="flow-assign-subtitle">
@@ -78,6 +83,7 @@ export function FlowAssignModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
