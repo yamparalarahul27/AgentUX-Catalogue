@@ -202,6 +202,31 @@ export function CatalogueToolbar({
         </div>
       )}
 
+      <div className="catalogue-floating-search">
+        {activePills.length > 0 && (
+          <div className="catalogue-filter-pills catalogue-filter-pills--floating">
+            {activePills.map((pill) => (
+              <button key={pill.key} type="button" className="catalogue-filter-pill" onClick={pill.onRemove}>
+                <span>{pill.label}</span>
+                <span className="catalogue-filter-pill__close"><CloseIcon /></span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="catalogue-search catalogue-search--floating">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search screen families..."
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+          />
+        </div>
+      </div>
+
       <CatalogueFilterSheet
         isOpen={filterSheetOpen}
         onClose={() => setFilterSheetOpen(false)}
