@@ -52,6 +52,10 @@
   display: none;
 }
 
+.catalogue-mobile-search {
+  display: none;
+}
+
 
 .catalogue-group-config {
   padding: 0 0 16px;
@@ -312,7 +316,11 @@
     flex-wrap: nowrap;
   }
 
-  .catalogue-toolbar-left > .catalogue-search {
+  .catalogue-search--desktop {
+    display: none;
+  }
+
+  .catalogue-toolbar-quick-upload {
     display: none;
   }
 
@@ -326,42 +334,76 @@
     display: none;
   }
 
-  .catalogue-floating-search {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: 8px;
+  .catalogue-mobile-search {
+    display: block;
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: 50%;
+    bottom: max(20px, calc(12px + env(safe-area-inset-bottom)));
+    transform: translateX(-50%);
     z-index: 200;
-    padding: 10px 16px max(12px, env(safe-area-inset-bottom));
-    pointer-events: none;
-    transition: padding 0.25s ease;
+  }
 
-    > * {
-      pointer-events: auto;
+  .catalogue-mobile-search__pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 999px;
+    background: rgba(24, 24, 27, 0.96);
+    color: #a5b4fc;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:active {
+      transform: scale(1.08);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
     }
   }
 
-  .catalogue-search--floating {
-    flex: none;
-    max-width: none;
-    border-radius: 14px;
+  .catalogue-mobile-search__dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #6366f1;
+  }
+
+  .catalogue-mobile-search__bar {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    width: calc(100vw - 32px);
+    max-width: 480px;
     padding: 12px 16px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 14px;
     background: rgba(24, 24, 27, 0.98);
-    border-color: rgba(99, 102, 241, 0.3);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+
+    svg { flex-shrink: 0; color: #71717a; }
 
     input {
-      width: 100%;
+      flex: 1;
+      min-width: 0;
+      background: none;
+      border: none;
+      color: #f4f4f5;
       font-size: 15px;
+      font-family: inherit;
+      outline: none;
+
+      &::placeholder { color: #71717a; }
     }
   }
 
-  .catalogue-search__cancel {
+  .catalogue-mobile-search__cancel {
     flex-shrink: 0;
     border: none;
     background: transparent;
@@ -372,65 +414,22 @@
     cursor: pointer;
   }
 
-  .catalogue-search-pill {
-    display: none;
-    position: absolute;
-    left: 50%;
-    bottom: max(20px, calc(12px + env(safe-area-inset-bottom)));
-    transform: translateX(-50%);
-    width: 48px;
-    height: 48px;
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    border-radius: 999px;
-    background: rgba(24, 24, 27, 0.96);
-    color: #a5b4fc;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    pointer-events: auto;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  .catalogue-mobile-search.is-expanded {
+    left: 16px;
+    right: 16px;
+    transform: none;
 
-    &:hover,
-    &:active {
-      transform: translateX(-50%) scale(1.08);
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
-    }
-  }
-
-  .catalogue-search-pill__dot {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: #6366f1;
-  }
-
-  .catalogue-floating-search.is-collapsed {
-    background: transparent;
-    padding: 0;
-
-    .catalogue-search--floating,
-    .catalogue-filter-pills--floating {
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(20px);
+    .catalogue-mobile-search__pill {
+      display: none;
     }
 
-    .catalogue-search-pill {
-      display: inline-flex;
+    .catalogue-mobile-search__bar {
+      display: flex;
     }
-  }
-
-  .catalogue-filter-pills--floating {
-    padding: 0;
-    transition: opacity 0.2s ease, transform 0.2s ease;
   }
 
   .catalogue-body {
-    padding-bottom: 72px;
+    padding-bottom: 80px;
   }
 
   .catalogue-flow-sheet-trigger {
