@@ -57,6 +57,15 @@ function CloseIcon() {
   );
 }
 
+function SearchIcon({ size = 16, strokeWidth = 2 }: { size?: number; strokeWidth?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth}>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
 export function CatalogueToolbar({
   allFlows,
   allMobileOs,
@@ -108,12 +117,7 @@ export function CatalogueToolbar({
   }
 
   const activeFilterCount = [
-    filterGroup,
-    filterFlow,
-    filterPlatform,
-    filterTheme,
-    filterWebPreset,
-    filterMobileOs,
+    filterGroup, filterFlow, filterPlatform, filterTheme, filterWebPreset, filterMobileOs,
   ].filter(Boolean).length + (viewBy !== 'all' ? 1 : 0);
 
   const activePills: Array<{ key: string; label: string; onRemove: () => void }> = [];
@@ -155,11 +159,9 @@ export function CatalogueToolbar({
     <div className="catalogue-toolbar-wrapper">
       <div className="catalogue-toolbar">
         <div className="catalogue-toolbar-left">
-          <div className="catalogue-search">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+          {/* Desktop only - hidden on mobile via CSS */}
+          <div className="catalogue-search catalogue-search--desktop">
+            <SearchIcon />
             <input
               type="text"
               placeholder="Search screen families..."
@@ -195,7 +197,8 @@ export function CatalogueToolbar({
         </div>
 
         <div className="catalogue-toolbar-right">
-          <button className="btn-secondary" onClick={onQuickUploadClick}>
+          {/* Desktop only - hidden on mobile via CSS */}
+          <button className="btn-secondary catalogue-toolbar-quick-upload" onClick={onQuickUploadClick}>
             Quick Upload
           </button>
           <button className="btn-primary" onClick={onUploadClick}>
@@ -215,22 +218,14 @@ export function CatalogueToolbar({
         </div>
       )}
 
-      <div className={`catalogue-floating-search ${searchExpanded ? '' : 'is-collapsed'}`}>
-        {activePills.length > 0 && (
-          <div className="catalogue-filter-pills catalogue-filter-pills--floating">
-            {activePills.map((pill) => (
-              <button key={pill.key} type="button" className="catalogue-filter-pill" onClick={pill.onRemove}>
-                <span>{pill.label}</span>
-                <span className="catalogue-filter-pill__close"><CloseIcon /></span>
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="catalogue-search catalogue-search--floating">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+      {/* Mobile only floating search - hidden on desktop via CSS */}
+      <div className={`catalogue-mobile-search ${searchExpanded ? 'is-expanded' : ''}`}>
+        <button type="button" className="catalogue-mobile-search__pill" onClick={expandSearch}>
+          <SearchIcon size={18} strokeWidth={2.5} />
+          {searchQuery && <span className="catalogue-mobile-search__dot" />}
+        </button>
+        <div className="catalogue-mobile-search__bar">
+          <SearchIcon />
           <input
             ref={floatingInputRef}
             type="text"
@@ -238,17 +233,10 @@ export function CatalogueToolbar({
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
           />
-          <button type="button" className="catalogue-search__cancel" onClick={collapseSearch}>
+          <button type="button" className="catalogue-mobile-search__cancel" onClick={collapseSearch}>
             Cancel
           </button>
         </div>
-        <button type="button" className="catalogue-search-pill" onClick={expandSearch}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          {searchQuery && <span className="catalogue-search-pill__dot" />}
-        </button>
       </div>
 
       <CatalogueFilterSheet
