@@ -1,48 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import { CatalogueFilterSheet } from './CatalogueFilterSheet';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
-
-type ToolbarFilterKey =
-  | 'flow'
-  | 'group'
-  | 'platform'
-  | 'theme'
-  | 'webPreset'
-  | 'mobileOs'
-  | 'view';
-
-const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
-const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['flow', 'group', 'platform', 'theme', 'view'];
-
-const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
-  { key: 'flow', label: 'Flows' },
-  { key: 'group', label: 'Groups' },
-  { key: 'platform', label: 'Platforms' },
-  { key: 'theme', label: 'Themes' },
-  { key: 'webPreset', label: 'Web presets' },
-  { key: 'mobileOs', label: 'Mobile OS' },
-  { key: 'view', label: 'View' },
-];
-
-function parseVisibleFilters(value: string | null): Set<ToolbarFilterKey> {
-  if (!value) return new Set(DEFAULT_VISIBLE_FILTERS);
-
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    if (!Array.isArray(parsed)) return new Set(DEFAULT_VISIBLE_FILTERS);
-    const next = parsed.filter(
-      (item): item is ToolbarFilterKey => FILTER_OPTIONS.some((option) => option.key === item),
-    );
-    return new Set(next);
-  } catch {
-    return new Set(DEFAULT_VISIBLE_FILTERS);
-  }
-}
 
 interface CatalogueToolbarProps {
   allFlows: string[];
@@ -77,6 +40,21 @@ interface CatalogueToolbarProps {
   viewBy: CatalogueViewBy;
   viewMode: CatalogueViewMode;
   vsGroups: string[];
+}
+
+const VIEW_BY_LABELS: Record<CatalogueViewBy, string> = {
+  'all': 'All screen families',
+  'comments-added': 'Comments added',
+  'annotations-added': 'Annotations added',
+};
+
+function CloseIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
 }
 
 export function CatalogueToolbar({
@@ -114,17 +92,43 @@ export function CatalogueToolbar({
   vsGroups,
 }: CatalogueToolbarProps) {
   const nonPrimaryGroups = groups.filter((group) => group !== primaryGroup);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
-  const [visibleFilters, setVisibleFilters] = useState<Set<ToolbarFilterKey>>(() => {
-    try {
-      return parseVisibleFilters(window.localStorage.getItem(TOOLBAR_FILTER_KEY));
-    } catch {
-      return new Set(DEFAULT_VISIBLE_FILTERS);
-    }
-  });
-  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+
+  const activeFilterCount = [
+    filterGroup,
+    filterFlow,
+    filterPlatform,
+    filterTheme,
+    filterWebPreset,
+    filterMobileOs,
+  ].filter(Boolean).length + (viewBy !== 'all' ? 1 : 0);
+
+  const activePills: Array<{ key: string; label: string; onRemove: () => void }> = [];
+  if (filterGroup) activePills.push({ key: 'group', label: `Group: ${filterGroup}`, onRemove: () => onFilterGroupChange(null) });
+  if (filterFlow) activePills.push({ key: 'flow', label: `Flow: ${filterFlow}`, onRemove: () => onFilterFlowChange(null) });
+  if (filterPlatform) activePills.push({ key: 'platform', label: `Platform: ${filterPlatform}`, onRemove: () => onFilterPlatformChange(null) });
+  if (filterTheme) activePills.push({ key: 'theme', label: `Theme: ${filterTheme}`, onRemove: () => onFilterThemeChange(null) });
+  if (filterWebPreset) activePills.push({ key: 'webPreset', label: `Preset: ${filterWebPreset}`, onRemove: () => onFilterWebPresetChange(null) });
+  if (filterMobileOs) activePills.push({ key: 'mobileOs', label: `OS: ${filterMobileOs}`, onRemove: () => onFilterMobileOsChange(null) });
+  if (viewBy !== 'all') activePills.push({ key: 'viewBy', label: `View: ${VIEW_BY_LABELS[viewBy]}`, onRemove: () => onViewByChange('all') });
+
+  function handleApplyFilters(filters: {
+    flow: string | null;
+    group: string | null;
+    mobileOs: string | null;
+    platform: string | null;
+    theme: string | null;
+    viewBy: CatalogueViewBy;
+    webPreset: string | null;
+  }) {
+    onFilterGroupChange(filters.group);
+    onFilterFlowChange(filters.flow);
+    onFilterPlatformChange(filters.platform);
+    onFilterThemeChange(filters.theme);
+    onFilterWebPresetChange(filters.webPreset);
+    onFilterMobileOsChange(filters.mobileOs);
+    onViewByChange(filters.viewBy);
+  }
 
   function toggleVsGroup(group: string) {
     if (vsGroups.includes(group)) {
@@ -132,78 +136,6 @@ export function CatalogueToolbar({
       return;
     }
     onVsGroupsChange([...vsGroups, group]);
-  }
-
-  useEffect(() => {
-    if (!filterMenuOpen) return undefined;
-
-    function handleClick(event: MouseEvent) {
-      const target = event.target as Node;
-      if (
-        triggerRef.current && !triggerRef.current.contains(target) &&
-        menuRef.current && !menuRef.current.contains(target)
-      ) {
-        setFilterMenuOpen(false);
-      }
-    }
-
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setFilterMenuOpen(false);
-    }
-
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [filterMenuOpen]);
-
-  useLayoutEffect(() => {
-    if (!filterMenuOpen || !triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const preferredWidth = 220;
-    const left = Math.min(Math.max(12, rect.left), Math.max(12, viewportWidth - preferredWidth - 12));
-    setMenuStyle({
-      position: 'fixed',
-      top: rect.bottom + 8,
-      left,
-      width: preferredWidth,
-    });
-  }, [filterMenuOpen]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(TOOLBAR_FILTER_KEY, JSON.stringify(Array.from(visibleFilters)));
-    } catch {
-      // ignore persistence failures
-    }
-  }, [visibleFilters]);
-
-  function toggleVisibleFilter(key: ToolbarFilterKey) {
-    const isVisible = visibleFilters.has(key);
-
-    if (isVisible) {
-      if (key === 'flow') onFilterFlowChange(null);
-      if (key === 'group') onFilterGroupChange(null);
-      if (key === 'platform') onFilterPlatformChange(null);
-      if (key === 'theme') onFilterThemeChange(null);
-      if (key === 'webPreset') onFilterWebPresetChange(null);
-      if (key === 'mobileOs') onFilterMobileOsChange(null);
-      if (key === 'view') onViewByChange('all');
-    }
-
-    setVisibleFilters((previous) => {
-      const next = new Set(previous);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
-
-  function isFilterVisible(key: ToolbarFilterKey) {
-    return visibleFilters.has(key);
   }
 
   return (
@@ -224,88 +156,15 @@ export function CatalogueToolbar({
           </div>
 
           <button
-            ref={triggerRef}
             type="button"
-            className={`btn-secondary catalogue-filter-toggle ${filterMenuOpen ? 'is-open' : ''}`}
-            aria-expanded={filterMenuOpen}
-            aria-controls="catalogue-filter-menu"
-            onClick={() => setFilterMenuOpen((previous) => !previous)}
+            className="btn-secondary catalogue-filter-toggle"
+            onClick={() => setFilterSheetOpen(true)}
           >
-            + Filter
+            Filter
+            {activeFilterCount > 0 && (
+              <span className="catalogue-filter-btn__badge">{activeFilterCount}</span>
+            )}
           </button>
-
-          {isFilterVisible('group') && (
-            <Dropdown
-              value={filterGroup}
-              placeholder="Group"
-              options={groups.map((group) => ({ value: group, label: group, badge: group === primaryGroup ? 'Primary' : undefined }))}
-              onChange={onFilterGroupChange}
-            />
-          )}
-
-          {isFilterVisible('flow') && (
-            <Dropdown
-              value={filterFlow}
-              placeholder="Flow"
-              options={allFlows.map((flow) => ({ value: flow, label: flow }))}
-              onChange={onFilterFlowChange}
-            />
-          )}
-
-          {isFilterVisible('platform') && (
-            <Dropdown
-              value={filterPlatform}
-              placeholder="Platform"
-              options={[
-                { value: 'mobile', label: 'Mobile' },
-                { value: 'web', label: 'Web' },
-              ]}
-              onChange={onFilterPlatformChange}
-            />
-          )}
-
-          {isFilterVisible('theme') && (
-            <Dropdown
-              value={filterTheme}
-              placeholder="Theme"
-              options={[
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-              ]}
-              onChange={onFilterThemeChange}
-            />
-          )}
-
-          {isFilterVisible('webPreset') && filterPlatform === 'web' && (
-            <Dropdown
-              value={filterWebPreset}
-              placeholder="Web preset"
-              options={allWebPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
-              onChange={onFilterWebPresetChange}
-            />
-          )}
-
-          {isFilterVisible('mobileOs') && filterPlatform === 'mobile' && (
-            <Dropdown
-              value={filterMobileOs}
-              placeholder="Mobile OS"
-              options={allMobileOs.map((item) => ({ value: item.id, label: item.label }))}
-              onChange={onFilterMobileOsChange}
-            />
-          )}
-
-          {isFilterVisible('view') && (
-            <Dropdown
-              value={viewBy}
-              placeholder="View by"
-              options={[
-                { value: 'all', label: 'All screen families' },
-                { value: 'comments-added', label: 'Comments added' },
-                { value: 'annotations-added', label: 'Annotations added' },
-              ]}
-              onChange={(value) => onViewByChange((value || 'all') as CatalogueViewBy)}
-            />
-          )}
 
           <Dropdown
             value={sortBy}
@@ -332,28 +191,33 @@ export function CatalogueToolbar({
         </div>
       </div>
 
-      {filterMenuOpen && createPortal(
-        <div ref={menuRef} id="catalogue-filter-menu" className="catalogue-filter-menu" style={menuStyle}>
-          <div className="catalogue-filter-menu__title">Visible filters</div>
-          <div className="catalogue-filter-menu__list">
-            {FILTER_OPTIONS.map((option) => {
-              const selected = visibleFilters.has(option.key);
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  className={`catalogue-filter-menu__item ${selected ? 'is-selected' : ''}`}
-                  onClick={() => toggleVisibleFilter(option.key)}
-                >
-                  <span>{option.label}</span>
-                  <span className="catalogue-filter-menu__check">{selected ? '✓' : ''}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>,
-        document.body,
+      {activePills.length > 0 && (
+        <div className="catalogue-filter-pills">
+          {activePills.map((pill) => (
+            <button key={pill.key} type="button" className="catalogue-filter-pill" onClick={pill.onRemove}>
+              <span>{pill.label}</span>
+              <span className="catalogue-filter-pill__close"><CloseIcon /></span>
+            </button>
+          ))}
+        </div>
       )}
+
+      <CatalogueFilterSheet
+        isOpen={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        filterGroup={filterGroup}
+        filterFlow={filterFlow}
+        filterPlatform={filterPlatform}
+        filterTheme={filterTheme}
+        filterWebPreset={filterWebPreset}
+        filterMobileOs={filterMobileOs}
+        viewBy={viewBy}
+        groups={groups}
+        allFlows={allFlows}
+        allWebPresets={allWebPresets}
+        allMobileOs={allMobileOs}
+        onApply={handleApplyFilters}
+      />
 
       {showGroupConfig && (
         <div className="catalogue-group-config">
