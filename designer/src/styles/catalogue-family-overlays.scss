@@ -6,6 +6,18 @@
   z-index: 1300;
 }
 
+.catalogue-upload-overlay {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.catalogue-upload-modal {
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  margin: 0 auto;
+}
+
 .catalogue-lightbox {
   z-index: 1250;
 }
