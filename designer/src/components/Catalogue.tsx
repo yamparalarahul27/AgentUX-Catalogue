@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import type { User } from '@supabase/supabase-js';
-import type { Flow, WebPreset } from '../types';
+import type { WebPreset } from '../types';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
@@ -11,17 +11,15 @@ import { buildCatalogueFamilies } from '../lib/catalogue-families';
 import { DEFAULT_CATALOGUE_VIEW_MODE, parseCatalogueViewMode, type CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueContent } from './CatalogueContent';
-import { CatalogueDuplicateVariantModal } from './CatalogueDuplicateVariantModal';
 import { CatalogueFamilyDetailsModal } from './CatalogueFamilyDetailsModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
-import { CatalogueFlowSidebar } from './CatalogueFlowSidebar';
 import { CatalogueHeader } from './CatalogueHeader';
+import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { ConfirmModal } from './ConfirmModal';
-import { FlowAssignModal } from './FlowAssignModal';
 import { Toast } from './Toast';
 
 interface CatalogueProps {
@@ -30,7 +28,7 @@ interface CatalogueProps {
 
 const CATALOGUE_VIEW_MODE_KEY = 'catalogue:view-mode';
 
-type BulkAction = 'assign' | 'group' | null;
+type BulkAction = 'group' | null;
 type CatalogueSection = 'catalogue' | 'team';
 
 function defaultViewMode() {
@@ -51,10 +49,8 @@ function buildPresetUsage(screenshots: { web_preset_key: string | null }[]) {
 
 export function Catalogue({ user }: CatalogueProps) {
   const {
-    flows,
     flowMap,
     loading,
-    projectMap,
     projects,
     screenFamilies,
     screenshots,
@@ -64,31 +60,24 @@ export function Catalogue({ user }: CatalogueProps) {
   } = useCatalogueData();
   const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
   const {
-    activeFlowCount,
-    activeFlowFilter,
-    activeFlowLabel,
+    allFlows,
     allGroups,
     allMobileOs,
-    allScreenFamilies,
     allWebPresets,
+    filterFlow,
     filterGroup,
     filterMobileOs,
     filterPlatform,
-    filterProject,
-    filterScreenFamily,
     filterTheme,
     filterWebPreset,
     filteredFamilies,
-    flowItems,
     groupedFamilies,
     primaryGroup,
     searchQuery,
-    setActiveFlowFilter,
+    setFilterFlow,
     setFilterGroup,
     setFilterMobileOs,
     setFilterPlatform,
-    setFilterProject,
-    setFilterScreenFamily,
     setFilterTheme,
     setFilterWebPreset,
     setSortBy,
@@ -99,15 +88,12 @@ export function Catalogue({ user }: CatalogueProps) {
     viewBy,
     vsGroups,
   } = useCatalogueFilters({
-    flows,
-    projects,
     screenshots,
     screenFamilies,
     webPresets,
   });
 
   const [showSettings, setShowSettings] = useState(false);
-  const [assignModal, setAssignModal] = useState<string | null>(null);
   const [detailsFamilyId, setDetailsFamilyId] = useState<string | null>(null);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -116,7 +102,6 @@ export function Catalogue({ user }: CatalogueProps) {
   const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
-  const [isFlowSheetExpanded, setIsFlowSheetExpanded] = useState(false);
   const canViewTeamSection = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
 
@@ -133,33 +118,25 @@ export function Catalogue({ user }: CatalogueProps) {
     () => filteredFamilies.filter((family) => selected.has(family.id)).length,
     [filteredFamilies, selected],
   );
-  const bulkFlows = useMemo(() => {
-    if (selected.size === 0) return [] as Flow[];
-    const projectIds = new Set(Array.from(selected).map((familyId) => familyById[familyId]?.project_id).filter(Boolean));
-    return flows.filter((flow) => projectIds.has(flow.project_id));
-  }, [familyById, flows, selected]);
-  const assigningFamily = assignModal ? familyById[assignModal] ?? null : null;
-  const assigningProject = assigningFamily ? projects.find((project) => project.id === assigningFamily.project_id) ?? null : null;
   const detailsFamily = detailsFamilyId ? familyById[detailsFamilyId] ?? null : null;
   const previewFamily = previewFamilyId ? familyById[previewFamilyId] ?? null : null;
 
   const {
     handleAnnotationStateChange,
-    handleAssignFlow,
     handleChangeFamilyGroup,
     handleCommentCountChange,
     handleDeleteFamily,
     handlePrimaryGroupChange,
     handleRenameFamily,
     handleReplaceImage,
+    handleSetFlowLabel,
     handleUpdateVariantDetails,
     handleVsGroupsChange,
   } = useCatalogueFamilyActions({
     familyById,
-    filterProject,
+    filterProject: null,
     flowMap,
     onFamilyDeleted: (familyId) => {
-      setAssignModal((previous) => (previous === familyId ? null : previous));
       setDetailsFamilyId((previous) => (previous === familyId ? null : previous));
       setPreviewFamilyId((previous) => (previous === familyId ? null : previous));
       setSelected((previous) => {
@@ -180,11 +157,6 @@ export function Catalogue({ user }: CatalogueProps) {
   });
   const upload = useCatalogueUpload({
     allFamilies,
-    handleReplaceImage,
-    presetByKey,
-    screenFamilies,
-    screenshots,
-    setScreenFamilies,
     setScreenshots,
     setToast,
     userEmail: user.email || null,
@@ -193,13 +165,12 @@ export function Catalogue({ user }: CatalogueProps) {
   });
   const isAnyModalOpen = Boolean(
     upload.showUpload ||
+    upload.showQuickUpload ||
     showSettings ||
-    assigningFamily ||
     previewFamily ||
     detailsFamily ||
     bulkAction ||
-    confirmDeleteOpen ||
-    upload.duplicateState,
+    confirmDeleteOpen,
   );
 
   useEffect(() => {
@@ -295,23 +266,10 @@ export function Catalogue({ user }: CatalogueProps) {
     setBulkGroupValue('');
   }
 
-  function getProjectFlows(familyId: string): Flow[] {
-    const family = familyById[familyId];
-    return family ? flows.filter((flow) => flow.project_id === family.project_id) : [];
-  }
-
   async function handleBulkDelete() {
     if (selected.size === 0) return;
     for (const familyId of selected) {
       await handleDeleteFamily(familyId);
-    }
-    clearSelection();
-  }
-
-  async function handleBulkAssignFlow(flowId: string | null) {
-    if (selected.size === 0) return;
-    for (const familyId of selected) {
-      await handleAssignFlow(familyId, flowId);
     }
     clearSelection();
   }
@@ -352,52 +310,36 @@ export function Catalogue({ user }: CatalogueProps) {
       ) : (
         <main className="catalogue-main">
           <div className="catalogue-shell">
-            <CatalogueFlowSidebar
-              activeFlowCount={activeFlowCount}
-              activeFlowFilter={activeFlowFilter}
-              activeFlowLabel={activeFlowLabel}
-              items={flowItems}
-              mobileExpanded={isFlowSheetExpanded}
-              onFlowFilterChange={setActiveFlowFilter}
-              onMobileExpandedChange={setIsFlowSheetExpanded}
-            />
-
             <div className="catalogue-body">
               <CatalogueToolbar
-                activeFlowCount={activeFlowCount}
-                activeFlowLabel={activeFlowLabel}
+                allFlows={allFlows}
                 allMobileOs={allMobileOs}
-                allScreenFamilies={allScreenFamilies}
                 allWebPresets={allWebPresets}
+                filterFlow={filterFlow}
                 filterGroup={filterGroup}
                 filterMobileOs={filterMobileOs}
                 filterPlatform={filterPlatform}
-                filterProject={filterProject}
-                filterScreenFamily={filterScreenFamily}
                 filterTheme={filterTheme}
                 filterWebPreset={filterWebPreset}
                 groups={allGroups}
                 isSortLocked={isSortLocked}
+                onFilterFlowChange={setFilterFlow}
                 onFilterGroupChange={setFilterGroup}
                 onFilterMobileOsChange={setFilterMobileOs}
                 onFilterPlatformChange={setFilterPlatform}
-                onFilterProjectChange={setFilterProject}
-                onFilterScreenFamilyChange={setFilterScreenFamily}
                 onFilterThemeChange={setFilterTheme}
                 onFilterWebPresetChange={setFilterWebPreset}
                 onPrimaryGroupChange={handlePrimaryGroupChange}
-                onQuickUploadClick={() => upload.setShowUpload(true)}
+                onQuickUploadClick={() => upload.setShowQuickUpload(true)}
                 onSearchChange={setSearchQuery}
                 onSortByChange={setSortBy}
-                onToggleFlowSheet={() => setIsFlowSheetExpanded((previous) => !previous)}
                 onUploadClick={() => upload.setShowUpload(true)}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
                 onVsGroupsChange={handleVsGroupsChange}
                 primaryGroup={primaryGroup}
-                projects={projects.map((project) => ({ id: project.id, name: project.name }))}
                 searchQuery={searchQuery}
-                showGroupConfig={Boolean(filterProject)}
+                showGroupConfig={false}
                 sortBy={sortBy}
                 viewBy={viewBy}
                 viewMode={viewMode}
@@ -405,34 +347,29 @@ export function Catalogue({ user }: CatalogueProps) {
               />
 
               <CatalogueContent
-                activeFlowFilter={activeFlowFilter}
                 activeVariantKeys={upload.activeVariantKeys}
+                filterFlow={filterFlow}
                 filterGroup={filterGroup}
                 filterMobileOs={filterMobileOs}
                 filterPlatform={filterPlatform}
-                filterProject={filterProject}
-                filterScreenFamily={filterScreenFamily}
                 filterTheme={filterTheme}
                 filterWebPreset={filterWebPreset}
                 filteredFamilies={filteredFamilies}
-                flowMap={flowMap}
                 groupedFamilies={groupedFamilies}
                 loading={loading}
                 primaryGroup={primaryGroup}
-                projectMap={projectMap}
-                projectsCount={projects.length}
                 searchQuery={searchQuery}
                 selected={selected}
                 viewMode={viewMode}
                 vsGroups={vsGroups}
                 onActiveVariantChange={upload.updateActiveVariant}
-                onAssignFlow={setAssignModal}
                 onChangeFamilyGroup={handleChangeFamilyGroup}
                 onDeleteFamily={handleDeleteFamily}
                 onOpenDetails={openDetails}
                 onOpenPreview={openPreview}
                 onRenameFamily={handleRenameFamily}
                 onReplaceVariantImage={handleReplaceImage}
+                onSetFlowLabel={handleSetFlowLabel}
                 onToggleGroupSelect={toggleGroupSelection}
                 onToggleSelect={toggleSelect}
                 onUpdateVariantDetails={handleUpdateVariantDetails}
@@ -444,11 +381,10 @@ export function Catalogue({ user }: CatalogueProps) {
       )}
 
       <CatalogueUploadModal
-        existingFamilies={upload.uploadProjectFamilies}
+        flowLabel={upload.uploadFlowLabel}
         isOpen={upload.showUpload}
         mobileOs={upload.uploadMobileOs}
         newFamilyGroup={upload.uploadNewFamilyGroup}
-        newFamilyMode={upload.uploadNewFamilyMode}
         newFamilyName={upload.uploadNewFamilyName}
         platform={upload.uploadPlatform}
         projectGroups={upload.uploadProjectGroups}
@@ -456,21 +392,19 @@ export function Catalogue({ user }: CatalogueProps) {
         projects={projects.map((project) => ({ id: project.id, name: project.name }))}
         referenceLabel={upload.uploadRefLabel}
         referencePreview={upload.uploadRefPreview}
-        selectedFamilyId={upload.uploadFamilyId}
         theme={upload.uploadTheme}
         uploading={upload.uploading}
         webPresetKey={upload.uploadWebPresetKey}
         webPresets={webPresets}
         onClose={upload.resetUploadState}
         onFilesSelected={(files) => void upload.handleFilesSelected(files)}
+        onFlowLabelChange={upload.setUploadFlowLabel}
         onMobileOsChange={upload.setUploadMobileOs}
         onNewFamilyGroupChange={upload.setUploadNewFamilyGroup}
-        onNewFamilyModeChange={upload.setUploadNewFamilyMode}
         onNewFamilyNameChange={upload.setUploadNewFamilyName}
         onPlatformChange={upload.setUploadPlatform}
         onProjectIdChange={(projectId) => {
           upload.setUploadProjectId(projectId);
-          upload.setUploadFamilyId(null);
           upload.setUploadNewFamilyName('');
           upload.setUploadNewFamilyGroup('');
         }}
@@ -490,9 +424,31 @@ export function Catalogue({ user }: CatalogueProps) {
           upload.setUploadRefFile(null);
           upload.setUploadRefPreview(null);
         }}
-        onSelectedFamilyIdChange={upload.setUploadFamilyId}
         onThemeChange={upload.setUploadTheme}
         onWebPresetKeyChange={upload.setUploadWebPresetKey}
+      />
+
+      <CatalogueQuickUploadModal
+        flowLabel={upload.quickUploadFlowLabel}
+        isOpen={upload.showQuickUpload}
+        projectId={upload.quickUploadProjectId}
+        projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+        quickUploadExistingGroup={upload.quickUploadExistingGroup}
+        quickUploadGroupMode={upload.quickUploadGroupMode}
+        quickUploadNewGroup={upload.quickUploadNewGroup}
+        quickUploadProjectGroups={upload.quickUploadProjectGroups}
+        quickUploadQueue={upload.quickUploadQueuePreview}
+        uploading={upload.uploading}
+        onClose={upload.resetQuickUploadState}
+        onQuickUploadClearQueue={upload.handleQuickUploadQueueClear}
+        onQuickUploadExistingGroupChange={upload.setQuickUploadExistingGroup}
+        onQuickUploadFilesSelected={upload.handleQuickUploadQueueAdd}
+        onQuickUploadFlowLabelChange={upload.setQuickUploadFlowLabel}
+        onQuickUploadGroupModeChange={upload.handleQuickUploadGroupModeChange}
+        onQuickUploadNewGroupChange={upload.setQuickUploadNewGroup}
+        onQuickUploadProjectChange={upload.handleQuickUploadProjectChange}
+        onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
+        onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}
       />
 
       <CatalogueSettingsModal
@@ -510,29 +466,15 @@ export function Catalogue({ user }: CatalogueProps) {
         </div>
       )}
 
-      {assigningFamily && (
-        <FlowAssignModal
-          screenshotName={assigningFamily.name}
-          currentFlowId={assigningFamily.flow_id}
-          flows={getProjectFlows(assigningFamily.id)}
-          primaryGroup={assigningProject?.primary_group}
-          screenshotGroup={assigningFamily.group}
-          onAssign={(flowId) => { void handleAssignFlow(assigningFamily.id, flowId); }}
-          onClose={() => setAssignModal(null)}
-        />
-      )}
-
       {previewFamily && (
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
           family={previewFamily}
-          flowName={previewFamily.flow_id ? flowMap[previewFamily.flow_id] || null : null}
+          flowName={previewFamily.flow_label}
           isOpen
-          projectName={projectMap[previewFamily.project_id] || 'Unknown'}
           userEmail={user.email || ''}
           onActiveVariantChange={upload.updateActiveVariant}
           onAnnotationStateChange={handleAnnotationStateChange}
-          onAssignFlow={setAssignModal}
           onClose={() => setPreviewFamilyId(null)}
           onCommentCountChange={handleCommentCountChange}
           onDeleteFamily={handleDeleteFamily}
@@ -545,46 +487,18 @@ export function Catalogue({ user }: CatalogueProps) {
       <CatalogueFamilyDetailsModal
         activeVariantKey={detailsFamily ? upload.activeVariantKeys[detailsFamily.id] ?? null : null}
         family={detailsFamily}
-        flowName={detailsFamily?.flow_id ? flowMap[detailsFamily.flow_id] || null : null}
+        flowName={detailsFamily?.flow_label || null}
         isOpen={Boolean(detailsFamily)}
-        projectName={detailsFamily ? projectMap[detailsFamily.project_id] || 'Unknown' : 'Unknown'}
         webPresets={webPresets}
         onActiveVariantChange={upload.updateActiveVariant}
-        onAssignFlow={setAssignModal}
         onChangeFamilyGroup={handleChangeFamilyGroup}
         onClose={() => setDetailsFamilyId(null)}
         onDeleteFamily={handleDeleteFamily}
         onRenameFamily={handleRenameFamily}
         onReplaceVariantImage={handleReplaceImage}
+        onSetFlowLabel={handleSetFlowLabel}
         onUpdateVariantDetails={handleUpdateVariantDetails}
       />
-
-      {bulkAction === 'assign' && (
-        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
-          <div className="flow-assign-modal" onClick={(event) => event.stopPropagation()}>
-            <h3>Assign {selected.size} families to Flow</h3>
-            <div className="flow-assign-options">
-              <label className="flow-assign-option">
-                <input type="radio" name="bulk-flow" defaultChecked onChange={() => undefined} />
-                <span>Unassigned</span>
-              </label>
-              {bulkFlows.map((flow) => (
-                <label key={flow.id} className="flow-assign-option">
-                  <input type="radio" name="bulk-flow" onChange={() => void handleBulkAssignFlow(flow.id)} />
-                  <span>{flow.name}</span>
-                </label>
-              ))}
-            </div>
-            {bulkFlows.length === 0 && (
-              <p className="flow-assign-empty">No flows available for selected screen families.</p>
-            )}
-            <div className="flow-assign-actions">
-              <button type="button" className="btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
-              <button type="button" className="btn-primary" onClick={() => void handleBulkAssignFlow(null)}>Unassign All</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {bulkAction === 'group' && (
         <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
@@ -638,16 +552,6 @@ export function Catalogue({ user }: CatalogueProps) {
         />
       )}
 
-      <CatalogueDuplicateVariantModal
-        familyName={upload.duplicateState?.familyName || ''}
-        fileName={upload.duplicateState?.fileName || ''}
-        isOpen={Boolean(upload.duplicateState)}
-        variantLabel={upload.duplicateState?.variantLabel || ''}
-        onAddVersion={() => upload.resolveDuplicateResolution('add-version')}
-        onCancel={() => upload.resolveDuplicateResolution('cancel')}
-        onReplace={() => upload.resolveDuplicateResolution('replace')}
-      />
-
       {toast && (
         <Toast
           message={toast.message}
@@ -663,8 +567,8 @@ export function Catalogue({ user }: CatalogueProps) {
           selectedVisibleCount={selectedVisibleCount}
           onClearSelection={clearSelection}
           onOpenDeleteConfirm={() => setConfirmDeleteOpen(true)}
+          onOpenGroupDialog={() => setBulkAction('group')}
           onSelectAllVisible={selectAllVisible}
-          onSetBulkAction={setBulkAction}
         />
       )}
     </div>

@@ -435,6 +435,41 @@
   flex: 1 1 calc(50% - 4px);
 }
 
+.catalogue-gallery-inline-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.26);
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.catalogue-gallery-inline-editor .catalogue-list-inline-editor__head {
+  padding-top: 0;
+}
+
+.catalogue-gallery-inline-editor .catalogue-list-inline-editor__grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.catalogue-gallery-inline-editor .catalogue-list-inline-editor__field {
+  gap: 6px;
+}
+
+.catalogue-gallery-inline-editor .catalogue-list-inline-editor__field input,
+.catalogue-gallery-inline-editor .catalogue-list-inline-editor__field select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #303038;
+  border-radius: 10px;
+  background: #0f1014;
+  color: #fff;
+  font-size: 13px;
+  padding: 9px 10px;
+}
+
 @media (max-width: 1200px) {
   .catalogue-list-header--family,
   .catalogue-list-row--family {

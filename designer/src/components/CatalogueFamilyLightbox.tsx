@@ -13,11 +13,9 @@ interface CatalogueFamilyLightboxProps {
   family: CatalogueFamilyView;
   flowName: string | null;
   isOpen: boolean;
-  projectName: string;
   userEmail: string;
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
   onAnnotationStateChange: (screenshotId: string, metadata: Record<string, unknown>) => void;
-  onAssignFlow: (familyId: string) => void;
   onClose: () => void;
   onCommentCountChange?: (screenshotId: string, delta: number) => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
@@ -40,11 +38,9 @@ export function CatalogueFamilyLightbox({
   family,
   flowName,
   isOpen,
-  projectName,
   userEmail,
   onActiveVariantChange,
   onAnnotationStateChange,
-  onAssignFlow,
   onClose,
   onCommentCountChange,
   onDeleteFamily,
@@ -407,21 +403,10 @@ export function CatalogueFamilyLightbox({
             <div className="catalogue-family-lightbox__summary">
               <div className="catalogue-family-lightbox__meta">
                 <div className="catalogue-family-lightbox__meta-row">
-                  <span>Project</span>
-                  <strong>{projectName}</strong>
-                </div>
-                <div className="catalogue-family-lightbox__meta-row">
                   <span>Flow</span>
-                  <button
-                    type="button"
-                    className="catalogue-gallery-flow"
-                    onClick={() => {
-                      onAssignFlow(family.id);
-                      onClose();
-                    }}
-                  >
+                  <span className="catalogue-gallery-flow">
                     {flowName || 'Unassigned'}
-                  </button>
+                  </span>
                 </div>
               </div>
 

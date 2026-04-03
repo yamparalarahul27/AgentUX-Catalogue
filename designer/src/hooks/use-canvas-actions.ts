@@ -43,7 +43,6 @@ interface UseCanvasActionsParams {
   setSelectedEdge: Dispatch<SetStateAction<{ edgeId: string; x: number; y: number } | null>>;
   setShowUpload: Dispatch<SetStateAction<boolean>>;
   setShowFlowInput: Dispatch<SetStateAction<boolean>>;
-  setShowCataloguePicker: Dispatch<SetStateAction<boolean>>;
   setShowBulkDeleteConfirm: Dispatch<SetStateAction<boolean>>;
   setUploading: Dispatch<SetStateAction<boolean>>;
   setToast: Dispatch<SetStateAction<{ message: string; type: 'error' | 'success' | 'info' } | null>>;
@@ -96,7 +95,6 @@ export function useCanvasActions({
   setSelectedEdge,
   setShowUpload,
   setShowFlowInput,
-  setShowCataloguePicker,
   setShowBulkDeleteConfirm,
   setUploading,
   setToast,
@@ -415,40 +413,6 @@ export function useCanvasActions({
     [flowId, markLocalEdit, projectId, pushUndoSnapshot, setScreenshots, setShowUpload, setToast, setUploading, touchFlow, userEmail, userId],
   );
 
-  const handleAddFromCatalogue = useCallback(
-    (added: ScreenshotNode[]) => {
-      setShowCataloguePicker(false);
-      if (added.length === 0) return;
-
-      pushUndoSnapshot();
-      markLocalEdit();
-
-      const start = getPlaceholderPosition(nodes);
-      const positioned = added.map((item, index) => ({
-        ...item,
-        position_x: start.x + index * (NODE_WIDTH + RANK_SEP),
-        position_y: start.y,
-      }));
-
-      for (const screenshot of positioned) {
-        supabase
-          .from('screenshots')
-          .update({ position_x: screenshot.position_x, position_y: screenshot.position_y })
-          .eq('id', screenshot.id)
-          .then(() => {});
-      }
-
-      setScreenshots((prev) => [...prev, ...positioned]);
-      setToast({
-        message: `Added ${added.length} screenshot${added.length > 1 ? 's' : ''} from catalogue`,
-        type: 'success',
-      });
-
-      void touchFlow();
-    },
-    [markLocalEdit, nodes, pushUndoSnapshot, setScreenshots, setShowCataloguePicker, setToast, touchFlow],
-  );
-
   const handleFlowInsert = useCallback(
     async (text: string) => {
       if (!flowId || !projectId) return;
@@ -679,7 +643,6 @@ export function useCanvasActions({
     handleEdgeDelete,
     handleEdgeInsertPlaceholder,
     handleFilesSelected,
-    handleAddFromCatalogue,
     handleFlowInsert,
     handleAddPlaceholderNode,
     handleCanvasDrop,

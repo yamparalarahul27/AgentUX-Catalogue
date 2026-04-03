@@ -1,10 +1,14 @@
 import { useState } from 'react';
 
-import {
-  FLOW_FILTER_ALL,
-  type CatalogueFlowFilter,
-  type FlowSidebarItem,
-} from '../hooks/use-catalogue-filters';
+const FLOW_FILTER_ALL = '__all__';
+type CatalogueFlowFilter = string;
+
+interface FlowSidebarItem {
+  kind: 'summary' | 'flow';
+  value: CatalogueFlowFilter;
+  label: string;
+  count: number;
+}
 
 interface CatalogueFlowSidebarProps {
   activeFlowCount: number;
@@ -66,7 +70,6 @@ export function CatalogueFlowSidebar({
       >
         <span className="catalogue-flow-sidebar__item-copy">
           <span className="catalogue-flow-sidebar__item-label">{item.label}</span>
-          {item.projectName && <span className="catalogue-flow-sidebar__item-meta">{item.projectName}</span>}
         </span>
         <span className="catalogue-flow-sidebar__count">{item.count}</span>
       </button>
@@ -100,7 +103,7 @@ export function CatalogueFlowSidebar({
         </div>
 
         <div className="catalogue-flow-sidebar__section">
-          <div className="catalogue-flow-sidebar__section-title">Project flows</div>
+          <div className="catalogue-flow-sidebar__section-title">Flows</div>
           {flowItems.length > 0 ? flowItems.map(renderItem) : (
             <div className="catalogue-flow-sidebar__empty">No flows available for the current scope.</div>
           )}

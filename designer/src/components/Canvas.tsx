@@ -32,7 +32,6 @@ import { UploadZone } from './UploadZone';
 import { FlowInput } from './FlowInput';
 import { EdgePopup } from './EdgePopup';
 import { Toast } from './Toast';
-import { CataloguePicker } from './CataloguePicker';
 import { CompareModal } from './CompareModal';
 import { MobileFlowView } from './MobileFlowView';
 import { ConfirmModal } from './ConfirmModal';
@@ -66,7 +65,6 @@ export function Canvas({ user }: CanvasProps) {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showFlowInput, setShowFlowInput] = useState(false);
-  const [showCataloguePicker, setShowCataloguePicker] = useState(false);
 
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
@@ -324,7 +322,6 @@ export function Canvas({ user }: CanvasProps) {
     handleEdgeDelete,
     handleEdgeInsertPlaceholder,
     handleFilesSelected,
-    handleAddFromCatalogue,
     handleFlowInsert,
     handleAddPlaceholderNode,
     handleCanvasDrop,
@@ -357,7 +354,6 @@ export function Canvas({ user }: CanvasProps) {
     setSelectedEdge,
     setShowUpload,
     setShowFlowInput,
-    setShowCataloguePicker,
     setShowBulkDeleteConfirm,
     setUploading,
     setToast,
@@ -417,7 +413,6 @@ export function Canvas({ user }: CanvasProps) {
         toolMode={toolMode}
         onToolModeChange={setToolMode}
         onUploadClick={() => setShowUpload(true)}
-        onCatalogueAdd={() => setShowCataloguePicker(true)}
         onAddFlow={() => setShowFlowInput(true)}
         onAddPlaceholder={handleAddPlaceholderNode}
         canUndo={undoDepth > 0}
@@ -439,15 +434,6 @@ export function Canvas({ user }: CanvasProps) {
               Tip: Start with placeholder nodes, then click them later to attach screenshots.
             </p>
             <div className="canvas-empty-actions">
-              <button className="btn-secondary" onClick={() => setShowCataloguePicker(true)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="7" height="7" />
-                  <rect x="14" y="3" width="7" height="7" />
-                  <rect x="3" y="14" width="7" height="7" />
-                  <rect x="14" y="14" width="7" height="7" />
-                </svg>
-                Add from Catalogue
-              </button>
               <button className="btn-secondary" onClick={() => setShowFlowInput(true)}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -583,16 +569,6 @@ export function Canvas({ user }: CanvasProps) {
             message={`This will permanently delete ${selectedNodeIds.size} screenshots and their connections from this flow.`}
             onConfirm={() => void handleBulkDeleteNodes()}
             onCancel={() => setShowBulkDeleteConfirm(false)}
-          />
-        )}
-
-        {showCataloguePicker && projectId && flowId && (
-          <CataloguePicker
-            projectId={projectId}
-            flowId={flowId}
-            userId={user.id}
-            onAdd={handleAddFromCatalogue}
-            onClose={() => setShowCataloguePicker(false)}
           />
         )}
 

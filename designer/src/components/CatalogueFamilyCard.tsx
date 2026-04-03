@@ -11,9 +11,6 @@ interface CatalogueFamilyCardProps {
   isPrimary: boolean;
   isSelected: boolean;
   isVs: boolean;
-  projectName: string;
-  onActiveVariantChange: (familyId: string, variantKey: string) => void;
-  onAssignFlow: (familyId: string) => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenDetails: (familyId: string) => void;
   onOpenPreview: (familyId: string) => void;
@@ -28,9 +25,6 @@ export function CatalogueFamilyCard({
   isPrimary,
   isSelected,
   isVs,
-  projectName,
-  onActiveVariantChange,
-  onAssignFlow,
   onDeleteFamily,
   onOpenDetails,
   onOpenPreview,
@@ -46,7 +40,7 @@ export function CatalogueFamilyCard({
   const groupColor = getGroupColor(family.group);
 
   async function requestDelete() {
-    const shouldDelete = window.confirm(`Delete "${family.name}" and all of its variants?`);
+    const shouldDelete = window.confirm(`Delete screenshot "${family.name}"?`);
     if (!shouldDelete) return;
     await onDeleteFamily(family.id);
   }
@@ -140,8 +134,8 @@ export function CatalogueFamilyCard({
           <button
             type="button"
             className="catalogue-card-action catalogue-card-action-danger"
-            title="Delete family"
-            aria-label="Delete family"
+            title="Delete screenshot"
+            aria-label="Delete screenshot"
             onClick={() => void requestDelete()}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -171,7 +165,7 @@ export function CatalogueFamilyCard({
           <button type="button" className="catalogue-family-card__name" onClick={() => onOpenPreview(family.id)}>
             {family.name}
           </button>
-          <span className="catalogue-family-card__count">{family.variants.length} variants</span>
+          <span className="catalogue-family-card__count">Screenshot</span>
         </div>
 
         <div className="catalogue-card-meta">
@@ -179,28 +173,11 @@ export function CatalogueFamilyCard({
             <span className="catalogue-card-dot" style={{ background: groupColor }} />
             <span className="catalogue-family-card__group">{family.group || 'No group'}</span>
           </div>
-          <button type="button" className="catalogue-card-flow-pill" onClick={() => onAssignFlow(family.id)}>
+          <span className="catalogue-card-flow-pill">
             {flowName || 'Unassigned'}
-          </button>
+          </span>
         </div>
 
-        <div className="catalogue-family-card__submeta">
-          <span className="catalogue-card-project">{projectName}</span>
-          {activeVariant && <span className="catalogue-family-card__variant-copy">{activeVariant.label}</span>}
-        </div>
-
-        <div className="catalogue-family-card__variants">
-          {family.variants.map((variant) => (
-            <button
-              key={variant.key}
-              type="button"
-              className={`catalogue-family-card__variant ${activeVariant?.key === variant.key ? 'is-active' : ''}`}
-              onClick={() => onActiveVariantChange(family.id, variant.key)}
-            >
-              {variant.label}
-            </button>
-          ))}
-        </div>
       </div>
     </article>
   );

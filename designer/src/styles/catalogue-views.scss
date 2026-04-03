@@ -213,7 +213,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 14px;
-  height: min(78vh, 900px);
+  height: calc(100dvh - 188px);
   min-height: 560px;
   width: 100%;
   min-width: 0;

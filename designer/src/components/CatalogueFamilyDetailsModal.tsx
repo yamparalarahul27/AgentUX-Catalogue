@@ -11,15 +11,14 @@ interface CatalogueFamilyDetailsModalProps {
   family: CatalogueFamilyView | null;
   flowName: string | null;
   isOpen: boolean;
-  projectName: string;
   webPresets: WebPreset[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
-  onAssignFlow: (familyId: string) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onClose: () => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
+  onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onUpdateVariantDetails: (
     screenshotId: string,
     patch: {
@@ -74,15 +73,14 @@ export function CatalogueFamilyDetailsModal({
   family,
   flowName,
   isOpen,
-  projectName,
   webPresets,
   onActiveVariantChange,
-  onAssignFlow,
   onChangeFamilyGroup,
   onClose,
   onDeleteFamily,
   onRenameFamily,
   onReplaceVariantImage,
+  onSetFlowLabel,
   onUpdateVariantDetails,
 }: CatalogueFamilyDetailsModalProps) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -93,6 +91,7 @@ export function CatalogueFamilyDetailsModal({
   const screenshot = activeVariant?.screenshot ?? null;
   const [familyName, setFamilyName] = useState('');
   const [groupName, setGroupName] = useState('');
+  const [flowLabel, setFlowLabel] = useState('');
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [platform, setPlatform] = useState<'mobile' | 'web' | null>(null);
   const [webPresetKey, setWebPresetKey] = useState<string | null>(null);
@@ -103,12 +102,13 @@ export function CatalogueFamilyDetailsModal({
     if (!isOpen || !family || !screenshot) return;
     setFamilyName(family.name);
     setGroupName(family.group || '');
+    setFlowLabel(flowName || '');
     setTheme(screenshot.theme || null);
     setPlatform(screenshot.platform || null);
     setWebPresetKey(screenshot.web_preset_key || null);
     setMobileOs(screenshot.mobile_os || null);
     setSaving(false);
-  }, [family, isOpen, screenshot]);
+  }, [family, flowName, isOpen, screenshot]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -145,6 +145,15 @@ export function CatalogueFamilyDetailsModal({
 
       if (trimmedGroup !== (currentFamily.group || '')) {
         await onChangeFamilyGroup(currentFamily.id, trimmedGroup || null);
+      }
+
+      const trimmedFlowLabel = flowLabel.trim();
+      const previousFlowLabel = (flowName || '').trim();
+      if (trimmedFlowLabel !== previousFlowLabel) {
+        const flowUpdated = await onSetFlowLabel(currentFamily.id, trimmedFlowLabel || null);
+        if (!flowUpdated) {
+          return;
+        }
       }
 
       const variantChanged = (
@@ -191,7 +200,7 @@ export function CatalogueFamilyDetailsModal({
   }
 
   async function requestDelete() {
-    const shouldDelete = window.confirm(`Delete "${currentFamily.name}" and all of its variants?`);
+    const shouldDelete = window.confirm(`Delete screenshot "${currentFamily.name}"?`);
     if (!shouldDelete) return;
     await onDeleteFamily(currentFamily.id);
     onClose();
@@ -232,8 +241,7 @@ export function CatalogueFamilyDetailsModal({
 
             <div className="catalogue-family-details-preview__meta">
               <div className="catalogue-family-details-preview__title">
-                <span>{projectName}</span>
-                <span className="catalogue-family-details-preview__count">{currentFamily.variants.length} variants</span>
+                <span className="catalogue-family-details-preview__count">Screenshot</span>
               </div>
 
               <div className="catalogue-family-details-preview__chips">
@@ -242,23 +250,16 @@ export function CatalogueFamilyDetailsModal({
                 <span className="catalogue-family-details-chip">{currentScreenshot.annotation_count ?? 0} pins</span>
               </div>
 
-              <button
-                type="button"
-                className="catalogue-family-details-flow"
-                onClick={() => {
-                  onAssignFlow(currentFamily.id);
-                  onClose();
-                }}
-              >
+              <span className="catalogue-family-details-flow">
                 {flowName || 'Unassigned flow'}
-              </button>
+              </span>
 
               <div className="catalogue-family-details-preview__actions">
                 <button type="button" className="catalogue-family-details-action" onClick={() => fileRef.current?.click()}>
                   Reupload image
                 </button>
                 <button type="button" className="catalogue-family-details-action is-danger" onClick={() => void requestDelete()}>
-                  Delete family
+                  Delete screenshot
                 </button>
               </div>
             </div>
@@ -295,15 +296,15 @@ export function CatalogueFamilyDetailsModal({
           </div>
 
           <div className="catalogue-family-details-form">
-            <p className="catalogue-family-details-section-title">Edit family and variant</p>
+            <p className="catalogue-family-details-section-title">Edit screenshot details</p>
             <div className="catalogue-family-details-grid">
               <label className="catalogue-family-details-field">
-                <span>Screen family</span>
+                <span>Screenshot name</span>
                 <input
                   type="text"
                   value={familyName}
                   onChange={(event) => setFamilyName(event.target.value)}
-                  placeholder="Screen family name"
+                  placeholder="Screenshot name"
                 />
               </label>
 
@@ -314,6 +315,16 @@ export function CatalogueFamilyDetailsModal({
                   value={groupName}
                   onChange={(event) => setGroupName(event.target.value)}
                   placeholder="Group"
+                />
+              </label>
+
+              <label className="catalogue-family-details-field">
+                <span>Flow</span>
+                <input
+                  type="text"
+                  value={flowLabel}
+                  onChange={(event) => setFlowLabel(event.target.value)}
+                  placeholder="Flow (e.g. Deposit)"
                 />
               </label>
 
@@ -375,7 +386,7 @@ export function CatalogueFamilyDetailsModal({
             </div>
 
             <p className="catalogue-family-details-note">
-              Flow ownership stays at the family level. Variant comments and annotations stay attached to the currently selected screenshot variant.
+              Flow is stored per screenshot. Comments and annotations stay attached to this screenshot.
             </p>
           </div>
         </div>

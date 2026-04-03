@@ -166,3 +166,190 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 720px) {
+  .catalogue-upload-overlay,
+  .catalogue-settings-overlay,
+  .flow-assign-overlay,
+  .catalogue-family-detail-overlay,
+  .catalogue-family-details-overlay,
+  .confirm-overlay {
+    align-items: flex-end;
+    justify-content: stretch;
+    padding: 0;
+  }
+
+  .catalogue-upload-overlay,
+  .catalogue-settings-overlay,
+  .flow-assign-overlay,
+  .catalogue-family-detail-overlay,
+  .catalogue-family-details-overlay {
+    overflow: hidden;
+  }
+
+  .catalogue-upload-modal,
+  .catalogue-settings-modal,
+  .flow-assign-modal,
+  .catalogue-family-details-modal,
+  .catalogue-family-detail-modal,
+  .confirm-modal {
+    width: 100%;
+    max-width: none;
+    max-height: min(88dvh, 100%);
+    margin: 0;
+    padding: 18px 16px max(16px, env(safe-area-inset-bottom));
+    border-radius: 24px 24px 0 0;
+    border-bottom: 0;
+    box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.42);
+    overflow: hidden;
+  }
+
+  .catalogue-upload-modal,
+  .catalogue-settings-modal,
+  .flow-assign-modal,
+  .catalogue-family-details-modal,
+  .catalogue-family-detail-modal,
+  .confirm-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .catalogue-upload-modal {
+    overflow-y: auto;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .catalogue-upload-modal .upload-zone,
+  .catalogue-upload-modal .catalogue-upload-hint {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: auto;
+  }
+
+  .catalogue-upload-modal .upload-zone {
+    box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .catalogue-upload-modal .catalogue-upload-hint {
+    margin-bottom: 0;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(16, 16, 20, 0) 0%, rgba(16, 16, 20, 0.96) 22%);
+  }
+
+  .catalogue-upload-ref {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .catalogue-upload-ref-label {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .catalogue-settings-modal {
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .catalogue-settings-modal__head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding-bottom: 4px;
+    background: #101014;
+  }
+
+  .catalogue-settings-chain {
+    gap: 6px;
+  }
+
+  .catalogue-settings-preset-list {
+    min-height: 0;
+  }
+
+  .catalogue-settings-preset__fields {
+    gap: 10px;
+  }
+
+  .flow-assign-modal {
+    gap: 14px;
+  }
+
+  .flow-assign-options {
+    max-height: min(40dvh, 320px);
+    margin-bottom: 0;
+  }
+
+  .flow-assign-actions,
+  .catalogue-family-details-actions,
+  .confirm-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: auto;
+    padding-top: 12px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    background: inherit;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .flow-assign-actions,
+  .confirm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .flow-assign-actions button,
+  .confirm-actions button {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
+
+  .catalogue-duplicate-modal .flow-assign-actions button {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .confirm-modal {
+    text-align: left;
+  }
+
+  .confirm-icon {
+    margin-bottom: 12px;
+  }
+
+  .confirm-message {
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 320px) {
+  .catalogue-upload-modal,
+  .catalogue-settings-modal,
+  .flow-assign-modal,
+  .catalogue-family-details-modal,
+  .catalogue-family-detail-modal,
+  .confirm-modal {
+    padding: 16px 12px max(12px, env(safe-area-inset-bottom));
+    border-radius: 20px 20px 0 0;
+  }
+
+  .catalogue-settings-chain {
+    gap: 4px;
+  }
+
+  .flow-assign-actions,
+  .confirm-actions {
+    gap: 6px;
+    flex-direction: column;
+  }
+
+  .flow-assign-actions button,
+  .confirm-actions button,
+  .catalogue-duplicate-modal .flow-assign-actions button {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}

@@ -264,3 +264,111 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 720px) {
+  .catalogue-family-details-modal {
+    width: 100%;
+    max-height: min(90dvh, 100%);
+    border-radius: 24px 24px 0 0;
+    border-bottom: 0;
+    box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.42);
+  }
+
+  .catalogue-family-details-modal__head {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    padding: 16px 16px 14px;
+    background: #0f1014;
+  }
+
+  .catalogue-family-details-modal__body {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .catalogue-family-details-preview {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .catalogue-family-details-preview__media {
+    border-radius: 14px;
+  }
+
+  .catalogue-family-details-preview__media img {
+    max-height: min(34dvh, 280px);
+    object-fit: contain;
+    background: #09090b;
+  }
+
+  .catalogue-family-details-preview__placeholder {
+    min-height: 220px;
+  }
+
+  .catalogue-family-details-preview__actions,
+  .catalogue-family-details-variants__strip {
+    gap: 6px;
+  }
+
+  .catalogue-family-details-action,
+  .catalogue-family-details-variant,
+  .catalogue-family-details-chip,
+  .catalogue-family-details-flow {
+    min-height: 36px;
+  }
+
+  .catalogue-family-details-form {
+    gap: 16px;
+    padding: 16px;
+    padding-bottom: 0;
+  }
+
+  .catalogue-family-details-note {
+    padding-bottom: 8px;
+  }
+
+  .catalogue-family-details-actions {
+    padding: 14px 16px max(16px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 320px) {
+  .catalogue-family-details-modal {
+    border-radius: 20px 20px 0 0;
+  }
+
+  .catalogue-family-details-modal__head,
+  .catalogue-family-details-preview,
+  .catalogue-family-details-form,
+  .catalogue-family-details-actions {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .catalogue-family-details-preview__chips,
+  .catalogue-family-details-preview__actions,
+  .catalogue-family-details-variants__strip {
+    gap: 4px;
+  }
+
+  .catalogue-family-details-action,
+  .catalogue-family-details-flow {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .catalogue-family-details-preview__title {
+    flex-wrap: wrap;
+  }
+
+  .catalogue-family-details-actions {
+    gap: 6px;
+    flex-direction: column;
+  }
+
+  .catalogue-family-details-actions button {
+    width: 100%;
+  }
+}

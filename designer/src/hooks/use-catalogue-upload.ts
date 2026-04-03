@@ -1,33 +1,28 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
-import { getScreenshotFamilyId, getVariantKey, getVariantLabel } from '../lib/catalogue-families';
+import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId, getVariantKey } from '../lib/catalogue-families';
 import { compressImage } from '../lib/catalogue-image';
 import { parseScreenshotName } from '../lib/naming';
 import { insertScreenshotWithUploader } from '../lib/screenshot-write';
 import { supabase } from '../lib/supabase';
-import type { MobileOs, ScreenFamily, ScreenshotNode, WebPreset } from '../types';
+import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 
 interface ToastState {
   message: string;
   type: 'error' | 'success' | 'info';
 }
 
-type DuplicateResolutionAction = 'replace' | 'add-version' | 'cancel';
+type QuickUploadGroupMode = 'auto' | 'existing' | 'new';
 
-interface DuplicateResolutionState {
-  familyName: string;
-  fileName: string;
-  variantLabel: string;
+interface QuickUploadQueueItem {
+  id: string;
+  file: File;
+  parsed: ReturnType<typeof parseScreenshotName>;
 }
 
 interface UseCatalogueUploadArgs {
   allFamilies: CatalogueFamilyView[];
-  handleReplaceImage: (id: string, file: File) => Promise<void>;
-  presetByKey: Record<string, WebPreset>;
-  screenFamilies: ScreenFamily[];
-  screenshots: ScreenshotNode[];
-  setScreenFamilies: React.Dispatch<React.SetStateAction<ScreenFamily[]>>;
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
   userEmail?: string | null;
@@ -37,11 +32,6 @@ interface UseCatalogueUploadArgs {
 
 export function useCatalogueUpload({
   allFamilies,
-  handleReplaceImage,
-  presetByKey,
-  screenFamilies,
-  screenshots,
-  setScreenFamilies,
   setScreenshots,
   setToast,
   userEmail,
@@ -51,10 +41,9 @@ export function useCatalogueUpload({
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null);
-  const [uploadFamilyId, setUploadFamilyId] = useState<string | null>(null);
-  const [uploadNewFamilyMode, setUploadNewFamilyMode] = useState(false);
   const [uploadNewFamilyName, setUploadNewFamilyName] = useState('');
   const [uploadNewFamilyGroup, setUploadNewFamilyGroup] = useState('');
+  const [uploadFlowLabel, setUploadFlowLabel] = useState('');
   const [uploadTheme, setUploadTheme] = useState<'light' | 'dark' | null>(null);
   const [uploadPlatform, setUploadPlatform] = useState<'mobile' | 'web' | null>(null);
   const [uploadWebPresetKey, setUploadWebPresetKey] = useState<string | null>(null);
@@ -63,20 +52,38 @@ export function useCatalogueUpload({
   const [uploadRefLabel, setUploadRefLabel] = useState('');
   const [uploadRefPreview, setUploadRefPreview] = useState<string | null>(null);
   const [activeVariantKeys, setActiveVariantKeys] = useState<Record<string, string>>({});
-  const [duplicateState, setDuplicateState] = useState<DuplicateResolutionState | null>(null);
-  const duplicateResolverRef = useRef<((action: DuplicateResolutionAction) => void) | null>(null);
-
-  const uploadProjectFamilies = useMemo(
-    () => screenFamilies
-      .filter((family) => family.project_id === uploadProjectId)
-      .sort((left, right) => left.name.localeCompare(right.name)),
-    [screenFamilies, uploadProjectId],
-  );
+  const [showQuickUpload, setShowQuickUpload] = useState(false);
+  const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null);
+  const [quickUploadQueue, setQuickUploadQueue] = useState<QuickUploadQueueItem[]>([]);
+  const [quickUploadGroupMode, setQuickUploadGroupMode] = useState<QuickUploadGroupMode>('auto');
+  const [quickUploadExistingGroup, setQuickUploadExistingGroup] = useState<string | null>(null);
+  const [quickUploadNewGroup, setQuickUploadNewGroup] = useState('');
+  const [quickUploadFlowLabel, setQuickUploadFlowLabel] = useState('');
+  function buildFlowMetadata(value: string) {
+    const label = value.trim();
+    if (!label) return {};
+    return { [CATALOGUE_FLOW_LABEL_KEY]: label };
+  }
 
   const uploadProjectGroups = useMemo(() => {
     const families = allFamilies.filter((family) => family.project_id === uploadProjectId);
     return [...new Set(families.map((family) => family.group).filter(Boolean))] as string[];
   }, [allFamilies, uploadProjectId]);
+
+  const quickUploadProjectGroups = useMemo(() => {
+    const families = allFamilies.filter((family) => family.project_id === quickUploadProjectId);
+    return [...new Set(families.map((family) => family.group).filter(Boolean))] as string[];
+  }, [allFamilies, quickUploadProjectId]);
+
+  const quickUploadQueuePreview = useMemo(
+    () => quickUploadQueue.map((item) => ({
+      id: item.id,
+      fileName: item.file.name,
+      parsedName: item.parsed.name,
+      parsedGroup: item.parsed.group,
+    })),
+    [quickUploadQueue],
+  );
 
   useEffect(() => {
     if (uploadPlatform === 'web' && !uploadWebPresetKey) {
@@ -100,10 +107,9 @@ export function useCatalogueUpload({
   function resetUploadState() {
     setShowUpload(false);
     setUploadProjectId(null);
-    setUploadFamilyId(null);
-    setUploadNewFamilyMode(false);
     setUploadNewFamilyName('');
     setUploadNewFamilyGroup('');
+    setUploadFlowLabel('');
     setUploadTheme(null);
     setUploadPlatform(null);
     setUploadWebPresetKey(null);
@@ -116,63 +122,54 @@ export function useCatalogueUpload({
     }
   }
 
-  function requestDuplicateResolution(details: DuplicateResolutionState) {
-    return new Promise<DuplicateResolutionAction>((resolve) => {
-      duplicateResolverRef.current = resolve;
-      setDuplicateState(details);
+  function resetQuickUploadState() {
+    setShowQuickUpload(false);
+    setQuickUploadProjectId(null);
+    setQuickUploadQueue([]);
+    setQuickUploadGroupMode('auto');
+    setQuickUploadExistingGroup(null);
+    setQuickUploadNewGroup('');
+    setQuickUploadFlowLabel('');
+  }
+
+  function handleQuickUploadProjectChange(projectId: string | null) {
+    setQuickUploadProjectId(projectId);
+    setQuickUploadExistingGroup(null);
+  }
+
+  function handleQuickUploadGroupModeChange(mode: QuickUploadGroupMode) {
+    setQuickUploadGroupMode(mode);
+    if (mode === 'existing') {
+      setQuickUploadExistingGroup((previous) => previous || quickUploadProjectGroups[0] || null);
+    }
+  }
+
+  function handleQuickUploadQueueAdd(files: File[]) {
+    setQuickUploadQueue((previous) => {
+      const seen = new Set(previous.map((item) => `${item.file.name}:${item.file.size}:${item.file.lastModified}`));
+      const additions: QuickUploadQueueItem[] = [];
+
+      for (const file of files) {
+        const signature = `${file.name}:${file.size}:${file.lastModified}`;
+        if (seen.has(signature)) continue;
+        seen.add(signature);
+        additions.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name}`,
+          file,
+          parsed: parseScreenshotName(file.name),
+        });
+      }
+
+      return additions.length ? [...previous, ...additions] : previous;
     });
   }
 
-  function resolveDuplicateResolution(action: DuplicateResolutionAction) {
-    duplicateResolverRef.current?.(action);
-    duplicateResolverRef.current = null;
-    setDuplicateState(null);
+  function handleQuickUploadQueueRemove(id: string) {
+    setQuickUploadQueue((previous) => previous.filter((item) => item.id !== id));
   }
 
-  async function createFamily(projectId: string, name: string, group: string): Promise<ScreenFamily | null> {
-    const { data, error } = await supabase
-      .from('screen_families')
-      .insert({ project_id: projectId, name, group, flow_id: null })
-      .select()
-      .single();
-
-    if (error || !data) {
-      setToast({ message: 'Could not create the screen family', type: 'error' });
-      return null;
-    }
-
-    setScreenFamilies((previous) => [data, ...previous]);
-    return data as ScreenFamily;
-  }
-
-  async function addVersionOnly(id: string, file: File) {
-    const screenshot = screenshots.find((item) => item.id === id);
-    if (!screenshot) return;
-    const { count } = await supabase
-      .from('screenshot_versions')
-      .select('*', { count: 'exact', head: true })
-      .eq('screenshot_id', id);
-    const nextVersion = (count ?? 0) + 1;
-    const compressed = await compressImage(file);
-    const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-    const storagePath = `${userId}/${screenshot.project_id}/versions/${safeName}`;
-    const { error } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
-
-    if (error) {
-      setToast({ message: `Version upload failed: ${error.message}`, type: 'error' });
-      return;
-    }
-
-    await supabase.from('screenshot_versions').insert({
-      screenshot_id: id,
-      version_number: nextVersion,
-      storage_path: storagePath,
-      file_name: file.name,
-    });
-
-    setScreenshots((previous) => previous.map((item) => (
-      item.id === id ? { ...item, version_count: nextVersion } : item
-    )));
+  function handleQuickUploadQueueClear() {
+    setQuickUploadQueue([]);
   }
 
   async function uploadReference(projectId: string) {
@@ -199,63 +196,21 @@ export function useCatalogueUpload({
 
   async function handleFilesSelected(files: File[]) {
     if (!uploadProjectId || !uploadPlatform || !uploadTheme) return;
+    const screenshotName = uploadNewFamilyName.trim();
+    const screenshotGroup = uploadNewFamilyGroup.trim();
+    if (!screenshotName || !screenshotGroup) {
+      setToast({ message: 'Enter screenshot name and group before uploading', type: 'error' });
+      return;
+    }
+    const flowMetadata = buildFlowMetadata(uploadFlowLabel);
 
     setUploading(true);
 
-    const family = uploadNewFamilyMode
-      ? await createFamily(uploadProjectId, uploadNewFamilyName.trim(), uploadNewFamilyGroup.trim())
-      : uploadProjectFamilies.find((item) => item.id === uploadFamilyId) ?? null;
-
-    if (!family) {
-      setUploading(false);
-      return;
-    }
-
     const reference = await uploadReference(uploadProjectId);
     const inserted: ScreenshotNode[] = [];
-    let replacedCount = 0;
-    let versionedCount = 0;
     let failedCount = 0;
 
     for (const file of files) {
-      const availableScreenshots = [...screenshots, ...inserted];
-      const duplicate = availableScreenshots.find((screenshot) => {
-        if (screenshot.screen_family_id !== family.id) return false;
-        if (screenshot.theme !== uploadTheme) return false;
-        if (screenshot.platform !== uploadPlatform) return false;
-        if (uploadPlatform === 'web') return screenshot.web_preset_key === uploadWebPresetKey;
-        if (uploadPlatform === 'mobile') return screenshot.mobile_os === uploadMobileOs;
-        return false;
-      });
-
-      if (duplicate) {
-        const variantLabel = getVariantLabel({
-          ...duplicate,
-          theme: uploadTheme,
-          platform: uploadPlatform,
-          web_preset_key: uploadWebPresetKey,
-          mobile_os: uploadMobileOs,
-        }, presetByKey);
-        const resolution = await requestDuplicateResolution({
-          familyName: family.name,
-          fileName: file.name,
-          variantLabel,
-        });
-
-        if (resolution === 'cancel') {
-          failedCount += 1;
-          continue;
-        }
-        if (resolution === 'replace') {
-          await handleReplaceImage(duplicate.id, file);
-          replacedCount += 1;
-          continue;
-        }
-        await addVersionOnly(duplicate.id, file);
-        versionedCount += 1;
-        continue;
-      }
-
       try {
         const compressed = await compressImage(file);
         const parsed = parseScreenshotName(file.name);
@@ -272,17 +227,18 @@ export function useCatalogueUpload({
           supabase,
           payload: {
             project_id: uploadProjectId,
-            flow_id: family.flow_id,
-            screen_family_id: family.id,
-            name: family.name,
+            flow_id: null,
+            screen_family_id: null,
+            name: screenshotName,
             file_name: file.name,
             storage_path: storagePath,
             sequence: parsed.sequence,
-            group: family.group,
+            group: screenshotGroup,
             theme: uploadTheme,
             platform: uploadPlatform,
             web_preset_key: uploadPlatform === 'web' ? uploadWebPresetKey : null,
             mobile_os: uploadPlatform === 'mobile' ? uploadMobileOs : null,
+            metadata: flowMetadata,
             reference_url: reference.referenceUrl,
             reference_storage_path: reference.referenceStoragePath,
             reference_label: reference.referenceLabel,
@@ -316,45 +272,147 @@ export function useCatalogueUpload({
       });
     }
 
-    const successCount = inserted.length + replacedCount + versionedCount;
+    const successCount = inserted.length;
     if (successCount > 0) {
-      const messages = [`${successCount} file${successCount > 1 ? 's' : ''} handled`];
-      if (replacedCount > 0) messages.push(`${replacedCount} replaced`);
-      if (versionedCount > 0) messages.push(`${versionedCount} versioned`);
+      const messages = [`${successCount} file${successCount > 1 ? 's' : ''} uploaded`];
       if (failedCount > 0) messages.push(`${failedCount} skipped`);
       setToast({ message: messages.join(' • '), type: failedCount > 0 ? 'info' : 'success' });
     } else if (failedCount > 0) {
       setToast({ message: `Upload failed for ${failedCount} file${failedCount > 1 ? 's' : ''}`, type: 'error' });
     }
 
-    if (uploadNewFamilyMode && inserted.length === 0) {
-      await supabase.from('screen_families').delete().eq('id', family.id);
-      setScreenFamilies((previous) => previous.filter((item) => item.id !== family.id));
-
-      if (reference.referenceStoragePath) {
-        await supabase.storage.from('screenshots').remove([reference.referenceStoragePath]);
-      }
-    }
-
     setUploading(false);
     resetUploadState();
   }
 
+  async function handleQuickUploadUploadAll() {
+    if (!quickUploadProjectId || quickUploadQueue.length === 0) {
+      return [] as ScreenshotNode[];
+    }
+
+    const projectId = quickUploadProjectId;
+    const queue = [...quickUploadQueue];
+    const mode = quickUploadGroupMode;
+    const existingGroup = quickUploadExistingGroup?.trim() || null;
+    const newGroup = quickUploadNewGroup.trim();
+    const flowMetadata = buildFlowMetadata(quickUploadFlowLabel);
+
+    if (mode === 'existing' && !existingGroup) {
+      setToast({ message: 'Select an existing group before uploading', type: 'error' });
+      return [] as ScreenshotNode[];
+    }
+
+    if (mode === 'new' && !newGroup) {
+      setToast({ message: 'Enter a group name before uploading', type: 'error' });
+      return [] as ScreenshotNode[];
+    }
+
+    setUploading(true);
+    resetQuickUploadState();
+
+    const results = await Promise.allSettled(
+      queue.map(async (item) => {
+        const { file, parsed } = item;
+        const group = mode === 'existing' ? existingGroup : mode === 'new' ? newGroup : parsed.group;
+        const compressed = await compressImage(file);
+        const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+        const storagePath = `${userId}/${projectId}/${safeName}`;
+        const { error: uploadError } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
+        const { data, error } = await insertScreenshotWithUploader({
+          supabase,
+          payload: {
+            project_id: projectId,
+            flow_id: null,
+            screen_family_id: null,
+            name: parsed.name,
+            file_name: file.name,
+            storage_path: storagePath,
+            sequence: parsed.sequence,
+            group,
+            theme: null,
+            platform: null,
+            web_preset_key: null,
+            mobile_os: null,
+            metadata: flowMetadata,
+            reference_url: null,
+            reference_storage_path: null,
+            reference_label: null,
+          },
+          uploader: { userEmail, userId },
+        });
+
+        if (error || !data) {
+          throw error;
+        }
+
+        return {
+          ...data,
+          image_url: imageUrl,
+          metadata: data.metadata && typeof data.metadata === 'object' ? data.metadata as Record<string, unknown> : {},
+          version_count: 0,
+          comment_count: 0,
+          comment_last_added_at: null,
+          annotation_count: 0,
+          annotation_last_added_at: null,
+        } as ScreenshotNode;
+      }),
+    );
+
+    const inserted = results
+      .filter((result): result is PromiseFulfilledResult<ScreenshotNode> => result.status === 'fulfilled')
+      .map((result) => result.value);
+    const failed = results.filter((result) => result.status === 'rejected').length;
+
+    if (inserted.length > 0) {
+      setScreenshots((previous) => [...inserted, ...previous]);
+      inserted.forEach((item) => {
+        updateActiveVariant(getScreenshotFamilyId(item), getVariantKey(item));
+      });
+      setToast({
+        message: `${inserted.length} uploaded${failed ? `, ${failed} failed` : ''} — now assign them`,
+        type: failed ? 'info' : 'success',
+      });
+    } else if (failed > 0) {
+      setToast({ message: `Upload failed for ${failed} file${failed > 1 ? 's' : ''}`, type: 'error' });
+    }
+
+    setUploading(false);
+    return inserted;
+  }
+
   return {
     activeVariantKeys,
-    duplicateState,
-    resolveDuplicateResolution,
+    handleQuickUploadGroupModeChange,
+    handleQuickUploadProjectChange,
+    handleQuickUploadQueueAdd,
+    handleQuickUploadQueueClear,
+    handleQuickUploadQueueRemove,
+    handleQuickUploadUploadAll,
     resetUploadState,
+    resetQuickUploadState,
+    quickUploadExistingGroup,
+    quickUploadFlowLabel,
+    quickUploadGroupMode,
+    quickUploadNewGroup,
+    quickUploadProjectGroups,
+    quickUploadProjectId,
+    quickUploadQueuePreview,
     setShowUpload,
+    setShowQuickUpload,
     showUpload,
+    showQuickUpload,
     updateActiveVariant,
-    uploadFamilyId,
+    uploadFlowLabel,
     uploadMobileOs,
     uploadNewFamilyGroup,
-    uploadNewFamilyMode,
     uploadNewFamilyName,
     uploadPlatform,
-    uploadProjectFamilies,
     uploadProjectGroups,
     uploadProjectId,
     uploadRefFile,
@@ -364,10 +422,9 @@ export function useCatalogueUpload({
     uploadWebPresetKey,
     uploading,
     handleFilesSelected,
-    setUploadFamilyId,
+    setUploadFlowLabel,
     setUploadMobileOs,
     setUploadNewFamilyGroup,
-    setUploadNewFamilyMode,
     setUploadNewFamilyName,
     setUploadPlatform,
     setUploadProjectId,
@@ -376,5 +433,8 @@ export function useCatalogueUpload({
     setUploadRefPreview,
     setUploadTheme,
     setUploadWebPresetKey,
+    setQuickUploadExistingGroup,
+    setQuickUploadFlowLabel,
+    setQuickUploadNewGroup,
   };
 }

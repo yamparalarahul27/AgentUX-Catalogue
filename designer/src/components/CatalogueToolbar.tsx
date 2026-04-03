@@ -8,9 +8,8 @@ import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
 
 type ToolbarFilterKey =
-  | 'project'
+  | 'flow'
   | 'group'
-  | 'screenFamily'
   | 'platform'
   | 'theme'
   | 'webPreset'
@@ -18,12 +17,11 @@ type ToolbarFilterKey =
   | 'view';
 
 const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
-const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['project', 'group', 'screenFamily', 'platform', 'theme', 'view'];
+const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['flow', 'group', 'platform', 'theme', 'view'];
 
 const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
-  { key: 'project', label: 'Projects' },
+  { key: 'flow', label: 'Flows' },
   { key: 'group', label: 'Groups' },
-  { key: 'screenFamily', label: 'Screen families' },
   { key: 'platform', label: 'Platforms' },
   { key: 'theme', label: 'Themes' },
   { key: 'webPreset', label: 'Web presets' },
@@ -47,38 +45,32 @@ function parseVisibleFilters(value: string | null): Set<ToolbarFilterKey> {
 }
 
 interface CatalogueToolbarProps {
-  activeFlowCount: number;
-  activeFlowLabel: string;
+  allFlows: string[];
   allMobileOs: { id: string; label: string }[];
-  allScreenFamilies: { id: string; name: string }[];
   allWebPresets: { id: string; label: string }[];
+  filterFlow: string | null;
   filterGroup: string | null;
   filterMobileOs: string | null;
   filterPlatform: string | null;
-  filterProject: string | null;
-  filterScreenFamily: string | null;
   filterTheme: string | null;
   filterWebPreset: string | null;
   groups: string[];
   isSortLocked: boolean;
   onFilterGroupChange: (value: string | null) => void;
+  onFilterFlowChange: (value: string | null) => void;
   onFilterMobileOsChange: (value: string | null) => void;
   onFilterPlatformChange: (value: string | null) => void;
-  onFilterProjectChange: (value: string | null) => void;
-  onFilterScreenFamilyChange: (value: string | null) => void;
   onFilterThemeChange: (value: string | null) => void;
   onFilterWebPresetChange: (value: string | null) => void;
   onPrimaryGroupChange: (value: string | null) => void;
   onQuickUploadClick: () => void;
   onSearchChange: (value: string) => void;
   onSortByChange: (value: CatalogueSortOption) => void;
-  onToggleFlowSheet: () => void;
   onUploadClick: () => void;
   onViewByChange: (value: CatalogueViewBy) => void;
   onViewModeChange: (value: CatalogueViewMode) => void;
   onVsGroupsChange: (value: string[]) => void;
   primaryGroup: string | null;
-  projects: { id: string; name: string }[];
   searchQuery: string;
   showGroupConfig: boolean;
   sortBy: CatalogueSortOption;
@@ -88,38 +80,32 @@ interface CatalogueToolbarProps {
 }
 
 export function CatalogueToolbar({
-  activeFlowCount,
-  activeFlowLabel,
+  allFlows,
   allMobileOs,
-  allScreenFamilies,
   allWebPresets,
+  filterFlow,
   filterGroup,
   filterMobileOs,
   filterPlatform,
-  filterProject,
-  filterScreenFamily,
   filterTheme,
   filterWebPreset,
   groups,
   isSortLocked,
   onFilterGroupChange,
+  onFilterFlowChange,
   onFilterMobileOsChange,
   onFilterPlatformChange,
-  onFilterProjectChange,
-  onFilterScreenFamilyChange,
   onFilterThemeChange,
   onFilterWebPresetChange,
   onPrimaryGroupChange,
   onQuickUploadClick,
   onSearchChange,
   onSortByChange,
-  onToggleFlowSheet,
   onUploadClick,
   onViewByChange,
   onViewModeChange,
   onVsGroupsChange,
   primaryGroup,
-  projects,
   searchQuery,
   showGroupConfig,
   sortBy,
@@ -199,9 +185,8 @@ export function CatalogueToolbar({
     const isVisible = visibleFilters.has(key);
 
     if (isVisible) {
-      if (key === 'project') onFilterProjectChange(null);
+      if (key === 'flow') onFilterFlowChange(null);
       if (key === 'group') onFilterGroupChange(null);
-      if (key === 'screenFamily') onFilterScreenFamilyChange(null);
       if (key === 'platform') onFilterPlatformChange(null);
       if (key === 'theme') onFilterThemeChange(null);
       if (key === 'webPreset') onFilterWebPresetChange(null);
@@ -249,15 +234,6 @@ export function CatalogueToolbar({
             + Filter
           </button>
 
-          {isFilterVisible('project') && (
-            <Dropdown
-              value={filterProject}
-              placeholder="Project"
-              options={projects.map((project) => ({ value: project.id, label: project.name }))}
-              onChange={onFilterProjectChange}
-            />
-          )}
-
           {isFilterVisible('group') && (
             <Dropdown
               value={filterGroup}
@@ -267,12 +243,12 @@ export function CatalogueToolbar({
             />
           )}
 
-          {isFilterVisible('screenFamily') && (
+          {isFilterVisible('flow') && (
             <Dropdown
-              value={filterScreenFamily}
-              placeholder="Screen family"
-              options={allScreenFamilies.map((family) => ({ value: family.id, label: family.name }))}
-              onChange={onFilterScreenFamilyChange}
+              value={filterFlow}
+              placeholder="Flow"
+              options={allFlows.map((flow) => ({ value: flow, label: flow }))}
+              onChange={onFilterFlowChange}
             />
           )}
 
@@ -347,13 +323,6 @@ export function CatalogueToolbar({
         </div>
 
         <div className="catalogue-toolbar-right">
-          <button type="button" className="btn-secondary catalogue-flow-sheet-trigger" onClick={onToggleFlowSheet}>
-            <span className="catalogue-flow-sheet-trigger__copy">
-              <span className="catalogue-flow-sheet-trigger__label">Flow filter</span>
-              <span className="catalogue-flow-sheet-trigger__value">{activeFlowLabel}</span>
-            </span>
-            <span className="catalogue-flow-sheet-trigger__count">{activeFlowCount}</span>
-          </button>
           <button className="btn-secondary" onClick={onQuickUploadClick}>
             Quick Upload
           </button>

@@ -1,0 +1,817 @@
+{
+  "generatedAt": "2026-04-03T07:33:28.373Z",
+  "targetUrl": "http://127.0.0.1:5173/designer/catalogue",
+  "viewport": {
+    "name": "720",
+    "width": 720,
+    "height": 811
+  },
+  "sampled": 80,
+  "counts": {
+    "pass": 0,
+    "fail": 0,
+    "blocked": 80
+  },
+  "items": [
+    {
+      "viewport": 720,
+      "action": "Dismiss bulk action modal",
+      "status": "blocked",
+      "notes": "Catalogue / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Prevent overlay dismissal",
+      "status": "blocked",
+      "notes": "Catalogue / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Unassigned",
+      "status": "blocked",
+      "notes": "Catalogue / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Assign flow",
+      "status": "blocked",
+      "notes": "Catalogue / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Cancel",
+      "status": "blocked",
+      "notes": "Catalogue / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Unassign All",
+      "status": "blocked",
+      "notes": "Catalogue / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Change group",
+      "status": "blocked",
+      "notes": "Catalogue / upload-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Or type a new group name...",
+      "status": "blocked",
+      "notes": "Catalogue / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Move to \" ... \"",
+      "status": "blocked",
+      "notes": "Catalogue / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Select visible items",
+      "status": "blocked",
+      "notes": "CatalogueBulkBar / bulk-bar / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Change Group",
+      "status": "blocked",
+      "notes": "CatalogueBulkBar / bulk-bar / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Assign to Flow",
+      "status": "blocked",
+      "notes": "CatalogueBulkBar / bulk-bar / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Delete",
+      "status": "blocked",
+      "notes": "CatalogueBulkBar / bulk-bar / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "button action",
+      "status": "blocked",
+      "notes": "CatalogueBulkBar / bulk-bar / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Open lightbox",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Select",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Ref:",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "View version history",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Replace image",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Delete screenshot",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "file input",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "input action",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Add group...",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Assign to flow",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "No platform",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Toggle reference preview",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Toggle version history",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "div action",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Prevent overlay dismissal",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Edit screenshot name",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "input action",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "button action",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Prevent overlay dismissal",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "div action",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Draft annotation",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Prevent overlay dismissal",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Annotations ( )",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Comments ( )",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Delete comment",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Add a comment...",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "button action",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Placement mode on",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Cancel",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Save pin",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Write annotation text...",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Delete annotation",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "div action",
+      "status": "blocked",
+      "notes": "CatalogueCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Go to Projects",
+      "status": "blocked",
+      "notes": "CatalogueContent / content / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Deselect group",
+      "status": "blocked",
+      "notes": "CatalogueContent / content / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "div action",
+      "status": "blocked",
+      "notes": "CatalogueDuplicateVariantModal / flow-assign-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Prevent overlay dismissal",
+      "status": "blocked",
+      "notes": "CatalogueDuplicateVariantModal / duplicate-variant-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Cancel",
+      "status": "blocked",
+      "notes": "CatalogueDuplicateVariantModal / duplicate-variant-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Add Version",
+      "status": "blocked",
+      "notes": "CatalogueDuplicateVariantModal / duplicate-variant-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Replace",
+      "status": "blocked",
+      "notes": "CatalogueDuplicateVariantModal / duplicate-variant-modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Edit details",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Reupload variant",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Delete family",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "file input",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "button action",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Unassigned",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "button action",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Select family",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "button action",
+      "status": "blocked",
+      "notes": "CatalogueFamilyCard / card / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Dismiss current surface",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Prevent overlay dismissal",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Close details",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Unassigned flow",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Reupload image",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Delete family",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "button action",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "file input",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Screen family name",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Group",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Select theme",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Select platform",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Select preset",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Select OS",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Cancel",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Saving...",
+      "status": "blocked",
+      "notes": "CatalogueFamilyDetailsModal / modal / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    },
+    {
+      "viewport": 720,
+      "action": "Dismiss current surface",
+      "status": "blocked",
+      "notes": "CatalogueFamilyLightbox / content / Selector not present in the default rendered state.",
+      "evidence": {
+        "screenshot": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.png",
+        "details": "/Users/yamparalarahul/Desktop/Personal Apps/appmap/docs/local/catalogue-quality-evidence/latest/catalogue-720.json"
+      }
+    }
+  ]
+}

@@ -1,40 +1,33 @@
-import type { CatalogueFlowFilter } from '../hooks/use-catalogue-filters';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
-import { FLOW_FILTER_ALL } from '../hooks/use-catalogue-filters';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueFamilyListView } from './CatalogueFamilyListView';
 
 interface CatalogueContentProps {
-  activeFlowFilter: CatalogueFlowFilter;
   activeVariantKeys: Record<string, string>;
+  filterFlow: string | null;
   filterGroup: string | null;
   filterMobileOs: string | null;
   filterPlatform: string | null;
-  filterProject: string | null;
-  filterScreenFamily: string | null;
   filterTheme: string | null;
   filterWebPreset: string | null;
-  flowMap: Record<string, string>;
   groupedFamilies: Record<string, CatalogueFamilyView[]>;
   loading: boolean;
   primaryGroup: string | null;
-  projectMap: Record<string, string>;
-  projectsCount: number;
   searchQuery: string;
   selected: Set<string>;
   viewMode: CatalogueViewMode;
   filteredFamilies: CatalogueFamilyView[];
   vsGroups: string[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
-  onAssignFlow: (familyId: string) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenDetails: (familyId: string) => void;
   onOpenPreview: (familyId: string) => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
+  onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onToggleGroupSelect: (familyIds: string[]) => void;
   onToggleSelect: (familyId: string) => void;
   onUpdateVariantDetails: (
@@ -50,34 +43,29 @@ interface CatalogueContentProps {
 }
 
 export function CatalogueContent({
-  activeFlowFilter,
   activeVariantKeys,
+  filterFlow,
   filterGroup,
   filterMobileOs,
   filterPlatform,
-  filterProject,
-  filterScreenFamily,
   filterTheme,
   filterWebPreset,
-  flowMap,
   groupedFamilies,
   loading,
   primaryGroup,
-  projectMap,
-  projectsCount,
   searchQuery,
   selected,
   viewMode,
   filteredFamilies,
   vsGroups,
   onActiveVariantChange,
-  onAssignFlow,
   onChangeFamilyGroup,
   onDeleteFamily,
   onOpenDetails,
   onOpenPreview,
   onRenameFamily,
   onReplaceVariantImage,
+  onSetFlowLabel,
   onToggleGroupSelect,
   onToggleSelect,
   onUpdateVariantDetails,
@@ -85,14 +73,12 @@ export function CatalogueContent({
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
     searchQuery ||
-    filterProject ||
+    filterFlow ||
     filterGroup ||
-    filterScreenFamily ||
     filterPlatform ||
     filterTheme ||
     filterWebPreset ||
-    filterMobileOs ||
-    activeFlowFilter !== FLOW_FILTER_ALL,
+    filterMobileOs,
   );
 
   if (loading) {
@@ -100,21 +86,6 @@ export function CatalogueContent({
       <div className="empty-state">
         <div className="loading-spinner" />
         <p>Loading catalogue...</p>
-      </div>
-    );
-  }
-
-  if (projectsCount === 0) {
-    return (
-      <div className="empty-state">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" strokeWidth="1.5">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <polyline points="21 15 16 10 5 21" />
-        </svg>
-        <h2>No projects yet</h2>
-        <p>Create a project first to start uploading screenshots.</p>
-        <button className="btn-primary" onClick={() => { window.location.href = '/designer/'; }}>Go to Projects</button>
       </div>
     );
   }
@@ -128,7 +99,7 @@ export function CatalogueContent({
           <polyline points="21 15 16 10 5 21" />
         </svg>
         <h2>{hasActiveFilters ? 'No matching screen families' : 'No screenshots yet'}</h2>
-        <p>{hasActiveFilters ? 'Try adjusting your search, filters, or selected flow.' : 'Upload screenshots to get started.'}</p>
+        <p>{hasActiveFilters ? 'Try adjusting your search or filters.' : 'Upload screenshots to get started.'}</p>
       </div>
     );
   }
@@ -138,11 +109,8 @@ export function CatalogueContent({
       <CatalogueFamilyListView
         activeVariantKeys={activeVariantKeys}
         families={filteredFamilies}
-        flowMap={flowMap}
-        projectMap={projectMap}
         selected={selected}
         onActiveVariantChange={onActiveVariantChange}
-        onAssignFlow={onAssignFlow}
         onChangeFamilyGroup={onChangeFamilyGroup}
         onDeleteFamily={onDeleteFamily}
         onOpenPreview={onOpenPreview}
@@ -160,15 +128,15 @@ export function CatalogueContent({
       <CatalogueGalleryView
         activeVariantKeys={activeVariantKeys}
         families={filteredFamilies}
-        flowMap={flowMap}
-        projectMap={projectMap}
         onActiveVariantChange={onActiveVariantChange}
-        onAssignFlow={onAssignFlow}
+        onChangeFamilyGroup={onChangeFamilyGroup}
         onDeleteFamily={onDeleteFamily}
-        onOpenDetails={onOpenDetails}
         onOpenPreview={onOpenPreview}
         onRenameFamily={onRenameFamily}
         onReplaceVariantImage={onReplaceVariantImage}
+        onSetFlowLabel={onSetFlowLabel}
+        onUpdateVariantDetails={onUpdateVariantDetails}
+        webPresets={webPresets}
       />
     );
   }
@@ -206,13 +174,10 @@ export function CatalogueContent({
                   key={family.id}
                   family={family}
                   activeVariantKey={activeVariantKeys[family.id] ?? null}
-                  flowName={family.flow_id ? (flowMap[family.flow_id] || null) : null}
+                  flowName={family.flow_label}
                   isPrimary={Boolean(primaryGroup && family.group === primaryGroup)}
                   isSelected={selected.has(family.id)}
                   isVs={vsGroups.includes(family.group || '')}
-                  projectName={projectMap[family.project_id] || 'Unknown'}
-                  onActiveVariantChange={onActiveVariantChange}
-                  onAssignFlow={onAssignFlow}
                   onDeleteFamily={onDeleteFamily}
                   onOpenDetails={onOpenDetails}
                   onOpenPreview={onOpenPreview}

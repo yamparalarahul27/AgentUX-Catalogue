@@ -7,10 +7,15 @@
 .catalogue-shell {
   --catalogue-flow-sidebar-top: 84px;
   display: grid;
-  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
   align-items: start;
   width: 100%;
+
+  &:has(.catalogue-flow-sidebar) {
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+    gap: 24px;
+  }
 
   &:has(.catalogue-flow-sidebar.is-collapsed) {
     grid-template-columns: min-content minmax(0, 1fr);
@@ -339,10 +344,6 @@
       grid-template-columns: 1fr;
       gap: 24px;
     }
-  }
-
-  .catalogue-body {
-    padding-bottom: 104px;
   }
 
   .catalogue-flow-sidebar {

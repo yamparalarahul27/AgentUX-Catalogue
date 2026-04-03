@@ -2,13 +2,12 @@ import { createPortal } from 'react-dom';
 
 import { Dropdown } from './Dropdown';
 import { UploadZone } from './UploadZone';
-import type { MobileOs, ScreenFamily, WebPreset } from '../types';
+import type { MobileOs, WebPreset } from '../types';
 
 interface CatalogueUploadModalProps {
-  existingFamilies: ScreenFamily[];
+  flowLabel: string;
   isOpen: boolean;
   newFamilyGroup: string;
-  newFamilyMode: boolean;
   newFamilyName: string;
   platform: 'mobile' | 'web' | null;
   projectGroups: string[];
@@ -16,7 +15,6 @@ interface CatalogueUploadModalProps {
   projects: { id: string; name: string }[];
   referenceLabel: string;
   referencePreview: string | null;
-  selectedFamilyId: string | null;
   theme: 'light' | 'dark' | null;
   uploading: boolean;
   webPresetKey: string | null;
@@ -24,14 +22,13 @@ interface CatalogueUploadModalProps {
   mobileOs: MobileOs | null;
   onClose: () => void;
   onFilesSelected: (files: File[]) => void;
+  onFlowLabelChange: (value: string) => void;
   onNewFamilyGroupChange: (value: string) => void;
-  onNewFamilyModeChange: (value: boolean) => void;
   onNewFamilyNameChange: (value: string) => void;
   onProjectIdChange: (value: string | null) => void;
   onReferenceLabelChange: (value: string) => void;
   onReferenceRemove: () => void;
   onReferenceSelect: (file: File | null) => void;
-  onSelectedFamilyIdChange: (value: string | null) => void;
   onThemeChange: (value: 'light' | 'dark' | null) => void;
   onPlatformChange: (value: 'mobile' | 'web' | null) => void;
   onWebPresetKeyChange: (value: string | null) => void;
@@ -40,24 +37,18 @@ interface CatalogueUploadModalProps {
 
 function isReadyToUpload({
   newFamilyGroup,
-  newFamilyMode,
   newFamilyName,
   platform,
   theme,
   projectId,
-  selectedFamilyId,
   webPresetKey,
   mobileOs,
 }: Pick<
   CatalogueUploadModalProps,
-  'newFamilyGroup' | 'newFamilyMode' | 'newFamilyName' | 'platform' | 'projectId' | 'selectedFamilyId' | 'theme' | 'webPresetKey' | 'mobileOs'
+  'newFamilyGroup' | 'newFamilyName' | 'platform' | 'projectId' | 'theme' | 'webPresetKey' | 'mobileOs'
 >) {
   if (!projectId) return false;
-  if (newFamilyMode) {
-    if (!newFamilyName.trim() || !newFamilyGroup.trim()) return false;
-  } else if (!selectedFamilyId) {
-    return false;
-  }
+  if (!newFamilyName.trim() || !newFamilyGroup.trim()) return false;
   if (!theme) return false;
 
   if (platform === 'web') return Boolean(webPresetKey);
@@ -66,11 +57,10 @@ function isReadyToUpload({
 }
 
 export function CatalogueUploadModal({
-  existingFamilies,
+  flowLabel,
   isOpen,
   mobileOs,
   newFamilyGroup,
-  newFamilyMode,
   newFamilyName,
   platform,
   projectGroups,
@@ -78,23 +68,21 @@ export function CatalogueUploadModal({
   projects,
   referenceLabel,
   referencePreview,
-  selectedFamilyId,
   theme,
   uploading,
   webPresetKey,
   webPresets,
   onClose,
   onFilesSelected,
+  onFlowLabelChange,
   onMobileOsChange,
   onNewFamilyGroupChange,
-  onNewFamilyModeChange,
   onNewFamilyNameChange,
   onPlatformChange,
   onProjectIdChange,
   onReferenceLabelChange,
   onReferenceRemove,
   onReferenceSelect,
-  onSelectedFamilyIdChange,
   onThemeChange,
   onWebPresetKeyChange,
 }: CatalogueUploadModalProps) {
@@ -105,11 +93,9 @@ export function CatalogueUploadModal({
   const uploadReady = isReadyToUpload({
     mobileOs,
     newFamilyGroup,
-    newFamilyMode,
     newFamilyName,
     platform,
     projectId,
-    selectedFamilyId,
     theme,
     webPresetKey,
   });
@@ -127,8 +113,8 @@ export function CatalogueUploadModal({
         aria-labelledby="catalogue-upload-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <h3 id="catalogue-upload-title">Upload Screenshot Variant</h3>
-        <p className="catalogue-upload-subtitle">Choose a family, then classify the variant by theme, platform, and preset.</p>
+        <h3 id="catalogue-upload-title">Upload Screenshot</h3>
+        <p className="catalogue-upload-subtitle">Name the screenshot, then classify it by theme, platform, and preset.</p>
 
         <Dropdown
           className="catalogue-upload-project-dropdown"
@@ -140,50 +126,32 @@ export function CatalogueUploadModal({
 
         {projectId ? (
           <>
-            <label className="catalogue-upload-label">Screen family</label>
-            <div className="catalogue-upload-groups">
-              <button
-                type="button"
-                className={`catalogue-upload-group-chip ${!newFamilyMode ? 'active' : ''}`}
-                onClick={() => onNewFamilyModeChange(false)}
-              >
-                Existing family
-              </button>
-              <button
-                type="button"
-                className={`catalogue-upload-group-chip ${newFamilyMode ? 'active' : ''}`}
-                onClick={() => onNewFamilyModeChange(true)}
-              >
-                New family
-              </button>
-            </div>
+            <label className="catalogue-upload-label">Flow</label>
+            <input
+              className="catalogue-filter catalogue-upload-project-select"
+              type="text"
+              placeholder="Flow name (e.g. Deposit)"
+              value={flowLabel}
+              onChange={(event) => onFlowLabelChange(event.target.value)}
+            />
 
-            {newFamilyMode ? (
-              <div className="catalogue-upload-stack">
-                <input
-                  className="catalogue-filter catalogue-upload-project-select"
-                  type="text"
-                  placeholder="Screen family name"
-                  value={newFamilyName}
-                  onChange={(event) => onNewFamilyNameChange(event.target.value)}
-                />
-                <input
-                  className="catalogue-filter catalogue-upload-project-select"
-                  type="text"
-                  placeholder={projectGroups.length > 0 ? `Group (for example: ${projectGroups[0]})` : 'Group'}
-                  value={newFamilyGroup}
-                  onChange={(event) => onNewFamilyGroupChange(event.target.value)}
-                />
-              </div>
-            ) : (
-              <Dropdown
-                className="catalogue-upload-project-dropdown"
-                value={selectedFamilyId}
-                placeholder="Select a screen family..."
-                options={existingFamilies.map((family) => ({ value: family.id, label: family.name }))}
-                onChange={onSelectedFamilyIdChange}
+            <label className="catalogue-upload-label">Screenshot</label>
+            <div className="catalogue-upload-stack">
+              <input
+                className="catalogue-filter catalogue-upload-project-select"
+                type="text"
+                placeholder="Screenshot name"
+                value={newFamilyName}
+                onChange={(event) => onNewFamilyNameChange(event.target.value)}
               />
-            )}
+              <input
+                className="catalogue-filter catalogue-upload-project-select"
+                type="text"
+                placeholder={projectGroups.length > 0 ? `Group (for example: ${projectGroups[0]})` : 'Group'}
+                value={newFamilyGroup}
+                onChange={(event) => onNewFamilyGroupChange(event.target.value)}
+              />
+            </div>
 
             <label className="catalogue-upload-label">Theme</label>
             <div className="catalogue-upload-groups">
@@ -294,7 +262,7 @@ export function CatalogueUploadModal({
               <UploadZone onFilesSelected={onFilesSelected} disabled={uploading} />
             ) : (
               <p className="catalogue-upload-hint">
-                Choose a family and classification before uploading.
+                Choose screenshot details and classification before uploading.
               </p>
             )}
           </>

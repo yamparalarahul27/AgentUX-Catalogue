@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
-import { getScreenshotFamilyId } from '../lib/catalogue-families';
+import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId } from '../lib/catalogue-families';
 import { getAnnotationActivity } from '../lib/catalogue-activity';
 import { compressImage } from '../lib/catalogue-image';
 import { supabase } from '../lib/supabase';
@@ -62,11 +62,6 @@ export function useCatalogueFamilyActions({
   userId,
   webPresets,
 }: UseCatalogueFamilyActionsArgs) {
-  const projectById = useCallback(
-    (projectId: string) => projects.find((project) => project.id === projectId) ?? null,
-    [projects],
-  );
-
   const setFamilyScreenshotsPatch = useCallback((familyId: string, patch: Partial<ScreenshotNode>) => {
     setScreenshots((previous) => previous.map((screenshot) => (
       getScreenshotFamilyId(screenshot) === familyId ? { ...screenshot, ...patch } : screenshot
@@ -266,17 +261,52 @@ export function useCatalogueFamilyActions({
     const family = familyById[id];
     if (!family) return;
 
-    const projectPrimaryGroup = projectById(family.project_id)?.primary_group ?? null;
-    const shouldClearFlow = Boolean(family.flow_id && projectPrimaryGroup && group !== projectPrimaryGroup);
-    await syncFamilyPatch(id, shouldClearFlow ? { group, flow_id: null } : { group });
+    await syncFamilyPatch(id, { group });
+    setToast({ message: group ? `Moved screenshot to "${group}"` : 'Group cleared', type: 'success' });
+  }, [familyById, setToast, syncFamilyPatch]);
 
-    setToast({
-      message: shouldClearFlow
-        ? `Moved family to "${group || 'No group'}" and cleared its flow assignment`
-        : (group ? `Moved family to "${group}"` : 'Group cleared'),
-      type: 'success',
-    });
-  }, [familyById, projectById, setToast, syncFamilyPatch]);
+  const handleSetFlowLabel = useCallback(async (id: string, flowLabel: string | null) => {
+    const family = familyById[id];
+    if (!family) return false;
+
+    const normalized = flowLabel?.trim() || null;
+    const familyScreenshots = screenshots.filter((screenshot) => getScreenshotFamilyId(screenshot) === id);
+    if (familyScreenshots.length === 0) return false;
+
+    const updates = await Promise.all(familyScreenshots.map(async (screenshot) => {
+      const nextMetadata: Record<string, unknown> = {
+        ...(screenshot.metadata && typeof screenshot.metadata === 'object' ? screenshot.metadata : {}),
+      };
+      if (normalized) {
+        nextMetadata[CATALOGUE_FLOW_LABEL_KEY] = normalized;
+      } else {
+        delete nextMetadata[CATALOGUE_FLOW_LABEL_KEY];
+      }
+
+      const { error } = await supabase
+        .from('screenshots')
+        .update({ metadata: nextMetadata })
+        .eq('id', screenshot.id);
+
+      return { error, id: screenshot.id, metadata: nextMetadata };
+    }));
+
+    const failed = updates.find((item) => item.error);
+    if (failed) {
+      setToast({ message: `Could not update flow: ${failed.error?.message || 'Unknown error'}`, type: 'error' });
+      return false;
+    }
+
+    const metadataById = new Map(updates.map((item) => [item.id, item.metadata] as const));
+    setScreenshots((previous) => previous.map((screenshot) => {
+      const nextMetadata = metadataById.get(screenshot.id);
+      if (!nextMetadata) return screenshot;
+      return { ...screenshot, metadata: nextMetadata };
+    }));
+
+    setToast({ message: normalized ? `Flow set to "${normalized}"` : 'Flow cleared', type: 'success' });
+    return true;
+  }, [familyById, screenshots, setScreenshots, setToast]);
 
   const handleDeleteFamily = useCallback(async (id: string) => {
     const familyScreenshots = screenshots.filter((screenshot) => getScreenshotFamilyId(screenshot) === id);
@@ -300,7 +330,7 @@ export function useCatalogueFamilyActions({
 
     setScreenshots((previous) => previous.filter((screenshot) => getScreenshotFamilyId(screenshot) !== id));
     onFamilyDeleted?.(id);
-    setToast({ message: 'Screen family deleted', type: 'success' });
+    setToast({ message: 'Screenshot deleted', type: 'success' });
   }, [onFamilyDeleted, screenFamilies, screenshots, setScreenFamilies, setScreenshots, setToast]);
 
   const handleReplaceImage = useCallback(async (id: string, file: File) => {
@@ -345,18 +375,12 @@ export function useCatalogueFamilyActions({
     const family = familyById[familyId];
     if (!family) return;
 
-    const projectPrimaryGroup = projectById(family.project_id)?.primary_group ?? null;
-    if (flowId && projectPrimaryGroup && family.group !== projectPrimaryGroup) {
-      setToast({ message: 'Only primary group screen families can be assigned to flows', type: 'error' });
-      return;
-    }
-
     await syncFamilyPatch(familyId, { flow_id: flowId });
     setToast({
       message: flowId ? `Assigned to ${flowMap[flowId] || 'flow'}` : 'Unassigned from flow',
       type: 'success',
     });
-  }, [familyById, flowMap, projectById, setToast, syncFamilyPatch]);
+  }, [familyById, flowMap, setToast, syncFamilyPatch]);
 
   return {
     currentProject: projects.find((project) => project.id === filterProject) ?? null,
@@ -368,6 +392,7 @@ export function useCatalogueFamilyActions({
     handlePrimaryGroupChange,
     handleRenameFamily,
     handleReplaceImage,
+    handleSetFlowLabel,
     handleUpdateVariantDetails,
     handleVariantPlatformChange,
     handleVsGroupsChange,

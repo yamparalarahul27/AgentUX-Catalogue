@@ -1,6 +1,5 @@
 import type { ScreenFamily, ScreenshotNode, WebPreset } from '../types';
-
-const LEGACY_FAMILY_PREFIX = 'legacy-family-';
+export const CATALOGUE_FLOW_LABEL_KEY = 'catalogue_flow_label';
 
 export interface CatalogueVariantView {
   id: string;
@@ -14,10 +13,21 @@ export interface CatalogueFamilyView {
   name: string;
   group: string | null;
   flow_id: string | null;
+  flow_label: string | null;
   project_id: string;
   created_at?: string;
   isLegacy: boolean;
   variants: CatalogueVariantView[];
+}
+
+function normalizeFlowLabel(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+export function getScreenshotFlowLabel(screenshot: ScreenshotNode): string | null {
+  return normalizeFlowLabel(screenshot.metadata?.[CATALOGUE_FLOW_LABEL_KEY]);
 }
 
 export function getDefaultFamilyVariant(
@@ -36,7 +46,7 @@ export function getActiveFamilyVariant(
 
 export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
   return {
-    id: `${LEGACY_FAMILY_PREFIX}${screenshot.id}`,
+    id: screenshot.id,
     project_id: screenshot.project_id,
     name: screenshot.name,
     group: screenshot.group,
@@ -47,7 +57,7 @@ export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
 }
 
 export function getScreenshotFamilyId(screenshot: ScreenshotNode): string {
-  return screenshot.screen_family_id || `${LEGACY_FAMILY_PREFIX}${screenshot.id}`;
+  return screenshot.id;
 }
 
 export function getVariantKey(screenshot: ScreenshotNode): string {
@@ -91,16 +101,10 @@ export function getVariantLabel(
 
 export function buildCatalogueFamilies(
   screenshots: ScreenshotNode[],
-  screenFamilies: ScreenFamily[],
+  _screenFamilies: ScreenFamily[],
   presetMap: Record<string, WebPreset>,
 ): CatalogueFamilyView[] {
-  const familyMap = new Map(screenFamilies.map((family) => [family.id, family]));
-  const grouped = new Map<string, CatalogueFamilyView>();
-
-  for (const screenshot of screenshots) {
-    const familyId = getScreenshotFamilyId(screenshot);
-    const family = familyMap.get(familyId) || buildLegacyFamily(screenshot);
-    const existing = grouped.get(familyId);
+  return screenshots.map((screenshot) => {
     const variant: CatalogueVariantView = {
       id: screenshot.id,
       key: getVariantKey(screenshot),
@@ -108,27 +112,16 @@ export function buildCatalogueFamilies(
       screenshot,
     };
 
-    if (existing) {
-      if (!existing.variants.some((item) => item.key === variant.key && item.id === variant.id)) {
-        existing.variants.push(variant);
-      }
-      continue;
-    }
-
-    grouped.set(familyId, {
-      id: family.id,
-      name: family.name || screenshot.name,
-      group: family.group ?? screenshot.group,
-      flow_id: family.flow_id ?? screenshot.flow_id,
-      project_id: family.project_id || screenshot.project_id,
-      created_at: family.created_at || screenshot.created_at,
-      isLegacy: family.id.startsWith(LEGACY_FAMILY_PREFIX),
+    return {
+      id: screenshot.id,
+      name: screenshot.name,
+      group: screenshot.group,
+      flow_id: screenshot.flow_id,
+      flow_label: getScreenshotFlowLabel(screenshot),
+      project_id: screenshot.project_id,
+      created_at: screenshot.created_at,
+      isLegacy: false,
       variants: [variant],
-    });
-  }
-
-  return Array.from(grouped.values()).map((family) => ({
-    ...family,
-    variants: family.variants.sort((left, right) => left.label.localeCompare(right.label)),
-  }));
+    };
+  });
 }

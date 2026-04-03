@@ -1,26 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { DEFAULT_CATALOGUE_VIEW_BY, sortByAnnotationActivity, sortByCommentActivity, type CatalogueViewBy } from '../lib/catalogue-activity';
-import { buildCatalogueFamilies, buildLegacyFamily, getScreenshotFamilyId, type CatalogueFamilyView } from '../lib/catalogue-families';
+import { buildCatalogueFamilies, buildLegacyFamily, getScreenshotFamilyId, getScreenshotFlowLabel, type CatalogueFamilyView } from '../lib/catalogue-families';
 import { DEFAULT_CATALOGUE_SORT, sortCatalogueScreenshots, type CatalogueSortOption } from '../lib/catalogue-sort';
-import type { Flow, Project, ScreenFamily, ScreenshotNode, WebPreset } from '../types';
-
-export const FLOW_FILTER_ALL = '__catalogue_flow_all__';
-export const FLOW_FILTER_UNASSIGNED = '__catalogue_flow_unassigned__';
-
-export type CatalogueFlowFilter = typeof FLOW_FILTER_ALL | typeof FLOW_FILTER_UNASSIGNED | string;
-
-export interface FlowSidebarItem {
-  count: number;
-  kind: 'all' | 'flow' | 'unassigned';
-  label: string;
-  projectName?: string;
-  value: CatalogueFlowFilter;
-}
+import type { ScreenFamily, ScreenshotNode, WebPreset } from '../types';
 
 interface UseCatalogueFiltersArgs {
-  flows: Flow[];
-  projects: Project[];
   screenshots: ScreenshotNode[];
   screenFamilies: ScreenFamily[];
   webPresets: WebPreset[];
@@ -34,58 +19,37 @@ function getFamilyForScreenshot(
 }
 
 export function useCatalogueFilters({
-  flows,
-  projects,
   screenshots,
   screenFamilies,
   webPresets,
 }: UseCatalogueFiltersArgs) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterProject, setFilterProject] = useState<string | null>(null);
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
-  const [filterScreenFamily, setFilterScreenFamily] = useState<string | null>(null);
+  const [filterFlow, setFilterFlow] = useState<string | null>(null);
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [filterTheme, setFilterTheme] = useState<string | null>(null);
   const [filterWebPreset, setFilterWebPreset] = useState<string | null>(null);
   const [filterMobileOs, setFilterMobileOs] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<CatalogueSortOption>(DEFAULT_CATALOGUE_SORT);
   const [viewBy, setViewBy] = useState<CatalogueViewBy>(DEFAULT_CATALOGUE_VIEW_BY);
-  const [activeFlowFilter, setActiveFlowFilter] = useState<CatalogueFlowFilter>(FLOW_FILTER_ALL);
 
   const familyMap = useMemo(() => new Map(screenFamilies.map((family) => [family.id, family])), [screenFamilies]);
   const presetMap = useMemo(() => Object.fromEntries(webPresets.map((preset) => [preset.key, preset])), [webPresets]);
 
-  const currentProject = useMemo(() => {
-    if (!filterProject) return null;
-    return projects.find((project) => project.id === filterProject) ?? null;
-  }, [filterProject, projects]);
-
-  const primaryGroup = currentProject?.primary_group ?? null;
-  const vsGroups = currentProject?.vs_groups ?? [];
+  const primaryGroup = null;
+  const vsGroups: string[] = [];
 
   const allGroups = useMemo(() => {
-    const groupSource = filterProject
-      ? screenshots.filter((screenshot) => screenshot.project_id === filterProject)
-      : screenshots;
+    return [...new Set(screenshots.map((screenshot) => getFamilyForScreenshot(screenshot, familyMap).group).filter(Boolean))] as string[];
+  }, [familyMap, screenshots]);
 
-    return [...new Set(groupSource.map((screenshot) => getFamilyForScreenshot(screenshot, familyMap).group).filter(Boolean))] as string[];
-  }, [familyMap, filterProject, screenshots]);
-
-  const allScreenFamilies = useMemo(() => {
-    const familySource = filterProject
-      ? screenshots.filter((screenshot) => screenshot.project_id === filterProject)
-      : screenshots;
-
-    const seen = new Map<string, string>();
-    for (const screenshot of familySource) {
-      const family = getFamilyForScreenshot(screenshot, familyMap);
-      seen.set(family.id, family.name);
-    }
-
-    return [...seen.entries()]
-      .map(([id, name]) => ({ id, name }))
-      .sort((left, right) => left.name.localeCompare(right.name));
-  }, [familyMap, filterProject, screenshots]);
+  const allFlows = useMemo(() => (
+    [...new Set(
+      screenshots
+        .map((screenshot) => getScreenshotFlowLabel(screenshot))
+        .filter((label): label is string => Boolean(label)),
+    )].sort((left, right) => left.localeCompare(right))
+  ), [screenshots]);
 
   const allWebPresets = useMemo(() => webPresets.map((preset) => ({
     id: preset.key,
@@ -102,41 +66,19 @@ export function useCatalogueFilters({
   }, [allGroups, filterGroup]);
 
   useEffect(() => {
-    if (filterScreenFamily && !allScreenFamilies.some((family) => family.id === filterScreenFamily)) {
-      setFilterScreenFamily(null);
+    if (filterFlow && !allFlows.includes(filterFlow)) {
+      setFilterFlow(null);
     }
-  }, [allScreenFamilies, filterScreenFamily]);
+  }, [allFlows, filterFlow]);
 
   useEffect(() => {
     if (filterPlatform !== 'web' && filterWebPreset) setFilterWebPreset(null);
     if (filterPlatform !== 'mobile' && filterMobileOs) setFilterMobileOs(null);
   }, [filterMobileOs, filterPlatform, filterWebPreset]);
 
-  const scopedFlows = useMemo(() => {
-    const filtered = filterProject
-      ? flows.filter((flow) => flow.project_id === filterProject)
-      : flows;
-
-    return [...filtered].sort((left, right) => {
-      const leftProject = projects.find((project) => project.id === left.project_id)?.name ?? '';
-      const rightProject = projects.find((project) => project.id === right.project_id)?.name ?? '';
-      const projectNameCompare = leftProject.localeCompare(rightProject);
-      return projectNameCompare !== 0 ? projectNameCompare : left.name.localeCompare(right.name);
-    });
-  }, [filterProject, flows, projects]);
-
-  useEffect(() => {
-    if (
-      activeFlowFilter !== FLOW_FILTER_ALL &&
-      activeFlowFilter !== FLOW_FILTER_UNASSIGNED &&
-      !scopedFlows.some((flow) => flow.id === activeFlowFilter)
-    ) {
-      setActiveFlowFilter(FLOW_FILTER_ALL);
-    }
-  }, [activeFlowFilter, scopedFlows]);
-
   const baseScreenshots = useMemo(() => screenshots.filter((screenshot) => {
     const family = getFamilyForScreenshot(screenshot, familyMap);
+    const flowLabel = getScreenshotFlowLabel(screenshot) || '';
     const query = searchQuery.trim().toLowerCase();
     const presetLabel = screenshot.web_preset_key ? presetMap[screenshot.web_preset_key]?.label.toLowerCase() || '' : '';
     const mobileOs = screenshot.mobile_os || '';
@@ -144,33 +86,31 @@ export function useCatalogueFilters({
     const matchesSearch = !query
       || screenshot.name.toLowerCase().includes(query)
       || family.name.toLowerCase().includes(query)
+      || flowLabel.toLowerCase().includes(query)
       || group.toLowerCase().includes(query)
       || screenshot.file_name.toLowerCase().includes(query)
       || presetLabel.includes(query)
       || mobileOs.toLowerCase().includes(query);
-    const matchesProject = !filterProject || screenshot.project_id === filterProject;
     const matchesGroup = !filterGroup || family.group === filterGroup;
-    const matchesFamily = !filterScreenFamily || family.id === filterScreenFamily;
+    const matchesFlow = !filterFlow || flowLabel === filterFlow;
     const matchesPlatform = !filterPlatform || screenshot.platform === filterPlatform;
     const matchesTheme = !filterTheme || screenshot.theme === filterTheme;
     const matchesWebPreset = !filterWebPreset || screenshot.web_preset_key === filterWebPreset;
     const matchesMobileOs = !filterMobileOs || screenshot.mobile_os === filterMobileOs;
 
     return matchesSearch
-      && matchesProject
       && matchesGroup
-      && matchesFamily
+      && matchesFlow
       && matchesPlatform
       && matchesTheme
       && matchesWebPreset
       && matchesMobileOs;
   }), [
     familyMap,
+    filterFlow,
     filterGroup,
     filterMobileOs,
     filterPlatform,
-    filterProject,
-    filterScreenFamily,
     filterTheme,
     filterWebPreset,
     presetMap,
@@ -194,50 +134,9 @@ export function useCatalogueFilters({
     () => buildCatalogueFamilies(viewByScreenshots, screenFamilies, presetMap),
     [presetMap, screenFamilies, viewByScreenshots],
   );
-
-  const flowCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-
-    for (const family of baseFamilies) {
-      if (family.flow_id) counts[family.flow_id] = (counts[family.flow_id] || 0) + 1;
-    }
-
-    return counts;
-  }, [baseFamilies]);
-
-  const unassignedCount = useMemo(
-    () => baseFamilies.filter((family) => !family.flow_id).length,
-    [baseFamilies],
-  );
-
-  const flowItems = useMemo<FlowSidebarItem[]>(() => {
-    const defaultItems: FlowSidebarItem[] = [
-      { count: baseFamilies.length, kind: 'all', label: 'All Screens', value: FLOW_FILTER_ALL },
-      { count: unassignedCount, kind: 'unassigned', label: 'Unassigned', value: FLOW_FILTER_UNASSIGNED },
-    ];
-
-    const flowEntries = scopedFlows.map((flow) => ({
-      count: flowCounts[flow.id] || 0,
-      kind: 'flow' as const,
-      label: flow.name,
-      projectName: filterProject
-        ? undefined
-        : projects.find((project) => project.id === flow.project_id)?.name ?? 'Unknown project',
-      value: flow.id,
-    }));
-
-    return [...defaultItems, ...flowEntries];
-  }, [baseFamilies.length, filterProject, flowCounts, projects, scopedFlows, unassignedCount]);
-
-  const filteredFamilies = useMemo(() => baseFamilies.filter((family) => {
-    if (activeFlowFilter === FLOW_FILTER_ALL) return true;
-    if (activeFlowFilter === FLOW_FILTER_UNASSIGNED) return !family.flow_id;
-    return family.flow_id === activeFlowFilter;
-  }), [activeFlowFilter, baseFamilies]);
-
   const filteredScreenshots = useMemo(
-    () => filteredFamilies.flatMap((family) => family.variants.map((variant) => variant.screenshot)),
-    [filteredFamilies],
+    () => baseFamilies.flatMap((family) => family.variants.map((variant) => variant.screenshot)),
+    [baseFamilies],
   );
 
   const sortedFamilies = useMemo(() => {
@@ -248,7 +147,7 @@ export function useCatalogueFilters({
         : sortCatalogueScreenshots(filteredScreenshots, sortBy);
     const order = new Map(sortedVariants.map((screenshot, index) => [getScreenshotFamilyId(screenshot), index]));
 
-    return [...filteredFamilies].sort((left, right) => {
+    return [...baseFamilies].sort((left, right) => {
       const leftIsPrimary = left.group === primaryGroup;
       const rightIsPrimary = right.group === primaryGroup;
       if (leftIsPrimary !== rightIsPrimary) return leftIsPrimary ? -1 : 1;
@@ -259,7 +158,7 @@ export function useCatalogueFilters({
 
       return (order.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(right.id) ?? Number.MAX_SAFE_INTEGER);
     });
-  }, [filteredFamilies, filteredScreenshots, primaryGroup, sortBy, viewBy, vsGroups]);
+  }, [baseFamilies, filteredScreenshots, primaryGroup, sortBy, viewBy, vsGroups]);
 
   const groupedFamilies = useMemo(() => {
     const grouped = sortedFamilies.reduce<Record<string, CatalogueFamilyView[]>>((accumulator, family) => {
@@ -281,37 +180,28 @@ export function useCatalogueFilters({
     }));
   }, [primaryGroup, sortedFamilies, vsGroups]);
 
-  const activeFlowItem = flowItems.find((item) => item.value === activeFlowFilter) ?? flowItems[0];
   const isSortLocked = viewBy !== 'all';
 
   return {
-    activeFlowCount: activeFlowItem?.count ?? 0,
-    activeFlowFilter,
-    activeFlowLabel: activeFlowItem?.label ?? 'All Screens',
+    allFlows,
     allGroups,
     allMobileOs,
-    allScreenFamilies,
     allWebPresets,
-    currentProject,
+    filterFlow,
     filterGroup,
     filterMobileOs,
     filterPlatform,
-    filterProject,
-    filterScreenFamily,
     filterTheme,
     filterWebPreset,
-    filteredFamilies,
+    filteredFamilies: sortedFamilies,
     filteredScreenshots,
-    flowItems,
     groupedFamilies,
     primaryGroup,
     searchQuery,
-    setActiveFlowFilter,
+    setFilterFlow,
     setFilterGroup,
     setFilterMobileOs,
     setFilterPlatform,
-    setFilterProject,
-    setFilterScreenFamily,
     setFilterTheme,
     setFilterWebPreset,
     setSortBy,

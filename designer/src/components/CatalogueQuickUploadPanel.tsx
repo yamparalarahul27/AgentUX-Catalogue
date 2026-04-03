@@ -9,12 +9,14 @@ interface QuickUploadQueueItem {
 }
 
 interface CatalogueQuickUploadPanelProps {
+  flowLabel: string;
   uploading: boolean;
   quickUploadGroupMode: 'auto' | 'existing' | 'new';
   quickUploadExistingGroup: string | null;
   quickUploadNewGroup: string;
   quickUploadProjectGroups: string[];
   quickUploadQueue: QuickUploadQueueItem[];
+  onQuickUploadFlowLabelChange: (value: string) => void;
   onQuickUploadFilesSelected: (files: File[]) => void;
   onQuickUploadGroupModeChange: (mode: 'auto' | 'existing' | 'new') => void;
   onQuickUploadExistingGroupChange: (value: string | null) => void;
@@ -25,12 +27,14 @@ interface CatalogueQuickUploadPanelProps {
 }
 
 export function CatalogueQuickUploadPanel({
+  flowLabel,
   uploading,
   quickUploadGroupMode,
   quickUploadExistingGroup,
   quickUploadNewGroup,
   quickUploadProjectGroups,
   quickUploadQueue,
+  onQuickUploadFlowLabelChange,
   onQuickUploadFilesSelected,
   onQuickUploadGroupModeChange,
   onQuickUploadExistingGroupChange,
@@ -56,6 +60,15 @@ export function CatalogueQuickUploadPanel({
   return (
     <div className="catalogue-quick-upload-layout">
       <div className="catalogue-quick-upload-left">
+        <label className="catalogue-upload-label">Flow</label>
+        <input
+          className="catalogue-filter catalogue-upload-project-select"
+          type="text"
+          placeholder="Flow name (e.g. Deposit)"
+          value={flowLabel}
+          onChange={(event) => onQuickUploadFlowLabelChange(event.target.value)}
+        />
+
         <label className="catalogue-upload-label">Group assignment</label>
         <div className="catalogue-upload-groups">
           <button

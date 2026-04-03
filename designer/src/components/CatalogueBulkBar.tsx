@@ -3,9 +3,9 @@ interface CatalogueBulkBarProps {
   selectedCount: number;
   selectedVisibleCount: number;
   onClearSelection: () => void;
+  onOpenGroupDialog: () => void;
   onOpenDeleteConfirm: () => void;
   onSelectAllVisible: () => void;
-  onSetBulkAction: (action: 'assign' | 'group') => void;
 }
 
 export function CatalogueBulkBar({
@@ -13,9 +13,9 @@ export function CatalogueBulkBar({
   selectedCount,
   selectedVisibleCount,
   onClearSelection,
+  onOpenGroupDialog,
   onOpenDeleteConfirm,
   onSelectAllVisible,
-  onSetBulkAction,
 }: CatalogueBulkBarProps) {
   if (selectedCount === 0) {
     return null;
@@ -35,18 +35,11 @@ export function CatalogueBulkBar({
       </div>
 
       <div className="catalogue-bulk-actions">
-        <button type="button" className="catalogue-bulk-btn" onClick={() => onSetBulkAction('group')}>
+        <button type="button" className="catalogue-bulk-btn" onClick={onOpenGroupDialog}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
           </svg>
           Change Group
-        </button>
-        <button type="button" className="catalogue-bulk-btn" onClick={() => onSetBulkAction('assign')}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="16 3 21 3 21 8" />
-            <line x1="4" y1="20" x2="21" y2="3" />
-          </svg>
-          Assign to Flow
         </button>
         <button type="button" className="catalogue-bulk-btn catalogue-bulk-btn-danger" onClick={onOpenDeleteConfirm}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

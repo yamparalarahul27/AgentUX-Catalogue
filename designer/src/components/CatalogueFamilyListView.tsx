@@ -7,11 +7,8 @@ import type { MobileOs, WebPreset } from '../types';
 interface CatalogueFamilyListViewProps {
   activeVariantKeys: Record<string, string>;
   families: CatalogueFamilyView[];
-  flowMap: Record<string, string>;
-  projectMap: Record<string, string>;
   selected: Set<string>;
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
-  onAssignFlow: (familyId: string) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenPreview: (familyId: string) => void;
@@ -31,16 +28,15 @@ interface CatalogueFamilyListViewProps {
 }
 
 const DESKTOP_RESIZE_BREAKPOINT = 1200;
-const DEFAULT_COLUMN_WIDTHS = [30, 72, 240, 150, 170, 320, 150, 110, 180];
-const MIN_COLUMN_WIDTHS = [30, 72, 180, 120, 140, 220, 120, 96, 140];
+const DEFAULT_COLUMN_WIDTHS = [30, 72, 240, 150, 170, 320, 110, 180];
+const MIN_COLUMN_WIDTHS = [30, 72, 180, 120, 140, 220, 96, 140];
 const HEADER_COLUMNS = [
   { key: 'select', label: '', resizable: false },
   { key: 'preview', label: 'Preview', resizable: true },
-  { key: 'family', label: 'Screen family', resizable: true },
+  { key: 'family', label: 'Screenshot', resizable: true },
   { key: 'group', label: 'Group', resizable: true },
   { key: 'flow', label: 'Flow', resizable: true },
   { key: 'variant', label: 'Variant', resizable: true },
-  { key: 'project', label: 'Project', resizable: true },
   { key: 'created', label: 'Created', resizable: true },
   { key: 'actions', label: 'Actions', resizable: false },
 ] as const;
@@ -92,11 +88,8 @@ function formatCreatedAt(value?: string): string {
 export function CatalogueFamilyListView({
   activeVariantKeys,
   families,
-  flowMap,
-  projectMap,
   selected,
   onActiveVariantChange,
-  onAssignFlow,
   onChangeFamilyGroup,
   onDeleteFamily,
   onOpenPreview,
@@ -184,7 +177,7 @@ export function CatalogueFamilyListView({
   }, []);
 
   async function requestDelete(family: CatalogueFamilyView) {
-    const shouldDelete = window.confirm(`Delete "${family.name}" and all of its variants?`);
+    const shouldDelete = window.confirm(`Delete screenshot "${family.name}"?`);
     if (!shouldDelete) return;
     await onDeleteFamily(family.id);
   }
@@ -363,9 +356,9 @@ export function CatalogueFamilyListView({
                   </div>
 
                   <span className="catalogue-list-group">{family.group || 'No group'}</span>
-                  <button type="button" className="catalogue-list-flow" onClick={() => onAssignFlow(family.id)}>
-                    {family.flow_id ? flowMap[family.flow_id] || 'Assigned' : 'Unassigned'}
-                  </button>
+                  <span className="catalogue-list-flow">
+                    {family.flow_label || 'Unassigned'}
+                  </span>
 
                   <div className="catalogue-family-list__variants">
                     {family.variants.map((variant) => (
@@ -380,7 +373,6 @@ export function CatalogueFamilyListView({
                     ))}
                   </div>
 
-                  <span className="catalogue-list-project">{projectMap[family.project_id] || 'Unknown'}</span>
                   <span className="catalogue-list-created">{formatCreatedAt(activeScreenshot?.created_at || family.created_at)}</span>
 
                   <div className="catalogue-list-actions">
@@ -429,12 +421,12 @@ export function CatalogueFamilyListView({
                   <div className="catalogue-list-inline-editor">
                     <div className="catalogue-list-inline-editor__head">
                       <strong>Editing {activeVariant?.label || 'variant'}</strong>
-                      <span>Changes apply to the active variant in this family.</span>
+                      <span>Changes apply to this screenshot.</span>
                     </div>
 
                     <div className="catalogue-list-inline-editor__grid">
                       <label className="catalogue-list-inline-editor__field">
-                        <span>Screen family</span>
+                        <span>Screenshot name</span>
                         <input
                           type="text"
                           value={inlineDraft.familyName}
