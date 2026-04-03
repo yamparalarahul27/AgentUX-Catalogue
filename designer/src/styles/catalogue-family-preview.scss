@@ -184,6 +184,44 @@
   flex-wrap: wrap;
 }
 
+.catalogue-lightbox-inline-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.26);
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.catalogue-lightbox-inline-editor .catalogue-list-inline-editor__head {
+  padding-top: 0;
+}
+
+.catalogue-lightbox-inline-editor .catalogue-list-inline-editor__grid {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.catalogue-lightbox-inline-editor .catalogue-list-inline-editor__field input,
+.catalogue-lightbox-inline-editor .catalogue-list-inline-editor__field select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #303038;
+  border-radius: 10px;
+  background: #0f1014;
+  color: #fff;
+  font-size: 13px;
+  padding: 9px 10px;
+}
+
+.catalogue-lightbox-inline-editor__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .catalogue-family-lightbox__action {
   display: inline-flex;
   align-items: center;

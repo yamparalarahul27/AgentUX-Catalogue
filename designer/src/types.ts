@@ -112,6 +112,8 @@ export interface ScreenshotComment {
   user_email: string;
   text: string;
   created_at: string;
+  resolved_at?: string | null;
+  resolved_by_email?: string | null;
 }
 
 export interface ParsedScreenshotName {

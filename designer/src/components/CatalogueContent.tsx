@@ -23,8 +23,8 @@ interface CatalogueContentProps {
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onDeleteFamily: (familyId: string) => Promise<void>;
-  onOpenDetails: (familyId: string) => void;
   onOpenPreview: (familyId: string) => void;
+  onOpenPreviewAndEdit: (familyId: string) => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onRemoveReference: (screenshotId: string) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
@@ -62,8 +62,8 @@ export function CatalogueContent({
   onActiveVariantChange,
   onChangeFamilyGroup,
   onDeleteFamily,
-  onOpenDetails,
   onOpenPreview,
+  onOpenPreviewAndEdit,
   onRenameFamily,
   onRemoveReference,
   onReplaceVariantImage,
@@ -182,8 +182,8 @@ export function CatalogueContent({
                   isSelected={selected.has(family.id)}
                   isVs={vsGroups.includes(family.group || '')}
                   onDeleteFamily={onDeleteFamily}
-                  onOpenDetails={onOpenDetails}
                   onOpenPreview={onOpenPreview}
+                  onOpenPreviewAndEdit={onOpenPreviewAndEdit}
                   onReplaceVariantImage={onReplaceVariantImage}
                   onToggleSelect={onToggleSelect}
                 />

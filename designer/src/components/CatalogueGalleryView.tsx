@@ -94,6 +94,7 @@ export function CatalogueGalleryView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const panStateRef = useRef<GalleryPanState | null>(null);
   const panMovedRef = useRef(false);
+  const lastActiveIndexRef = useRef(0);
   const [activeFamilyId, setActiveFamilyId] = useState<string | null>(families[0]?.id ?? null);
   const [zoom, setZoom] = useState(GALLERY_ZOOM_MIN);
   const [isPanning, setIsPanning] = useState(false);
@@ -106,7 +107,12 @@ export function CatalogueGalleryView({
       return;
     }
     if (!activeFamilyId || !families.some((family) => family.id === activeFamilyId)) {
-      setActiveFamilyId(families[0].id);
+      if (!activeFamilyId) {
+        setActiveFamilyId(families[0].id);
+        return;
+      }
+      const fallbackIndex = Math.min(lastActiveIndexRef.current, families.length - 1);
+      setActiveFamilyId(families[fallbackIndex].id);
     }
   }, [activeFamilyId, families]);
   const activeFamilyIndex = useMemo(
@@ -114,6 +120,11 @@ export function CatalogueGalleryView({
     [activeFamilyId, families],
   );
   const activeFamily = activeFamilyIndex >= 0 ? families[activeFamilyIndex] : null;
+  useEffect(() => {
+    if (activeFamilyIndex >= 0) {
+      lastActiveIndexRef.current = activeFamilyIndex;
+    }
+  }, [activeFamilyIndex]);
   const activeVariant = useMemo(
     () => (activeFamily ? getActiveFamilyVariant(activeFamily, activeVariantKeys[activeFamily.id]) : null),
     [activeFamily, activeVariantKeys],

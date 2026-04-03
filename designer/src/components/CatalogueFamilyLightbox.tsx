@@ -1,60 +1,82 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
-import { getActiveFamilyVariant } from '../lib/catalogue-families';
+import { getActiveFamilyVariant, getVariantKey } from '../lib/catalogue-families';
 import { formatDateTime, getAnnotationId, getContainLayout, parseAnnotations, type ImageSize, type LightboxAnnotation } from '../lib/catalogue-lightbox';
 import { getGroupColor } from '../lib/naming';
 import { ANNOTATION_METADATA_KEY } from '../lib/catalogue-activity';
 import { supabase } from '../lib/supabase';
-
+import type { MobileOs, WebPreset } from '../types';
+import { buildLightboxDraftVariant, CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
+import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
   family: CatalogueFamilyView;
   flowName: string | null;
   isOpen: boolean;
+  startInlineEdit?: boolean;
   userEmail: string;
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
   onAnnotationStateChange: (screenshotId: string, metadata: Record<string, unknown>) => void;
   onClose: () => void;
   onCommentCountChange?: (screenshotId: string, delta: number) => void;
+  onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onDeleteFamily: (familyId: string) => Promise<void>;
-  onOpenDetails: (familyId: string) => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
+  onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
+  onUpdateVariantDetails: (
+    screenshotId: string,
+    patch: {
+      mobile_os?: MobileOs | null;
+      platform?: 'mobile' | 'web' | null;
+      theme?: 'light' | 'dark' | null;
+      web_preset_key?: string | null;
+    },
+  ) => Promise<boolean>;
+  webPresets: WebPreset[];
 }
-
 interface ScreenshotComment {
   id: string;
   user_email: string;
   text: string;
   created_at: string;
+  resolved_at?: string | null;
+  resolved_by_email?: string | null;
 }
-
 type LightboxPanel = 'comments' | 'annotations';
-
 export function CatalogueFamilyLightbox({
   activeVariantKey,
   family,
   flowName,
   isOpen,
+  startInlineEdit = false,
   userEmail,
   onActiveVariantChange,
   onAnnotationStateChange,
   onClose,
   onCommentCountChange,
+  onChangeFamilyGroup,
   onDeleteFamily,
-  onOpenDetails,
   onRenameFamily,
   onReplaceVariantImage,
+  onSetFlowLabel,
+  onUpdateVariantDetails,
+  webPresets,
 }: CatalogueFamilyLightboxProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const annotationInputRef = useRef<HTMLInputElement>(null);
-  const lightboxNameRef = useRef<HTMLInputElement>(null);
   const [lightboxPanel, setLightboxPanel] = useState<LightboxPanel>('comments');
-  const [editingLightboxName, setEditingLightboxName] = useState(false);
+  const [isInlineEditing, setIsInlineEditing] = useState(startInlineEdit);
+  const [isSavingInline, setIsSavingInline] = useState(false);
   const [nameDraft, setNameDraft] = useState(family.name);
+  const [groupDraft, setGroupDraft] = useState(family.group || '');
+  const [flowDraft, setFlowDraft] = useState(flowName || '');
+  const [themeDraft, setThemeDraft] = useState<'light' | 'dark' | null>(null);
+  const [platformDraft, setPlatformDraft] = useState<'mobile' | 'web' | null>(null);
+  const [webPresetDraft, setWebPresetDraft] = useState<string | null>(null);
+  const [mobileOsDraft, setMobileOsDraft] = useState<MobileOs | null>(null);
   const [comments, setComments] = useState<ScreenshotComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
@@ -68,7 +90,15 @@ export function CatalogueFamilyLightbox({
   const [annotationError, setAnnotationError] = useState('');
   const [imageSize, setImageSize] = useState<ImageSize | null>(null);
   const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
-
+  const sortedComments = useMemo(
+    () => [...comments].sort((a, b) => {
+      const aResolved = Boolean(a.resolved_at);
+      const bResolved = Boolean(b.resolved_at);
+      if (aResolved !== bResolved) return aResolved ? 1 : -1;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    }),
+    [comments],
+  );
   const activeVariant = useMemo(
     () => getActiveFamilyVariant(family, activeVariantKey),
     [activeVariantKey, family],
@@ -76,7 +106,6 @@ export function CatalogueFamilyLightbox({
   const screenshot = activeVariant?.screenshot ?? null;
   const mediaLayout = useMemo(() => getContainLayout(mediaSize, imageSize), [imageSize, mediaSize]);
   const groupColor = getGroupColor(family.group);
-
   useEffect(() => {
     if (!isOpen || !screenshot) return;
     setLightboxPanel('comments');
@@ -93,7 +122,6 @@ export function CatalogueFamilyLightbox({
     setAnnotationError('');
     setImageSize(null);
     setMediaSize(null);
-
     let cancelled = false;
     supabase
       .from('screenshot_comments')
@@ -110,23 +138,21 @@ export function CatalogueFamilyLightbox({
         }
         setComments(data as ScreenshotComment[]);
       });
-
     return () => {
       cancelled = true;
     };
   }, [isOpen, screenshot]);
-
   useEffect(() => {
+    if (!screenshot) return;
     setNameDraft(family.name);
-    setEditingLightboxName(false);
-  }, [family.id, family.name]);
-
-  useEffect(() => {
-    if (!editingLightboxName) return;
-    lightboxNameRef.current?.focus();
-    lightboxNameRef.current?.select();
-  }, [editingLightboxName]);
-
+    setGroupDraft(family.group || '');
+    setFlowDraft(flowName || '');
+    setThemeDraft(screenshot.theme || null);
+    setPlatformDraft(screenshot.platform || null);
+    setWebPresetDraft(screenshot.web_preset_key || null);
+    setMobileOsDraft(screenshot.mobile_os || null);
+    setIsSavingInline(false);
+  }, [family, flowName, screenshot]);
   useEffect(() => {
     if (!isOpen || !mediaRef.current) return;
     const update = () => {
@@ -142,59 +168,49 @@ export function CatalogueFamilyLightbox({
       window.removeEventListener('resize', update);
     };
   }, [isOpen, screenshot?.id]);
-
   useEffect(() => {
     if (!annotationDraft) return;
     annotationInputRef.current?.focus();
     annotationInputRef.current?.select();
   }, [annotationDraft]);
-
   const saveAnnotations = useCallback(async (nextAnnotations: LightboxAnnotation[]) => {
     if (!screenshot) return false;
     const nextMetadata = {
       ...annotationMetadata,
       [ANNOTATION_METADATA_KEY]: JSON.stringify(nextAnnotations),
     };
-
     const { error } = await supabase
       .from('screenshots')
       .update({ metadata: nextMetadata })
       .eq('id', screenshot.id);
-
     if (error) {
       setAnnotationError('Could not save annotations right now.');
       return false;
     }
-
     setAnnotations(nextAnnotations);
     setAnnotationMetadata(nextMetadata);
     setAnnotationError('');
     onAnnotationStateChange(screenshot.id, nextMetadata);
     return true;
   }, [annotationMetadata, onAnnotationStateChange, screenshot]);
-
   const addComment = useCallback(async () => {
     if (!screenshot) return;
     const trimmed = newComment.trim();
     if (!trimmed) return;
-
     const { data, error } = await supabase
       .from('screenshot_comments')
       .insert({ screenshot_id: screenshot.id, user_email: userEmail, text: trimmed })
       .select()
       .single();
-
     if (error || !data) {
       setCommentsError('Unable to add this comment.');
       return;
     }
-
     setComments((previous) => [...previous, data as ScreenshotComment]);
     setNewComment('');
     setCommentsError('');
     onCommentCountChange?.(screenshot.id, 1);
   }, [newComment, onCommentCountChange, screenshot, userEmail]);
-
   const deleteComment = useCallback(async (commentId: string) => {
     if (!screenshot) return;
     const { error } = await supabase.from('screenshot_comments').delete().eq('id', commentId);
@@ -205,17 +221,33 @@ export function CatalogueFamilyLightbox({
     setComments((previous) => previous.filter((comment) => comment.id !== commentId));
     onCommentCountChange?.(screenshot.id, -1);
   }, [onCommentCountChange, screenshot]);
-
+  const toggleResolveComment = useCallback(async (comment: ScreenshotComment) => {
+    if (!screenshot) return;
+    const nextResolved = !comment.resolved_at;
+    const patch = nextResolved
+      ? { resolved_at: new Date().toISOString(), resolved_by_email: userEmail }
+      : { resolved_at: null, resolved_by_email: null };
+    const { data, error } = await supabase
+      .from('screenshot_comments')
+      .update(patch)
+      .eq('id', comment.id)
+      .select('*')
+      .single();
+    if (error || !data) {
+      setCommentsError('Unable to update comment status right now.');
+      return;
+    }
+    setComments((previous) => previous.map((item) => (item.id === comment.id ? data as ScreenshotComment : item)));
+    setCommentsError('');
+  }, [screenshot, userEmail]);
   function handleMediaClick(event: React.MouseEvent<HTMLDivElement>) {
     if (!annotationMode || !mediaLayout) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const relativeX = event.clientX - rect.left - mediaLayout.left;
     const relativeY = event.clientY - rect.top - mediaLayout.top;
-
     if (relativeX < 0 || relativeY < 0 || relativeX > mediaLayout.width || relativeY > mediaLayout.height) {
       return;
     }
-
     setAnnotationDraft({
       x: (relativeX / mediaLayout.width) * 100,
       y: (relativeY / mediaLayout.height) * 100,
@@ -223,11 +255,9 @@ export function CatalogueFamilyLightbox({
     setLightboxPanel('annotations');
     setAnnotationError('');
   }
-
   async function addAnnotation() {
     const trimmed = annotationDraftText.trim();
     if (!annotationDraft || !trimmed) return;
-
     const item: LightboxAnnotation = {
       id: getAnnotationId(),
       x: annotationDraft.x,
@@ -239,26 +269,22 @@ export function CatalogueFamilyLightbox({
     const nextAnnotations = [...annotations, item];
     const saved = await saveAnnotations(nextAnnotations);
     if (!saved) return;
-
     setSelectedAnnotationId(item.id);
     setAnnotationDraft(null);
     setAnnotationDraftText('');
   }
-
   async function deleteAnnotation(annotationId: string) {
     const nextAnnotations = annotations.filter((annotation) => annotation.id !== annotationId);
     const saved = await saveAnnotations(nextAnnotations);
     if (!saved) return;
     if (selectedAnnotationId === annotationId) setSelectedAnnotationId(null);
   }
-
   async function requestDeleteFamily() {
     const shouldDelete = window.confirm(`Delete "${family.name}" and all of its variants?`);
     if (!shouldDelete) return;
     await onDeleteFamily(family.id);
     onClose();
   }
-
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (file && screenshot) {
@@ -266,7 +292,6 @@ export function CatalogueFamilyLightbox({
     }
     event.target.value = '';
   }
-
   function toggleAnnotationMode() {
     setAnnotationError('');
     setAnnotationMode((current) => {
@@ -278,66 +303,84 @@ export function CatalogueFamilyLightbox({
       return next;
     });
   }
-
-  function openDetails() {
-    onClose();
-    onOpenDetails(family.id);
-  }
-
-  async function commitName() {
-    const trimmed = nameDraft.trim();
-    setEditingLightboxName(false);
-    if (!trimmed || trimmed === family.name) {
-      setNameDraft(family.name);
+  function handleInlinePlatformChange(nextPlatform: 'mobile' | 'web' | null) {
+    setPlatformDraft(nextPlatform);
+    if (nextPlatform === 'web') {
+      setWebPresetDraft((current) => current || webPresets[0]?.key || null);
+      setMobileOsDraft(null);
       return;
     }
-    await onRenameFamily(family.id, trimmed);
+    if (nextPlatform === 'mobile') {
+      setMobileOsDraft((current) => current || 'ios');
+      setWebPresetDraft(null);
+      return;
+    }
+    setWebPresetDraft(null);
+    setMobileOsDraft(null);
   }
-
-  function openLightboxNameEditor() {
+  async function saveInlineDetails() {
+    if (!screenshot) return;
+    setIsSavingInline(true);
+    try {
+      const trimmedName = nameDraft.trim();
+      const trimmedGroup = groupDraft.trim();
+      const trimmedFlow = flowDraft.trim();
+      const nextVariant = buildLightboxDraftVariant(screenshot, {
+        mobileOs: mobileOsDraft,
+        platform: platformDraft,
+        theme: themeDraft,
+        webPresetKey: webPresetDraft,
+      });
+      if (trimmedName && trimmedName !== family.name) {
+        await onRenameFamily(family.id, trimmedName);
+      }
+      if (trimmedGroup !== (family.group || '')) {
+        await onChangeFamilyGroup(family.id, trimmedGroup || null);
+      }
+      if (trimmedFlow !== (flowName || '').trim()) {
+        const flowUpdated = await onSetFlowLabel(family.id, trimmedFlow || null);
+        if (!flowUpdated) return;
+      }
+      const variantChanged = (
+        nextVariant.theme !== screenshot.theme
+        || nextVariant.platform !== screenshot.platform
+        || nextVariant.web_preset_key !== screenshot.web_preset_key
+        || nextVariant.mobile_os !== screenshot.mobile_os
+      );
+      if (variantChanged) {
+        const updated = await onUpdateVariantDetails(screenshot.id, {
+          theme: nextVariant.theme,
+          platform: nextVariant.platform,
+          web_preset_key: nextVariant.web_preset_key,
+          mobile_os: nextVariant.mobile_os,
+        });
+        if (!updated) return;
+        onActiveVariantChange(family.id, getVariantKey(nextVariant));
+      }
+      setIsInlineEditing(false);
+    } finally {
+      setIsSavingInline(false);
+    }
+  }
+  function cancelInlineDetails() {
+    if (!screenshot) return;
     setNameDraft(family.name);
-    setEditingLightboxName(true);
+    setGroupDraft(family.group || '');
+    setFlowDraft(flowName || '');
+    setThemeDraft(screenshot.theme || null);
+    setPlatformDraft(screenshot.platform || null);
+    setWebPresetDraft(screenshot.web_preset_key || null);
+    setMobileOsDraft(screenshot.mobile_os || null);
+    setIsInlineEditing(false);
   }
-
   if (!isOpen || !screenshot || !activeVariant) {
     return null;
   }
-
   return createPortal(
     <div className="catalogue-lightbox" onClick={onClose}>
       <div className="catalogue-lightbox-header" onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-name-wrap">
-          {editingLightboxName ? (
-            <input
-              ref={lightboxNameRef}
-              className="catalogue-lightbox-name-input"
-              value={nameDraft}
-              onChange={(event) => setNameDraft(event.target.value)}
-              onBlur={() => { void commitName(); }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') void commitName();
-                if (event.key === 'Escape') {
-                  setNameDraft(family.name);
-                  setEditingLightboxName(false);
-                }
-              }}
-            />
-          ) : (
-            <>
-              <span className="catalogue-lightbox-name">{family.name}</span>
-              <button
-                type="button"
-                className="catalogue-lightbox-name-edit"
-                title="Edit family name"
-                onClick={openLightboxNameEditor}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                </svg>
-              </button>
-            </>
-          )}
+          <span className="catalogue-lightbox-name">{family.name}</span>
         </div>
         {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}>{family.group}</span>}
         {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
@@ -349,7 +392,6 @@ export function CatalogueFamilyLightbox({
           </svg>
         </button>
       </div>
-
       <div className="catalogue-lightbox-body" onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-media" ref={mediaRef} onClick={handleMediaClick} style={{ cursor: annotationMode ? 'crosshair' : 'default' }}>
           <img
@@ -397,7 +439,6 @@ export function CatalogueFamilyLightbox({
           )}
           {annotationMode && <div className="catalogue-lightbox-media-hint">Click the image to place a pin</div>}
         </div>
-
         <div className="catalogue-lightbox-comments">
           <div className="catalogue-family-lightbox">
             <div className="catalogue-family-lightbox__summary">
@@ -409,7 +450,6 @@ export function CatalogueFamilyLightbox({
                   </span>
                 </div>
               </div>
-
               <div className="catalogue-family-lightbox__variant-strip">
                 {family.variants.map((variant) => (
                   <button
@@ -422,14 +462,18 @@ export function CatalogueFamilyLightbox({
                   </button>
                 ))}
               </div>
-
               <div className="catalogue-family-lightbox__actions">
-                <button type="button" className="catalogue-family-lightbox__action" onClick={openDetails}>
+                <button
+                  type="button"
+                  className="catalogue-family-lightbox__action"
+                  onClick={() => (isInlineEditing ? cancelInlineDetails() : setIsInlineEditing(true))}
+                  disabled={isSavingInline}
+                >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                   </svg>
-                  Edit details
+                  {isInlineEditing ? 'Close edit' : 'Edit'}
                 </button>
                 <button type="button" className="catalogue-family-lightbox__action" onClick={() => fileRef.current?.click()}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -449,8 +493,29 @@ export function CatalogueFamilyLightbox({
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
               </div>
+              {isInlineEditing && (
+                <CatalogueFamilyLightboxInlineEditor
+                  flowDraft={flowDraft}
+                  groupDraft={groupDraft}
+                  isSaving={isSavingInline}
+                  mobileOsDraft={mobileOsDraft}
+                  nameDraft={nameDraft}
+                  platformDraft={platformDraft}
+                  themeDraft={themeDraft}
+                  webPresetDraft={webPresetDraft}
+                  webPresets={webPresets}
+                  onCancel={cancelInlineDetails}
+                  onFlowChange={setFlowDraft}
+                  onGroupChange={setGroupDraft}
+                  onMobileOsChange={setMobileOsDraft}
+                  onNameChange={setNameDraft}
+                  onPlatformChange={handleInlinePlatformChange}
+                  onSave={() => void saveInlineDetails()}
+                  onThemeChange={setThemeDraft}
+                  onWebPresetChange={setWebPresetDraft}
+                />
+              )}
             </div>
-
             <div className="catalogue-family-lightbox__panel">
               <div className="catalogue-lightbox-panel-tabs" role="tablist" aria-label="Lightbox details">
                 <button
@@ -472,7 +537,6 @@ export function CatalogueFamilyLightbox({
                   Annotations ({annotations.length})
                 </button>
               </div>
-
               {lightboxPanel === 'comments' ? (
                 <>
                   <div className="catalogue-lightbox-comments-list">
@@ -480,30 +544,18 @@ export function CatalogueFamilyLightbox({
                       <div className="catalogue-lightbox-comments-empty"><div className="loading-spinner" /></div>
                     ) : commentsError ? (
                       <p className="catalogue-lightbox-comments-empty">{commentsError}</p>
-                    ) : comments.length === 0 ? (
+                    ) : sortedComments.length === 0 ? (
                       <p className="catalogue-lightbox-comments-empty">No comments yet</p>
                     ) : (
-                      comments.map((comment) => (
-                        <div key={comment.id} className="catalogue-lightbox-comment">
-                          <div className="catalogue-lightbox-comment-top">
-                            <span className="catalogue-lightbox-comment-email">{comment.user_email}</span>
-                            <span className="catalogue-lightbox-comment-time">{formatDateTime(comment.created_at)}</span>
-                            {comment.user_email === userEmail && (
-                              <button
-                                type="button"
-                                className="catalogue-lightbox-comment-delete"
-                                title="Delete comment"
-                                onClick={() => void deleteComment(comment.id)}
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <line x1="18" y1="6" x2="6" y2="18" />
-                                  <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                          <p className="catalogue-lightbox-comment-text">{comment.text}</p>
-                        </div>
+                      sortedComments.map((comment) => (
+                        <CatalogueFamilyLightboxCommentItem
+                          key={comment.id}
+                          comment={comment}
+                          userEmail={userEmail}
+                          onDelete={(commentId) => void deleteComment(commentId)}
+                          onToggleResolve={(item) => void toggleResolveComment(item)}
+                          formatDateTime={formatDateTime}
+                        />
                       ))
                     )}
                   </div>

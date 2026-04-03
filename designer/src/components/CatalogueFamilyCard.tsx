@@ -12,8 +12,8 @@ interface CatalogueFamilyCardProps {
   isSelected: boolean;
   isVs: boolean;
   onDeleteFamily: (familyId: string) => Promise<void>;
-  onOpenDetails: (familyId: string) => void;
   onOpenPreview: (familyId: string) => void;
+  onOpenPreviewAndEdit: (familyId: string) => void;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onToggleSelect: (familyId: string) => void;
 }
@@ -26,8 +26,8 @@ export function CatalogueFamilyCard({
   isSelected,
   isVs,
   onDeleteFamily,
-  onOpenDetails,
   onOpenPreview,
+  onOpenPreviewAndEdit,
   onReplaceVariantImage,
   onToggleSelect,
 }: CatalogueFamilyCardProps) {
@@ -107,9 +107,9 @@ export function CatalogueFamilyCard({
           <button
             type="button"
             className="catalogue-card-action"
-            title="Edit details"
-            aria-label="Edit details"
-            onClick={() => onOpenDetails(family.id)}
+            title="Open preview"
+            aria-label="Open preview"
+            onClick={() => onOpenPreviewAndEdit(family.id)}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 20h9" />
@@ -165,7 +165,6 @@ export function CatalogueFamilyCard({
           <button type="button" className="catalogue-family-card__name" onClick={() => onOpenPreview(family.id)}>
             {family.name}
           </button>
-          <span className="catalogue-family-card__count">Screenshot</span>
         </div>
 
         <div className="catalogue-card-meta">

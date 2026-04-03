@@ -11,7 +11,6 @@ import { buildCatalogueFamilies } from '../lib/catalogue-families';
 import { DEFAULT_CATALOGUE_VIEW_MODE, parseCatalogueViewMode, type CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueContent } from './CatalogueContent';
-import { CatalogueFamilyDetailsModal } from './CatalogueFamilyDetailsModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
@@ -94,8 +93,8 @@ export function Catalogue({ user }: CatalogueProps) {
   });
 
   const [showSettings, setShowSettings] = useState(false);
-  const [detailsFamilyId, setDetailsFamilyId] = useState<string | null>(null);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
+  const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<BulkAction>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -118,7 +117,6 @@ export function Catalogue({ user }: CatalogueProps) {
     () => filteredFamilies.filter((family) => selected.has(family.id)).length,
     [filteredFamilies, selected],
   );
-  const detailsFamily = detailsFamilyId ? familyById[detailsFamilyId] ?? null : null;
   const previewFamily = previewFamilyId ? familyById[previewFamilyId] ?? null : null;
 
   const {
@@ -138,8 +136,8 @@ export function Catalogue({ user }: CatalogueProps) {
     filterProject: null,
     flowMap,
     onFamilyDeleted: (familyId) => {
-      setDetailsFamilyId((previous) => (previous === familyId ? null : previous));
       setPreviewFamilyId((previous) => (previous === familyId ? null : previous));
+      setPreviewStartInlineEdit(false);
       setSelected((previous) => {
         const next = new Set(previous);
         next.delete(familyId);
@@ -169,7 +167,6 @@ export function Catalogue({ user }: CatalogueProps) {
     upload.showQuickUpload ||
     showSettings ||
     previewFamily ||
-    detailsFamily ||
     bulkAction ||
     confirmDeleteOpen,
   );
@@ -187,12 +184,6 @@ export function Catalogue({ user }: CatalogueProps) {
       setPreviewFamilyId(null);
     }
   }, [familyById, previewFamilyId]);
-
-  useEffect(() => {
-    if (detailsFamilyId && !familyById[detailsFamilyId]) {
-      setDetailsFamilyId(null);
-    }
-  }, [detailsFamilyId, familyById]);
 
   useEffect(() => {
     if (!canViewTeamSection && activeSection === 'team') {
@@ -219,13 +210,13 @@ export function Catalogue({ user }: CatalogueProps) {
   }, [isAnyModalOpen]);
 
   function openPreview(familyId: string) {
-    setDetailsFamilyId(null);
+    setPreviewStartInlineEdit(false);
     setPreviewFamilyId(familyId);
   }
 
-  function openDetails(familyId: string) {
-    setPreviewFamilyId(null);
-    setDetailsFamilyId(familyId);
+  function openPreviewAndEdit(familyId: string) {
+    setPreviewStartInlineEdit(true);
+    setPreviewFamilyId(familyId);
   }
 
   function toggleSelect(familyId: string) {
@@ -366,8 +357,8 @@ export function Catalogue({ user }: CatalogueProps) {
                 onActiveVariantChange={upload.updateActiveVariant}
                 onChangeFamilyGroup={handleChangeFamilyGroup}
                 onDeleteFamily={handleDeleteFamily}
-                onOpenDetails={openDetails}
                 onOpenPreview={openPreview}
+                onOpenPreviewAndEdit={openPreviewAndEdit}
                 onRenameFamily={handleRenameFamily}
                 onRemoveReference={handleRemoveReference}
                 onReplaceVariantImage={handleReplaceImage}
@@ -474,34 +465,24 @@ export function Catalogue({ user }: CatalogueProps) {
           family={previewFamily}
           flowName={previewFamily.flow_label}
           isOpen
+          startInlineEdit={previewStartInlineEdit}
+          webPresets={webPresets}
           userEmail={user.email || ''}
           onActiveVariantChange={upload.updateActiveVariant}
           onAnnotationStateChange={handleAnnotationStateChange}
-          onClose={() => setPreviewFamilyId(null)}
+          onChangeFamilyGroup={handleChangeFamilyGroup}
+          onClose={() => {
+            setPreviewFamilyId(null);
+            setPreviewStartInlineEdit(false);
+          }}
           onCommentCountChange={handleCommentCountChange}
           onDeleteFamily={handleDeleteFamily}
-          onOpenDetails={openDetails}
           onRenameFamily={handleRenameFamily}
           onReplaceVariantImage={handleReplaceImage}
+          onSetFlowLabel={handleSetFlowLabel}
+          onUpdateVariantDetails={handleUpdateVariantDetails}
         />
       )}
-
-      <CatalogueFamilyDetailsModal
-        activeVariantKey={detailsFamily ? upload.activeVariantKeys[detailsFamily.id] ?? null : null}
-        family={detailsFamily}
-        flowName={detailsFamily?.flow_label || null}
-        isOpen={Boolean(detailsFamily)}
-        webPresets={webPresets}
-        onActiveVariantChange={upload.updateActiveVariant}
-        onChangeFamilyGroup={handleChangeFamilyGroup}
-        onClose={() => setDetailsFamilyId(null)}
-        onDeleteFamily={handleDeleteFamily}
-        onRenameFamily={handleRenameFamily}
-        onRemoveReference={handleRemoveReference}
-        onReplaceVariantImage={handleReplaceImage}
-        onSetFlowLabel={handleSetFlowLabel}
-        onUpdateVariantDetails={handleUpdateVariantDetails}
-      />
 
       {bulkAction === 'group' && (
         <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
