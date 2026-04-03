@@ -84,8 +84,9 @@
 
 .catalogue-lightbox-panel-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  padding: 12px;
+  padding: 10px 12px 12px;
   border-bottom: 1px solid #2a2a31;
   flex-shrink: 0;
   background: rgba(24, 24, 28, 0.9);
@@ -102,13 +103,15 @@
 }
 
 .catalogue-lightbox-tab {
-  flex: 1;
-  padding: 8px 10px;
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   background: transparent;
   color: #9ca3af;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 
   &:hover {
     background: rgba(12, 12, 14, 0.8);
@@ -118,7 +121,8 @@
   &.is-active {
     background: #101014;
     color: #f4f4f5;
-    box-shadow: inset 0 0 0 1px #2a2a31;
+    border-color: #2a2a31;
+    box-shadow: none;
   }
 }
 
@@ -152,6 +156,7 @@
 .catalogue-lightbox-annotation-toolbar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 12px;
   border-bottom: 1px solid #2a2a31;
@@ -223,6 +228,7 @@
 
 .catalogue-lightbox-annotation-composer-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 

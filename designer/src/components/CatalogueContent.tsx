@@ -29,12 +29,24 @@ interface CatalogueContentProps {
   vsGroups: string[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
   onAssignFlow: (familyId: string) => void;
+  onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenDetails: (familyId: string) => void;
   onOpenPreview: (familyId: string) => void;
+  onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onToggleGroupSelect: (familyIds: string[]) => void;
   onToggleSelect: (familyId: string) => void;
+  onUpdateVariantDetails: (
+    screenshotId: string,
+    patch: {
+      mobile_os?: 'ios' | 'android' | null;
+      platform?: 'mobile' | 'web' | null;
+      theme?: 'light' | 'dark' | null;
+      web_preset_key?: string | null;
+    },
+  ) => Promise<boolean>;
+  webPresets: { key: string; label: string; width: number }[];
 }
 
 export function CatalogueContent({
@@ -60,12 +72,16 @@ export function CatalogueContent({
   vsGroups,
   onActiveVariantChange,
   onAssignFlow,
+  onChangeFamilyGroup,
   onDeleteFamily,
   onOpenDetails,
   onOpenPreview,
+  onRenameFamily,
   onReplaceVariantImage,
   onToggleGroupSelect,
   onToggleSelect,
+  onUpdateVariantDetails,
+  webPresets,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
     searchQuery ||
@@ -127,11 +143,14 @@ export function CatalogueContent({
         selected={selected}
         onActiveVariantChange={onActiveVariantChange}
         onAssignFlow={onAssignFlow}
+        onChangeFamilyGroup={onChangeFamilyGroup}
         onDeleteFamily={onDeleteFamily}
-        onOpenDetails={onOpenDetails}
         onOpenPreview={onOpenPreview}
+        onRenameFamily={onRenameFamily}
         onReplaceVariantImage={onReplaceVariantImage}
         onToggleSelect={onToggleSelect}
+        onUpdateVariantDetails={onUpdateVariantDetails}
+        webPresets={webPresets}
       />
     );
   }

@@ -62,6 +62,7 @@ export function Dropdown({
       position: 'fixed',
       left: rect.left,
       width: Math.max(rect.width, 140),
+      zIndex: 1400,
       ...(openUpward
         ? { bottom: window.innerHeight - rect.top + 4 }
         : { top: rect.bottom + 4 }),

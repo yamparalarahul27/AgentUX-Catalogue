@@ -208,9 +208,9 @@ export function CatalogueFamilyDetailsModal({
       >
         <div className="catalogue-family-details-modal__head">
           <div>
-            <p className="catalogue-family-details-modal__eyebrow">Variant details</p>
+            <p className="catalogue-family-details-modal__eyebrow">Edit screenshot</p>
             <h3 id="catalogue-family-details-title">{currentFamily.name}</h3>
-            <p className="catalogue-family-details-modal__subhead">{currentVariant.label}</p>
+            <p className="catalogue-family-details-modal__subhead">Variant: {currentVariant.label}</p>
           </div>
           <button type="button" className="catalogue-family-details-modal__close" onClick={onClose} aria-label="Close details">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

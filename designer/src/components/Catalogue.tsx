@@ -379,12 +379,16 @@ export function Catalogue({ user }: CatalogueProps) {
               vsGroups={vsGroups}
               onActiveVariantChange={upload.updateActiveVariant}
               onAssignFlow={setAssignModal}
+              onChangeFamilyGroup={handleChangeFamilyGroup}
               onDeleteFamily={handleDeleteFamily}
               onOpenDetails={openDetails}
               onOpenPreview={openPreview}
+              onRenameFamily={handleRenameFamily}
               onReplaceVariantImage={handleReplaceImage}
               onToggleGroupSelect={toggleGroupSelection}
               onToggleSelect={toggleSelect}
+              onUpdateVariantDetails={handleUpdateVariantDetails}
+              webPresets={webPresets}
             />
           </div>
         </div>

@@ -348,226 +348,252 @@ export function CatalogueFamilyLightbox({
         </div>
 
         <div className="catalogue-lightbox-comments">
-          <div className="catalogue-family-lightbox__meta">
-            <div className="catalogue-family-lightbox__meta-row">
-              <span>Project</span>
-              <strong>{projectName}</strong>
-            </div>
-            <div className="catalogue-family-lightbox__meta-row">
-              <span>Flow</span>
-              <button
-                type="button"
-                className="catalogue-gallery-flow"
-                onClick={() => {
-                  onAssignFlow(family.id);
-                  onClose();
-                }}
-              >
-                {flowName || 'Unassigned'}
-              </button>
-            </div>
-          </div>
-
-          <div className="catalogue-family-lightbox__variant-strip">
-            {family.variants.map((variant) => (
-              <button
-                key={variant.key}
-                type="button"
-                className={`catalogue-family-card__variant ${activeVariant.key === variant.key ? 'is-active' : ''}`}
-                onClick={() => onActiveVariantChange(family.id, variant.key)}
-              >
-                {variant.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="catalogue-family-lightbox__actions">
-            <button type="button" className="catalogue-family-card__action" onClick={openDetails}>Edit details</button>
-            <button type="button" className="catalogue-family-card__action" onClick={() => fileRef.current?.click()}>Reupload</button>
-            <button type="button" className="catalogue-family-card__action is-danger" onClick={() => void requestDeleteFamily()}>Delete</button>
-            <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
-          </div>
-
-          <div className="catalogue-lightbox-panel-tabs" role="tablist" aria-label="Lightbox details">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={lightboxPanel === 'comments'}
-              className={`catalogue-lightbox-tab ${lightboxPanel === 'comments' ? 'is-active' : ''}`}
-              onClick={() => setLightboxPanel('comments')}
-            >
-              Comments ({comments.length})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={lightboxPanel === 'annotations'}
-              className={`catalogue-lightbox-tab ${lightboxPanel === 'annotations' ? 'is-active' : ''}`}
-              onClick={() => setLightboxPanel('annotations')}
-            >
-              Annotations ({annotations.length})
-            </button>
-          </div>
-
-          {lightboxPanel === 'comments' ? (
-            <>
-              <div className="catalogue-lightbox-comments-list">
-                {loadingComments ? (
-                  <div className="catalogue-lightbox-comments-empty"><div className="loading-spinner" /></div>
-                ) : commentsError ? (
-                  <p className="catalogue-lightbox-comments-empty">{commentsError}</p>
-                ) : comments.length === 0 ? (
-                  <p className="catalogue-lightbox-comments-empty">No comments yet</p>
-                ) : (
-                  comments.map((comment) => (
-                    <div key={comment.id} className="catalogue-lightbox-comment">
-                      <div className="catalogue-lightbox-comment-top">
-                        <span className="catalogue-lightbox-comment-email">{comment.user_email}</span>
-                        <span className="catalogue-lightbox-comment-time">{formatDateTime(comment.created_at)}</span>
-                        {comment.user_email === userEmail && (
-                          <button
-                            type="button"
-                            className="catalogue-lightbox-comment-delete"
-                            title="Delete comment"
-                            onClick={() => void deleteComment(comment.id)}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <line x1="18" y1="6" x2="6" y2="18" />
-                              <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                      <p className="catalogue-lightbox-comment-text">{comment.text}</p>
-                    </div>
-                  ))
-                )}
+          <div className="catalogue-family-lightbox">
+            <div className="catalogue-family-lightbox__summary">
+              <div className="catalogue-family-lightbox__meta">
+                <div className="catalogue-family-lightbox__meta-row">
+                  <span>Project</span>
+                  <strong>{projectName}</strong>
+                </div>
+                <div className="catalogue-family-lightbox__meta-row">
+                  <span>Flow</span>
+                  <button
+                    type="button"
+                    className="catalogue-gallery-flow"
+                    onClick={() => {
+                      onAssignFlow(family.id);
+                      onClose();
+                    }}
+                  >
+                    {flowName || 'Unassigned'}
+                  </button>
+                </div>
               </div>
-              <div className="catalogue-lightbox-comment-input">
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(event) => setNewComment(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') void addComment();
-                  }}
-                  placeholder="Add a comment..."
-                />
-                <button type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+
+              <div className="catalogue-family-lightbox__variant-strip">
+                {family.variants.map((variant) => (
+                  <button
+                    key={variant.key}
+                    type="button"
+                    className={`catalogue-family-card__variant ${activeVariant.key === variant.key ? 'is-active' : ''}`}
+                    onClick={() => onActiveVariantChange(family.id, variant.key)}
+                  >
+                    {variant.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="catalogue-family-lightbox__actions">
+                <button type="button" className="catalogue-family-lightbox__action" onClick={openDetails}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                   </svg>
+                  Edit details
                 </button>
+                <button type="button" className="catalogue-family-lightbox__action" onClick={() => fileRef.current?.click()}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                    <path d="M16 16h5v5" />
+                  </svg>
+                  Reupload
+                </button>
+                <button type="button" className="catalogue-family-lightbox__action is-danger" onClick={() => void requestDeleteFamily()}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  Delete
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
               </div>
-            </>
-          ) : (
-            <>
-              <div className="catalogue-lightbox-annotation-toolbar">
+            </div>
+
+            <div className="catalogue-family-lightbox__panel">
+              <div className="catalogue-lightbox-panel-tabs" role="tablist" aria-label="Lightbox details">
                 <button
                   type="button"
-                  className={`catalogue-lightbox-annotation-toggle ${annotationMode ? 'is-active' : ''}`}
-                  onClick={toggleAnnotationMode}
+                  role="tab"
+                  aria-selected={lightboxPanel === 'comments'}
+                  className={`catalogue-lightbox-tab ${lightboxPanel === 'comments' ? 'is-active' : ''}`}
+                  onClick={() => setLightboxPanel('comments')}
                 >
-                  {annotationMode ? 'Placement mode on' : 'Add pin'}
+                  Comments ({comments.length})
                 </button>
-                <span className="catalogue-lightbox-annotation-toolbar-copy">
-                  {annotationMode ? 'Click the image, then add a note.' : 'Select a pin to inspect it.'}
-                </span>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={lightboxPanel === 'annotations'}
+                  className={`catalogue-lightbox-tab ${lightboxPanel === 'annotations' ? 'is-active' : ''}`}
+                  onClick={() => setLightboxPanel('annotations')}
+                >
+                  Annotations ({annotations.length})
+                </button>
               </div>
-              {annotationError && <p className="catalogue-lightbox-annotation-error">{annotationError}</p>}
-              {annotationDraft && (
-                <div className="catalogue-lightbox-annotation-composer">
-                  <div className="catalogue-lightbox-annotation-composer-label">
-                    New pin at {annotationDraft.x.toFixed(1)}%, {annotationDraft.y.toFixed(1)}%
+
+              {lightboxPanel === 'comments' ? (
+                <>
+                  <div className="catalogue-lightbox-comments-list">
+                    {loadingComments ? (
+                      <div className="catalogue-lightbox-comments-empty"><div className="loading-spinner" /></div>
+                    ) : commentsError ? (
+                      <p className="catalogue-lightbox-comments-empty">{commentsError}</p>
+                    ) : comments.length === 0 ? (
+                      <p className="catalogue-lightbox-comments-empty">No comments yet</p>
+                    ) : (
+                      comments.map((comment) => (
+                        <div key={comment.id} className="catalogue-lightbox-comment">
+                          <div className="catalogue-lightbox-comment-top">
+                            <span className="catalogue-lightbox-comment-email">{comment.user_email}</span>
+                            <span className="catalogue-lightbox-comment-time">{formatDateTime(comment.created_at)}</span>
+                            {comment.user_email === userEmail && (
+                              <button
+                                type="button"
+                                className="catalogue-lightbox-comment-delete"
+                                title="Delete comment"
+                                onClick={() => void deleteComment(comment.id)}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                          <p className="catalogue-lightbox-comment-text">{comment.text}</p>
+                        </div>
+                      ))
+                    )}
                   </div>
-                  <input
-                    ref={annotationInputRef}
-                    type="text"
-                    value={annotationDraftText}
-                    onChange={(event) => setAnnotationDraftText(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') void addAnnotation();
-                      if (event.key === 'Escape') {
-                        setAnnotationDraft(null);
-                        setAnnotationDraftText('');
-                      }
-                    }}
-                    placeholder="Write annotation text..."
-                  />
-                  <div className="catalogue-lightbox-annotation-composer-actions">
-                    <button
-                      type="button"
-                      className="catalogue-lightbox-annotation-save"
-                      onClick={() => void addAnnotation()}
-                      disabled={!annotationDraftText.trim()}
-                    >
-                      Save pin
-                    </button>
-                    <button
-                      type="button"
-                      className="catalogue-lightbox-annotation-cancel"
-                      onClick={() => {
-                        setAnnotationDraft(null);
-                        setAnnotationDraftText('');
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-              <div className="catalogue-lightbox-annotation-list">
-                {annotations.length === 0 ? (
-                  <p className="catalogue-lightbox-comments-empty">No annotations yet</p>
-                ) : (
-                  annotations.map((annotation, index) => (
-                    <div
-                      key={annotation.id}
-                      role="button"
-                      tabIndex={0}
-                      className={`catalogue-lightbox-annotation-item ${selectedAnnotationId === annotation.id ? 'is-active' : ''}`}
-                      onClick={() => {
-                        setSelectedAnnotationId(annotation.id);
-                        setLightboxPanel('annotations');
-                      }}
+                  <div className="catalogue-lightbox-comment-input">
+                    <input
+                      type="text"
+                      value={newComment}
+                      onChange={(event) => setNewComment(event.target.value)}
                       onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          setSelectedAnnotationId(annotation.id);
-                        }
+                        if (event.key === 'Enter') void addComment();
                       }}
+                      placeholder="Add a comment..."
+                    />
+                    <button type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="catalogue-lightbox-annotation-toolbar">
+                    <button
+                      type="button"
+                      className={`catalogue-lightbox-annotation-toggle ${annotationMode ? 'is-active' : ''}`}
+                      onClick={toggleAnnotationMode}
                     >
-                      <div className="catalogue-lightbox-annotation-item-top">
-                        <span className="catalogue-lightbox-annotation-badge">{index + 1}</span>
-                        <span className="catalogue-lightbox-annotation-time">{formatDateTime(annotation.created_at)}</span>
-                        {annotation.user_email === userEmail && (
-                          <button
-                            type="button"
-                            className="catalogue-lightbox-annotation-delete"
-                            title="Delete annotation"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void deleteAnnotation(annotation.id);
-                            }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <line x1="18" y1="6" x2="6" y2="18" />
-                              <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                          </button>
-                        )}
+                      {annotationMode ? 'Placement mode on' : 'Add pin'}
+                    </button>
+                    <span className="catalogue-lightbox-annotation-toolbar-copy">
+                      {annotationMode ? 'Click the image, then add a note.' : 'Select a pin to inspect it.'}
+                    </span>
+                  </div>
+                  {annotationError && <p className="catalogue-lightbox-annotation-error">{annotationError}</p>}
+                  {annotationDraft && (
+                    <div className="catalogue-lightbox-annotation-composer">
+                      <div className="catalogue-lightbox-annotation-composer-label">
+                        New pin at {annotationDraft.x.toFixed(1)}%, {annotationDraft.y.toFixed(1)}%
                       </div>
-                      <p className="catalogue-lightbox-annotation-text">{annotation.text}</p>
-                      <span className="catalogue-lightbox-annotation-coords">
-                        {annotation.x.toFixed(1)}%, {annotation.y.toFixed(1)}%
-                      </span>
+                      <input
+                        ref={annotationInputRef}
+                        type="text"
+                        value={annotationDraftText}
+                        onChange={(event) => setAnnotationDraftText(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') void addAnnotation();
+                          if (event.key === 'Escape') {
+                            setAnnotationDraft(null);
+                            setAnnotationDraftText('');
+                          }
+                        }}
+                        placeholder="Write annotation text..."
+                      />
+                      <div className="catalogue-lightbox-annotation-composer-actions">
+                        <button
+                          type="button"
+                          className="catalogue-lightbox-annotation-save"
+                          onClick={() => void addAnnotation()}
+                          disabled={!annotationDraftText.trim()}
+                        >
+                          Save pin
+                        </button>
+                        <button
+                          type="button"
+                          className="catalogue-lightbox-annotation-cancel"
+                          onClick={() => {
+                            setAnnotationDraft(null);
+                            setAnnotationDraftText('');
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </>
-          )}
+                  )}
+                  <div className="catalogue-lightbox-annotation-list">
+                    {annotations.length === 0 ? (
+                      <p className="catalogue-lightbox-comments-empty">No annotations yet</p>
+                    ) : (
+                      annotations.map((annotation, index) => (
+                        <div
+                          key={annotation.id}
+                          role="button"
+                          tabIndex={0}
+                          className={`catalogue-lightbox-annotation-item ${selectedAnnotationId === annotation.id ? 'is-active' : ''}`}
+                          onClick={() => {
+                            setSelectedAnnotationId(annotation.id);
+                            setLightboxPanel('annotations');
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedAnnotationId(annotation.id);
+                            }
+                          }}
+                        >
+                          <div className="catalogue-lightbox-annotation-item-top">
+                            <span className="catalogue-lightbox-annotation-badge">{index + 1}</span>
+                            <span className="catalogue-lightbox-annotation-time">{formatDateTime(annotation.created_at)}</span>
+                            {annotation.user_email === userEmail && (
+                              <button
+                                type="button"
+                                className="catalogue-lightbox-annotation-delete"
+                                title="Delete annotation"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void deleteAnnotation(annotation.id);
+                                }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                          <p className="catalogue-lightbox-annotation-text">{annotation.text}</p>
+                          <span className="catalogue-lightbox-annotation-coords">
+                            {annotation.x.toFixed(1)}%, {annotation.y.toFixed(1)}%
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>,

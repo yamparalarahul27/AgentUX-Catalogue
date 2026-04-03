@@ -3,7 +3,7 @@
   align-items: center;
   border: 1px solid #33363f;
   border-radius: 999px;
-  padding: 2px;
+  padding: 4px;
   background: rgba(24, 24, 27, 0.9);
 }
 
@@ -196,6 +196,12 @@
   font-size: 11px;
   padding: 5px 8px;
   cursor: pointer;
+
+  &.is-primary {
+    color: #eef2ff;
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.45);
+  }
 
   &.is-danger {
     color: #fca5a5;
@@ -431,7 +437,7 @@
   min-height: 180px;
   max-height: 260px;
   overflow: auto;
-  padding-right: 2px;
+  padding-right: 4px;
 }
 
 .catalogue-gallery-comments-empty,
