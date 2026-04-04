@@ -1,5 +1,6 @@
 import type { ScreenFamily, ScreenshotNode, WebPreset } from '../types';
 export const CATALOGUE_FLOW_LABEL_KEY = 'catalogue_flow_label';
+const LEGACY_FAMILY_PREFIX = 'legacy-family-';
 
 export interface CatalogueVariantView {
   id: string;
@@ -46,7 +47,7 @@ export function getActiveFamilyVariant(
 
 export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
   return {
-    id: screenshot.id,
+    id: `${LEGACY_FAMILY_PREFIX}${screenshot.id}`,
     project_id: screenshot.project_id,
     name: screenshot.name,
     group: screenshot.group,
@@ -57,7 +58,7 @@ export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
 }
 
 export function getScreenshotFamilyId(screenshot: ScreenshotNode): string {
-  return screenshot.id;
+  return screenshot.screen_family_id || `${LEGACY_FAMILY_PREFIX}${screenshot.id}`;
 }
 
 export function getVariantKey(screenshot: ScreenshotNode): string {
@@ -101,10 +102,17 @@ export function getVariantLabel(
 
 export function buildCatalogueFamilies(
   screenshots: ScreenshotNode[],
-  _screenFamilies: ScreenFamily[],
+  screenFamilies: ScreenFamily[],
   presetMap: Record<string, WebPreset>,
 ): CatalogueFamilyView[] {
-  return screenshots.map((screenshot) => {
+  const familyMap = new Map(screenFamilies.map((family) => [family.id, family]));
+  const grouped = new Map<string, CatalogueFamilyView>();
+
+  for (const screenshot of screenshots) {
+    const familyId = getScreenshotFamilyId(screenshot);
+    const flowLabel = getScreenshotFlowLabel(screenshot);
+    const family = familyMap.get(familyId) || buildLegacyFamily(screenshot);
+    const existing = grouped.get(familyId);
     const variant: CatalogueVariantView = {
       id: screenshot.id,
       key: getVariantKey(screenshot),
@@ -112,16 +120,31 @@ export function buildCatalogueFamilies(
       screenshot,
     };
 
-    return {
-      id: screenshot.id,
-      name: screenshot.name,
-      group: screenshot.group,
-      flow_id: screenshot.flow_id,
-      flow_label: getScreenshotFlowLabel(screenshot),
-      project_id: screenshot.project_id,
-      created_at: screenshot.created_at,
-      isLegacy: false,
+    if (existing) {
+      if (!existing.variants.some((item) => item.key === variant.key && item.id === variant.id)) {
+        existing.variants.push(variant);
+      }
+      if (!existing.flow_label && flowLabel) {
+        existing.flow_label = flowLabel;
+      }
+      continue;
+    }
+
+    grouped.set(familyId, {
+      id: family.id,
+      name: family.name || screenshot.name,
+      group: family.group ?? screenshot.group,
+      flow_id: family.flow_id ?? screenshot.flow_id,
+      flow_label: flowLabel,
+      project_id: family.project_id || screenshot.project_id,
+      created_at: family.created_at || screenshot.created_at,
+      isLegacy: family.id.startsWith(LEGACY_FAMILY_PREFIX),
       variants: [variant],
-    };
-  });
+    });
+  }
+
+  return Array.from(grouped.values()).map((family) => ({
+    ...family,
+    variants: family.variants.sort((left, right) => left.label.localeCompare(right.label)),
+  }));
 }
