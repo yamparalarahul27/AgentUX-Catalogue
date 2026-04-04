@@ -18,6 +18,7 @@ import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
+import { CatalogueVideosSection } from './CatalogueVideosSection';
 import { ConfirmModal } from './ConfirmModal';
 import { Toast } from './Toast';
 
@@ -28,7 +29,7 @@ interface CatalogueProps {
 const CATALOGUE_VIEW_MODE_KEY = 'catalogue:view-mode';
 
 type BulkAction = 'group' | null;
-type CatalogueSection = 'catalogue' | 'team';
+type CatalogueSection = 'catalogue' | 'videos' | 'team';
 
 function defaultViewMode() {
   try {
@@ -297,6 +298,12 @@ export function Catalogue({ user }: CatalogueProps) {
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueTeamSection projects={projects} screenshots={screenshots} />
+          </div>
+        </main>
+      ) : activeSection === 'videos' ? (
+        <main className="catalogue-main">
+          <div className="catalogue-shell catalogue-shell--team">
+            <CatalogueVideosSection userEmail={user.email || 'Designer'} />
           </div>
         </main>
       ) : (

@@ -1,6 +1,6 @@
 import agentuxLogo from '../assets/agentux-logo.svg';
 
-type CatalogueSection = 'catalogue' | 'team';
+type CatalogueSection = 'catalogue' | 'videos' | 'team';
 
 interface CatalogueHeaderProps {
   activeSection: CatalogueSection;
@@ -30,17 +30,26 @@ export function CatalogueHeader({
         <h1>Catalogue</h1>
       </div>
 
-      {canViewTeam && (
-        <div className="catalogue-header__tabs" role="tablist" aria-label="Catalogue sections">
-          <button
-            type="button"
-            role="tab"
-            className={`catalogue-header__tab ${activeSection === 'catalogue' ? 'is-active' : ''}`}
-            aria-selected={activeSection === 'catalogue'}
-            onClick={() => onSectionChange('catalogue')}
-          >
-            Catalogue
-          </button>
+      <div className="catalogue-header__tabs" role="tablist" aria-label="Catalogue sections">
+        <button
+          type="button"
+          role="tab"
+          className={`catalogue-header__tab ${activeSection === 'catalogue' ? 'is-active' : ''}`}
+          aria-selected={activeSection === 'catalogue'}
+          onClick={() => onSectionChange('catalogue')}
+        >
+          Catalogue
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className={`catalogue-header__tab ${activeSection === 'videos' ? 'is-active' : ''}`}
+          aria-selected={activeSection === 'videos'}
+          onClick={() => onSectionChange('videos')}
+        >
+          Videos
+        </button>
+        {canViewTeam && (
           <button
             type="button"
             role="tab"
@@ -50,8 +59,8 @@ export function CatalogueHeader({
           >
             Team
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <button
         type="button"
