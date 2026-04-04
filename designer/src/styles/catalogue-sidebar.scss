@@ -60,6 +60,10 @@
   display: none;
 }
 
+.catalogue-toolbar-pill.catalogue-toolbar--mobile-only {
+  display: none;
+}
+
 .catalogue-mobile-search-row {
   display: none;
 }
@@ -392,6 +396,10 @@
   }
 
   .catalogue-toolbar--mobile-only {
+    display: inline-flex;
+  }
+
+  .catalogue-toolbar-pill.catalogue-toolbar--mobile-only {
     display: inline-flex;
   }
 

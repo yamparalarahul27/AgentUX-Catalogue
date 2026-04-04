@@ -45,6 +45,12 @@ interface ScreenshotComment {
   resolved_by_email?: string | null;
 }
 type LightboxPanel = 'comments' | 'annotations';
+
+function shouldStartLightboxSheetMinimized() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(max-width: 960px)').matches;
+}
+
 export function CatalogueFamilyLightbox({
   activeVariantKey,
   family,
@@ -68,7 +74,7 @@ export function CatalogueFamilyLightbox({
   const mediaRef = useRef<HTMLDivElement>(null);
   const annotationInputRef = useRef<HTMLInputElement>(null);
   const [lightboxPanel, setLightboxPanel] = useState<LightboxPanel>('comments');
-  const [sheetMinimized, setSheetMinimized] = useState(true);
+  const [sheetMinimized, setSheetMinimized] = useState(shouldStartLightboxSheetMinimized);
   const [isInlineEditing, setIsInlineEditing] = useState(startInlineEdit);
   const [isSavingInline, setIsSavingInline] = useState(false);
   const [nameDraft, setNameDraft] = useState(family.name);
@@ -110,6 +116,7 @@ export function CatalogueFamilyLightbox({
   useEffect(() => {
     if (!isOpen || !screenshot) return;
     setLightboxPanel('comments');
+    setSheetMinimized(shouldStartLightboxSheetMinimized());
     setComments([]);
     setNewComment('');
     setCommentsError('');

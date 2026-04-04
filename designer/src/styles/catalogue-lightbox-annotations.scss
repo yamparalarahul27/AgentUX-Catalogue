@@ -83,7 +83,7 @@
 }
 
 .catalogue-lightbox-grabber {
-  display: block;
+  display: none;
   width: 100%;
   min-height: 44px;
   padding: 16px 0;
@@ -467,6 +467,10 @@
 
   .catalogue-lightbox-comments::before {
     display: none;
+  }
+
+  .catalogue-lightbox-grabber {
+    display: block;
   }
 
   .catalogue-family-lightbox {
