@@ -10,6 +10,8 @@ function spaFallback(): Plugin {
         const url = req.url || '';
         if (url.startsWith('/designer/catalogue')) {
           req.url = '/designer/catalogue.html';
+        } else if (url.startsWith('/designer/ctest') || url.startsWith('/ctest')) {
+          req.url = '/designer/ctest.html';
         } else if (url.startsWith('/designer/project/')) {
           req.url = '/designer/index.html';
         }
@@ -29,6 +31,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         catalogue: path.resolve(__dirname, 'catalogue.html'),
+        ctest: path.resolve(__dirname, 'ctest.html'),
       },
     },
   },
