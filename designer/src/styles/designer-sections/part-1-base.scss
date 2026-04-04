@@ -395,6 +395,13 @@ body {
     align-items: center;
     gap: 12px;
 
+    .header-logo {
+      width: 90px;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+
     h1 {
       font-size: 18px;
       font-weight: 600;

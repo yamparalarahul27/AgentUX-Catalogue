@@ -4,6 +4,7 @@ import type { User } from '@supabase/supabase-js';
 import type { Project } from '../types';
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
+import agentuxLogo from '../assets/agentux-logo.svg';
 
 interface ProjectWithCounts extends Project {
   flow_count?: number;
@@ -137,11 +138,7 @@ export function ProjectList({ user, onLogout }: ProjectListProps) {
     <div className="project-list-page">
       <header className="project-list-header">
         <div className="header-left">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-            <path d="M3 7l6-4 6 4 6-4v14l-6 4-6-4-6 4V7z" />
-            <path d="M9 3v14" />
-            <path d="M15 7v14" />
-          </svg>
+          <img src={agentuxLogo} alt="AgentUX logo" className="header-logo" />
           <h1>Flow Builder</h1>
         </div>
         <div className="header-right">

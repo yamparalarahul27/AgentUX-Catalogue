@@ -1,3 +1,5 @@
+import agentuxLogo from '../assets/agentux-logo.svg';
+
 type CatalogueSection = 'catalogue' | 'team';
 
 interface CatalogueHeaderProps {
@@ -24,11 +26,7 @@ export function CatalogueHeader({
       </button>
 
       <div className="catalogue-header__title">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-          <path d="M3 7l6-4 6 4 6-4v14l-6 4-6-4-6 4V7z" />
-          <path d="M9 3v14" />
-          <path d="M15 7v14" />
-        </svg>
+        <img src={agentuxLogo} alt="AgentUX logo" className="catalogue-header-logo" />
         <h1>Catalogue</h1>
       </div>
 
