@@ -6,7 +6,7 @@ import { compressImage } from '../lib/catalogue-image';
 import { parseScreenshotName } from '../lib/naming';
 import { insertScreenshotWithUploader } from '../lib/screenshot-write';
 import { supabase } from '../lib/supabase';
-import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
+import type { MobileOs, Project, ScreenshotNode, WebPreset } from '../types';
 
 interface ToastState {
   message: string;
@@ -23,6 +23,7 @@ interface QuickUploadQueueItem {
 
 interface UseCatalogueUploadArgs {
   allFamilies: CatalogueFamilyView[];
+  projects: Project[];
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
   userEmail?: string | null;
@@ -32,6 +33,7 @@ interface UseCatalogueUploadArgs {
 
 export function useCatalogueUpload({
   allFamilies,
+  projects,
   setScreenshots,
   setToast,
   userEmail,
@@ -65,15 +67,19 @@ export function useCatalogueUpload({
     return { [CATALOGUE_FLOW_LABEL_KEY]: label };
   }
 
+  const defaultProjectId = projects[0]?.id ?? null;
+  const effectiveUploadProjectId = uploadProjectId ?? defaultProjectId;
+  const effectiveQuickUploadProjectId = quickUploadProjectId ?? defaultProjectId;
+
   const uploadProjectGroups = useMemo(() => {
-    const families = allFamilies.filter((family) => family.project_id === uploadProjectId);
+    const families = allFamilies.filter((family) => family.project_id === effectiveUploadProjectId);
     return [...new Set(families.map((family) => family.group).filter(Boolean))] as string[];
-  }, [allFamilies, uploadProjectId]);
+  }, [allFamilies, effectiveUploadProjectId]);
 
   const quickUploadProjectGroups = useMemo(() => {
-    const families = allFamilies.filter((family) => family.project_id === quickUploadProjectId);
+    const families = allFamilies.filter((family) => family.project_id === effectiveQuickUploadProjectId);
     return [...new Set(families.map((family) => family.group).filter(Boolean))] as string[];
-  }, [allFamilies, quickUploadProjectId]);
+  }, [allFamilies, effectiveQuickUploadProjectId]);
 
   const quickUploadQueuePreview = useMemo(
     () => quickUploadQueue.map((item) => ({
@@ -99,6 +105,16 @@ export function useCatalogueUpload({
       setUploadMobileOs(null);
     }
   }, [uploadMobileOs, uploadPlatform, uploadWebPresetKey, webPresets]);
+
+  useEffect(() => {
+    if (!showUpload || uploadProjectId || !defaultProjectId) return;
+    setUploadProjectId(defaultProjectId);
+  }, [defaultProjectId, showUpload, uploadProjectId]);
+
+  useEffect(() => {
+    if (!showQuickUpload || quickUploadProjectId || !defaultProjectId) return;
+    setQuickUploadProjectId(defaultProjectId);
+  }, [defaultProjectId, quickUploadProjectId, showQuickUpload]);
 
   function updateActiveVariant(familyId: string, variantKey: string) {
     setActiveVariantKeys((previous) => ({ ...previous, [familyId]: variantKey }));
@@ -195,7 +211,12 @@ export function useCatalogueUpload({
   }
 
   async function handleFilesSelected(files: File[]) {
-    if (!uploadProjectId || !uploadPlatform || !uploadTheme) return;
+    const projectId = uploadProjectId ?? defaultProjectId;
+    if (!projectId) {
+      setToast({ message: 'Create a project before uploading screenshots', type: 'error' });
+      return;
+    }
+    if (!uploadPlatform || !uploadTheme) return;
     const screenshotName = uploadNewFamilyName.trim();
     const screenshotGroup = uploadNewFamilyGroup.trim();
     if (!screenshotName || !screenshotGroup) {
@@ -206,7 +227,7 @@ export function useCatalogueUpload({
 
     setUploading(true);
 
-    const reference = await uploadReference(uploadProjectId);
+    const reference = await uploadReference(projectId);
     const inserted: ScreenshotNode[] = [];
     let failedCount = 0;
 
@@ -215,7 +236,7 @@ export function useCatalogueUpload({
         const compressed = await compressImage(file);
         const parsed = parseScreenshotName(file.name);
         const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-        const storagePath = `${userId}/${uploadProjectId}/${safeName}`;
+        const storagePath = `${userId}/${projectId}/${safeName}`;
         const { error: uploadError } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
 
         if (uploadError) {
@@ -226,7 +247,7 @@ export function useCatalogueUpload({
         const { data, error } = await insertScreenshotWithUploader({
           supabase,
           payload: {
-            project_id: uploadProjectId,
+            project_id: projectId,
             flow_id: null,
             screen_family_id: null,
             name: screenshotName,
@@ -286,11 +307,15 @@ export function useCatalogueUpload({
   }
 
   async function handleQuickUploadUploadAll() {
-    if (!quickUploadProjectId || quickUploadQueue.length === 0) {
+    const projectId = quickUploadProjectId ?? defaultProjectId;
+    if (quickUploadQueue.length === 0) {
+      return [] as ScreenshotNode[];
+    }
+    if (!projectId) {
+      setToast({ message: 'Create a project before uploading screenshots', type: 'error' });
       return [] as ScreenshotNode[];
     }
 
-    const projectId = quickUploadProjectId;
     const queue = [...quickUploadQueue];
     const mode = quickUploadGroupMode;
     const existingGroup = quickUploadExistingGroup?.trim() || null;

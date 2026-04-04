@@ -31,15 +31,16 @@ const DESKTOP_RESIZE_BREAKPOINT = 1200;
 const DEFAULT_COLUMN_WIDTHS = [30, 72, 240, 150, 170, 320, 110, 180];
 const MIN_COLUMN_WIDTHS = [30, 72, 180, 120, 140, 220, 96, 140];
 const HEADER_COLUMNS = [
-  { key: 'select', label: '', resizable: false },
-  { key: 'preview', label: 'Preview', resizable: true },
-  { key: 'family', label: 'Screenshot', resizable: true },
-  { key: 'group', label: 'Group', resizable: true },
-  { key: 'flow', label: 'Flow', resizable: true },
-  { key: 'variant', label: 'Variant', resizable: true },
-  { key: 'created', label: 'Created', resizable: true },
-  { key: 'actions', label: 'Actions', resizable: false },
+  { key: 'select', label: '', resizable: false, pinnable: false },
+  { key: 'preview', label: 'Preview', resizable: true, pinnable: true },
+  { key: 'family', label: 'Screenshot', resizable: true, pinnable: true },
+  { key: 'group', label: 'Group', resizable: true, pinnable: true },
+  { key: 'flow', label: 'Flow', resizable: true, pinnable: true },
+  { key: 'variant', label: 'Variant', resizable: true, pinnable: true },
+  { key: 'created', label: 'Created', resizable: true, pinnable: true },
+  { key: 'actions', label: 'Actions', resizable: false, pinnable: true },
 ] as const;
+type HeaderColumnKey = typeof HEADER_COLUMNS[number]['key'];
 
 interface InlineEditDraft {
   familyId: string;
@@ -109,6 +110,7 @@ export function CatalogueFamilyListView({
   const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
   const [inlineDraft, setInlineDraft] = useState<InlineEditDraft | null>(null);
   const [savingFamilyId, setSavingFamilyId] = useState<string | null>(null);
+  const [pinnedColumns, setPinnedColumns] = useState<HeaderColumnKey[]>([]);
 
   const familyLookup = useMemo(
     () => Object.fromEntries(families.map((family) => [family.id, family])),
@@ -121,6 +123,20 @@ export function CatalogueFamilyListView({
       '--catalogue-family-list-columns': columnWidths.map((width) => `${Math.round(width)}px`).join(' '),
     } as CSSProperties;
   }, [columnWidths, isDesktopResizable]);
+
+  const pinnedOffsets = useMemo(() => {
+    if (!isDesktopResizable || pinnedColumns.length === 0) return {} as Partial<Record<HeaderColumnKey, number>>;
+    const offsets: Partial<Record<HeaderColumnKey, number>> = {};
+    let left = 0;
+
+    HEADER_COLUMNS.forEach((column, index) => {
+      if (!pinnedColumns.includes(column.key)) return;
+      offsets[column.key] = left;
+      left += columnWidths[index] ?? DEFAULT_COLUMN_WIDTHS[index] ?? 160;
+    });
+
+    return offsets;
+  }, [columnWidths, isDesktopResizable, pinnedColumns]);
 
   useEffect(() => {
     function handleResize() {
@@ -243,6 +259,28 @@ export function CatalogueFamilyListView({
     });
   }
 
+  function isColumnPinned(columnKey: HeaderColumnKey) {
+    return isDesktopResizable && pinnedOffsets[columnKey] !== undefined;
+  }
+
+  function getPinnedCellStyle(columnKey: HeaderColumnKey): CSSProperties | undefined {
+    const left = pinnedOffsets[columnKey];
+    if (!isDesktopResizable || left === undefined) return undefined;
+    return { '--catalogue-pin-left': `${left}px` } as CSSProperties;
+  }
+
+  function togglePinnedColumn(columnKey: HeaderColumnKey) {
+    setPinnedColumns((previous) => {
+      if (previous.includes(columnKey)) {
+        return previous.filter((key) => key !== columnKey);
+      }
+      const next = [...previous, columnKey];
+      return HEADER_COLUMNS
+        .map((column) => column.key)
+        .filter((key): key is HeaderColumnKey => next.includes(key));
+    });
+  }
+
   async function saveInlineEdit(family: CatalogueFamilyView) {
     if (!inlineDraft || inlineDraft.familyId !== family.id || !isInlineDraftValid(inlineDraft)) return;
     const activeVariant = getActiveFamilyVariant(family, activeVariantKeys[family.id] ?? null);
@@ -305,8 +343,28 @@ export function CatalogueFamilyListView({
       <div className="catalogue-list-track">
         <div className="catalogue-list-header catalogue-list-header--family">
           {HEADER_COLUMNS.map((column, index) => (
-            <div key={column.key} className={`catalogue-list-header-cell ${column.key === 'select' ? 'is-empty' : ''}`}>
-              {column.label ? <span>{column.label}</span> : null}
+            <div
+              key={column.key}
+              className={`catalogue-list-header-cell ${column.key === 'select' ? 'is-empty' : ''} ${isColumnPinned(column.key) ? 'is-pinned' : ''}`}
+              style={getPinnedCellStyle(column.key)}
+            >
+              <div className="catalogue-list-header-cell__content">
+                {column.label ? <span>{column.label}</span> : null}
+                {isDesktopResizable && column.pinnable ? (
+                  <button
+                    type="button"
+                    className={`catalogue-list-pin-button ${isColumnPinned(column.key) ? 'is-pinned' : ''}`}
+                    aria-label={isColumnPinned(column.key) ? `Unpin ${column.label} column` : `Pin ${column.label} column`}
+                    title={isColumnPinned(column.key) ? 'Unpin column' : 'Pin column'}
+                    onClick={() => togglePinnedColumn(column.key)}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 3v6l4 4v1H6v-1l4-4V3" />
+                      <path d="M12 14v7" />
+                    </svg>
+                  </button>
+                ) : null}
+              </div>
               {isDesktopResizable && column.resizable ? (
                 <button
                   type="button"
@@ -330,7 +388,8 @@ export function CatalogueFamilyListView({
                 <div className={`catalogue-list-row catalogue-list-row--family ${selected.has(family.id) ? 'is-selected' : ''}`}>
                   <button
                     type="button"
-                    className={`catalogue-list-check ${selected.has(family.id) ? 'is-selected' : ''}`}
+                    className={`catalogue-list-check ${selected.has(family.id) ? 'is-selected' : ''} ${isColumnPinned('select') ? 'is-pinned' : ''}`}
+                    style={getPinnedCellStyle('select')}
                     onClick={() => onToggleSelect(family.id)}
                     title="Select family"
                   >
@@ -341,7 +400,12 @@ export function CatalogueFamilyListView({
                     )}
                   </button>
 
-                  <button type="button" className="catalogue-list-thumb" onClick={() => onOpenPreview(family.id)}>
+                  <button
+                    type="button"
+                    className={`catalogue-list-thumb ${isColumnPinned('preview') ? 'is-pinned' : ''}`}
+                    style={getPinnedCellStyle('preview')}
+                    onClick={() => onOpenPreview(family.id)}
+                  >
                     {activeScreenshot?.image_url ? (
                       <img src={activeScreenshot.image_url} alt={family.name} />
                     ) : (
@@ -349,18 +413,20 @@ export function CatalogueFamilyListView({
                     )}
                   </button>
 
-                  <div className="catalogue-list-name">
+                  <div className={`catalogue-list-name ${isColumnPinned('family') ? 'is-pinned' : ''}`} style={getPinnedCellStyle('family')}>
                     <button type="button" className="catalogue-list-name-btn" onClick={() => onOpenPreview(family.id)}>
                       {family.name}
                     </button>
                   </div>
 
-                  <span className="catalogue-list-group">{family.group || 'No group'}</span>
-                  <span className="catalogue-list-flow">
+                  <span className={`catalogue-list-group ${isColumnPinned('group') ? 'is-pinned' : ''}`} style={getPinnedCellStyle('group')}>
+                    {family.group || 'No group'}
+                  </span>
+                  <span className={`catalogue-list-flow ${isColumnPinned('flow') ? 'is-pinned' : ''}`} style={getPinnedCellStyle('flow')}>
                     {family.flow_label || 'Unassigned'}
                   </span>
 
-                  <div className="catalogue-family-list__variants">
+                  <div className={`catalogue-family-list__variants ${isColumnPinned('variant') ? 'is-pinned' : ''}`} style={getPinnedCellStyle('variant')}>
                     {family.variants.map((variant) => (
                       <button
                         key={variant.key}
@@ -373,9 +439,11 @@ export function CatalogueFamilyListView({
                     ))}
                   </div>
 
-                  <span className="catalogue-list-created">{formatCreatedAt(activeScreenshot?.created_at || family.created_at)}</span>
+                  <span className={`catalogue-list-created ${isColumnPinned('created') ? 'is-pinned' : ''}`} style={getPinnedCellStyle('created')}>
+                    {formatCreatedAt(activeScreenshot?.created_at || family.created_at)}
+                  </span>
 
-                  <div className="catalogue-list-actions">
+                  <div className={`catalogue-list-actions ${isColumnPinned('actions') ? 'is-pinned' : ''}`} style={getPinnedCellStyle('actions')}>
                     {isEditing ? (
                       <>
                         <button

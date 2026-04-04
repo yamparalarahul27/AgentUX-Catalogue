@@ -11,6 +11,7 @@ import { buildCatalogueFamilies } from '../lib/catalogue-families';
 import { DEFAULT_CATALOGUE_VIEW_MODE, parseCatalogueViewMode, type CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueContent } from './CatalogueContent';
+import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
@@ -24,6 +25,8 @@ import { Toast } from './Toast';
 
 interface CatalogueProps {
   user: User;
+  isGuest?: boolean;
+  onRequestLogin: (email: string) => void;
 }
 
 const CATALOGUE_VIEW_MODE_KEY = 'catalogue:view-mode';
@@ -47,7 +50,11 @@ function buildPresetUsage(screenshots: { web_preset_key: string | null }[]) {
   }, {});
 }
 
-export function Catalogue({ user }: CatalogueProps) {
+export function Catalogue({
+  user,
+  isGuest = false,
+  onRequestLogin,
+}: CatalogueProps) {
   const {
     flowMap,
     loading,
@@ -102,6 +109,7 @@ export function Catalogue({ user }: CatalogueProps) {
   const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const canViewTeamSection = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
 
@@ -157,6 +165,7 @@ export function Catalogue({ user }: CatalogueProps) {
   });
   const upload = useCatalogueUpload({
     allFamilies,
+    projects,
     setScreenshots,
     setToast,
     userEmail: user.email || null,
@@ -169,8 +178,61 @@ export function Catalogue({ user }: CatalogueProps) {
     showSettings ||
     previewFamily ||
     bulkAction ||
-    confirmDeleteOpen,
+    confirmDeleteOpen ||
+    showAuthPrompt,
   );
+
+  function requireEditAccess() {
+    if (!isGuest) return true;
+    setShowAuthPrompt(true);
+    return false;
+  }
+
+  async function guardMutation<T>(action: () => Promise<T>, fallback: T): Promise<T> {
+    if (!requireEditAccess()) return fallback;
+    return action();
+  }
+
+  function guardAction(action: () => void) {
+    if (!requireEditAccess()) return;
+    action();
+  }
+
+  async function handleGuestAwareDeleteFamily(familyId: string) {
+    await guardMutation(() => handleDeleteFamily(familyId), undefined);
+  }
+
+  async function handleGuestAwareRenameFamily(familyId: string, name: string) {
+    await guardMutation(() => handleRenameFamily(familyId, name), undefined);
+  }
+
+  async function handleGuestAwareChangeFamilyGroup(familyId: string, group: string | null) {
+    await guardMutation(() => handleChangeFamilyGroup(familyId, group), undefined);
+  }
+
+  async function handleGuestAwareReplaceImage(screenshotId: string, file: File) {
+    await guardMutation(() => handleReplaceImage(screenshotId, file), undefined);
+  }
+
+  async function handleGuestAwareSetFlowLabel(familyId: string, flowLabel: string | null) {
+    return guardMutation(() => handleSetFlowLabel(familyId, flowLabel), false);
+  }
+
+  async function handleGuestAwareUpdateVariantDetails(
+    screenshotId: string,
+    patch: {
+      mobile_os?: 'ios' | 'android' | null;
+      platform?: 'mobile' | 'web' | null;
+      theme?: 'light' | 'dark' | null;
+      web_preset_key?: string | null;
+    },
+  ) {
+    return guardMutation(() => handleUpdateVariantDetails(screenshotId, patch), false);
+  }
+
+  async function handleGuestAwareRemoveReference(screenshotId: string) {
+    return guardMutation(() => handleRemoveReference(screenshotId), false);
+  }
 
   useEffect(() => {
     try {
@@ -260,6 +322,7 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   async function handleBulkDelete() {
+    if (!requireEditAccess()) return;
     if (selected.size === 0) return;
     for (const familyId of selected) {
       await handleDeleteFamily(familyId);
@@ -268,6 +331,7 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   async function handleBulkChangeGroup(group: string) {
+    if (!requireEditAccess()) return;
     const trimmedGroup = group.trim();
     if (selected.size === 0 || !trimmedGroup) return;
     for (const familyId of selected) {
@@ -278,6 +342,7 @@ export function Catalogue({ user }: CatalogueProps) {
   }
 
   async function handleSavePresets(nextPresets: WebPreset[]) {
+    if (!requireEditAccess()) return;
     const result = await saveWebPresets(nextPresets);
     setToast({
       message: result.ok ? 'Catalogue presets updated' : 'Using local preset changes until the database is ready',
@@ -303,13 +368,29 @@ export function Catalogue({ user }: CatalogueProps) {
       ) : activeSection === 'videos' ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
-            <CatalogueVideosSection userEmail={user.email || 'Designer'} />
+            <CatalogueVideosSection
+              canEdit={!isGuest}
+              userEmail={user.email || 'Designer'}
+              onRequireAuth={() => setShowAuthPrompt(true)}
+            />
           </div>
         </main>
       ) : (
         <main className="catalogue-main">
           <div className="catalogue-shell">
             <div className="catalogue-body">
+              {isGuest && (
+                <div className="catalogue-guest-banner">
+                  <span>Read-only mode. Enter your email to upload, edit, or delete screenshots.</span>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setShowAuthPrompt(true)}
+                  >
+                    Enter Email
+                  </button>
+                </div>
+              )}
               <CatalogueToolbar
                 allFlows={allFlows}
                 allMobileOs={allMobileOs}
@@ -328,14 +409,22 @@ export function Catalogue({ user }: CatalogueProps) {
                 onFilterPlatformChange={setFilterPlatform}
                 onFilterThemeChange={setFilterTheme}
                 onFilterWebPresetChange={setFilterWebPreset}
-                onPrimaryGroupChange={handlePrimaryGroupChange}
-                onQuickUploadClick={() => upload.setShowQuickUpload(true)}
+                onPrimaryGroupChange={(value) => {
+                  void guardMutation(() => handlePrimaryGroupChange(value), undefined);
+                }}
+                onQuickUploadClick={() => {
+                  guardAction(() => upload.setShowQuickUpload(true));
+                }}
                 onSearchChange={setSearchQuery}
                 onSortByChange={setSortBy}
-                onUploadClick={() => upload.setShowUpload(true)}
+                onUploadClick={() => {
+                  guardAction(() => upload.setShowUpload(true));
+                }}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
-                onVsGroupsChange={handleVsGroupsChange}
+                onVsGroupsChange={(groups) => {
+                  void guardMutation(() => handleVsGroupsChange(groups), undefined);
+                }}
                 primaryGroup={primaryGroup}
                 searchQuery={searchQuery}
                 showGroupConfig={false}
@@ -362,17 +451,24 @@ export function Catalogue({ user }: CatalogueProps) {
                 viewMode={viewMode}
                 vsGroups={vsGroups}
                 onActiveVariantChange={upload.updateActiveVariant}
-                onChangeFamilyGroup={handleChangeFamilyGroup}
-                onDeleteFamily={handleDeleteFamily}
+                onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
+                onDeleteFamily={handleGuestAwareDeleteFamily}
                 onOpenPreview={openPreview}
-                onOpenPreviewAndEdit={openPreviewAndEdit}
-                onRenameFamily={handleRenameFamily}
-                onRemoveReference={handleRemoveReference}
-                onReplaceVariantImage={handleReplaceImage}
-                onSetFlowLabel={handleSetFlowLabel}
+                onOpenPreviewAndEdit={(familyId) => {
+                  if (isGuest) {
+                    openPreview(familyId);
+                    setShowAuthPrompt(true);
+                    return;
+                  }
+                  openPreviewAndEdit(familyId);
+                }}
+                onRenameFamily={handleGuestAwareRenameFamily}
+                onRemoveReference={handleGuestAwareRemoveReference}
+                onReplaceVariantImage={handleGuestAwareReplaceImage}
+                onSetFlowLabel={handleGuestAwareSetFlowLabel}
                 onToggleGroupSelect={toggleGroupSelection}
                 onToggleSelect={toggleSelect}
-                onUpdateVariantDetails={handleUpdateVariantDetails}
+                onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
                 webPresets={webPresets}
               />
             </div>
@@ -469,25 +565,27 @@ export function Catalogue({ user }: CatalogueProps) {
       {previewFamily && (
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
+          canEdit={!isGuest}
           family={previewFamily}
           flowName={previewFamily.flow_label}
           isOpen
+          onRequireAuth={() => setShowAuthPrompt(true)}
           startInlineEdit={previewStartInlineEdit}
           webPresets={webPresets}
           userEmail={user.email || ''}
           onActiveVariantChange={upload.updateActiveVariant}
           onAnnotationStateChange={handleAnnotationStateChange}
-          onChangeFamilyGroup={handleChangeFamilyGroup}
+          onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
           onClose={() => {
             setPreviewFamilyId(null);
             setPreviewStartInlineEdit(false);
           }}
           onCommentCountChange={handleCommentCountChange}
-          onDeleteFamily={handleDeleteFamily}
-          onRenameFamily={handleRenameFamily}
-          onReplaceVariantImage={handleReplaceImage}
-          onSetFlowLabel={handleSetFlowLabel}
-          onUpdateVariantDetails={handleUpdateVariantDetails}
+          onDeleteFamily={handleGuestAwareDeleteFamily}
+          onRenameFamily={handleGuestAwareRenameFamily}
+          onReplaceVariantImage={handleGuestAwareReplaceImage}
+          onSetFlowLabel={handleGuestAwareSetFlowLabel}
+          onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
         />
       )}
 
@@ -557,11 +655,25 @@ export function Catalogue({ user }: CatalogueProps) {
           selectedCount={selected.size}
           selectedVisibleCount={selectedVisibleCount}
           onClearSelection={clearSelection}
-          onOpenDeleteConfirm={() => setConfirmDeleteOpen(true)}
-          onOpenGroupDialog={() => setBulkAction('group')}
+          onOpenDeleteConfirm={() => {
+            guardAction(() => setConfirmDeleteOpen(true));
+          }}
+          onOpenGroupDialog={() => {
+            guardAction(() => setBulkAction('group'));
+          }}
           onSelectAllVisible={selectAllVisible}
         />
       )}
+
+      <CatalogueEmailPromptModal
+        isOpen={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        onSubmit={(email) => {
+          onRequestLogin(email);
+          setShowAuthPrompt(false);
+          setToast({ message: 'Editing enabled for this session.', type: 'success' });
+        }}
+      />
     </div>
   );
 }

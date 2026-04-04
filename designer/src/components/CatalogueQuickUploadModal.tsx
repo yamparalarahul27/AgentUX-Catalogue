@@ -73,37 +73,33 @@ export function CatalogueQuickUploadModal({
         onClick={(event) => event.stopPropagation()}
       >
         <h3 id="catalogue-quick-upload-title">Quick Upload</h3>
-        <p className="catalogue-upload-subtitle">Select a project, configure group assignment, queue files, then upload all.</p>
+        <p className="catalogue-upload-subtitle">Project selection is optional. Queue files first, then upload all.</p>
 
         <Dropdown
           className="catalogue-upload-project-dropdown"
           value={projectId}
-          placeholder="Select a project..."
+          placeholder="Project (optional)"
           options={projects.map((project) => ({ value: project.id, label: project.name }))}
           onChange={onQuickUploadProjectChange}
         />
 
-        {projectId ? (
-          <CatalogueQuickUploadPanel
-            flowLabel={flowLabel}
-            uploading={uploading}
-            quickUploadGroupMode={quickUploadGroupMode}
-            quickUploadExistingGroup={quickUploadExistingGroup}
-            quickUploadNewGroup={quickUploadNewGroup}
-            quickUploadProjectGroups={quickUploadProjectGroups}
-            quickUploadQueue={quickUploadQueue}
-            onQuickUploadFlowLabelChange={onQuickUploadFlowLabelChange}
-            onQuickUploadFilesSelected={onQuickUploadFilesSelected}
-            onQuickUploadGroupModeChange={onQuickUploadGroupModeChange}
-            onQuickUploadExistingGroupChange={onQuickUploadExistingGroupChange}
-            onQuickUploadNewGroupChange={onQuickUploadNewGroupChange}
-            onQuickUploadRemoveQueuedFile={onQuickUploadRemoveQueuedFile}
-            onQuickUploadClearQueue={onQuickUploadClearQueue}
-            onQuickUploadUploadAll={onQuickUploadUploadAll}
-          />
-        ) : (
-          <p className="catalogue-upload-hint">Select a project above to enable upload.</p>
-        )}
+        <CatalogueQuickUploadPanel
+          flowLabel={flowLabel}
+          uploading={uploading}
+          quickUploadGroupMode={quickUploadGroupMode}
+          quickUploadExistingGroup={quickUploadExistingGroup}
+          quickUploadNewGroup={quickUploadNewGroup}
+          quickUploadProjectGroups={quickUploadProjectGroups}
+          quickUploadQueue={quickUploadQueue}
+          onQuickUploadFlowLabelChange={onQuickUploadFlowLabelChange}
+          onQuickUploadFilesSelected={onQuickUploadFilesSelected}
+          onQuickUploadGroupModeChange={onQuickUploadGroupModeChange}
+          onQuickUploadExistingGroupChange={onQuickUploadExistingGroupChange}
+          onQuickUploadNewGroupChange={onQuickUploadNewGroupChange}
+          onQuickUploadRemoveQueuedFile={onQuickUploadRemoveQueuedFile}
+          onQuickUploadClearQueue={onQuickUploadClearQueue}
+          onQuickUploadUploadAll={onQuickUploadUploadAll}
+        />
       </div>
     </div>,
     document.body,

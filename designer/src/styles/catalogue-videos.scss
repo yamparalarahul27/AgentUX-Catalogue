@@ -47,6 +47,67 @@
   }
 }
 
+.catalogue-videos__add-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  input {
+    flex: 1;
+    min-width: min(420px, 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: #101015;
+    color: #f4f4f5;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+
+    &::placeholder {
+      color: #71717a;
+    }
+  }
+
+  button {
+    border: none;
+    border-radius: 999px;
+    background: #6366f1;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 9px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}
+
+.catalogue-videos__error {
+  margin: -6px 0 0;
+  color: #fda4af;
+  font-size: 12px;
+}
+
+.catalogue-videos__loading {
+  margin: 2px 0 0;
+  color: #a1a1aa;
+  font-size: 12px;
+}
+
+.catalogue-videos__section-title {
+  margin: 8px 0 0;
+  color: #d4d4d8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .catalogue-videos__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -83,6 +144,21 @@
   }
 }
 
+.catalogue-videos__remove-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 999px;
+  background: rgba(136, 19, 55, 0.45);
+  color: #fecdd3;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+
 .catalogue-videos__player-wrap {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: #09090b;
@@ -93,6 +169,18 @@
   width: 100%;
   max-height: 290px;
   background: #09090b;
+}
+
+.catalogue-videos__tweet-wrap {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #09090b;
+}
+
+.catalogue-videos__tweet {
+  display: block;
+  width: 100%;
+  min-height: 295px;
+  border: none;
 }
 
 .catalogue-videos__meta {
@@ -158,6 +246,15 @@
   width: 100%;
   height: 100%;
   max-height: calc(100vh - 48px);
+  background: #050507;
+}
+
+.catalogue-videos-preview__tweet {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: min(760px, calc(100vh - 48px));
+  border: none;
   background: #050507;
 }
 
@@ -307,6 +404,13 @@
     grid-template-columns: 1fr;
   }
 
+  .catalogue-videos__add-row {
+    input {
+      min-width: 0;
+      width: 100%;
+    }
+  }
+
   .catalogue-videos-preview {
     padding: 10px;
   }
@@ -324,5 +428,9 @@
 
   .catalogue-videos-preview__player {
     max-height: none;
+  }
+
+  .catalogue-videos-preview__tweet {
+    min-height: 100%;
   }
 }
