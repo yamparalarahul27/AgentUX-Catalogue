@@ -164,9 +164,10 @@ export function CatalogueToolbar({
             />
           </div>
 
+          {/* Desktop: text button — hidden on mobile */}
           <button
             type="button"
-            className="btn-secondary catalogue-filter-toggle"
+            className="btn-secondary catalogue-filter-toggle catalogue-toolbar--desktop-only"
             onClick={() => setFilterSheetOpen(true)}
           >
             Filter
@@ -175,6 +176,25 @@ export function CatalogueToolbar({
             )}
           </button>
 
+          {/* Mobile: filter icon pill — hidden on desktop */}
+          <button
+            type="button"
+            className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
+            onClick={() => setFilterSheetOpen(true)}
+            title="Filter"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <line x1="4" y1="18" x2="20" y2="18" />
+              <circle cx="8" cy="6" r="2" fill="currentColor" />
+              <circle cx="16" cy="12" r="2" fill="currentColor" />
+              <circle cx="10" cy="18" r="2" fill="currentColor" />
+            </svg>
+            {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
+          </button>
+
+          {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
           <Dropdown
             value={sortBy}
             placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
@@ -185,6 +205,7 @@ export function CatalogueToolbar({
             ]}
             onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
             disabled={isSortLocked}
+            className="catalogue-sort-dropdown"
           />
 
           <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
