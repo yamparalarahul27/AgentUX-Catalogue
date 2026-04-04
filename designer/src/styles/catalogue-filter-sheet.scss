@@ -59,6 +59,33 @@
   }
 }
 
+.catalogue-filter-sheet__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalogue-filter-sheet__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #303038;
+  border-radius: 10px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #f4f4f5;
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
 .catalogue-filter-sheet__clear {
   border: 0;
   background: transparent;
