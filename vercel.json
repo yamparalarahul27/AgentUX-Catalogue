@@ -4,6 +4,8 @@
   "rewrites": [
     { "source": "/designer/catalogue", "destination": "/designer/catalogue.html" },
     { "source": "/designer/catalogue/(.*)", "destination": "/designer/catalogue.html" },
+    { "source": "/designer/cd", "destination": "/designer/cd.html" },
+    { "source": "/designer/cd/(.*)", "destination": "/designer/cd.html" },
     { "source": "/designer", "destination": "/designer/index.html" },
     { "source": "/designer/(.*)", "destination": "/designer/index.html" }
   ]
