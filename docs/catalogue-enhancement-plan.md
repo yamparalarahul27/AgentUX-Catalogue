@@ -182,10 +182,10 @@ vs COINBASE — Deposit Flow — 3 steps (-1)
 
 | Step | Feature | Effort | Dependencies |
 |------|---------|--------|-------------|
-| 1 | Quick Upload Enhancement | Medium | None |
-| 2 | Rename existing screenshots (run locally) | Medium | Step 1 naming convention |
+| 1 | Rename existing screenshots (run locally) | Medium | Naming convention defined |
+| 2 | Quick Upload Enhancement | Medium | Step 1 validates the convention |
 | 3 | Activate primary_group + vs_groups | Small | None |
-| 4 | Flow comparison view | Large | Steps 1 + 3 |
+| 4 | Flow comparison view | Large | Steps 2 + 3 |
 | 5 | Screen audit dashboard | Medium | Step 4 |
 
 **Note:** Video support (reference videos + X post embeds + comments) is already shipped in `CatalogueVideosSection.tsx`.
