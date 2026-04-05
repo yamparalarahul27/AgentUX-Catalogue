@@ -100,16 +100,30 @@ Same filenames for competitors — batch group changes (Binance, Coinbase, etc.)
 
 ### Renaming Existing Screenshots
 
-For screenshots already uploaded without the naming convention:
+For screenshots already uploaded without the naming convention, run this **locally** (not in cloud/sandbox — needs internet access to Supabase):
 
-**Option A: Claude Code (multimodal)**
-- Download screenshots to a local folder
-- Prompt Claude Code to look at each image, identify the flow and screen, rename following the convention
-- Provide a reference list of flows/screens for accuracy
-- Re-upload with Quick Upload batch settings
+**Prerequisites:**
+- Clone the repo on your local machine
+- `.env` file with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` set
+- Claude Code CLI installed
 
-**Option B: Rename within Catalogue (future)**
-- If inline rename + flow label assignment is added, screenshots can be organized without re-uploading
+**Steps:**
+1. Open Claude Code in the repo folder on your local machine
+2. Ask Claude Code to run a script that:
+   - Queries Supabase for all screenshot records (id, name, image_url, metadata)
+   - Downloads each image to a temp folder
+3. Claude Code reads each image (multimodal) and identifies:
+   - The app/brand (from UI/branding in the screenshot)
+   - The flow (deposit, withdraw, auth, etc.)
+   - The screen name (select coin, review, success, etc.)
+   - The logical sequence within the flow
+4. Claude Code generates rename mappings and updates Supabase:
+   - `name` → new parsed screen name
+   - `metadata.catalogue_flow_label` → identified flow
+   - `sequence` → order within the flow
+5. Provide a reference list of expected flows/screens for better accuracy
+
+**Note:** This cannot be done from the cloud sandbox environment (no external internet). Must be run locally where Supabase is reachable.
 
 ### Implementation
 - Add batch fields to Quick Upload: group, platform, theme, preset/OS
