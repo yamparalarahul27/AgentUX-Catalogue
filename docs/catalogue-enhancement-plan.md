@@ -4,46 +4,169 @@ Single source of truth for all Catalogue feature planning, research, and decisio
 
 ---
 
-## 1. Video Support
+## UX Design: Unified Catalogue
 
-### Problem
-Add video support to Catalogue. Supabase free tier (1 GB storage, 2 GB bandwidth/month) makes direct video storage impractical.
+### Principle
+Catalogue is the **single home** for all screenshot and flow work. No separate Flow Builder needed for comparison workflows. Everything lives in one scrollable, mobile-friendly space.
 
-### Storage Comparison
+### Three Modes (same page, same toolbar)
 
-| Content type | Typical size | Fits in 1 GB |
-|-------------|-------------|--------------|
-| Screenshot (WebP) | 50-200 KB | 5,000+ |
-| 15s recording | 5-15 MB | 50-100 |
-| 1 min clip | 20-50 MB | 20-50 |
+| Tab | Sub-mode | What shows |
+|-----|----------|------------|
+| **Screens** | Compare OFF | Normal grid/list/gallery (existing) |
+| **Screens** | Compare ON | Flow strips stacked by group (new) |
+| **Videos** | — | Reference videos + X posts (existing, shipped) |
 
-### Services Evaluated
+Compare is a **toggle within the Screens tab**, not a separate page.
 
-| Service | Free Tier | Fit |
-|---------|-----------|-----|
-| **Cloudflare R2** | 10 GB, zero egress | Best self-hosted |
-| **Cloudflare Stream** | $5/mo for 1000 min | Best UX, paid |
-| **Bunny.net** | ~$0.01/GB | Great budget option |
-| **YouTube** | Free but re-encodes, no upload API, content policy risks | Not suitable |
+### Mobile Layout — Screens (Compare OFF, default)
 
-### Decision: Phased approach
-- **Phase 1**: External URL (paste Loom/Drive/mp4 link). Zero cost. Add `video_url` text field to screenshots table.
-- **Phase 2**: Direct upload via Cloudflare R2 when ready to scale.
-
-### Schema (Phase 1)
-```sql
-ALTER TABLE screenshots ADD COLUMN video_url text;
+```
+┌─────────────────────────────┐
+│  [≡] [↕] [⊞≡🖥] [🔍] [+]  │  ← existing toolbar
+├─────────────────────────────┤
+│  [Screens] [Videos]         │  ← existing tabs
+├─────────────────────────────┤
+│                              │
+│  ☐ Deposit Address    (37)  │  ← normal grid
+│  ┌───────────────────────┐  │
+│  │     screenshot        │  │
+│  └───────────────────────┘  │
+│                              │
+│  ☐ Coin Suspended     (12)  │
+│  ┌───────────────────────┐  │
+│  │     screenshot        │  │
+│  └───────────────────────┘  │
+│                              │
+└─────────────────────────────┘
 ```
 
-### UI (Phase 1)
-- Upload Modal: optional "Video URL" input
-- Family Card: video badge when video_url exists
-- Lightbox: image/video toggle
+### Mobile Layout — Screens (Compare ON)
 
-### Open Decisions
-- [ ] Confirm Phase 1 approach
-- [ ] Video per-variant or per-family?
-- [ ] Accepted URL formats
+```
+┌─────────────────────────────┐
+│  [≡] [↕] [⊞≡🖥] [🔍] [+]  │
+├─────────────────────────────┤
+│  [Screens] [Videos]         │
+│  [Deposit ▾]  [Compare: ON] │  ← flow picker + toggle
+├─────────────────────────────┤
+│                              │
+│  Crpko ● · 4 steps          │  ← primary group first
+│  ┌───┐ → ┌───┐ → ┌───┐ → ┌───┐
+│  │   │   │   │   │   │   │   │
+│  └───┘   └───┘   └───┘   └───┘
+│  Select   Amount  Review   Done
+│                              │
+│  ─────────────────────────── │
+│                              │
+│  Binance · 3 steps · -1     │  ← vs group
+│  ┌───┐ → ┌───┐ → ┌───┐    │
+│  │   │   │   │   │   │     │
+│  └───┘   └───┘   └───┘     │
+│  Select   Address  Done     │
+│           ⚠ Missing: Review │
+│                              │
+│  ─────────────────────────── │
+│                              │
+│  Coinbase · 4 steps · +1    │  ← vs group
+│  ┌───┐ → ┌───┐ → ┌───┐ → ┌───┐
+│  │   │   │   │   │   │   │   │
+│  └───┘   └───┘   └───┘   └───┘
+│  Select   Network  Review   Done
+│           ★ Extra: Network   │
+│                              │
+└─────────────────────────────┘
+        ↕ scroll
+```
+
+### Mobile Layout — Videos (existing, unchanged)
+
+```
+┌─────────────────────────────┐
+│  [≡] [↕] [⊞≡🖥] [🔍] [+]  │
+├─────────────────────────────┤
+│  [Screens] [Videos]         │  ← Videos active
+├─────────────────────────────┤
+│                              │
+│  Reference Videos            │
+│  ┌─────┐ ┌─────┐ ┌─────┐  │
+│  │ ▶️  │ │ ▶️  │ │ ▶️  │  │
+│  └─────┘ └─────┘ └─────┘  │
+│                              │
+│  X Posts                     │
+│  ┌─────────────────────┐    │
+│  │  embedded tweet      │    │
+│  └─────────────────────┘    │
+│                              │
+└─────────────────────────────┘
+```
+
+### Desktop Layout — Compare ON
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  AgentUX                                    [rahul] [⚙]     │
+├──────────────────────────────────────────────────────────────┤
+│  [Search......] [Filter] [Sort ▾] [⊞≡🖥]  [Quick] [+Upload]│
+│  [Screens] [Videos]       [Deposit ▾]        [Compare: ON]  │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌─ Crpko (Primary) ─── Deposit ───────────────────────────┐│
+│  │                                                          ││
+│  │  ┌─────┐  →  ┌─────┐  →  ┌─────┐  →  ┌─────┐         ││
+│  │  │ img │     │ img │     │ img │     │ img │          ││
+│  │  └─────┘     └─────┘     └─────┘     └─────┘         ││
+│  │  Select      Amount      Review       Success          ││
+│  │  4 steps                                               ││
+│  └────────────────────────────────────────────────────────┘│
+│                                                               │
+│  ┌─ Binance ─── Deposit ───────────────────────────────────┐│
+│  │  ┌─────┐  →  ┌─────┐  →  ┌─────┐       3 steps        ││
+│  │  │ img │     │ img │     │ img │       -1 vs primary   ││
+│  │  └─────┘     └─────┘     └─────┘       ⚠ Missing:     ││
+│  │  Select      Address     Success         Review         ││
+│  └────────────────────────────────────────────────────────┘│
+│                                                               │
+│  ┌─ Coinbase ─── Deposit ──────────────────────────────────┐│
+│  │  ┌─────┐  →  ┌─────┐  →  ┌─────┐  →  ┌─────┐         ││
+│  │  │ img │     │ img │     │ img │     │ img │  4 steps ││
+│  │  └─────┘     └─────┘     └─────┘     └─────┘  +1 extra││
+│  │  Select      Network     Review       Success  ★Network││
+│  └────────────────────────────────────────────────────────┘│
+│                                                               │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Compare Mode Behavior
+
+| Action | Result |
+|--------|--------|
+| Toggle Compare ON | Flow picker appears, view switches to flow-strip layout |
+| Toggle Compare OFF | Back to normal grid/list/gallery |
+| Change flow in picker | Shows that flow across all groups |
+| Tap a screenshot in strip | Opens existing lightbox |
+| Scroll vertically | See more groups for the same flow |
+| Horizontal swipe on strip | See more steps if flow is long |
+
+### Insights (shown per vs group)
+
+| Insight | When shown |
+|---------|-----------|
+| `+N steps` / `-N steps` | Step count differs from primary |
+| `⚠ Missing: {screen}` | Primary has a step that vs group doesn't |
+| `★ Extra: {screen}` | Vs group has a step that primary doesn't |
+| Similarity score | Percentage overlap with primary |
+
+---
+
+## 1. Video Support — SHIPPED
+
+Already built in `CatalogueVideosSection.tsx`:
+- Reference videos from benji.org (55 clips)
+- X/Twitter post embeds with save/remove
+- Comments per video/post (stored in `catalogue_video_comments`)
+- Preview modal with video player + comments panel
+- Accessible via Videos tab in header
 
 ---
 
@@ -133,10 +256,10 @@ For screenshots already uploaded without the naming convention, run this **local
 
 ---
 
-## 3. Primary Group + Flow Comparison
+## 3. Primary Group + Compare Mode
 
 ### Problem
-Need to set Crpko as primary product and compare its flows against competitors (Binance, Coinbase, etc.) to identify extra steps, missing screens, and flow differences.
+Need to set Crpko as primary product and compare its flows against competitors.
 
 ### Existing Infrastructure (already in codebase)
 
@@ -148,31 +271,40 @@ Need to set Crpko as primary product and compare its flows against competitors (
 | `metadata.catalogue_flow_label` | Working |
 | Group config UI | Built in toolbar (`showGroupConfig={false}` in Catalogue.tsx) |
 | Sort by primary → vs groups | Already implemented in `useCatalogueFilters` |
+| Flow comparison engine | `lib/compare-flows.ts` — diffs steps + transitions, similarity score |
+| Step normalizer | `lib/flow-step-normalizer.ts` — normalizes names for matching |
+| FlowCompareModal UI | `FlowCompareModal.tsx` — side-by-side with shared/unique sections |
+| Auto-connect algorithm | `lib/auto-connect.ts` — sequence + group based |
 
-### Activation Steps
+### What needs to happen
+
+**3a. Activate primary/vs groups:**
 1. Remove hardcoded `null`/`[]` in `useCatalogueFilters`
 2. Set `showGroupConfig={true}` in `Catalogue.tsx`
 3. Primary group gets badge, sorts first
-4. Vs groups sort after primary
 
-### Flow Comparison View
+**3b. Add Compare toggle to toolbar:**
+1. Compare toggle button in toolbar (within Screens tab)
+2. Flow picker dropdown (shows available flow labels)
+3. When ON: switches from grid to flow-strip view
 
-New view mode alongside grid/list/gallery:
-```
-BINANCE (Primary) — Deposit Flow — 4 steps
-┌─────┐ → ┌─────┐ → ┌─────┐ → ┌─────┐
-│  1  │   │  2  │   │  3  │   │  4  │
-└─────┘   └─────┘   └─────┘   └─────┘
+**3c. Build flow-strip compare view:**
+1. Group screenshots by `group` + `flow_label` + sort by `sequence`
+2. Primary group flow strip on top
+3. Vs group strips below with diff insights
+4. Horizontal scroll per strip, vertical scroll for groups
+5. Tap screenshot → existing lightbox
 
-vs COINBASE — Deposit Flow — 3 steps (-1)
-┌─────┐ → ┌─────┐ → ┌─────┐
-│  1  │   │  2  │   │  3  │
-└─────┘   └─────┘   └─────┘
-           ↑ MISSING: Review step
-```
+**3d. Bridge Catalogue data to comparison engine:**
+1. Build `FlowCompareSnapshot` from catalogue data (group + flow_label + sequence)
+2. Reuse `buildComparison()` diff logic from `compare-flows.ts`
+3. Generate insights: missing steps, extra steps, step count diff, similarity score
 
-### Screen Audit Dashboard (future)
-- Per group: total screens, in flows, orphaned
+---
+
+## 4. Screen Audit Dashboard (future)
+
+- Per group: total screens, screens in flows, orphaned
 - Per flow: step count, coverage across groups
 - Quick actions: assign orphaned screens, mark as "not needed"
 
@@ -185,7 +317,7 @@ vs COINBASE — Deposit Flow — 3 steps (-1)
 | 1 | Rename existing screenshots (run locally) | Medium | Naming convention defined |
 | 2 | Quick Upload Enhancement | Medium | Step 1 validates the convention |
 | 3 | Activate primary_group + vs_groups | Small | None |
-| 4 | Flow comparison view | Large | Steps 2 + 3 |
+| 4 | Compare mode + flow-strip view | Large | Steps 2 + 3 |
 | 5 | Screen audit dashboard | Medium | Step 4 |
 
-**Note:** Video support (reference videos + X post embeds + comments) is already shipped in `CatalogueVideosSection.tsx`.
+**Already shipped:** Video support (`CatalogueVideosSection.tsx`)
