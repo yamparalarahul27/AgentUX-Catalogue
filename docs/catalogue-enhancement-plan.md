@@ -1,30 +1,74 @@
-# Catalogue Enhancement Plan - Quick Upload + Flow Comparison
+# Catalogue — Feature Roadmap & Research
 
-## Goal
-Capture MVP screenshots for Crpko (primary) and competitors, organize them by flows, and compare flows side-by-side.
+Single source of truth for all Catalogue feature planning, research, and decisions.
 
 ---
 
-## File Naming Convention
+## 1. Video Support
+
+### Problem
+Add video support to Catalogue. Supabase free tier (1 GB storage, 2 GB bandwidth/month) makes direct video storage impractical.
+
+### Storage Comparison
+
+| Content type | Typical size | Fits in 1 GB |
+|-------------|-------------|--------------|
+| Screenshot (WebP) | 50-200 KB | 5,000+ |
+| 15s recording | 5-15 MB | 50-100 |
+| 1 min clip | 20-50 MB | 20-50 |
+
+### Services Evaluated
+
+| Service | Free Tier | Fit |
+|---------|-----------|-----|
+| **Cloudflare R2** | 10 GB, zero egress | Best self-hosted |
+| **Cloudflare Stream** | $5/mo for 1000 min | Best UX, paid |
+| **Bunny.net** | ~$0.01/GB | Great budget option |
+| **YouTube** | Free but re-encodes, no upload API, content policy risks | Not suitable |
+
+### Decision: Phased approach
+- **Phase 1**: External URL (paste Loom/Drive/mp4 link). Zero cost. Add `video_url` text field to screenshots table.
+- **Phase 2**: Direct upload via Cloudflare R2 when ready to scale.
+
+### Schema (Phase 1)
+```sql
+ALTER TABLE screenshots ADD COLUMN video_url text;
+```
+
+### UI (Phase 1)
+- Upload Modal: optional "Video URL" input
+- Family Card: video badge when video_url exists
+- Lightbox: image/video toggle
+
+### Open Decisions
+- [ ] Confirm Phase 1 approach
+- [ ] Video per-variant or per-family?
+- [ ] Accepted URL formats
+
+---
+
+## 2. Quick Upload Enhancement
+
+### Problem
+Bulk uploading screenshots requires setting platform/preset/OS individually. Quick Upload doesn't support batch-level settings, and parsed filename `group` doesn't map to `flow_label`.
+
+### Solution
+Add batch-level fields to Quick Upload. Parse filenames to auto-extract flow + screen name + sequence.
+
+### File Naming Convention
 
 ```
 {sequence}-{flow}-{screen-name}.png
 ```
 
-| Part | Example | Purpose |
-|------|---------|---------|
-| `sequence` | `01`, `02`, `03` | Order within a flow (resets per flow) |
-| `flow` | `deposit`, `withdraw`, `auth` | First word after sequence → becomes flow label |
-| `screen-name` | `select-coin`, `review-details` | Rest of filename → becomes screen name |
+Example: `03-deposit-review-details.png` →
+- sequence: `3` (order within flow)
+- flow: `deposit` (→ flow label)
+- name: `Review Details` (screen name)
 
-### How the existing parser reads it
+**Existing parser already supports this.** The `parseScreenshotName()` function in `designer/src/lib/naming.ts` splits by dashes, extracts sequence prefix, first segment becomes group (which we map to flow label).
 
-`03-deposit-review-details.png` →
-- sequence: `3`
-- group (→ flow label): `deposit`
-- name: `Review Details`
-
-### Example folder structure
+### Folder Structure
 
 ```
 📁 Crpko-Web-MVP/
@@ -35,106 +79,97 @@ Capture MVP screenshots for Crpko (primary) and competitors, organize them by fl
 ├── 05-deposit-success.png
 ├── 01-withdraw-select-coin.png
 ├── 02-withdraw-enter-address.png
-├── 03-withdraw-review.png
-├── 04-withdraw-otp.png
-├── 05-withdraw-success.png
-├── 01-kyc-personal-info.png
-├── 02-kyc-document-upload.png
-├── 03-kyc-selfie.png
-├── 04-kyc-pending.png
-├── 01-trade-market-view.png
-├── 02-trade-order-book.png
-├── 03-trade-place-order.png
+├── ...
 ├── 01-auth-login.png
 ├── 02-auth-register.png
-├── 03-auth-forgot-password.png
-├── 01-settings-profile.png
-├── 02-settings-security.png
 └── 01-home-dashboard.png
 ```
 
 Same filenames for mobile — batch settings change platform/preset/OS.
+Same filenames for competitors — batch group changes (Binance, Coinbase, etc.).
 
-For competitors: same naming, different batch group.
-```
-📁 Binance-Web/
-├── 01-deposit-select-coin.png
-├── 02-deposit-network-select.png    ← extra step
-├── 03-deposit-address.png
-├── ...
-```
+### Batch Settings (per upload)
 
----
-
-## Batch Upload Settings (per folder upload)
-
-| Setting | Crpko Web | Crpko Mobile | Competitor Web |
-|---------|-----------|-------------|----------------|
-| Group | Crpko | Crpko | Binance/Coinbase/etc |
+| Setting | Crpko Web | Crpko Mobile | Competitor |
+|---------|-----------|-------------|------------|
+| Group | Crpko | Crpko | Binance/etc |
 | Platform | web | mobile | web |
 | Preset | 1512 | — | 1512 |
 | OS | — | ios | — |
 | Theme | dark | dark | dark |
 
----
+### Renaming Existing Screenshots
 
-## Renaming Existing Screenshots
+For screenshots already uploaded without the naming convention:
 
-For already-uploaded screenshots that don't follow the naming convention, use **Claude Code** to bulk rename:
+**Option A: Claude Code (multimodal)**
+- Download screenshots to a local folder
+- Prompt Claude Code to look at each image, identify the flow and screen, rename following the convention
+- Provide a reference list of flows/screens for accuracy
+- Re-upload with Quick Upload batch settings
 
-1. Export/download screenshots to a local folder
-2. Prompt Claude Code:
-   ```
-   Look at all screenshots in ~/folder/. These are screens from a crypto 
-   exchange app. Rename following: {sequence}-{flow}-{screen-name}.png
-   Identify flow and screen from image content.
-   ```
-3. Claude Code reads images (multimodal), identifies screens, renames
-4. Re-upload with Quick Upload using batch settings
+**Option B: Rename within Catalogue (future)**
+- If inline rename + flow label assignment is added, screenshots can be organized without re-uploading
 
-Alternatively, provide a reference list of flows and screens to improve accuracy:
-```
-Flows and screens:
-- deposit: select coin, enter amount, review, otp, success
-- withdraw: select coin, address, review, confirm, success
-- auth: login, register, forgot password
-- kyc: personal info, document upload, selfie, pending
-```
+### Implementation
+- Add batch fields to Quick Upload: group, platform, theme, preset/OS
+- Map parsed `group` from filename → `flow_label` on the screenshot
+- Auto-assign `sequence` from filename prefix
+- Support folder drag-and-drop
 
 ---
 
-## Implementation Steps
+## 3. Primary Group + Flow Comparison
 
-### Step 1: Quick Upload Enhancement
-- Add batch-level fields: group, platform, theme, preset/OS
-- Map parsed filename `group` → `flow_label`
-- All files in queue inherit batch settings
-- Sequence auto-assigned from filename prefix
+### Problem
+Need to set Crpko as primary product and compare its flows against competitors (Binance, Coinbase, etc.) to identify extra steps, missing screens, and flow differences.
 
-### Step 2: Activate primary_group + vs_groups
-- Remove hardcoded `null` in useCatalogueFilters (line 39-40)
-- Set `showGroupConfig={true}` in Catalogue.tsx
-- UI: set Crpko as primary, add competitors as vs groups
+### Existing Infrastructure (already in codebase)
 
-### Step 3: Flow comparison view
-- New view mode alongside grid/list/gallery
-- Primary group flow on top, vs group flows below
-- Same flow label → aligned side by side
-- Step count diff, missing/extra screen markers
+| Piece | Status |
+|-------|--------|
+| `project.primary_group` | In DB + types + hook (hardcoded `null` at `use-catalogue-filters.ts:39`) |
+| `project.vs_groups` | In DB + types + hook (hardcoded `[]` at `use-catalogue-filters.ts:40`) |
+| `screenshot.sequence` | In DB + types (mostly unused) |
+| `metadata.catalogue_flow_label` | Working |
+| Group config UI | Built in toolbar (`showGroupConfig={false}` in Catalogue.tsx) |
+| Sort by primary → vs groups | Already implemented in `useCatalogueFilters` |
 
-### Step 4: Screen audit dashboard
-- Per group: total screens, screens in flows, orphaned
+### Activation Steps
+1. Remove hardcoded `null`/`[]` in `useCatalogueFilters`
+2. Set `showGroupConfig={true}` in `Catalogue.tsx`
+3. Primary group gets badge, sorts first
+4. Vs groups sort after primary
+
+### Flow Comparison View
+
+New view mode alongside grid/list/gallery:
+```
+BINANCE (Primary) — Deposit Flow — 4 steps
+┌─────┐ → ┌─────┐ → ┌─────┐ → ┌─────┐
+│  1  │   │  2  │   │  3  │   │  4  │
+└─────┘   └─────┘   └─────┘   └─────┘
+
+vs COINBASE — Deposit Flow — 3 steps (-1)
+┌─────┐ → ┌─────┐ → ┌─────┐
+│  1  │   │  2  │   │  3  │
+└─────┘   └─────┘   └─────┘
+           ↑ MISSING: Review step
+```
+
+### Screen Audit Dashboard (future)
+- Per group: total screens, in flows, orphaned
 - Per flow: step count, coverage across groups
 - Quick actions: assign orphaned screens, mark as "not needed"
 
 ---
 
-## Data Model Notes
+## Implementation Priority
 
-Already exists in codebase:
-- `project.primary_group` — in DB + types + hook (hardcoded null)
-- `project.vs_groups` — in DB + types + hook (hardcoded [])
-- `screenshot.sequence` — in DB + types (mostly unused)
-- `metadata.catalogue_flow_label` — working, used for flow tagging
-- Group config UI — built in toolbar (hidden with showGroupConfig=false)
-- Sort prioritizes primary_group first, then vs_groups — already implemented
+| Step | Feature | Effort | Dependencies |
+|------|---------|--------|-------------|
+| 1 | Quick Upload Enhancement | Medium | None |
+| 2 | Activate primary_group + vs_groups | Small | None |
+| 3 | Flow comparison view | Large | Steps 1 + 2 |
+| 4 | Screen audit dashboard | Medium | Step 3 |
+| 5 | Video support (Phase 1) | Small | None |
