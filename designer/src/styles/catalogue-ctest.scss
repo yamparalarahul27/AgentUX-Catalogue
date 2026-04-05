@@ -39,12 +39,17 @@
   position: relative;
   z-index: 2;
   border-bottom: 1px solid var(--cd-border);
-  padding: 14px 24px;
+  padding: 12px 20px;
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(8px);
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
 }
 
 .catalogue-page--ctest .catalogue-back {
+  position: static;
+  transform: none;
   background: var(--cd-surface);
   border: 1px solid var(--cd-border-strong);
   border-radius: 10px;
@@ -53,33 +58,47 @@
   &:hover { background: var(--cd-surface-raised); border-color: var(--cd-text-primary); color: var(--cd-text-display); }
 }
 
-.catalogue-page--ctest .catalogue-header__title h1 {
-  margin: 0;
-  color: var(--cd-text-display);
-  font-family: 'Doto', 'Space Mono', monospace;
-  font-size: clamp(20px, 2.2vw, 28px);
-  letter-spacing: -0.02em;
+.catalogue-page--ctest .catalogue-header__title {
+  min-width: 0;
+  flex: 1;
+
+  h1 {
+    margin: 0;
+    color: var(--cd-text-display);
+    font-family: 'Doto', 'Space Mono', monospace;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
-.catalogue-page--ctest .catalogue-header-logo { filter: grayscale(1) brightness(1.14); }
+.catalogue-page--ctest .catalogue-header-logo {
+  width: 72px;
+  filter: grayscale(1) brightness(1.14);
+}
 
 .catalogue-page--ctest .catalogue-header__tabs {
   background: var(--cd-surface);
   border: 1px solid var(--cd-border);
   border-radius: 999px;
-  padding: 4px;
+  padding: 3px;
 }
 
 .catalogue-page--ctest .catalogue-header__tab {
   color: var(--cd-text-secondary);
   font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.06em;
+  padding: 6px 12px;
 
-  &.is-active { color: var(--cd-black); background: var(--cd-text-display); }
+  &.is-active { color: var(--cd-black); background: var(--cd-text-display); border-radius: 999px; }
 }
 
 .catalogue-page--ctest .catalogue-header__settings {
+  position: static;
+  transform: none;
   border-color: var(--cd-border-strong);
   background: var(--cd-surface);
   color: var(--cd-text-secondary);
