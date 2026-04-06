@@ -223,30 +223,67 @@ Same filenames for competitors — batch group changes (Binance, Coinbase, etc.)
 
 ### Renaming Existing Screenshots
 
-For screenshots already uploaded without the naming convention, run this **locally** (not in cloud/sandbox — needs internet access to Supabase):
+**Script ready at:** `scripts/catalogue-rename.mjs`
+
+**Must run locally** — needs internet to reach Supabase. Cannot run in cloud sandbox.
 
 **Prerequisites:**
-- Clone the repo on your local machine
-- `.env` file with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` set
+- Repo cloned locally
+- `designer/.env` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
 - Claude Code CLI installed
+- Node.js 18+
 
-**Steps:**
-1. Open Claude Code in the repo folder on your local machine
-2. Ask Claude Code to run a script that:
-   - Queries Supabase for all screenshot records (id, name, image_url, metadata)
-   - Downloads each image to a temp folder
-3. Claude Code reads each image (multimodal) and identifies:
-   - The app/brand (from UI/branding in the screenshot)
-   - The flow (deposit, withdraw, auth, etc.)
-   - The screen name (select coin, review, success, etc.)
-   - The logical sequence within the flow
-4. Claude Code generates rename mappings and updates Supabase:
-   - `name` → new parsed screen name
-   - `metadata.catalogue_flow_label` → identified flow
-   - `sequence` → order within the flow
-5. Provide a reference list of expected flows/screens for better accuracy
+**Step-by-step:**
 
-**Note:** This cannot be done from the cloud sandbox environment (no external internet). Must be run locally where Supabase is reachable.
+```bash
+# 1. Fetch screenshots + download images + generate report
+node scripts/catalogue-rename.mjs
+```
+
+This creates `.tmp-screenshots/` with:
+- `{screenshot_id}.png` — each screenshot image
+- `report.tsv` — current state (ID, name, group, flow, sequence, platform, theme)
+
+```bash
+# 2. Ask Claude Code to read the images and generate mappings
+```
+
+Prompt Claude Code:
+```
+Read the images in .tmp-screenshots/ and the report at
+.tmp-screenshots/report.tsv. For each screenshot:
+- Identify the app (from branding in the image)
+- Identify the flow (deposit, withdraw, auth, kyc, trade, settings, home)
+- Identify the screen name (select coin, review, success, etc.)
+- Assign a sequence number (order within the flow)
+
+Generate a TSV file at .tmp-screenshots/mappings.tsv with columns:
+ID  NEW_NAME  FLOW_LABEL  SEQUENCE
+
+Use these flows as reference:
+- deposit: select coin, enter amount, review, otp, success
+- withdraw: select coin, address, review, confirm, success
+- auth: login, register, forgot password
+- kyc: personal info, document upload, selfie, pending
+- trade: market view, order book, place order
+- settings: profile, security
+- home: dashboard
+```
+
+```bash
+# 3. Review the mappings file
+cat .tmp-screenshots/mappings.tsv
+
+# 4. Apply the renames to Supabase
+node scripts/catalogue-rename.mjs --apply
+```
+
+**What gets updated per screenshot:**
+- `name` → new screen name (e.g., "Select Coin")
+- `metadata.catalogue_flow_label` → flow (e.g., "Deposit")
+- `sequence` → order within flow (e.g., 1, 2, 3)
+
+**Safety:** The script updates one record at a time. If anything fails, it logs the ID and continues. No batch deletes, no destructive operations.
 
 ### Implementation
 - Add batch fields to Quick Upload: group, platform, theme, preset/OS

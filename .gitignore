@@ -8,3 +8,4 @@ site/designer/
 *.tgz
 .playwright-cli/
 output/
+.tmp-screenshots/
