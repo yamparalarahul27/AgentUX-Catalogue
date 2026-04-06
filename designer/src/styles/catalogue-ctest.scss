@@ -45,6 +45,11 @@
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-start;
+
+  .header-left {
+    padding: 0;
+    gap: 8px;
+  }
 }
 
 .catalogue-page--ctest .catalogue-back {
