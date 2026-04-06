@@ -12,7 +12,8 @@
   --cd-text-secondary: #9f9f9f;
   --cd-text-primary: #e8e8e8;
   --cd-text-display: #ffffff;
-  --cd-accent: #d71921;
+  --cd-accent: #6366f1;
+  --cd-accent-hover: #818cf8;
   --cd-success: #4a9e5c;
   --cd-warning: #d4a843;
 
@@ -85,20 +86,27 @@
 }
 
 .catalogue-page--ctest .catalogue-header__tabs {
-  background: var(--cd-surface);
-  border: 1px solid var(--cd-border);
-  border-radius: 999px;
-  padding: 3px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  gap: 4px;
 }
 
 .catalogue-page--ctest .catalogue-header__tab {
-  color: var(--cd-text-secondary);
+  color: var(--cd-text-disabled);
   font-family: 'Space Mono', monospace;
   font-size: 10px;
-  letter-spacing: 0.06em;
-  padding: 6px 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border: 1px solid var(--cd-border);
+  border-radius: 999px;
+  background: transparent;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
 
-  &.is-active { color: var(--cd-black); background: var(--cd-text-display); border-radius: 999px; }
+  &:hover { border-color: var(--cd-border-strong); color: var(--cd-text-primary); }
+  &.is-active { background: var(--cd-accent); border-color: var(--cd-accent); color: #fff; }
 }
 
 .catalogue-page--ctest .catalogue-header__settings {
