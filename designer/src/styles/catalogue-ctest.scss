@@ -1,27 +1,46 @@
 // ==========================================
 // Nothing Design — Unified Catalogue (cd)
+// Design reference: github.com/dominikmartn/nothing-design-skill
+// Accent override: Indigo (#6366f1) replaces Nothing Red
 // ==========================================
 
+// ---- Light theme (default for cd page) ----
 .catalogue-page--ctest {
-  --cd-black: #000000;
-  --cd-surface: #111111;
-  --cd-surface-raised: #181818;
-  --cd-border: #242424;
-  --cd-border-strong: #333333;
-  --cd-text-disabled: #555555;
-  --cd-text-secondary: #9f9f9f;
-  --cd-text-primary: #e8e8e8;
-  --cd-text-display: #ffffff;
+  --cd-black: #F5F5F5;
+  --cd-surface: #FFFFFF;
+  --cd-surface-raised: #F0F0F0;
+  --cd-border: #E8E8E8;
+  --cd-border-strong: #CCCCCC;
+  --cd-text-disabled: #999999;
+  --cd-text-secondary: #666666;
+  --cd-text-primary: #1A1A1A;
+  --cd-text-display: #000000;
   --cd-accent: #6366f1;
   --cd-accent-hover: #818cf8;
-  --cd-success: #4a9e5c;
-  --cd-warning: #d4a843;
+  --cd-accent-subtle: rgba(99, 102, 241, 0.12);
+  --cd-success: #4A9E5C;
+  --cd-warning: #D4A843;
+  --cd-error: #D71921;
 
   position: relative;
   min-height: 100vh;
   background: var(--cd-black);
   color: var(--cd-text-primary);
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
+}
+
+// ---- Dark theme (toggle with .cd-dark) ----
+.catalogue-page--ctest.cd-dark {
+  --cd-black: #000000;
+  --cd-surface: #111111;
+  --cd-surface-raised: #1A1A1A;
+  --cd-border: #222222;
+  --cd-border-strong: #333333;
+  --cd-text-disabled: #666666;
+  --cd-text-secondary: #999999;
+  --cd-text-primary: #E8E8E8;
+  --cd-text-display: #FFFFFF;
+  --cd-accent-subtle: rgba(99, 102, 241, 0.15);
 }
 
 // Dot grid background
@@ -29,10 +48,10 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.18;
+  opacity: 0.15;
   background-image: radial-gradient(circle, var(--cd-border-strong) 1px, transparent 1px);
-  background-size: 16px 16px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.1));
+  background-size: 14px 14px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.08));
 }
 
 // Header overrides
@@ -41,8 +60,10 @@
   z-index: 2;
   border-bottom: 1px solid var(--cd-border);
   padding: 12px 20px;
-  background: rgba(0, 0, 0, 0.82);
+  background: rgba(245, 245, 245, 0.88);
   backdrop-filter: blur(8px);
+
+  .cd-dark & { background: rgba(0, 0, 0, 0.82); }
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-start;
@@ -82,7 +103,9 @@
 
 .catalogue-page--ctest .catalogue-header-logo {
   width: 72px;
-  filter: grayscale(1) brightness(1.14);
+  filter: grayscale(1) brightness(0.2);
+
+  .cd-dark & { filter: grayscale(1) brightness(1.14); }
 }
 
 .catalogue-page--ctest .catalogue-header__tabs {
@@ -356,7 +379,7 @@
   aspect-ratio: 3 / 4;
   border: 1px solid var(--cd-border);
   border-radius: 8px;
-  background: linear-gradient(180deg, #0f0f0f, #080808);
+  background: var(--cd-surface-raised);
   overflow: hidden;
 }
 
@@ -461,7 +484,7 @@
   position: relative;
   aspect-ratio: 4 / 3;
   border-bottom: 1px solid var(--cd-border);
-  background: linear-gradient(180deg, #0f0f0f, #080808);
+  background: var(--cd-surface-raised);
   overflow: hidden;
 }
 
@@ -592,7 +615,7 @@
 .cd-video-card__preview {
   position: relative;
   aspect-ratio: 16 / 9;
-  background: linear-gradient(180deg, #0a0a0a, #050505);
+  background: var(--cd-surface-raised);
   display: flex;
   align-items: center;
   justify-content: center;
