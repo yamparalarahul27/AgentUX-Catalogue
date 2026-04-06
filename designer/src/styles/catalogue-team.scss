@@ -183,6 +183,49 @@
   font-variant-numeric: tabular-nums;
 }
 
+.catalogue-team__proto-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  input { flex: 1; min-width: 0; }
+  button { white-space: nowrap; flex-shrink: 0; }
+}
+
+.catalogue-team__proto-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #a78bfa;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.15s;
+
+  &:hover { color: #c4b5fd; }
+}
+
+.catalogue-team__proto-remove {
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #52525b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+}
+
 .catalogue-team__empty {
   border: 1px dashed rgba(63, 63, 70, 0.8);
   border-radius: 12px;
