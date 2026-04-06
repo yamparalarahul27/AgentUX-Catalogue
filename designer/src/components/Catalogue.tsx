@@ -8,7 +8,8 @@ import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
-import { DEFAULT_CATALOGUE_VIEW_MODE, parseCatalogueViewMode, type CatalogueViewMode } from '../lib/catalogue-view';
+import { buildPresetUsage, defaultViewMode, persistViewMode } from '../lib/catalogue-helpers';
+import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
@@ -30,26 +31,7 @@ interface CatalogueProps {
   onRequestLogin: (email: string) => void;
 }
 
-const CATALOGUE_VIEW_MODE_KEY = 'catalogue:view-mode';
-
-type BulkAction = 'group' | null;
 type CatalogueSection = 'catalogue' | 'videos' | 'team';
-
-function defaultViewMode() {
-  try {
-    return parseCatalogueViewMode(window.localStorage.getItem(CATALOGUE_VIEW_MODE_KEY));
-  } catch {
-    return DEFAULT_CATALOGUE_VIEW_MODE;
-  }
-}
-
-function buildPresetUsage(screenshots: { web_preset_key: string | null }[]) {
-  return screenshots.reduce<Record<string, number>>((accumulator, screenshot) => {
-    if (!screenshot.web_preset_key) return accumulator;
-    accumulator[screenshot.web_preset_key] = (accumulator[screenshot.web_preset_key] || 0) + 1;
-    return accumulator;
-  }, {});
-}
 
 export function Catalogue({
   user,
@@ -132,7 +114,7 @@ export function Catalogue({
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<BulkAction>(null);
+  const [bulkAction, setBulkAction] = useState<'group' | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [bulkRenameOpen, setBulkRenameOpen] = useState(false);
   const [bulkGroupValue, setBulkGroupValue] = useState('');
@@ -227,48 +209,16 @@ export function Catalogue({
     action();
   }
 
-  async function handleGuestAwareDeleteFamily(familyId: string) {
-    await guardMutation(() => handleDeleteFamily(familyId), undefined);
-  }
-
-  async function handleGuestAwareRenameFamily(familyId: string, name: string) {
-    await guardMutation(() => handleRenameFamily(familyId, name), undefined);
-  }
-
-  async function handleGuestAwareChangeFamilyGroup(familyId: string, group: string | null) {
-    await guardMutation(() => handleChangeFamilyGroup(familyId, group), undefined);
-  }
-
-  async function handleGuestAwareReplaceImage(screenshotId: string, file: File) {
-    await guardMutation(() => handleReplaceImage(screenshotId, file), undefined);
-  }
-
-  async function handleGuestAwareSetFlowLabel(familyId: string, flowLabel: string | null) {
-    return guardMutation(() => handleSetFlowLabel(familyId, flowLabel), false);
-  }
-
-  async function handleGuestAwareUpdateVariantDetails(
-    screenshotId: string,
-    patch: {
-      mobile_os?: 'ios' | 'android' | null;
-      platform?: 'mobile' | 'web' | null;
-      theme?: 'light' | 'dark' | null;
-      web_preset_key?: string | null;
-    },
-  ) {
-    return guardMutation(() => handleUpdateVariantDetails(screenshotId, patch), false);
-  }
-
-  async function handleGuestAwareRemoveReference(screenshotId: string) {
-    return guardMutation(() => handleRemoveReference(screenshotId), false);
-  }
+  const handleGuestAwareDeleteFamily = (id: string) => guardMutation(() => handleDeleteFamily(id), undefined);
+  const handleGuestAwareRenameFamily = (id: string, name: string) => guardMutation(() => handleRenameFamily(id, name), undefined);
+  const handleGuestAwareChangeFamilyGroup = (id: string, group: string | null) => guardMutation(() => handleChangeFamilyGroup(id, group), undefined);
+  const handleGuestAwareReplaceImage = (id: string, file: File) => guardMutation(() => handleReplaceImage(id, file), undefined);
+  const handleGuestAwareSetFlowLabel = (id: string, label: string | null) => guardMutation(() => handleSetFlowLabel(id, label), false);
+  const handleGuestAwareUpdateVariantDetails = (id: string, patch: { mobile_os?: 'ios' | 'android' | null; platform?: 'mobile' | 'web' | null; theme?: 'light' | 'dark' | null; web_preset_key?: string | null }) => guardMutation(() => handleUpdateVariantDetails(id, patch), false);
+  const handleGuestAwareRemoveReference = (id: string) => guardMutation(() => handleRemoveReference(id), false);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(CATALOGUE_VIEW_MODE_KEY, viewMode);
-    } catch {
-      // ignore write errors
-    }
+    persistViewMode(viewMode);
   }, [viewMode]);
 
   useEffect(() => {
@@ -350,61 +300,25 @@ export function Catalogue({
   }
 
   function toggleSelect(familyId: string) {
-    setSelected((previous) => {
-      const next = new Set(previous);
-      if (next.has(familyId)) next.delete(familyId);
-      else next.add(familyId);
-      return next;
-    });
+    setSelected((prev) => { const next = new Set(prev); if (next.has(familyId)) next.delete(familyId); else next.add(familyId); return next; });
   }
-
   function toggleGroupSelection(familyIds: string[]) {
-    setSelected((previous) => {
-      const next = new Set(previous);
-      const allSelected = familyIds.every((familyId) => next.has(familyId));
-      familyIds.forEach((familyId) => {
-        if (allSelected) next.delete(familyId);
-        else next.add(familyId);
-      });
-      return next;
-    });
+    setSelected((prev) => { const next = new Set(prev); const all = familyIds.every((id) => next.has(id)); familyIds.forEach((id) => { if (all) next.delete(id); else next.add(id); }); return next; });
   }
-
   function selectAllVisible() {
-    setSelected((previous) => {
-      const next = new Set(previous);
-      const allVisibleSelected = filteredFamilies.length > 0 && filteredFamilies.every((family) => next.has(family.id));
-      filteredFamilies.forEach((family) => {
-        if (allVisibleSelected) next.delete(family.id);
-        else next.add(family.id);
-      });
-      return next;
-    });
+    setSelected((prev) => { const next = new Set(prev); const all = filteredFamilies.length > 0 && filteredFamilies.every((f) => next.has(f.id)); filteredFamilies.forEach((f) => { if (all) next.delete(f.id); else next.add(f.id); }); return next; });
   }
-
-  function clearSelection() {
-    setSelected(new Set());
-    setBulkAction(null);
-    setBulkGroupValue('');
-  }
-
+  function clearSelection() { setSelected(new Set()); setBulkAction(null); setBulkGroupValue(''); }
   async function handleBulkDelete() {
-    if (!requireEditAccess()) return;
-    if (selected.size === 0) return;
-    for (const familyId of selected) {
-      await handleDeleteFamily(familyId);
-    }
+    if (!requireEditAccess() || selected.size === 0) return;
+    for (const id of selected) await handleDeleteFamily(id);
     clearSelection();
   }
-
   async function handleBulkChangeGroup(group: string) {
     if (!requireEditAccess()) return;
-    const trimmedGroup = group.trim();
-    if (selected.size === 0 || !trimmedGroup) return;
-    for (const familyId of selected) {
-      await handleChangeFamilyGroup(familyId, trimmedGroup);
-    }
-    setToast({ message: `${selected.size} families moved to "${trimmedGroup}"`, type: 'success' });
+    const g = group.trim(); if (selected.size === 0 || !g) return;
+    for (const id of selected) await handleChangeFamilyGroup(id, g);
+    setToast({ message: `${selected.size} families moved to "${g}"`, type: 'success' });
     clearSelection();
   }
 

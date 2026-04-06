@@ -418,58 +418,6 @@
   }
 }
 
-.catalogue-bulk-rename-list {
-  max-height: 400px;
-  overflow-y: auto;
-  border: 1px solid $border;
-  border-radius: 8px;
-}
-
-.catalogue-bulk-rename-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: $text-dim;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid $border;
-}
-
-.catalogue-bulk-rename-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 6px 12px;
-  align-items: center;
-  border-bottom: 1px solid rgba($border, 0.5);
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.catalogue-bulk-rename-current {
-  font-size: 13px;
-  color: $text-muted;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.catalogue-bulk-rename-input {
-  font-size: 13px;
-  padding: 4px 8px;
-}
-
-.catalogue-bulk-rename-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
 .catalogue-upload-project-select {
   width: 100%;
 }
