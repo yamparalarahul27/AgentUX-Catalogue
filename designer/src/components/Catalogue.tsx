@@ -10,6 +10,7 @@ import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
 import { DEFAULT_CATALOGUE_VIEW_MODE, parseCatalogueViewMode, type CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
+import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
@@ -66,6 +67,30 @@ export function Catalogue({
     setScreenshots,
   } = useCatalogueData();
   const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [compareEnabled, setCompareEnabled] = useState(false);
+  const [compareFlow, setCompareFlow] = useState<string | null>(null);
+  const activeProject = useMemo(
+    () => projects.find((project) => project.id === activeProjectId) ?? null,
+    [projects, activeProjectId],
+  );
+  const scopedScreenshots = useMemo(
+    () => (activeProjectId ? screenshots.filter((screenshot) => screenshot.project_id === activeProjectId) : screenshots),
+    [activeProjectId, screenshots],
+  );
+  const scopedScreenFamilies = useMemo(
+    () => (activeProjectId ? screenFamilies.filter((family) => family.project_id === activeProjectId) : screenFamilies),
+    [activeProjectId, screenFamilies],
+  );
+  const orderedProjectsForUpload = useMemo(() => {
+    if (!activeProject) return projects;
+    return [activeProject, ...projects.filter((project) => project.id !== activeProject.id)];
+  }, [activeProject, projects]);
+  const projectOptions = useMemo(
+    () => projects.map((project) => ({ id: project.id, name: project.name })),
+    [projects],
+  );
+
   const {
     allFlows,
     allGroups,
@@ -95,9 +120,12 @@ export function Catalogue({
     viewBy,
     vsGroups,
   } = useCatalogueFilters({
-    screenshots,
-    screenFamilies,
+    screenshots: scopedScreenshots,
+    screenFamilies: scopedScreenFamilies,
     webPresets,
+    primaryGroup: activeProject?.primary_group ?? projects[0]?.primary_group ?? null,
+    vsGroups: activeProject?.vs_groups ?? projects[0]?.vs_groups ?? [],
+    compareEnabled,
   });
 
   const [showSettings, setShowSettings] = useState(false);
@@ -106,6 +134,7 @@ export function Catalogue({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<BulkAction>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [bulkRenameOpen, setBulkRenameOpen] = useState(false);
   const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
@@ -114,14 +143,14 @@ export function Catalogue({
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
 
   const allFamilies = useMemo(
-    () => buildCatalogueFamilies(screenshots, screenFamilies, presetByKey),
-    [presetByKey, screenFamilies, screenshots],
+    () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
+    [presetByKey, scopedScreenFamilies, scopedScreenshots],
   );
   const familyById = useMemo(
     () => Object.fromEntries(allFamilies.map((family) => [family.id, family])),
     [allFamilies],
   );
-  const presetUsage = useMemo(() => buildPresetUsage(screenshots), [screenshots]);
+  const presetUsage = useMemo(() => buildPresetUsage(scopedScreenshots), [scopedScreenshots]);
   const selectedVisibleCount = useMemo(
     () => filteredFamilies.filter((family) => selected.has(family.id)).length,
     [filteredFamilies, selected],
@@ -142,7 +171,7 @@ export function Catalogue({
     handleVsGroupsChange,
   } = useCatalogueFamilyActions({
     familyById,
-    filterProject: null,
+    filterProject: activeProject?.id ?? projects[0]?.id ?? null,
     flowMap,
     onFamilyDeleted: (familyId) => {
       setPreviewFamilyId((previous) => (previous === familyId ? null : previous));
@@ -154,8 +183,8 @@ export function Catalogue({
       });
     },
     projects,
-    screenFamilies,
-    screenshots,
+    screenFamilies: scopedScreenFamilies,
+    screenshots: scopedScreenshots,
     setProjects,
     setScreenFamilies,
     setScreenshots,
@@ -165,7 +194,7 @@ export function Catalogue({
   });
   const upload = useCatalogueUpload({
     allFamilies,
-    projects,
+    projects: orderedProjectsForUpload,
     setScreenshots,
     setToast,
     userEmail: user.email || null,
@@ -253,6 +282,44 @@ export function Catalogue({
       setActiveSection('catalogue');
     }
   }, [activeSection, canViewTeamSection]);
+
+  useEffect(() => {
+    if (projects.length === 0) {
+      setActiveProjectId(null);
+      return;
+    }
+
+    setActiveProjectId((previous) => {
+      if (previous === null) {
+        return null;
+      }
+      if (previous && projects.some((project) => project.id === previous)) {
+        return previous;
+      }
+      return projects[0].id;
+    });
+  }, [projects]);
+
+  useEffect(() => {
+    if (allFlows.length === 0) {
+      setCompareFlow(null);
+      setCompareEnabled(false);
+      return;
+    }
+
+    setCompareFlow((previous) => {
+      if (previous && allFlows.includes(previous)) {
+        return previous;
+      }
+      return allFlows[0];
+    });
+  }, [allFlows]);
+
+  useEffect(() => {
+    setSelected(new Set());
+    setPreviewFamilyId(null);
+    setPreviewStartInlineEdit(false);
+  }, [activeProjectId]);
 
   useEffect(() => {
     if (!isAnyModalOpen) return;
@@ -392,9 +459,12 @@ export function Catalogue({
                 </div>
               )}
               <CatalogueToolbar
+                activeProjectId={activeProjectId}
                 allFlows={allFlows}
                 allMobileOs={allMobileOs}
                 allWebPresets={allWebPresets}
+                compareEnabled={compareEnabled}
+                compareFlow={compareFlow}
                 filterFlow={filterFlow}
                 filterGroup={filterGroup}
                 filterMobileOs={filterMobileOs}
@@ -403,6 +473,9 @@ export function Catalogue({
                 filterWebPreset={filterWebPreset}
                 groups={allGroups}
                 isSortLocked={isSortLocked}
+                onActiveProjectChange={setActiveProjectId}
+                onCompareEnabledChange={setCompareEnabled}
+                onCompareFlowChange={setCompareFlow}
                 onFilterFlowChange={setFilterFlow}
                 onFilterGroupChange={setFilterGroup}
                 onFilterMobileOsChange={setFilterMobileOs}
@@ -413,12 +486,18 @@ export function Catalogue({
                   void guardMutation(() => handlePrimaryGroupChange(value), undefined);
                 }}
                 onQuickUploadClick={() => {
-                  guardAction(() => upload.setShowQuickUpload(true));
+                  guardAction(() => {
+                    upload.handleQuickUploadProjectChange(activeProjectId);
+                    upload.setShowQuickUpload(true);
+                  });
                 }}
                 onSearchChange={setSearchQuery}
                 onSortByChange={setSortBy}
                 onUploadClick={() => {
-                  guardAction(() => upload.setShowUpload(true));
+                  guardAction(() => {
+                    upload.setUploadProjectId(activeProjectId);
+                    upload.setShowUpload(true);
+                  });
                 }}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
@@ -426,8 +505,9 @@ export function Catalogue({
                   void guardMutation(() => handleVsGroupsChange(groups), undefined);
                 }}
                 primaryGroup={primaryGroup}
+                projectOptions={projectOptions}
                 searchQuery={searchQuery}
-                showGroupConfig={false}
+                showGroupConfig={compareEnabled}
                 sortBy={sortBy}
                 viewBy={viewBy}
                 viewMode={viewMode}
@@ -436,6 +516,9 @@ export function Catalogue({
 
               <CatalogueContent
                 activeVariantKeys={upload.activeVariantKeys}
+                allFamilies={allFamilies}
+                compareEnabled={compareEnabled}
+                compareFlow={compareFlow}
                 filterFlow={filterFlow}
                 filterGroup={filterGroup}
                 filterMobileOs={filterMobileOs}
@@ -535,7 +618,16 @@ export function Catalogue({
         quickUploadProjectGroups={upload.quickUploadProjectGroups}
         quickUploadQueue={upload.quickUploadQueuePreview}
         uploading={upload.uploading}
+        platform={upload.quickUploadPlatform}
+        theme={upload.quickUploadTheme}
+        webPresetKey={upload.quickUploadWebPresetKey}
+        webPresets={webPresets}
+        mobileOs={upload.quickUploadMobileOs}
         onClose={upload.resetQuickUploadState}
+        onPlatformChange={upload.setQuickUploadPlatform}
+        onThemeChange={upload.setQuickUploadTheme}
+        onWebPresetKeyChange={upload.setQuickUploadWebPresetKey}
+        onMobileOsChange={upload.setQuickUploadMobileOs}
         onQuickUploadClearQueue={upload.handleQuickUploadQueueClear}
         onQuickUploadExistingGroupChange={upload.setQuickUploadExistingGroup}
         onQuickUploadFilesSelected={upload.handleQuickUploadQueueAdd}
@@ -566,6 +658,7 @@ export function Catalogue({
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
           canEdit={!isGuest}
+          existingGroups={allGroups}
           family={previewFamily}
           flowName={previewFamily.flow_label}
           isOpen
@@ -661,9 +754,19 @@ export function Catalogue({
           onOpenGroupDialog={() => {
             guardAction(() => setBulkAction('group'));
           }}
+          onOpenBulkRename={() => {
+            guardAction(() => setBulkRenameOpen(true));
+          }}
           onSelectAllVisible={selectAllVisible}
         />
       )}
+
+      <CatalogueBulkRenameModal
+        isOpen={bulkRenameOpen}
+        families={filteredFamilies.filter((family) => selected.has(family.id))}
+        onClose={() => setBulkRenameOpen(false)}
+        onRenameFamily={handleRenameFamily}
+      />
 
       <CatalogueEmailPromptModal
         isOpen={showAuthPrompt}

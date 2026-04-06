@@ -27,7 +27,6 @@ export function CatalogueHeader({
 
       <div className="catalogue-header__title">
         <img src={agentuxLogo} alt="AgentUX logo" className="catalogue-header-logo" />
-        <h1>Catalogue</h1>
       </div>
 
       <div className="catalogue-header__tabs" role="tablist" aria-label="Catalogue sections">

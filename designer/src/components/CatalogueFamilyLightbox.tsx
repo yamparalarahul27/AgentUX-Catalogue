@@ -13,6 +13,7 @@ import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCom
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
   canEdit?: boolean;
+  existingGroups: string[];
   family: CatalogueFamilyView;
   flowName: string | null;
   isOpen: boolean;
@@ -48,6 +49,7 @@ function shouldStartLightboxSheetMinimized() {
 export function CatalogueFamilyLightbox({
   activeVariantKey,
   canEdit = true,
+  existingGroups,
   family,
   flowName,
   isOpen,
@@ -483,6 +485,7 @@ export function CatalogueFamilyLightbox({
               <CatalogueFamilyLightboxActions
                 annotationsCount={annotations.length}
                 commentsCount={comments.length}
+                existingGroups={existingGroups}
                 flowDraft={flowDraft}
                 groupDraft={groupDraft}
                 isInlineEditing={isInlineEditing}

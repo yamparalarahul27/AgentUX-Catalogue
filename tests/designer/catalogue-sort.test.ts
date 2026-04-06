@@ -40,6 +40,11 @@ describe('sortCatalogueScreenshots', () => {
     expect(sorted.map((item) => item.id)).toEqual(['b', 'c', 'a']);
   });
 
+  it('sorts by latest date first for global latest mode', () => {
+    const sorted = sortCatalogueScreenshots(items, 'date-desc-global');
+    expect(sorted.map((item) => item.id)).toEqual(['b', 'c', 'a']);
+  });
+
   it('sorts by oldest date first', () => {
     const sorted = sortCatalogueScreenshots(items, 'date-asc');
     expect(sorted.map((item) => item.id)).toEqual(['a', 'c', 'b']);

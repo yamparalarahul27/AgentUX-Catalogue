@@ -1,11 +1,15 @@
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import { CatalogueCompareView } from './CatalogueCompareView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueFamilyListView } from './CatalogueFamilyListView';
 
 interface CatalogueContentProps {
   activeVariantKeys: Record<string, string>;
+  allFamilies: CatalogueFamilyView[];
+  compareEnabled: boolean;
+  compareFlow: string | null;
   filterFlow: string | null;
   filterGroup: string | null;
   filterMobileOs: string | null;
@@ -45,6 +49,9 @@ interface CatalogueContentProps {
 
 export function CatalogueContent({
   activeVariantKeys,
+  allFamilies,
+  compareEnabled,
+  compareFlow,
   filterFlow,
   filterGroup,
   filterMobileOs,
@@ -89,6 +96,19 @@ export function CatalogueContent({
         <div className="loading-spinner" />
         <p>Loading catalogue...</p>
       </div>
+    );
+  }
+
+  if (compareEnabled) {
+    return (
+      <CatalogueCompareView
+        activeVariantKeys={activeVariantKeys}
+        families={allFamilies}
+        flowLabel={compareFlow}
+        primaryGroup={primaryGroup}
+        vsGroups={vsGroups}
+        onOpenPreview={onOpenPreview}
+      />
     );
   }
 
@@ -167,8 +187,8 @@ export function CatalogueContent({
               </button>
               {groupName}
               <span className="catalogue-section-count">{families.length}</span>
-              {primaryGroup === groupName && <span className="catalogue-badge catalogue-badge-primary">Primary</span>}
-              {vsGroups.includes(groupName) && <span className="catalogue-badge catalogue-badge-vs">Vs</span>}
+              {compareEnabled && primaryGroup === groupName && <span className="catalogue-badge catalogue-badge-primary">Primary</span>}
+              {compareEnabled && vsGroups.includes(groupName) && <span className="catalogue-badge catalogue-badge-vs">Vs</span>}
             </h3>
 
             <div className="catalogue-grid catalogue-grid--families">
@@ -178,12 +198,13 @@ export function CatalogueContent({
                   family={family}
                   activeVariantKey={activeVariantKeys[family.id] ?? null}
                   flowName={family.flow_label}
-                  isPrimary={Boolean(primaryGroup && family.group === primaryGroup)}
+                  isPrimary={compareEnabled && Boolean(primaryGroup && family.group === primaryGroup)}
                   isSelected={selected.has(family.id)}
-                  isVs={vsGroups.includes(family.group || '')}
+                  isVs={compareEnabled && vsGroups.includes(family.group || '')}
                   onDeleteFamily={onDeleteFamily}
                   onOpenPreview={onOpenPreview}
                   onOpenPreviewAndEdit={onOpenPreviewAndEdit}
+                  onRenameFamily={onRenameFamily}
                   onReplaceVariantImage={onReplaceVariantImage}
                   onToggleSelect={onToggleSelect}
                 />

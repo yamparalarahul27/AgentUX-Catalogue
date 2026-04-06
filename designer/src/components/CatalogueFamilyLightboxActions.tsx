@@ -4,6 +4,7 @@ import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxIn
 interface CatalogueFamilyLightboxActionsProps {
   annotationsCount: number;
   commentsCount: number;
+  existingGroups: string[];
   flowDraft: string;
   groupDraft: string;
   isInlineEditing: boolean;
@@ -32,6 +33,7 @@ interface CatalogueFamilyLightboxActionsProps {
 export function CatalogueFamilyLightboxActions({
   annotationsCount,
   commentsCount,
+  existingGroups,
   flowDraft,
   groupDraft,
   isInlineEditing,
@@ -80,6 +82,7 @@ export function CatalogueFamilyLightboxActions({
       </div>
       {isInlineEditing && (
         <CatalogueFamilyLightboxInlineEditor
+          existingGroups={existingGroups}
           flowDraft={flowDraft}
           groupDraft={groupDraft}
           isSaving={isSavingInline}

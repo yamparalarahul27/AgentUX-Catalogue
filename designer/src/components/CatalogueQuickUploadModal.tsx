@@ -8,6 +8,13 @@ interface QuickUploadQueuePreviewItem {
   fileName: string;
   parsedName: string;
   parsedGroup: string | null;
+  parsedSequence: number | null;
+}
+
+interface WebPresetOption {
+  key: string;
+  label: string;
+  width: number;
 }
 
 interface CatalogueQuickUploadModalProps {
@@ -21,7 +28,16 @@ interface CatalogueQuickUploadModalProps {
   quickUploadProjectGroups: string[];
   quickUploadQueue: QuickUploadQueuePreviewItem[];
   uploading: boolean;
+  platform: 'web' | 'mobile' | null;
+  theme: 'light' | 'dark' | null;
+  webPresetKey: string | null;
+  webPresets: WebPresetOption[];
+  mobileOs: 'ios' | 'android' | null;
   onClose: () => void;
+  onPlatformChange: (value: 'web' | 'mobile' | null) => void;
+  onThemeChange: (value: 'light' | 'dark' | null) => void;
+  onWebPresetKeyChange: (value: string | null) => void;
+  onMobileOsChange: (value: 'ios' | 'android' | null) => void;
   onQuickUploadFlowLabelChange: (value: string) => void;
   onQuickUploadProjectChange: (value: string | null) => void;
   onQuickUploadFilesSelected: (files: File[]) => void;
@@ -44,7 +60,16 @@ export function CatalogueQuickUploadModal({
   quickUploadProjectGroups,
   quickUploadQueue,
   uploading,
+  platform,
+  theme,
+  webPresetKey,
+  webPresets,
+  mobileOs,
   onClose,
+  onPlatformChange,
+  onThemeChange,
+  onWebPresetKeyChange,
+  onMobileOsChange,
   onQuickUploadFlowLabelChange,
   onQuickUploadProjectChange,
   onQuickUploadFilesSelected,
@@ -73,7 +98,9 @@ export function CatalogueQuickUploadModal({
         onClick={(event) => event.stopPropagation()}
       >
         <h3 id="catalogue-quick-upload-title">Quick Upload</h3>
-        <p className="catalogue-upload-subtitle">Project selection is optional. Queue files first, then upload all.</p>
+        <p className="catalogue-upload-subtitle">
+          Name files as <code>{'{sequence}-{flow}-{screen-name}.png'}</code> (e.g. <code>01-deposit-select-coin.png</code>). Queue files, then upload all.
+        </p>
 
         <Dropdown
           className="catalogue-upload-project-dropdown"
@@ -91,6 +118,15 @@ export function CatalogueQuickUploadModal({
           quickUploadNewGroup={quickUploadNewGroup}
           quickUploadProjectGroups={quickUploadProjectGroups}
           quickUploadQueue={quickUploadQueue}
+          platform={platform}
+          theme={theme}
+          webPresetKey={webPresetKey}
+          webPresets={webPresets}
+          mobileOs={mobileOs}
+          onPlatformChange={onPlatformChange}
+          onThemeChange={onThemeChange}
+          onWebPresetKeyChange={onWebPresetKeyChange}
+          onMobileOsChange={onMobileOsChange}
           onQuickUploadFlowLabelChange={onQuickUploadFlowLabelChange}
           onQuickUploadFilesSelected={onQuickUploadFilesSelected}
           onQuickUploadGroupModeChange={onQuickUploadGroupModeChange}

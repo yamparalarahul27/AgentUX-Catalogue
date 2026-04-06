@@ -51,6 +51,7 @@
     "@babel/traverse": "^7.27.0",
     "@babel/types": "^7.27.0",
     "@dagrejs/dagre": "^1.1.4",
+    "@supabase/supabase-js": "^2.101.1",
     "@xyflow/react": "^12.6.0"
   },
   "devDependencies": {

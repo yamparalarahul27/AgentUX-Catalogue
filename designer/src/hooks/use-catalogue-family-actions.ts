@@ -98,8 +98,7 @@ export function useCatalogueFamilyActions({
     setProjects((previous) => previous.map((project) => (
       project.id === filterProject ? { ...project, primary_group: group } : project
     )));
-    setToast({ message: group ? `Primary group set to "${group}"` : 'Primary group cleared', type: 'success' });
-  }, [filterProject, setProjects, setToast]);
+  }, [filterProject, setProjects]);
 
   const handleVsGroupsChange = useCallback(async (groups: string[]) => {
     if (!filterProject) return;

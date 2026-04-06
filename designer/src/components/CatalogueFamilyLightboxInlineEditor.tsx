@@ -1,6 +1,7 @@
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 
 interface CatalogueFamilyLightboxInlineEditorProps {
+  existingGroups: string[];
   flowDraft: string;
   groupDraft: string;
   isSaving: boolean;
@@ -58,6 +59,7 @@ export function buildLightboxDraftVariant(
 }
 
 export function CatalogueFamilyLightboxInlineEditor({
+  existingGroups,
   flowDraft,
   groupDraft,
   isSaving,
@@ -90,7 +92,24 @@ export function CatalogueFamilyLightboxInlineEditor({
         </label>
         <label className="catalogue-list-inline-editor__field">
           <span>Group</span>
-          <input value={groupDraft} onChange={(event) => onGroupChange(event.target.value)} />
+          {existingGroups.length > 0 && (
+            <select
+              value={existingGroups.includes(groupDraft) ? groupDraft : ''}
+              onChange={(event) => onGroupChange(event.target.value)}
+            >
+              <option value="">Select existing group...</option>
+              {existingGroups.map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+            </select>
+          )}
+          <input
+            value={groupDraft}
+            placeholder="Type a new group..."
+            onChange={(event) => onGroupChange(event.target.value)}
+          />
         </label>
         <label className="catalogue-list-inline-editor__field">
           <span>Flow</span>

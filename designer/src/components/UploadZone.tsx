@@ -54,6 +54,85 @@ function isEditableTarget(target: EventTarget | null) {
   return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
 }
 
+function isFileEntry(entry: FileSystemEntry): entry is FileSystemFileEntry {
+  return entry.isFile;
+}
+
+function isDirectoryEntry(entry: FileSystemEntry): entry is FileSystemDirectoryEntry {
+  return entry.isDirectory;
+}
+
+function readFileEntry(entry: FileSystemFileEntry): Promise<File | null> {
+  return new Promise((resolve) => {
+    entry.file(
+      (file) => resolve(file),
+      () => resolve(null),
+    );
+  });
+}
+
+function readDirectoryChunk(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
+  return new Promise((resolve) => {
+    reader.readEntries(
+      (entries) => resolve(entries),
+      () => resolve([]),
+    );
+  });
+}
+
+async function readDirectoryEntry(entry: FileSystemDirectoryEntry): Promise<File[]> {
+  const reader = entry.createReader();
+  const files: File[] = [];
+
+  while (true) {
+    const entries = await readDirectoryChunk(reader);
+    if (entries.length === 0) break;
+
+    for (const child of entries) {
+      if (isFileEntry(child)) {
+        const file = await readFileEntry(child);
+        if (file) files.push(file);
+        continue;
+      }
+      if (isDirectoryEntry(child)) {
+        files.push(...await readDirectoryEntry(child));
+      }
+    }
+  }
+
+  return files;
+}
+
+async function extractDroppedFiles(dataTransfer: DataTransfer): Promise<File[]> {
+  const items = Array.from(dataTransfer.items || []);
+  if (items.length === 0) return Array.from(dataTransfer.files || []);
+
+  const files: File[] = [];
+  let hasEntrySupport = false;
+
+  for (const item of items) {
+    const entry = item.webkitGetAsEntry?.();
+    if (!entry) {
+      const file = item.getAsFile();
+      if (file) files.push(file);
+      continue;
+    }
+
+    hasEntrySupport = true;
+    if (isFileEntry(entry)) {
+      const file = await readFileEntry(entry);
+      if (file) files.push(file);
+      continue;
+    }
+    if (isDirectoryEntry(entry)) {
+      files.push(...await readDirectoryEntry(entry));
+    }
+  }
+
+  if (hasEntrySupport) return files;
+  return Array.from(dataTransfer.files || []);
+}
+
 export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const zoneRef = useRef<HTMLDivElement>(null);
@@ -85,13 +164,14 @@ export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
     if (disabled) return;
 
-    emitImageFiles(Array.from(e.dataTransfer.files));
+    const droppedFiles = await extractDroppedFiles(e.dataTransfer);
+    emitImageFiles(droppedFiles);
   }, [disabled, emitImageFiles]);
 
   const handleClick = () => {
@@ -167,7 +247,7 @@ export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
         <polyline points="17 8 12 3 7 8" />
         <line x1="12" y1="3" x2="12" y2="15" />
       </svg>
-      <p>Drop screenshots here or click to upload</p>
+      <p>Drop screenshots or folders here, or click to upload</p>
       <span className="upload-zone-hint">PNG, JPG, WebP · Paste with Ctrl+V / Cmd+V</span>
     </div>
   );

@@ -5,6 +5,7 @@ interface CatalogueBulkBarProps {
   onClearSelection: () => void;
   onOpenGroupDialog: () => void;
   onOpenDeleteConfirm: () => void;
+  onOpenBulkRename: () => void;
   onSelectAllVisible: () => void;
 }
 
@@ -15,6 +16,7 @@ export function CatalogueBulkBar({
   onClearSelection,
   onOpenGroupDialog,
   onOpenDeleteConfirm,
+  onOpenBulkRename,
   onSelectAllVisible,
 }: CatalogueBulkBarProps) {
   if (selectedCount === 0) {
@@ -35,6 +37,13 @@ export function CatalogueBulkBar({
       </div>
 
       <div className="catalogue-bulk-actions">
+        <button type="button" className="catalogue-bulk-btn" onClick={onOpenBulkRename}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+          </svg>
+          Rename
+        </button>
         <button type="button" className="catalogue-bulk-btn" onClick={onOpenGroupDialog}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />

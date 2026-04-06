@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId, getVariantKey } from '../lib/catalogue-families';
 import { compressImage } from '../lib/catalogue-image';
-import { parseScreenshotName } from '../lib/naming';
+import { buildConventionName, isConventionName, parseScreenshotName } from '../lib/naming';
 import { insertScreenshotWithUploader } from '../lib/screenshot-write';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, Project, ScreenshotNode, WebPreset } from '../types';
@@ -61,6 +61,10 @@ export function useCatalogueUpload({
   const [quickUploadExistingGroup, setQuickUploadExistingGroup] = useState<string | null>(null);
   const [quickUploadNewGroup, setQuickUploadNewGroup] = useState('');
   const [quickUploadFlowLabel, setQuickUploadFlowLabel] = useState('');
+  const [quickUploadPlatform, setQuickUploadPlatform] = useState<'web' | 'mobile' | null>(null);
+  const [quickUploadTheme, setQuickUploadTheme] = useState<'light' | 'dark' | null>(null);
+  const [quickUploadWebPresetKey, setQuickUploadWebPresetKey] = useState<string | null>(null);
+  const [quickUploadMobileOs, setQuickUploadMobileOs] = useState<MobileOs | null>(null);
   function buildFlowMetadata(value: string) {
     const label = value.trim();
     if (!label) return {};
@@ -87,6 +91,7 @@ export function useCatalogueUpload({
       fileName: item.file.name,
       parsedName: item.parsed.name,
       parsedGroup: item.parsed.group,
+      parsedSequence: item.parsed.sequence,
     })),
     [quickUploadQueue],
   );
@@ -105,6 +110,21 @@ export function useCatalogueUpload({
       setUploadMobileOs(null);
     }
   }, [uploadMobileOs, uploadPlatform, uploadWebPresetKey, webPresets]);
+
+  useEffect(() => {
+    if (quickUploadPlatform === 'web' && !quickUploadWebPresetKey) {
+      setQuickUploadWebPresetKey(webPresets[0]?.key ?? null);
+      setQuickUploadMobileOs(null);
+    }
+    if (quickUploadPlatform === 'mobile' && !quickUploadMobileOs) {
+      setQuickUploadMobileOs('ios');
+      setQuickUploadWebPresetKey(null);
+    }
+    if (!quickUploadPlatform) {
+      setQuickUploadWebPresetKey(null);
+      setQuickUploadMobileOs(null);
+    }
+  }, [quickUploadMobileOs, quickUploadPlatform, quickUploadWebPresetKey, webPresets]);
 
   useEffect(() => {
     if (!showUpload || uploadProjectId || !defaultProjectId) return;
@@ -146,6 +166,10 @@ export function useCatalogueUpload({
     setQuickUploadExistingGroup(null);
     setQuickUploadNewGroup('');
     setQuickUploadFlowLabel('');
+    setQuickUploadPlatform(null);
+    setQuickUploadTheme(null);
+    setQuickUploadWebPresetKey(null);
+    setQuickUploadMobileOs(null);
   }
 
   function handleQuickUploadProjectChange(projectId: string | null) {
@@ -320,7 +344,11 @@ export function useCatalogueUpload({
     const mode = quickUploadGroupMode;
     const existingGroup = quickUploadExistingGroup?.trim() || null;
     const newGroup = quickUploadNewGroup.trim();
-    const flowMetadata = buildFlowMetadata(quickUploadFlowLabel);
+    const batchFlowLabel = quickUploadFlowLabel.trim();
+    const batchPlatform = quickUploadPlatform;
+    const batchTheme = quickUploadTheme;
+    const batchWebPresetKey = quickUploadPlatform === 'web' ? quickUploadWebPresetKey : null;
+    const batchMobileOs = quickUploadPlatform === 'mobile' ? quickUploadMobileOs : null;
 
     if (mode === 'existing' && !existingGroup) {
       setToast({ message: 'Select an existing group before uploading', type: 'error' });
@@ -339,6 +367,8 @@ export function useCatalogueUpload({
       queue.map(async (item) => {
         const { file, parsed } = item;
         const group = mode === 'existing' ? existingGroup : mode === 'new' ? newGroup : parsed.group;
+        const flowLabel = batchFlowLabel || parsed.group || null;
+        const flowMetadata = flowLabel ? { [CATALOGUE_FLOW_LABEL_KEY]: flowLabel } : {};
         const compressed = await compressImage(file);
         const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
         const storagePath = `${userId}/${projectId}/${safeName}`;
@@ -355,15 +385,15 @@ export function useCatalogueUpload({
             project_id: projectId,
             flow_id: null,
             screen_family_id: null,
-            name: parsed.name,
+            name: buildConventionName(parsed.sequence, flowLabel || parsed.group, parsed.name),
             file_name: file.name,
             storage_path: storagePath,
             sequence: parsed.sequence,
             group,
-            theme: null,
-            platform: null,
-            web_preset_key: null,
-            mobile_os: null,
+            theme: batchTheme,
+            platform: batchPlatform,
+            web_preset_key: batchWebPresetKey,
+            mobile_os: batchMobileOs,
             metadata: flowMetadata,
             reference_url: null,
             reference_storage_path: null,
@@ -399,9 +429,13 @@ export function useCatalogueUpload({
       inserted.forEach((item) => {
         updateActiveVariant(getScreenshotFamilyId(item), getVariantKey(item));
       });
+      const nonConventionCount = inserted.filter((item) => !isConventionName(item.name)).length;
+      const messages = [`${inserted.length} uploaded`];
+      if (failed) messages.push(`${failed} failed`);
+      if (nonConventionCount) messages.push(`${nonConventionCount} need renaming to convention format`);
       setToast({
-        message: `${inserted.length} uploaded${failed ? `, ${failed} failed` : ''} — now assign them`,
-        type: failed ? 'info' : 'success',
+        message: messages.join(' · '),
+        type: failed || nonConventionCount ? 'info' : 'success',
       });
     } else if (failed > 0) {
       setToast({ message: `Upload failed for ${failed} file${failed > 1 ? 's' : ''}`, type: 'error' });
@@ -424,10 +458,14 @@ export function useCatalogueUpload({
     quickUploadExistingGroup,
     quickUploadFlowLabel,
     quickUploadGroupMode,
+    quickUploadMobileOs,
     quickUploadNewGroup,
+    quickUploadPlatform,
     quickUploadProjectGroups,
     quickUploadProjectId,
     quickUploadQueuePreview,
+    quickUploadTheme,
+    quickUploadWebPresetKey,
     setShowUpload,
     setShowQuickUpload,
     showUpload,
@@ -460,6 +498,10 @@ export function useCatalogueUpload({
     setUploadWebPresetKey,
     setQuickUploadExistingGroup,
     setQuickUploadFlowLabel,
+    setQuickUploadMobileOs,
     setQuickUploadNewGroup,
+    setQuickUploadPlatform,
+    setQuickUploadTheme,
+    setQuickUploadWebPresetKey,
   };
 }

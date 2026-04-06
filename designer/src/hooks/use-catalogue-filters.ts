@@ -9,6 +9,9 @@ interface UseCatalogueFiltersArgs {
   screenshots: ScreenshotNode[];
   screenFamilies: ScreenFamily[];
   webPresets: WebPreset[];
+  primaryGroup: string | null;
+  vsGroups: string[];
+  compareEnabled: boolean;
 }
 
 function getFamilyForScreenshot(
@@ -22,6 +25,9 @@ export function useCatalogueFilters({
   screenshots,
   screenFamilies,
   webPresets,
+  primaryGroup,
+  vsGroups,
+  compareEnabled,
 }: UseCatalogueFiltersArgs) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
@@ -36,8 +42,6 @@ export function useCatalogueFilters({
   const familyMap = useMemo(() => new Map(screenFamilies.map((family) => [family.id, family])), [screenFamilies]);
   const presetMap = useMemo(() => Object.fromEntries(webPresets.map((preset) => [preset.key, preset])), [webPresets]);
 
-  const primaryGroup = null;
-  const vsGroups: string[] = [];
 
   const allGroups = useMemo(() => {
     return [...new Set(screenshots.map((screenshot) => getFamilyForScreenshot(screenshot, familyMap).group).filter(Boolean))] as string[];
@@ -138,6 +142,7 @@ export function useCatalogueFilters({
     () => baseFamilies.flatMap((family) => family.variants.map((variant) => variant.screenshot)),
     [baseFamilies],
   );
+  const isGlobalLatestSort = viewBy === 'all' && sortBy === 'date-desc-global';
 
   const sortedFamilies = useMemo(() => {
     const sortedVariants = viewBy === 'comments-added'
@@ -148,19 +153,25 @@ export function useCatalogueFilters({
     const order = new Map(sortedVariants.map((screenshot, index) => [getScreenshotFamilyId(screenshot), index]));
 
     return [...baseFamilies].sort((left, right) => {
-      const leftIsPrimary = left.group === primaryGroup;
-      const rightIsPrimary = right.group === primaryGroup;
-      if (leftIsPrimary !== rightIsPrimary) return leftIsPrimary ? -1 : 1;
+      if (compareEnabled && !isGlobalLatestSort) {
+        const leftIsPrimary = left.group === primaryGroup;
+        const rightIsPrimary = right.group === primaryGroup;
+        if (leftIsPrimary !== rightIsPrimary) return leftIsPrimary ? -1 : 1;
 
-      const leftIsVs = vsGroups.includes(left.group || '');
-      const rightIsVs = vsGroups.includes(right.group || '');
-      if (leftIsVs !== rightIsVs) return leftIsVs ? -1 : 1;
+        const leftIsVs = vsGroups.includes(left.group || '');
+        const rightIsVs = vsGroups.includes(right.group || '');
+        if (leftIsVs !== rightIsVs) return leftIsVs ? -1 : 1;
+      }
 
       return (order.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(right.id) ?? Number.MAX_SAFE_INTEGER);
     });
-  }, [baseFamilies, filteredScreenshots, primaryGroup, sortBy, viewBy, vsGroups]);
+  }, [baseFamilies, compareEnabled, filteredScreenshots, isGlobalLatestSort, primaryGroup, sortBy, viewBy, vsGroups]);
 
   const groupedFamilies = useMemo(() => {
+    if (isGlobalLatestSort) {
+      return { 'All groups': sortedFamilies };
+    }
+
     const grouped = sortedFamilies.reduce<Record<string, CatalogueFamilyView[]>>((accumulator, family) => {
       const key = family.group || 'Ungrouped';
       (accumulator[key] ||= []).push(family);
@@ -168,17 +179,19 @@ export function useCatalogueFilters({
     }, {});
 
     return Object.fromEntries(Object.entries(grouped).sort(([left], [right]) => {
-      const leftIsPrimary = left === primaryGroup;
-      const rightIsPrimary = right === primaryGroup;
-      if (leftIsPrimary !== rightIsPrimary) return leftIsPrimary ? -1 : 1;
+      if (compareEnabled) {
+        const leftIsPrimary = left === primaryGroup;
+        const rightIsPrimary = right === primaryGroup;
+        if (leftIsPrimary !== rightIsPrimary) return leftIsPrimary ? -1 : 1;
 
-      const leftIsVs = vsGroups.includes(left);
-      const rightIsVs = vsGroups.includes(right);
-      if (leftIsVs !== rightIsVs) return leftIsVs ? -1 : 1;
+        const leftIsVs = vsGroups.includes(left);
+        const rightIsVs = vsGroups.includes(right);
+        if (leftIsVs !== rightIsVs) return leftIsVs ? -1 : 1;
+      }
 
       return left.localeCompare(right);
     }));
-  }, [primaryGroup, sortedFamilies, vsGroups]);
+  }, [compareEnabled, isGlobalLatestSort, primaryGroup, sortedFamilies, vsGroups]);
 
   const isSortLocked = viewBy !== 'all';
 

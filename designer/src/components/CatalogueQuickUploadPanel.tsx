@@ -1,3 +1,4 @@
+import { buildConventionName } from '../lib/naming';
 import { Dropdown } from './Dropdown';
 import { UploadZone } from './UploadZone';
 
@@ -6,6 +7,13 @@ interface QuickUploadQueueItem {
   fileName: string;
   parsedName: string;
   parsedGroup: string | null;
+  parsedSequence: number | null;
+}
+
+interface WebPresetOption {
+  key: string;
+  label: string;
+  width: number;
 }
 
 interface CatalogueQuickUploadPanelProps {
@@ -16,6 +24,15 @@ interface CatalogueQuickUploadPanelProps {
   quickUploadNewGroup: string;
   quickUploadProjectGroups: string[];
   quickUploadQueue: QuickUploadQueueItem[];
+  platform: 'web' | 'mobile' | null;
+  theme: 'light' | 'dark' | null;
+  webPresetKey: string | null;
+  webPresets: WebPresetOption[];
+  mobileOs: 'ios' | 'android' | null;
+  onPlatformChange: (value: 'web' | 'mobile' | null) => void;
+  onThemeChange: (value: 'light' | 'dark' | null) => void;
+  onWebPresetKeyChange: (value: string | null) => void;
+  onMobileOsChange: (value: 'ios' | 'android' | null) => void;
   onQuickUploadFlowLabelChange: (value: string) => void;
   onQuickUploadFilesSelected: (files: File[]) => void;
   onQuickUploadGroupModeChange: (mode: 'auto' | 'existing' | 'new') => void;
@@ -34,6 +51,15 @@ export function CatalogueQuickUploadPanel({
   quickUploadNewGroup,
   quickUploadProjectGroups,
   quickUploadQueue,
+  platform,
+  theme,
+  webPresetKey,
+  webPresets,
+  mobileOs,
+  onPlatformChange,
+  onThemeChange,
+  onWebPresetKeyChange,
+  onMobileOsChange,
   onQuickUploadFlowLabelChange,
   onQuickUploadFilesSelected,
   onQuickUploadGroupModeChange,
@@ -62,14 +88,14 @@ export function CatalogueQuickUploadPanel({
       <div className="catalogue-quick-upload-left">
         <label className="catalogue-upload-label">Flow</label>
         <input
-          className="catalogue-filter catalogue-upload-project-select"
+          className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
           type="text"
           placeholder="Flow name (e.g. Deposit)"
           value={flowLabel}
           onChange={(event) => onQuickUploadFlowLabelChange(event.target.value)}
         />
 
-        <label className="catalogue-upload-label">Group assignment</label>
+        <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Group assignment</label>
         <div className="catalogue-upload-groups">
           <button
             type="button"
@@ -118,6 +144,74 @@ export function CatalogueQuickUploadPanel({
           />
         )}
 
+        <label className="catalogue-upload-label">Theme</label>
+        <div className="catalogue-upload-groups">
+          {(['light', 'dark'] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`catalogue-upload-group-chip ${theme === item ? 'active' : ''}`}
+              onClick={() => onThemeChange(theme === item ? null : item)}
+            >
+              {item === 'light' ? 'Light' : 'Dark'}
+            </button>
+          ))}
+        </div>
+
+        <label className="catalogue-upload-label">Platform</label>
+        <div className="catalogue-upload-groups">
+          {(['web', 'mobile'] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`catalogue-upload-group-chip ${platform === item ? 'active' : ''}`}
+              onClick={() => onPlatformChange(platform === item ? null : item)}
+            >
+              {item === 'web' ? 'Web' : 'Mobile'}
+            </button>
+          ))}
+        </div>
+
+        {platform === 'web' && (
+          <>
+            <label className="catalogue-upload-label">Web preset</label>
+            <div className="catalogue-upload-groups">
+              {webPresets.map((preset) => (
+                <button
+                  key={preset.key}
+                  type="button"
+                  className={`catalogue-upload-group-chip ${webPresetKey === preset.key ? 'active' : ''}`}
+                  onClick={() => onWebPresetKeyChange(webPresetKey === preset.key ? null : preset.key)}
+                >
+                  {preset.label}
+                  <span className="catalogue-upload-group-primary">{preset.width}px</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {platform === 'mobile' && (
+          <>
+            <label className="catalogue-upload-label">Mobile OS</label>
+            <div className="catalogue-upload-groups">
+              {(['ios', 'android'] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`catalogue-upload-group-chip ${mobileOs === item ? 'active' : ''}`}
+                  onClick={() => onMobileOsChange(mobileOs === item ? null : item)}
+                >
+                  {item === 'ios' ? 'iOS' : 'Android'}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <p className="catalogue-upload-hint" style={{ textAlign: 'left', padding: '8px 0' }}>
+          Naming format: <code>01-deposit-select-coin.png</code>
+        </p>
         <UploadZone onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />
       </div>
 
@@ -142,7 +236,7 @@ export function CatalogueQuickUploadPanel({
                   <span className="catalogue-quick-queue-copy">
                     <span className="catalogue-quick-queue-file">{item.fileName}</span>
                     <span className="catalogue-quick-queue-meta">
-                      {item.parsedName} · Group: {getQueueGroupLabel(item)}
+                      {buildConventionName(item.parsedSequence, flowLabel || item.parsedGroup, item.parsedName)} · Group: {getQueueGroupLabel(item)}
                     </span>
                   </span>
                   <button

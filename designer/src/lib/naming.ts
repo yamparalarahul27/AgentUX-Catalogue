@@ -57,6 +57,45 @@ export function getDisplayName(fileName: string): string {
 }
 
 /**
+ * Build a convention-format name from parts.
+ *
+ * Examples:
+ *   (1, "Deposit", "Select Coin") → "01-deposit-select-coin"
+ *   (null, "Auth", "Login")       → "auth-login"
+ *   (3, null, "Dashboard")        → "03-dashboard"
+ */
+export function buildConventionName(
+  sequence: number | null,
+  flowLabel: string | null,
+  screenName: string,
+): string {
+  const slug = screenName.trim().toLowerCase().replace(/\s+/g, '-');
+  const flow = flowLabel?.trim().toLowerCase().replace(/\s+/g, '-') || null;
+
+  const parts: string[] = [];
+  if (sequence !== null && sequence >= 0) {
+    parts.push(String(sequence).padStart(2, '0'));
+  }
+  if (flow) {
+    parts.push(flow);
+  }
+  parts.push(slug);
+  return parts.join('-');
+}
+
+/**
+ * Check if a name follows the convention format (lowercase, dashes, optional leading number).
+ *
+ * Examples:
+ *   "01-deposit-select-coin" → true
+ *   "Select Coin"            → false
+ *   "auth-login"             → true
+ */
+export function isConventionName(name: string): boolean {
+  return /^(\d+-)?[a-z][a-z0-9-]*$/.test(name);
+}
+
+/**
  * Color map for known screenshot groups.
  */
 export const groupColors: Record<string, string> = {
