@@ -1,3 +1,5 @@
+// Design reference: github.com/dominikmartn/nothing-design-skill
+// Accent override: Indigo (#6366f1) replaces Nothing Red
 import { useMemo, useRef, useState } from 'react';
 import { CatalogueHeader } from './CatalogueHeader';
 
