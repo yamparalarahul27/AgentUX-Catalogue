@@ -119,6 +119,70 @@
   }
 }
 
+.catalogue-team__sub-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(15, 15, 16, 0.7);
+  margin-bottom: 4px;
+}
+
+.catalogue-team__sub-tab {
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 7px 14px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover { color: #d4d4d8; }
+
+  &.is-active {
+    color: #fafafa;
+    background: rgba(99, 102, 241, 0.22);
+  }
+}
+
+.catalogue-team__checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid #27272a;
+  border-radius: 14px;
+  background: rgba(17, 17, 19, 0.9);
+  overflow: hidden;
+}
+
+.catalogue-team__checklist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(39, 39, 42, 0.6);
+  transition: background 0.12s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba(99, 102, 241, 0.06); }
+}
+
+.catalogue-team__checklist-flow {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e4e4e7;
+}
+
+.catalogue-team__checklist-count {
+  font-size: 12px;
+  color: #71717a;
+  font-variant-numeric: tabular-nums;
+}
+
 .catalogue-team__empty {
   border: 1px dashed rgba(63, 63, 70, 0.8);
   border-radius: 12px;
