@@ -10,6 +10,7 @@ import type { MobileOs, WebPreset } from '../types';
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
   canEdit?: boolean;
@@ -36,7 +37,6 @@ interface CatalogueFamilyLightboxProps {
 type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; resolved_at?: string | null; resolved_by_email?: string | null };
 type LightboxPanel = 'comments' | 'annotations';
 const shouldStartLightboxSheetMinimized = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 960px)').matches;
-
 export function CatalogueFamilyLightbox({
   activeVariantKey,
   canEdit = true,
@@ -396,7 +396,7 @@ export function CatalogueFamilyLightbox({
         <div className="catalogue-lightbox-name-wrap">
           <span className="catalogue-lightbox-name">{family.name}</span>
         </div>
-        {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}>{family.group}</span>}
+        {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={family.project_id} /></span>}
         {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
         {screenshot.theme && <span className="catalogue-lightbox-tag">{screenshot.theme}</span>}
         <button type="button" className="catalogue-lightbox-close" onClick={onClose}>
@@ -458,7 +458,7 @@ export function CatalogueFamilyLightbox({
           <div className="catalogue-family-lightbox">
             <div className="catalogue-family-lightbox__summary">
               <div className="catalogue-lightbox-meta-line">
-                {family.group && <span className="catalogue-lightbox-meta-chip" style={{ borderColor: groupColor, color: groupColor }}>{family.group}</span>}
+                {family.group && <span className="catalogue-lightbox-meta-chip" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={family.project_id} /></span>}
                 {flowName && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--flow">{flowName}</span></>}
                 {activeVariant.label && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--variant">{activeVariant.label}</span></>}
               </div>

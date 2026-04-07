@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Project, ScreenshotNode, Connection } from '../types';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 
 interface MobileFlowViewProps {
   project: Project;
@@ -90,7 +91,9 @@ export function MobileFlowView({
                   {screenshot.name}
                 </h3>
                 {screenshot.group && (
-                  <span className="mobile-flow-group">{screenshot.group}</span>
+                  <span className="mobile-flow-group">
+                    <CatalogueGroupLabel group={screenshot.group} projectId={screenshot.project_id} />
+                  </span>
                 )}
                 {targets.length > 0 && (
                   <div className="mobile-flow-targets">

@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueFilterSheet } from './CatalogueFilterSheet';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
@@ -598,7 +599,7 @@ export function CatalogueToolbar({
                       className={`catalogue-vs-chip ${vsGroups.includes(group) ? 'active' : ''}`}
                       onClick={() => toggleVsGroup(group)}
                     >
-                      {group}
+                      <CatalogueGroupLabel group={group} projectId={activeProjectId} />
                       {vsGroups.includes(group) && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                           <line x1="18" y1="6" x2="6" y2="18" />

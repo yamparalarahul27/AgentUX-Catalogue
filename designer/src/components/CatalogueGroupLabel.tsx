@@ -12,6 +12,7 @@ interface CatalogueGroupLabelProps {
   projectId?: string | null;
   fallback?: string;
   className?: string;
+  iconSize?: number;
 }
 
 export function CatalogueGroupLabel({
@@ -19,8 +20,10 @@ export function CatalogueGroupLabel({
   projectId = null,
   fallback = 'No group',
   className,
+  iconSize = 14,
 }: CatalogueGroupLabelProps) {
   const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
+  const [iconLoadFailed, setIconLoadFailed] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribeCatalogueGroupAppearance(() => {
@@ -36,26 +39,35 @@ export function CatalogueGroupLabel({
   const appearance = useMemo(() => (
     resolveCatalogueGroupAppearance(appearanceMap, group, projectId)
   ), [appearanceMap, group, projectId]);
+
+  useEffect(() => {
+    setIconLoadFailed(false);
+  }, [appearance.iconUrl]);
+
   const label = appearance.label || fallback;
+  const shouldShowImage = Boolean(appearance.iconUrl && !iconLoadFailed);
+  const shouldShowEmoji = Boolean(!shouldShowImage && appearance.iconEmoji);
 
   return (
-    <span className={className}>
-      {appearance.iconUrl ? (
+    <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+      {shouldShowImage ? (
         <img
-          src={appearance.iconUrl}
+          src={appearance.iconUrl || undefined}
           alt=""
           aria-hidden="true"
+          onError={() => setIconLoadFailed(true)}
           style={{
-            width: 14,
-            height: 14,
+            width: iconSize,
+            height: iconSize,
             objectFit: 'contain',
-            marginRight: 6,
-            verticalAlign: '-2px',
+            flexShrink: 0,
           }}
         />
       ) : null}
-      {!appearance.iconUrl && appearance.iconEmoji ? <span aria-hidden="true">{appearance.iconEmoji} </span> : null}
-      {label}
+      {shouldShowEmoji ? <span aria-hidden="true" style={{ fontSize: iconSize, lineHeight: 1 }}>{appearance.iconEmoji}</span> : null}
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
     </span>
   );
 }

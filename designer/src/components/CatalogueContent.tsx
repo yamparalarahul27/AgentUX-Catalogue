@@ -204,6 +204,7 @@ export function CatalogueContent({
                 group={groupName}
                 projectId={families[0]?.project_id ?? null}
                 fallback="Ungrouped"
+                iconSize={32}
               />
               <span className="catalogue-section-count">{families.length}</span>
               {compareEnabled && primaryGroup === groupName && <span className="catalogue-badge catalogue-badge-primary">Primary</span>}
