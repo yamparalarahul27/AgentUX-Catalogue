@@ -130,6 +130,14 @@ export function CatalogueGalleryView({
     [activeFamily, activeVariantKeys],
   );
   const screenshot = activeVariant?.screenshot ?? null;
+  const feedback = useCatalogueGalleryFeedback({
+    canEdit,
+    onAnnotationStateChange,
+    onCommentCountChange,
+    onRequireAuth,
+    screenshot,
+    userEmail,
+  });
   const zoomPercent = Math.round(zoom * 100);
   useEffect(() => {
     if (!activeFamily) return;
@@ -174,23 +182,8 @@ export function CatalogueGalleryView({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeFamily, activeFamilyIndex, families]);
-  if (!activeFamily || !activeVariant || !screenshot) {
-    return null;
-  }
-  const family = activeFamily;
-  const variant = activeVariant;
-  const activeScreenshot = screenshot;
-  const feedback = useCatalogueGalleryFeedback({
-    canEdit,
-    onAnnotationStateChange,
-    onCommentCountChange,
-    onRequireAuth,
-    screenshot: activeScreenshot,
-    userEmail,
-  });
-
   useEffect(() => {
-    if (!previewStageRef.current) return;
+    if (!screenshot || !previewStageRef.current) return;
 
     const update = () => {
       if (!previewStageRef.current) return;
@@ -209,7 +202,7 @@ export function CatalogueGalleryView({
       observer.disconnect();
       window.removeEventListener('resize', update);
     };
-  }, [activeScreenshot.id, feedback.setMediaSize]);
+  }, [feedback.setMediaSize, screenshot?.id]);
 
   useEffect(() => {
     if (!feedback.annotationMode || zoom <= GALLERY_ZOOM_MIN) return;
@@ -218,6 +211,13 @@ export function CatalogueGalleryView({
       previewRef.current?.scrollTo({ top: 0, left: 0 });
     });
   }, [feedback.annotationMode, zoom]);
+
+  if (!activeFamily || !activeVariant || !screenshot) {
+    return null;
+  }
+  const family = activeFamily;
+  const variant = activeVariant;
+  const activeScreenshot = screenshot;
 
   const canSaveInline = isInlineDraftValid(inlineDraft) && !isSavingInline;
   async function requestDeleteCurrent() {
