@@ -1,7 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { CatalogueHeader } from './CatalogueHeader';
 
 type GroupStatus = 'primary' | 'active' | 'review' | 'archived';
+
+interface FolderScreen {
+  id: string;
+  label: string;
+  color: string;
+}
 
 interface FolderGroup {
   id: string;
@@ -10,7 +16,7 @@ interface FolderGroup {
   description: string;
   status: GroupStatus;
   screenCount: number;
-  thumbnails: string[];
+  screens: FolderScreen[];
 }
 
 const STATUS_CONFIG: Record<GroupStatus, { label: string; symbol: string; className: string }> = {
@@ -28,7 +34,11 @@ const MOCK_GROUPS: FolderGroup[] = [
     description: 'Main competitor',
     status: 'active',
     screenCount: 12,
-    thumbnails: [],
+    screens: [
+      { id: 'b-1', label: 'Deposit Flow', color: '#1e3a5f' },
+      { id: 'b-2', label: 'Trade View', color: '#2d1b4e' },
+      { id: 'b-3', label: 'Portfolio', color: '#1a3d2e' },
+    ],
   },
   {
     id: 'g-02',
@@ -37,7 +47,11 @@ const MOCK_GROUPS: FolderGroup[] = [
     description: 'US market ref',
     status: 'archived',
     screenCount: 8,
-    thumbnails: [],
+    screens: [
+      { id: 'c-1', label: 'Home Feed', color: '#1b2d4e' },
+      { id: 'c-2', label: 'Buy Flow', color: '#3d1a2e' },
+      { id: 'c-3', label: 'Wallet', color: '#2e3a1a' },
+    ],
   },
   {
     id: 'g-03',
@@ -46,12 +60,69 @@ const MOCK_GROUPS: FolderGroup[] = [
     description: 'Our product',
     status: 'primary',
     screenCount: 15,
-    thumbnails: [],
+    screens: [
+      { id: 'k-1', label: 'Dashboard', color: '#2a1a4e' },
+      { id: 'k-2', label: 'Send Crypto', color: '#1a3a4e' },
+      { id: 'k-3', label: 'Settings', color: '#3a2a1a' },
+    ],
   },
 ];
 
 function getLetterAvatar(name: string) {
   return name.charAt(0).toUpperCase();
+}
+
+function FolderCarousel({ screens }: { screens: FolderScreen[] }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  function handleScroll() {
+    const track = trackRef.current;
+    if (!track) return;
+    const slideWidth = track.scrollWidth / screens.length;
+    const idx = Math.round(track.scrollLeft / slideWidth);
+    setActiveIndex(Math.min(idx, screens.length - 1));
+  }
+
+  function scrollTo(index: number) {
+    const track = trackRef.current;
+    if (!track) return;
+    const slideWidth = track.scrollWidth / screens.length;
+    track.scrollTo({ left: slideWidth * index, behavior: 'smooth' });
+  }
+
+  return (
+    <div className="cd-carousel">
+      <div className="cd-carousel__track" ref={trackRef} onScroll={handleScroll}>
+        {screens.map((screen, i) => (
+          <div
+            key={screen.id}
+            className={`cd-carousel__slide ${i === activeIndex ? 'is-active' : ''}`}
+          >
+            <div className="cd-carousel__screen" style={{ background: screen.color }}>
+              <div className="cd-carousel__screen-wire" />
+              <div className="cd-carousel__screen-wire" />
+              <div className="cd-carousel__screen-wire" />
+              <span className="cd-carousel__screen-label">{screen.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="cd-carousel__footer">
+        <div className="cd-carousel__dots">
+          {screens.map((screen, i) => (
+            <button
+              key={screen.id}
+              type="button"
+              className={`cd-carousel__dot ${i === activeIndex ? 'is-active' : ''}`}
+              onClick={() => scrollTo(i)}
+            />
+          ))}
+        </div>
+        <span className="cd-carousel__count">{activeIndex + 1}/{screens.length}</span>
+      </div>
+    </div>
+  );
 }
 
 function FolderCard({ group }: { group: FolderGroup }) {
@@ -79,19 +150,7 @@ function FolderCard({ group }: { group: FolderGroup }) {
         </div>
       </div>
 
-      <div className="cd-folder-card__thumbs">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="cd-folder-card__thumb">
-            {group.thumbnails[i] ? (
-              <img src={group.thumbnails[i]} alt="" draggable={false} />
-            ) : (
-              <div className="cd-folder-card__thumb-placeholder">
-                <div className="cd-folder-card__thumb-noise" />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      <FolderCarousel screens={group.screens} />
 
       <div className="cd-folder-card__footer">
         <span className="cd-folder-card__arrow">→</span>
@@ -105,7 +164,6 @@ export function CatalogueCtestPage() {
 
   return (
     <div className="catalogue-page catalogue-page--ctest">
-
       <CatalogueHeader
         activeSection={section}
         canViewTeam={false}
