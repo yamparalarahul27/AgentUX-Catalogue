@@ -1,13 +1,18 @@
+import { useRef } from 'react';
+
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 
 interface CatalogueFamilyLightboxInlineEditorProps {
   existingGroups: string[];
   flowDraft: string;
   groupDraft: string;
+  hasReference: boolean;
   isSaving: boolean;
   mobileOsDraft: MobileOs | null;
   nameDraft: string;
   platformDraft: 'mobile' | 'web' | null;
+  referenceFileName: string | null;
+  referenceLabelDraft: string;
   themeDraft: 'light' | 'dark' | null;
   webPresetDraft: string | null;
   webPresets: WebPreset[];
@@ -17,6 +22,8 @@ interface CatalogueFamilyLightboxInlineEditorProps {
   onMobileOsChange: (value: MobileOs | null) => void;
   onNameChange: (value: string) => void;
   onPlatformChange: (value: 'mobile' | 'web' | null) => void;
+  onReferenceFileSelect: (file: File | null) => void;
+  onReferenceLabelChange: (value: string) => void;
   onSave: () => void;
   onThemeChange: (value: 'light' | 'dark' | null) => void;
   onWebPresetChange: (value: string | null) => void;
@@ -62,10 +69,13 @@ export function CatalogueFamilyLightboxInlineEditor({
   existingGroups,
   flowDraft,
   groupDraft,
+  hasReference,
   isSaving,
   mobileOsDraft,
   nameDraft,
   platformDraft,
+  referenceFileName,
+  referenceLabelDraft,
   themeDraft,
   webPresetDraft,
   webPresets,
@@ -75,10 +85,14 @@ export function CatalogueFamilyLightboxInlineEditor({
   onMobileOsChange,
   onNameChange,
   onPlatformChange,
+  onReferenceFileSelect,
+  onReferenceLabelChange,
   onSave,
   onThemeChange,
   onWebPresetChange,
 }: CatalogueFamilyLightboxInlineEditorProps) {
+  const referenceInputRef = useRef<HTMLInputElement>(null);
+
   return (
     <div className="catalogue-lightbox-inline-editor">
       <div className="catalogue-list-inline-editor__head">
@@ -154,6 +168,45 @@ export function CatalogueFamilyLightboxInlineEditor({
             </select>
           </label>
         )}
+        <label className="catalogue-list-inline-editor__field catalogue-list-inline-editor__field--full">
+          <span>Reference image</span>
+          <div className="catalogue-list-inline-editor__chips">
+            <button
+              type="button"
+              className="catalogue-list-action"
+              onClick={() => referenceInputRef.current?.click()}
+            >
+              {hasReference || referenceFileName ? 'Replace reference image' : 'Add reference image'}
+            </button>
+            {referenceFileName
+              ? <span>{referenceFileName}</span>
+              : <span>{hasReference ? 'Current reference attached' : 'No reference image'}</span>}
+            {referenceFileName && (
+              <button
+                type="button"
+                className="catalogue-list-action"
+                onClick={() => onReferenceFileSelect(null)}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <input
+            ref={referenceInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event) => {
+              onReferenceFileSelect(event.target.files?.[0] ?? null);
+              event.target.value = '';
+            }}
+          />
+          <input
+            value={referenceLabelDraft}
+            placeholder="Reference label (optional)"
+            onChange={(event) => onReferenceLabelChange(event.target.value)}
+          />
+        </label>
       </div>
       <div className="catalogue-lightbox-inline-editor__actions">
         <button type="button" className="catalogue-family-lightbox__action" onClick={onSave} disabled={isSaving}>

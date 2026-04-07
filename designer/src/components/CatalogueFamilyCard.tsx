@@ -5,6 +5,7 @@ import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
 import { getGroupColor } from '../lib/naming';
 import { ConfirmModal } from './ConfirmModal';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 
 interface CatalogueFamilyCardProps {
   family: CatalogueFamilyView;
@@ -210,7 +211,11 @@ export function CatalogueFamilyCard({
           <div className="catalogue-card-meta">
             <div className="catalogue-card-group">
               <span className="catalogue-card-dot" style={{ background: groupColor }} />
-              <span className="catalogue-family-card__group">{family.group || 'No group'}</span>
+              <CatalogueGroupLabel
+                className="catalogue-family-card__group"
+                group={family.group}
+                projectId={family.project_id}
+              />
             </div>
             <div className="catalogue-card-meta-right">
               {platform === 'mobile' && (

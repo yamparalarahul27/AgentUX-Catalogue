@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
 import type { MobileOs, WebPreset } from '../types';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 
 interface CatalogueFamilyListViewProps {
   activeVariantKeys: Record<string, string>;
@@ -420,7 +421,7 @@ export function CatalogueFamilyListView({
                   </div>
 
                   <span className={`catalogue-list-group ${isColumnPinned('group') ? 'is-pinned' : ''}`} style={getPinnedCellStyle('group')}>
-                    {family.group || 'No group'}
+                    <CatalogueGroupLabel group={family.group} projectId={family.project_id} />
                   </span>
                   <span className={`catalogue-list-flow ${isColumnPinned('flow') ? 'is-pinned' : ''}`} style={getPinnedCellStyle('flow')}>
                     {family.flow_label || 'Unassigned'}

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-
 import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
@@ -24,7 +23,6 @@ import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
 import { ConfirmModal } from './ConfirmModal';
 import { Toast } from './Toast';
-
 interface CatalogueProps {
   user: User;
   isGuest?: boolean;
@@ -32,7 +30,6 @@ interface CatalogueProps {
 }
 
 type CatalogueSection = 'catalogue' | 'videos' | 'team';
-
 export function Catalogue({
   user,
   isGuest = false,
@@ -147,6 +144,7 @@ export function Catalogue({
     handlePrimaryGroupChange,
     handleRenameFamily,
     handleRemoveReference,
+    handleSetReference,
     handleReplaceImage,
     handleSetFlowLabel,
     handleUpdateVariantDetails,
@@ -216,6 +214,10 @@ export function Catalogue({
   const handleGuestAwareSetFlowLabel = (id: string, label: string | null) => guardMutation(() => handleSetFlowLabel(id, label), false);
   const handleGuestAwareUpdateVariantDetails = (id: string, patch: { mobile_os?: 'ios' | 'android' | null; platform?: 'mobile' | 'web' | null; theme?: 'light' | 'dark' | null; web_preset_key?: string | null }) => guardMutation(() => handleUpdateVariantDetails(id, patch), false);
   const handleGuestAwareRemoveReference = (id: string) => guardMutation(() => handleRemoveReference(id), false);
+  const handleGuestAwareSetReference = (
+    id: string,
+    input: { file: File | null; label: string | null },
+  ) => guardMutation(() => handleSetReference(id, input), false);
 
   useEffect(() => {
     persistViewMode(viewMode);
@@ -407,12 +409,6 @@ export function Catalogue({
                 }}
                 onSearchChange={setSearchQuery}
                 onSortByChange={setSortBy}
-                onUploadClick={() => {
-                  guardAction(() => {
-                    upload.setUploadProjectId(activeProjectId);
-                    upload.setShowUpload(true);
-                  });
-                }}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
                 onVsGroupsChange={(groups) => {
@@ -431,6 +427,7 @@ export function Catalogue({
               <CatalogueContent
                 activeVariantKeys={upload.activeVariantKeys}
                 allFamilies={allFamilies}
+                canEdit={!isGuest}
                 compareEnabled={compareEnabled}
                 compareFlow={compareFlow}
                 filterFlow={filterFlow}
@@ -448,7 +445,9 @@ export function Catalogue({
                 viewMode={viewMode}
                 vsGroups={vsGroups}
                 onActiveVariantChange={upload.updateActiveVariant}
+                onAnnotationStateChange={handleAnnotationStateChange}
                 onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
+                onCommentCountChange={handleCommentCountChange}
                 onDeleteFamily={handleGuestAwareDeleteFamily}
                 onOpenPreview={openPreview}
                 onOpenPreviewAndEdit={(familyId) => {
@@ -459,6 +458,7 @@ export function Catalogue({
                   }
                   openPreviewAndEdit(familyId);
                 }}
+                onRequireAuth={() => setShowAuthPrompt(true)}
                 onRenameFamily={handleGuestAwareRenameFamily}
                 onRemoveReference={handleGuestAwareRemoveReference}
                 onReplaceVariantImage={handleGuestAwareReplaceImage}
@@ -466,6 +466,7 @@ export function Catalogue({
                 onToggleGroupSelect={toggleGroupSelection}
                 onToggleSelect={toggleSelect}
                 onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
+                userEmail={user.email || 'Designer'}
                 webPresets={webPresets}
               />
             </div>
@@ -591,6 +592,7 @@ export function Catalogue({
           onDeleteFamily={handleGuestAwareDeleteFamily}
           onRenameFamily={handleGuestAwareRenameFamily}
           onReplaceVariantImage={handleGuestAwareReplaceImage}
+          onSetReference={handleGuestAwareSetReference}
           onSetFlowLabel={handleGuestAwareSetFlowLabel}
           onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
         />

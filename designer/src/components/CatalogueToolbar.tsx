@@ -36,7 +36,6 @@ interface CatalogueToolbarProps {
   onQuickUploadClick: () => void;
   onSearchChange: (value: string) => void;
   onSortByChange: (value: CatalogueSortOption) => void;
-  onUploadClick: () => void;
   onViewByChange: (value: CatalogueViewBy) => void;
   onViewModeChange: (value: CatalogueViewMode) => void;
   onVsGroupsChange: (value: string[]) => void;
@@ -130,7 +129,6 @@ export function CatalogueToolbar({
   onQuickUploadClick,
   onSearchChange,
   onSortByChange,
-  onUploadClick,
   onViewByChange,
   onViewModeChange,
   onVsGroupsChange,
@@ -458,11 +456,8 @@ export function CatalogueToolbar({
 
         <div className="catalogue-toolbar-right">
           {/* Desktop buttons - hidden on mobile */}
-          <button className="btn-secondary catalogue-toolbar--desktop-only" onClick={onQuickUploadClick}>
+          <button className="btn-primary catalogue-toolbar--desktop-only" onClick={onQuickUploadClick}>
             Quick Upload
-          </button>
-          <button className="btn-primary catalogue-toolbar--desktop-only" onClick={onUploadClick}>
-            + Upload
           </button>
 
           {/* Mobile pills - hidden on desktop */}
@@ -481,7 +476,12 @@ export function CatalogueToolbar({
           >
             <span>CMP</span>
           </button>
-          <button type="button" className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only" onClick={onUploadClick}>
+          <button
+            type="button"
+            className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only"
+            onClick={onQuickUploadClick}
+            title="Quick upload"
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId, getVariantKey } from '../lib/catalogue-families';
@@ -18,6 +18,7 @@ type QuickUploadGroupMode = 'auto' | 'existing' | 'new';
 interface QuickUploadQueueItem {
   id: string;
   file: File;
+  previewUrl: string;
   parsed: ReturnType<typeof parseScreenshotName>;
 }
 
@@ -57,6 +58,7 @@ export function useCatalogueUpload({
   const [showQuickUpload, setShowQuickUpload] = useState(false);
   const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null);
   const [quickUploadQueue, setQuickUploadQueue] = useState<QuickUploadQueueItem[]>([]);
+  const quickUploadQueueRef = useRef<QuickUploadQueueItem[]>([]);
   const [quickUploadGroupMode, setQuickUploadGroupMode] = useState<QuickUploadGroupMode>('auto');
   const [quickUploadExistingGroup, setQuickUploadExistingGroup] = useState<string | null>(null);
   const [quickUploadNewGroup, setQuickUploadNewGroup] = useState('');
@@ -89,12 +91,21 @@ export function useCatalogueUpload({
     () => quickUploadQueue.map((item) => ({
       id: item.id,
       fileName: item.file.name,
+      previewUrl: item.previewUrl,
       parsedName: item.parsed.name,
       parsedGroup: item.parsed.group,
       parsedSequence: item.parsed.sequence,
     })),
     [quickUploadQueue],
   );
+
+  useEffect(() => {
+    quickUploadQueueRef.current = quickUploadQueue;
+  }, [quickUploadQueue]);
+
+  useEffect(() => () => {
+    quickUploadQueueRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+  }, []);
 
   useEffect(() => {
     if (uploadPlatform === 'web' && !uploadWebPresetKey) {
@@ -161,7 +172,10 @@ export function useCatalogueUpload({
   function resetQuickUploadState() {
     setShowQuickUpload(false);
     setQuickUploadProjectId(null);
-    setQuickUploadQueue([]);
+    setQuickUploadQueue((previous) => {
+      previous.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      return [];
+    });
     setQuickUploadGroupMode('auto');
     setQuickUploadExistingGroup(null);
     setQuickUploadNewGroup('');
@@ -196,6 +210,7 @@ export function useCatalogueUpload({
         additions.push({
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name}`,
           file,
+          previewUrl: URL.createObjectURL(file),
           parsed: parseScreenshotName(file.name),
         });
       }
@@ -205,11 +220,18 @@ export function useCatalogueUpload({
   }
 
   function handleQuickUploadQueueRemove(id: string) {
-    setQuickUploadQueue((previous) => previous.filter((item) => item.id !== id));
+    setQuickUploadQueue((previous) => {
+      const target = previous.find((item) => item.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return previous.filter((item) => item.id !== id);
+    });
   }
 
   function handleQuickUploadQueueClear() {
-    setQuickUploadQueue([]);
+    setQuickUploadQueue((previous) => {
+      previous.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      return [];
+    });
   }
 
   async function uploadReference(projectId: string) {

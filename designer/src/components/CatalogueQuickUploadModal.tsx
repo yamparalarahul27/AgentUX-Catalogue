@@ -6,6 +6,7 @@ import { Dropdown } from './Dropdown';
 interface QuickUploadQueuePreviewItem {
   id: string;
   fileName: string;
+  previewUrl: string;
   parsedName: string;
   parsedGroup: string | null;
   parsedSequence: number | null;

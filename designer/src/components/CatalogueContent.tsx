@@ -3,11 +3,13 @@ import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueCompareView } from './CatalogueCompareView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueFamilyListView } from './CatalogueFamilyListView';
 
 interface CatalogueContentProps {
   activeVariantKeys: Record<string, string>;
   allFamilies: CatalogueFamilyView[];
+  canEdit: boolean;
   compareEnabled: boolean;
   compareFlow: string | null;
   filterFlow: string | null;
@@ -25,10 +27,13 @@ interface CatalogueContentProps {
   filteredFamilies: CatalogueFamilyView[];
   vsGroups: string[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
+  onAnnotationStateChange: (screenshotId: string, metadata: Record<string, unknown>) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
+  onCommentCountChange: (screenshotId: string, delta: number) => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenPreview: (familyId: string) => void;
   onOpenPreviewAndEdit: (familyId: string) => void;
+  onRequireAuth?: () => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onRemoveReference: (screenshotId: string) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
@@ -44,12 +49,14 @@ interface CatalogueContentProps {
       web_preset_key?: string | null;
     },
   ) => Promise<boolean>;
+  userEmail: string;
   webPresets: { key: string; label: string; width: number }[];
 }
 
 export function CatalogueContent({
   activeVariantKeys,
   allFamilies,
+  canEdit,
   compareEnabled,
   compareFlow,
   filterFlow,
@@ -67,10 +74,13 @@ export function CatalogueContent({
   filteredFamilies,
   vsGroups,
   onActiveVariantChange,
+  onAnnotationStateChange,
   onChangeFamilyGroup,
+  onCommentCountChange,
   onDeleteFamily,
   onOpenPreview,
   onOpenPreviewAndEdit,
+  onRequireAuth,
   onRenameFamily,
   onRemoveReference,
   onReplaceVariantImage,
@@ -78,6 +88,7 @@ export function CatalogueContent({
   onToggleGroupSelect,
   onToggleSelect,
   onUpdateVariantDetails,
+  userEmail,
   webPresets,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
@@ -149,16 +160,20 @@ export function CatalogueContent({
     return (
       <CatalogueGalleryView
         activeVariantKeys={activeVariantKeys}
+        canEdit={canEdit}
         families={filteredFamilies}
         onActiveVariantChange={onActiveVariantChange}
+        onAnnotationStateChange={onAnnotationStateChange}
         onChangeFamilyGroup={onChangeFamilyGroup}
+        onCommentCountChange={onCommentCountChange}
         onDeleteFamily={onDeleteFamily}
-        onOpenPreview={onOpenPreview}
+        onRequireAuth={onRequireAuth}
         onRenameFamily={onRenameFamily}
         onRemoveReference={onRemoveReference}
         onReplaceVariantImage={onReplaceVariantImage}
         onSetFlowLabel={onSetFlowLabel}
         onUpdateVariantDetails={onUpdateVariantDetails}
+        userEmail={userEmail}
         webPresets={webPresets}
       />
     );
@@ -185,7 +200,11 @@ export function CatalogueContent({
                     : <rect x="3" y="3" width="18" height="18" rx="2" />}
                 </svg>
               </button>
-              {groupName}
+              <CatalogueGroupLabel
+                group={groupName}
+                projectId={families[0]?.project_id ?? null}
+                fallback="Ungrouped"
+              />
               <span className="catalogue-section-count">{families.length}</span>
               {compareEnabled && primaryGroup === groupName && <span className="catalogue-badge catalogue-badge-primary">Primary</span>}
               {compareEnabled && vsGroups.includes(groupName) && <span className="catalogue-badge catalogue-badge-vs">Vs</span>}

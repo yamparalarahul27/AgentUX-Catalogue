@@ -1,0 +1,202 @@
+import { formatDateTime } from '../lib/catalogue-lightbox';
+import type { CatalogueGalleryFeedbackState } from '../hooks/use-catalogue-gallery-feedback';
+
+interface CatalogueGalleryFeedbackPanelProps {
+  canEdit: boolean;
+  feedback: CatalogueGalleryFeedbackState;
+  userEmail: string;
+}
+
+export function CatalogueGalleryFeedbackPanel({
+  canEdit,
+  feedback,
+  userEmail,
+}: CatalogueGalleryFeedbackPanelProps) {
+  return (
+    <>
+      <div className="catalogue-gallery-meta-head">
+        <div className="catalogue-gallery-tabs" role="tablist" aria-label="Gallery details">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={feedback.panel === 'comments'}
+            className={`catalogue-gallery-tab ${feedback.panel === 'comments' ? 'is-active' : ''}`}
+            onClick={() => feedback.setPanel('comments')}
+          >
+            Comments ({feedback.comments.length})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={feedback.panel === 'annotations'}
+            className={`catalogue-gallery-tab ${feedback.panel === 'annotations' ? 'is-active' : ''}`}
+            onClick={() => feedback.setPanel('annotations')}
+          >
+            Annotations ({feedback.annotations.length})
+          </button>
+        </div>
+      </div>
+
+      {feedback.panel === 'comments' ? (
+        <div className="catalogue-gallery-comments">
+          <div className="catalogue-gallery-comments-list">
+            {feedback.loadingComments ? (
+              <div className="catalogue-gallery-comments-empty catalogue-gallery-comments-state">
+                <div className="loading-spinner" />
+                <span>Loading comments...</span>
+              </div>
+            ) : feedback.commentsError ? (
+              <p className="catalogue-gallery-comments-empty catalogue-gallery-comments-state">
+                {feedback.commentsError}
+              </p>
+            ) : feedback.comments.length === 0 ? (
+              <p className="catalogue-gallery-comments-empty">No comments yet</p>
+            ) : (
+              feedback.comments.map((comment) => (
+                <div key={comment.id} className="catalogue-gallery-comment">
+                  <div className="catalogue-gallery-comment-top">
+                    <span className="catalogue-gallery-comment-email">{comment.user_email}</span>
+                    <span className="catalogue-gallery-comment-time">{formatDateTime(comment.created_at)}</span>
+                    {canEdit && comment.user_email === userEmail && (
+                      <button
+                        type="button"
+                        className="catalogue-gallery-comment-delete"
+                        title="Delete comment"
+                        onClick={() => void feedback.deleteComment(comment.id)}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <p className="catalogue-gallery-comment-text">{comment.text}</p>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="catalogue-gallery-comment-input">
+            <input
+              type="text"
+              value={feedback.newComment}
+              onChange={(event) => feedback.setNewComment(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  void feedback.addComment();
+                }
+              }}
+              placeholder={canEdit ? 'Add a comment...' : 'Enter email to comment'}
+              disabled={!canEdit || feedback.savingComment}
+            />
+            <button
+              type="button"
+              onClick={() => void feedback.addComment()}
+              disabled={!canEdit || !feedback.newComment.trim() || feedback.savingComment}
+            >
+              {feedback.savingComment ? 'Adding...' : 'Add'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="catalogue-gallery-annotations">
+          <div className="catalogue-lightbox-annotation-toolbar">
+            <button
+              type="button"
+              className={`catalogue-lightbox-annotation-toggle ${feedback.annotationMode ? 'is-active' : ''}`}
+              onClick={feedback.toggleAnnotationMode}
+            >
+              {feedback.annotationMode ? 'Placement mode on' : 'Add pin'}
+            </button>
+            <span className="catalogue-lightbox-annotation-toolbar-copy">
+              {feedback.annotationMode ? 'Click the image to place a pin.' : 'Select a pin to inspect it.'}
+            </span>
+          </div>
+          {feedback.annotationError && <p className="catalogue-lightbox-annotation-error">{feedback.annotationError}</p>}
+          {feedback.annotationDraft && (
+            <div className="catalogue-lightbox-annotation-composer">
+              <div className="catalogue-lightbox-annotation-composer-label">
+                New pin at {feedback.annotationDraft.x.toFixed(1)}%, {feedback.annotationDraft.y.toFixed(1)}%
+              </div>
+              <input
+                type="text"
+                value={feedback.annotationDraftText}
+                onChange={(event) => feedback.setAnnotationDraftText(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    void feedback.addAnnotation();
+                  }
+                  if (event.key === 'Escape') {
+                    feedback.cancelAnnotationDraft();
+                  }
+                }}
+                placeholder={canEdit ? 'Write annotation text...' : 'Enter email to annotate'}
+                disabled={!canEdit}
+              />
+              <div className="catalogue-lightbox-annotation-composer-actions">
+                <button
+                  type="button"
+                  className="catalogue-lightbox-annotation-save"
+                  onClick={() => void feedback.addAnnotation()}
+                  disabled={!canEdit || !feedback.annotationDraftText.trim()}
+                >
+                  Save pin
+                </button>
+                <button
+                  type="button"
+                  className="catalogue-lightbox-annotation-cancel"
+                  onClick={feedback.cancelAnnotationDraft}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="catalogue-lightbox-annotation-list">
+            {feedback.annotations.length === 0 ? (
+              <p className="catalogue-gallery-annotations-empty">No annotations yet</p>
+            ) : (
+              feedback.annotations.map((annotation, index) => (
+                <div
+                  key={annotation.id}
+                  role="button"
+                  tabIndex={0}
+                  className={`catalogue-lightbox-annotation-item ${feedback.selectedAnnotationId === annotation.id ? 'is-active' : ''}`}
+                  onClick={() => feedback.selectAnnotation(annotation.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      feedback.selectAnnotation(annotation.id);
+                    }
+                  }}
+                >
+                  <div className="catalogue-lightbox-annotation-item-top">
+                    <span className="catalogue-lightbox-annotation-badge">{index + 1}</span>
+                    <span className="catalogue-lightbox-annotation-time">{formatDateTime(annotation.created_at)}</span>
+                    {canEdit && annotation.user_email === userEmail && (
+                      <button
+                        type="button"
+                        className="catalogue-lightbox-annotation-delete"
+                        title="Delete annotation"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void feedback.deleteAnnotation(annotation.id);
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <p className="catalogue-lightbox-annotation-text">{annotation.text}</p>
+                  <span className="catalogue-lightbox-annotation-coords">
+                    {annotation.x.toFixed(1)}%, {annotation.y.toFixed(1)}%
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

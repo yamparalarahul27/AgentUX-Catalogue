@@ -1,11 +1,17 @@
 import { useMemo, useState } from 'react';
 
 import { getScreenshotFlowLabel } from '../lib/catalogue-families';
+import {
+  readCatalogueGroupAppearanceMap,
+  resolveCatalogueGroupAppearance,
+  upsertCatalogueGroupAppearance,
+  writeCatalogueGroupAppearanceMap,
+} from '../lib/catalogue-group-appearance';
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
 import type { Project, ScreenshotNode } from '../types';
 import { Dropdown } from './Dropdown';
 
-type TeamSubTab = 'analytics' | 'flows' | 'prototypes';
+type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'prototypes';
 
 const PROTOTYPE_LINKS_KEY = 'catalogue:prototype-links';
 
@@ -16,6 +22,11 @@ interface CatalogueTeamSectionProps {
 
 interface FlowChecklistItem {
   flow: string;
+  count: number;
+}
+
+interface GroupChecklistItem {
+  group: string;
   count: number;
 }
 
@@ -37,6 +48,23 @@ function buildFlowChecklist(screenshots: ScreenshotNode[]): FlowChecklistItem[] 
     .sort((a, b) => b.count - a.count);
 }
 
+function buildGroupChecklist(screenshots: ScreenshotNode[]): GroupChecklistItem[] {
+  const counts = new Map<string, GroupChecklistItem>();
+  for (const screenshot of screenshots) {
+    const group = screenshot.group?.trim();
+    if (!group) continue;
+    const key = group.toLowerCase();
+    const existing = counts.get(key);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    counts.set(key, { group, count: 1 });
+  }
+
+  return [...counts.values()].sort((left, right) => left.group.localeCompare(right.group));
+}
+
 function loadPrototypeLinks(): PrototypeLink[] {
   try {
     const raw = localStorage.getItem(PROTOTYPE_LINKS_KEY);
@@ -54,6 +82,15 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
   const [protoLinks, setProtoLinks] = useState<PrototypeLink[]>(loadPrototypeLinks);
   const [newLabel, setNewLabel] = useState('');
   const [newUrl, setNewUrl] = useState('');
+  const [groupAppearanceMap, setGroupAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
+  const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
+  const [groupLabelDraft, setGroupLabelDraft] = useState('');
+  const [groupIconDraft, setGroupIconDraft] = useState('');
+
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === projectId) ?? null,
+    [projectId, projects],
+  );
 
   const projectOptions = useMemo(
     () => projects
@@ -62,12 +99,18 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
     [projects],
   );
 
-  const rows = useMemo(
-    () => buildTeamUploadAnalyticsRows(screenshots, projectId),
+  const scopedScreenshots = useMemo(
+    () => (projectId ? screenshots.filter((screenshot) => screenshot.project_id === projectId) : screenshots),
     [projectId, screenshots],
   );
 
-  const flowChecklist = useMemo(() => buildFlowChecklist(screenshots), [screenshots]);
+  const rows = useMemo(
+    () => buildTeamUploadAnalyticsRows(scopedScreenshots, null),
+    [scopedScreenshots],
+  );
+
+  const flowChecklist = useMemo(() => buildFlowChecklist(scopedScreenshots), [scopedScreenshots]);
+  const groupChecklist = useMemo(() => buildGroupChecklist(scopedScreenshots), [scopedScreenshots]);
 
   function addPrototypeLink() {
     const url = newUrl.trim();
@@ -87,6 +130,31 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
     savePrototypeLinks(next);
   }
 
+  function beginGroupEdit(group: string) {
+    const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, group, projectId);
+    setEditingGroupKey(group.toLowerCase());
+    setGroupLabelDraft(appearance.label || group);
+    setGroupIconDraft(appearance.icon || '');
+  }
+
+  function cancelGroupEdit() {
+    setEditingGroupKey(null);
+    setGroupLabelDraft('');
+    setGroupIconDraft('');
+  }
+
+  function saveGroupAppearance(group: string) {
+    const next = upsertCatalogueGroupAppearance(groupAppearanceMap, {
+      group,
+      icon: groupIconDraft,
+      label: groupLabelDraft,
+      projectId,
+    });
+    setGroupAppearanceMap(next);
+    writeCatalogueGroupAppearanceMap(next);
+    cancelGroupEdit();
+  }
+
   return (
     <section className="catalogue-team">
       <div className="catalogue-team__head">
@@ -98,17 +166,27 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
             <button type="button" className={`catalogue-team__sub-tab ${subTab === 'flows' ? 'is-active' : ''}`} onClick={() => setSubTab('flows')}>
               Flows
             </button>
+            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'groups' ? 'is-active' : ''}`} onClick={() => setSubTab('groups')}>
+              Groups
+            </button>
             <button type="button" className={`catalogue-team__sub-tab ${subTab === 'prototypes' ? 'is-active' : ''}`} onClick={() => setSubTab('prototypes')}>
               Figma Prototypes
             </button>
           </div>
           {subTab === 'analytics' && <p>Date-wise screenshot uploads grouped in IST with Web and Mobile split.</p>}
-          {subTab === 'flows' && <p>All flows from uploaded screenshots. {flowChecklist.length} flows tracked.</p>}
+          {subTab === 'flows' && <p>All flows from uploaded screenshots. {flowChecklist.length} flow{flowChecklist.length !== 1 ? 's' : ''} tracked.</p>}
+          {subTab === 'groups' && <p>All groups used in uploaded screenshots. {groupChecklist.length} group{groupChecklist.length !== 1 ? 's' : ''} found.</p>}
           {subTab === 'prototypes' && <p>Figma prototype links for quick access. {protoLinks.length} link{protoLinks.length !== 1 ? 's' : ''} saved.</p>}
         </div>
-        {subTab === 'analytics' && (
+        {subTab !== 'prototypes' && (
           <div className="catalogue-team__filters">
-            <Dropdown value={projectId} options={projectOptions} placeholder="All projects" onChange={setProjectId} />
+            <Dropdown
+              value={projectId}
+              options={projectOptions}
+              placeholder={selectedProject ? selectedProject.name : 'All projects'}
+              onChange={setProjectId}
+              className="catalogue-team__project-dropdown"
+            />
           </div>
         )}
       </div>
@@ -152,6 +230,65 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
                   <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
                 </div>
               ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {subTab === 'groups' && (
+        <>
+          {groupChecklist.length === 0 ? (
+            <div className="catalogue-team__empty">No groups found yet. Add or rename screenshot groups to populate this list.</div>
+          ) : (
+            <div className="catalogue-team__checklist">
+              {groupChecklist.map((item) => {
+                const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, item.group, projectId);
+                const label = `${appearance.icon ? `${appearance.icon} ` : ''}${appearance.label || item.group}`;
+                const isEditing = editingGroupKey === item.group.toLowerCase();
+
+                return (
+                  <div key={item.group.toLowerCase()} className="catalogue-team__checklist-item catalogue-team__checklist-item--group">
+                    <div className="catalogue-team__group-meta">
+                      <span className="catalogue-team__checklist-flow">{label}</span>
+                      <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
+                    </div>
+                    {isEditing ? (
+                      <div className="catalogue-team__group-editor">
+                        <input
+                          className="catalogue-filter"
+                          type="text"
+                          placeholder="Group display name"
+                          value={groupLabelDraft}
+                          onChange={(event) => setGroupLabelDraft(event.target.value)}
+                        />
+                        <input
+                          className="catalogue-filter catalogue-team__group-icon-input"
+                          type="text"
+                          placeholder="Icon (emoji)"
+                          value={groupIconDraft}
+                          onChange={(event) => setGroupIconDraft(event.target.value)}
+                        />
+                        <div className="catalogue-team__group-editor-actions">
+                          <button type="button" className="btn-primary" onClick={() => saveGroupAppearance(item.group)}>
+                            Save
+                          </button>
+                          <button type="button" className="btn-secondary" onClick={cancelGroupEdit}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="catalogue-team__group-edit-btn"
+                        onClick={() => beginGroupEdit(item.group)}
+                      >
+                        Edit Name & Icon
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </>

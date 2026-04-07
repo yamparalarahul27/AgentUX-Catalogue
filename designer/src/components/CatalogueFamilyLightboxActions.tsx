@@ -9,9 +9,12 @@ interface CatalogueFamilyLightboxActionsProps {
   groupDraft: string;
   isInlineEditing: boolean;
   isSavingInline: boolean;
+  hasReference: boolean;
   mobileOsDraft: MobileOs | null;
   nameDraft: string;
   platformDraft: 'mobile' | 'web' | null;
+  referenceFileName: string | null;
+  referenceLabelDraft: string;
   themeDraft: 'light' | 'dark' | null;
   webPresetDraft: string | null;
   webPresets: WebPreset[];
@@ -23,6 +26,8 @@ interface CatalogueFamilyLightboxActionsProps {
   onOpenAnnotations: () => void;
   onOpenComments: () => void;
   onPlatformChange: (value: 'mobile' | 'web' | null) => void;
+  onReferenceFileSelect: (file: File | null) => void;
+  onReferenceLabelChange: (value: string) => void;
   onReupload: () => void;
   onSave: () => void;
   onThemeChange: (value: 'light' | 'dark' | null) => void;
@@ -36,11 +41,14 @@ export function CatalogueFamilyLightboxActions({
   existingGroups,
   flowDraft,
   groupDraft,
+  hasReference,
   isInlineEditing,
   isSavingInline,
   mobileOsDraft,
   nameDraft,
   platformDraft,
+  referenceFileName,
+  referenceLabelDraft,
   themeDraft,
   webPresetDraft,
   webPresets,
@@ -52,6 +60,8 @@ export function CatalogueFamilyLightboxActions({
   onOpenAnnotations,
   onOpenComments,
   onPlatformChange,
+  onReferenceFileSelect,
+  onReferenceLabelChange,
   onReupload,
   onSave,
   onThemeChange,
@@ -85,10 +95,13 @@ export function CatalogueFamilyLightboxActions({
           existingGroups={existingGroups}
           flowDraft={flowDraft}
           groupDraft={groupDraft}
+          hasReference={hasReference}
           isSaving={isSavingInline}
           mobileOsDraft={mobileOsDraft}
           nameDraft={nameDraft}
           platformDraft={platformDraft}
+          referenceFileName={referenceFileName}
+          referenceLabelDraft={referenceLabelDraft}
           themeDraft={themeDraft}
           webPresetDraft={webPresetDraft}
           webPresets={webPresets}
@@ -98,6 +111,8 @@ export function CatalogueFamilyLightboxActions({
           onMobileOsChange={onMobileOsChange}
           onNameChange={onNameChange}
           onPlatformChange={onPlatformChange}
+          onReferenceFileSelect={onReferenceFileSelect}
+          onReferenceLabelChange={onReferenceLabelChange}
           onSave={onSave}
           onThemeChange={onThemeChange}
           onWebPresetChange={onWebPresetChange}

@@ -1,13 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCatalogueGalleryFeedback } from '../hooks/use-catalogue-gallery-feedback';
 import { getActiveFamilyVariant, getVariantKey, type CatalogueFamilyView } from '../lib/catalogue-families';
+import { formatDateTime } from '../lib/catalogue-lightbox';
 import type { MobileOs, WebPreset } from '../types';
+import { CatalogueGalleryFeedbackPanel } from './CatalogueGalleryFeedbackPanel';
+import { CatalogueGalleryInlineEditor, type CatalogueGalleryInlineDraft } from './CatalogueGalleryInlineEditor';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+
 interface CatalogueGalleryViewProps {
   activeVariantKeys: Record<string, string>;
+  canEdit?: boolean;
   families: CatalogueFamilyView[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
+  onAnnotationStateChange?: (screenshotId: string, metadata: Record<string, unknown>) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
+  onCommentCountChange?: (screenshotId: string, delta: number) => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
-  onOpenPreview: (familyId: string) => void;
+  onRequireAuth?: () => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onRemoveReference: (screenshotId: string) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
@@ -21,6 +30,7 @@ interface CatalogueGalleryViewProps {
       web_preset_key?: string | null;
     },
   ) => Promise<boolean>;
+  userEmail: string;
   webPresets: WebPreset[];
 }
 const GALLERY_ZOOM_MIN = 1;
@@ -34,26 +44,11 @@ interface GalleryPanState {
   scrollLeft: number;
   scrollTop: number;
 }
-interface GalleryInlineDraft {
-  familyName: string;
-  groupName: string;
-  flowLabel: string;
-  screenshotId: string;
-  theme: 'light' | 'dark' | null;
-  platform: 'mobile' | 'web' | null;
-  webPresetKey: string | null;
-  mobileOs: MobileOs | null;
-}
-function formatDateTime(value?: string): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-}
+
 function buildInlineDraft(
   family: CatalogueFamilyView,
   variantKey: string | null | undefined,
-): GalleryInlineDraft | null {
+): CatalogueGalleryInlineDraft | null {
   const activeVariant = getActiveFamilyVariant(family, variantKey);
   const screenshot = activeVariant?.screenshot ?? null;
   if (!screenshot) return null;
@@ -68,7 +63,7 @@ function buildInlineDraft(
     mobileOs: screenshot.mobile_os || null,
   };
 }
-function isInlineDraftValid(draft: GalleryInlineDraft | null): boolean {
+function isInlineDraftValid(draft: CatalogueGalleryInlineDraft | null): boolean {
   if (!draft) return false;
   if (!draft.familyName.trim()) return false;
   if (!draft.theme) return false;
@@ -78,19 +73,24 @@ function isInlineDraftValid(draft: GalleryInlineDraft | null): boolean {
 }
 export function CatalogueGalleryView({
   activeVariantKeys,
+  canEdit = true,
   families,
   onActiveVariantChange,
+  onAnnotationStateChange,
   onChangeFamilyGroup,
+  onCommentCountChange,
   onDeleteFamily,
-  onOpenPreview,
+  onRequireAuth,
   onRenameFamily,
   onRemoveReference,
   onReplaceVariantImage,
   onSetFlowLabel,
   onUpdateVariantDetails,
+  userEmail,
   webPresets,
 }: CatalogueGalleryViewProps) {
   const previewRef = useRef<HTMLDivElement>(null);
+  const previewStageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const panStateRef = useRef<GalleryPanState | null>(null);
   const panMovedRef = useRef(false);
@@ -99,7 +99,7 @@ export function CatalogueGalleryView({
   const [zoom, setZoom] = useState(GALLERY_ZOOM_MIN);
   const [isPanning, setIsPanning] = useState(false);
   const [isInlineEditing, setIsInlineEditing] = useState(false);
-  const [inlineDraft, setInlineDraft] = useState<GalleryInlineDraft | null>(null);
+  const [inlineDraft, setInlineDraft] = useState<CatalogueGalleryInlineDraft | null>(null);
   const [isSavingInline, setIsSavingInline] = useState(false);
   useEffect(() => {
     if (families.length === 0) {
@@ -180,6 +180,45 @@ export function CatalogueGalleryView({
   const family = activeFamily;
   const variant = activeVariant;
   const activeScreenshot = screenshot;
+  const feedback = useCatalogueGalleryFeedback({
+    canEdit,
+    onAnnotationStateChange,
+    onCommentCountChange,
+    onRequireAuth,
+    screenshot: activeScreenshot,
+    userEmail,
+  });
+
+  useEffect(() => {
+    if (!previewStageRef.current) return;
+
+    const update = () => {
+      if (!previewStageRef.current) return;
+      feedback.setMediaSize({
+        width: previewStageRef.current.clientWidth,
+        height: previewStageRef.current.clientHeight,
+      });
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(previewStageRef.current);
+    window.addEventListener('resize', update);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [activeScreenshot.id, feedback.setMediaSize]);
+
+  useEffect(() => {
+    if (!feedback.annotationMode || zoom <= GALLERY_ZOOM_MIN) return;
+    setZoom(GALLERY_ZOOM_MIN);
+    requestAnimationFrame(() => {
+      previewRef.current?.scrollTo({ top: 0, left: 0 });
+    });
+  }, [feedback.annotationMode, zoom]);
+
   const canSaveInline = isInlineDraftValid(inlineDraft) && !isSavingInline;
   async function requestDeleteCurrent() {
     const shouldDelete = window.confirm(`Delete "${family.name}" and all of its variants?`);
@@ -293,7 +332,7 @@ export function CatalogueGalleryView({
     });
   }
   function handlePreviewWheel(event: React.WheelEvent<HTMLDivElement>) {
-    if (!activeScreenshot.image_url || !event.ctrlKey || event.deltaY === 0) return;
+    if (feedback.annotationMode || !activeScreenshot.image_url || !event.ctrlKey || event.deltaY === 0) return;
     event.preventDefault();
     if (event.deltaY < 0) {
       handleZoomIn();
@@ -302,7 +341,7 @@ export function CatalogueGalleryView({
     handleZoomOut();
   }
   function handlePreviewPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (!activeScreenshot.image_url || zoom <= GALLERY_ZOOM_MIN || event.button !== 0) return;
+    if (feedback.annotationMode || !activeScreenshot.image_url || zoom <= GALLERY_ZOOM_MIN || event.button !== 0) return;
     const preview = previewRef.current;
     if (!preview) return;
     panStateRef.current = {
@@ -337,7 +376,7 @@ export function CatalogueGalleryView({
     setIsPanning(false);
   }
   function handlePreviewDoubleClick() {
-    if (!activeScreenshot.image_url) return;
+    if (feedback.annotationMode || !activeScreenshot.image_url) return;
     if (zoom > GALLERY_ZOOM_MIN) {
       handleZoomReset();
       return;
@@ -345,7 +384,7 @@ export function CatalogueGalleryView({
     setZoom(Math.min(GALLERY_ZOOM_MAX, GALLERY_DOUBLE_CLICK_ZOOM));
   }
   function handlePreviewKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (!activeScreenshot.image_url) return;
+    if (feedback.annotationMode || !activeScreenshot.image_url) return;
     if (event.key === '+' || event.key === '=') {
       event.preventDefault();
       handleZoomIn();
@@ -357,12 +396,21 @@ export function CatalogueGalleryView({
       handleZoomReset();
     }
   }
-  function handlePreviewClick() {
+  function handlePreviewClick(event: React.MouseEvent<HTMLDivElement>) {
     if (panMovedRef.current) {
       panMovedRef.current = false;
       return;
     }
-    onOpenPreview(family.id);
+    if (feedback.annotationMode) {
+      if (previewStageRef.current) {
+        feedback.placeAnnotationDraft({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          rect: previewStageRef.current.getBoundingClientRect(),
+        });
+      }
+      return;
+    }
   }
   function handleVariantSelect(variantKey: string) {
     onActiveVariantChange(family.id, variantKey);
@@ -400,7 +448,6 @@ export function CatalogueGalleryView({
         <div
           ref={previewRef}
           className={`catalogue-gallery-preview ${zoom > GALLERY_ZOOM_MIN ? 'is-zoomed' : ''} ${isPanning ? 'is-panning' : ''}`}
-          role="button"
           onClick={handlePreviewClick}
           onWheel={handlePreviewWheel}
           onPointerDown={handlePreviewPointerDown}
@@ -410,7 +457,11 @@ export function CatalogueGalleryView({
           onDoubleClick={handlePreviewDoubleClick}
           onKeyDown={handlePreviewKeyDown}
           tabIndex={activeScreenshot.image_url ? 0 : -1}
-          aria-label={activeScreenshot.image_url ? 'Preview image. Scroll to move, pinch to zoom, drag to pan when zoomed in, and click to open the full preview.' : undefined}
+          aria-label={activeScreenshot.image_url
+            ? feedback.annotationMode
+              ? 'Preview image in annotation placement mode. Click image to place a pin.'
+              : 'Preview image. Scroll to move, pinch to zoom, and drag to pan when zoomed in.'
+            : undefined}
         >
           {activeScreenshot.image_url && (
             <div
@@ -422,7 +473,7 @@ export function CatalogueGalleryView({
                 <button
                   type="button"
                   className="catalogue-gallery-preview-btn"
-                  disabled={zoom <= GALLERY_ZOOM_MIN}
+                  disabled={feedback.annotationMode || zoom <= GALLERY_ZOOM_MIN}
                   onClick={(event) => {
                     event.stopPropagation();
                     handleZoomOut();
@@ -434,7 +485,7 @@ export function CatalogueGalleryView({
                 <button
                   type="button"
                   className="catalogue-gallery-preview-btn"
-                  disabled={zoom >= GALLERY_ZOOM_MAX}
+                  disabled={feedback.annotationMode || zoom >= GALLERY_ZOOM_MAX}
                   onClick={(event) => {
                     event.stopPropagation();
                     handleZoomIn();
@@ -445,7 +496,7 @@ export function CatalogueGalleryView({
                 <button
                   type="button"
                   className="catalogue-gallery-preview-btn"
-                  disabled={zoom <= GALLERY_ZOOM_MIN}
+                  disabled={feedback.annotationMode || zoom <= GALLERY_ZOOM_MIN}
                   onClick={(event) => {
                     event.stopPropagation();
                     handleZoomReset();
@@ -457,17 +508,65 @@ export function CatalogueGalleryView({
             </div>
           )}
           {activeScreenshot.image_url ? (
-            <div className="catalogue-gallery-preview-stage">
+            <div className="catalogue-gallery-preview-stage" ref={previewStageRef}>
               <img
                 src={activeScreenshot.image_url}
                 alt={`${family.name} ${variant.label}`}
                 draggable={false}
+                onLoad={(event) => {
+                  feedback.setImageSize({
+                    width: event.currentTarget.naturalWidth,
+                    height: event.currentTarget.naturalHeight,
+                  });
+                }}
                 style={{
                   width: zoom > GALLERY_ZOOM_MIN ? `${zoom * 100}%` : undefined,
                   maxWidth: zoom > GALLERY_ZOOM_MIN ? 'none' : undefined,
                   maxHeight: zoom > GALLERY_ZOOM_MIN ? 'none' : undefined,
                 }}
               />
+              {(() => {
+                const mediaLayout = feedback.mediaLayout;
+                if (!mediaLayout) return null;
+                return (
+                  <div className="catalogue-lightbox-pin-layer" aria-hidden="true">
+                    {feedback.annotations.map((annotation, index) => (
+                      <button
+                        key={annotation.id}
+                        type="button"
+                        className={`catalogue-lightbox-pin ${feedback.selectedAnnotationId === annotation.id ? 'is-active' : ''}`}
+                        style={{
+                          left: `${mediaLayout.left + (annotation.x / 100) * mediaLayout.width}px`,
+                          top: `${mediaLayout.top + (annotation.y / 100) * mediaLayout.height}px`,
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          feedback.selectAnnotation(annotation.id);
+                        }}
+                        title={annotation.text}
+                      >
+                        <span>{index + 1}</span>
+                      </button>
+                    ))}
+                    {feedback.annotationDraft && (
+                      <button
+                        type="button"
+                        className="catalogue-lightbox-pin catalogue-lightbox-pin-draft is-active"
+                        style={{
+                          left: `${mediaLayout.left + (feedback.annotationDraft.x / 100) * mediaLayout.width}px`,
+                          top: `${mediaLayout.top + (feedback.annotationDraft.y / 100) * mediaLayout.height}px`,
+                        }}
+                        title="Draft annotation"
+                      >
+                        <span>+</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+              {feedback.annotationMode && (
+                <div className="catalogue-lightbox-media-hint">Click the image to place a pin</div>
+              )}
             </div>
           ) : (
             <div className="catalogue-gallery-preview-empty">No image available</div>
@@ -496,7 +595,7 @@ export function CatalogueGalleryView({
           <div className="catalogue-gallery-meta-copy">
             <h3 className="catalogue-gallery-title">{family.name}</h3>
             <p className="catalogue-gallery-subtitle">
-              {family.group || 'No group'}
+              <CatalogueGroupLabel group={family.group} projectId={family.project_id} />
             </p>
           </div>
           <span className="catalogue-gallery-flow">
@@ -504,108 +603,12 @@ export function CatalogueGalleryView({
           </span>
         </div>
         {isInlineEditing && inlineDraft ? (
-          <div className="catalogue-gallery-inline-editor">
-            <div className="catalogue-list-inline-editor__head">
-              <strong>Editing {variant.label}</strong>
-              <span>Changes apply to this screenshot.</span>
-            </div>
-            <div className="catalogue-list-inline-editor__grid">
-              <label className="catalogue-list-inline-editor__field">
-                <span>Screenshot name</span>
-                <input
-                  type="text"
-                  value={inlineDraft.familyName}
-                  onChange={(event) => setInlineDraft((previous) => previous ? { ...previous, familyName: event.target.value } : previous)}
-                />
-              </label>
-              <label className="catalogue-list-inline-editor__field">
-                <span>Group</span>
-                <input
-                  type="text"
-                  value={inlineDraft.groupName}
-                  onChange={(event) => setInlineDraft((previous) => previous ? { ...previous, groupName: event.target.value } : previous)}
-                />
-              </label>
-              <label className="catalogue-list-inline-editor__field">
-                <span>Flow</span>
-                <input
-                  type="text"
-                  value={inlineDraft.flowLabel}
-                  onChange={(event) => setInlineDraft((previous) => previous ? { ...previous, flowLabel: event.target.value } : previous)}
-                  placeholder="Type a flow label"
-                />
-              </label>
-              <div className="catalogue-list-inline-editor__field">
-                <span>Theme</span>
-                <div className="catalogue-list-inline-editor__chips">
-                  {(['light', 'dark'] as const).map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`catalogue-family-card__variant ${inlineDraft.theme === item ? 'is-active' : ''}`}
-                      onClick={() => setInlineDraft((previous) => previous ? { ...previous, theme: item } : previous)}
-                    >
-                      {item === 'light' ? 'Light' : 'Dark'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="catalogue-list-inline-editor__field">
-                <span>Platform</span>
-                <div className="catalogue-list-inline-editor__chips">
-                  {(['web', 'mobile'] as const).map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`catalogue-family-card__variant ${inlineDraft.platform === item ? 'is-active' : ''}`}
-                      onClick={() => handlePlatformDraftChange(item)}
-                    >
-                      {item === 'web' ? 'Web' : 'Mobile'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {inlineDraft.platform === 'web' ? (
-                <label className="catalogue-list-inline-editor__field">
-                  <span>Web preset</span>
-                  <select
-                    value={inlineDraft.webPresetKey || ''}
-                    onChange={(event) => setInlineDraft((previous) => previous
-                      ? {
-                        ...previous,
-                        webPresetKey: event.target.value || null,
-                        mobileOs: null,
-                      }
-                      : previous)}
-                  >
-                    <option value="">Select web preset</option>
-                    {webPresets.map((preset) => (
-                      <option key={preset.key} value={preset.key}>
-                        {preset.label} ({preset.width}px)
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              {inlineDraft.platform === 'mobile' ? (
-                <div className="catalogue-list-inline-editor__field">
-                  <span>Mobile OS</span>
-                  <div className="catalogue-list-inline-editor__chips">
-                    {(['ios', 'android'] as const).map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        className={`catalogue-family-card__variant ${inlineDraft.mobileOs === item ? 'is-active' : ''}`}
-                        onClick={() => setInlineDraft((previous) => previous ? { ...previous, mobileOs: item, webPresetKey: null } : previous)}
-                      >
-                        {item === 'ios' ? 'iOS' : 'Android'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
+          <CatalogueGalleryInlineEditor
+            inlineDraft={inlineDraft}
+            webPresets={webPresets}
+            onInlineDraftChange={setInlineDraft}
+            onPlatformDraftChange={handlePlatformDraftChange}
+          />
         ) : null}
         <div className="catalogue-family-card__variants catalogue-family-card__variants--gallery">
           {family.variants.map((item) => (
@@ -637,6 +640,7 @@ export function CatalogueGalleryView({
             <strong>{formatDateTime(activeScreenshot.created_at || family.created_at)}</strong>
           </div>
         </div>
+        <CatalogueGalleryFeedbackPanel canEdit={canEdit} feedback={feedback} userEmail={userEmail} />
         <div className="catalogue-gallery-actions">
           {isInlineEditing ? (
             <>
