@@ -104,8 +104,7 @@ export function CatalogueCtestPage() {
   const [section, setSection] = useState<'catalogue' | 'videos'>('catalogue');
 
   return (
-    <div className="catalogue-page catalogue-page--ctest cd-page">
-      <div className="cd-page__grid" aria-hidden="true" />
+    <div className="catalogue-page catalogue-page--ctest">
 
       <CatalogueHeader
         activeSection={section}
