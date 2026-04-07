@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getScreenshotFlowLabel } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
+  ensureCatalogueGroupAppearanceLoadedForProjects,
   readCatalogueGroupAppearanceMap,
   removeCatalogueGroupUploadedIconFromSupabase,
   resolveCatalogueGroupAppearance,
@@ -130,8 +131,20 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
   }, []);
 
   useEffect(() => {
-    void ensureCatalogueGroupAppearanceLoaded(projectId);
-  }, [projectId]);
+    if (projectId) {
+      void ensureCatalogueGroupAppearanceLoaded(projectId);
+      return;
+    }
+
+    void ensureCatalogueGroupAppearanceLoadedForProjects(projects.map((project) => project.id));
+  }, [projectId, projects]);
+
+  function getAppearanceScope() {
+    if (projectId) {
+      return { projectId };
+    }
+    return { projectIds: projects.map((project) => project.id) };
+  }
 
   function addPrototypeLink() {
     const url = newUrl.trim();
@@ -152,10 +165,6 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
   }
 
   function beginGroupEdit(group: string) {
-    if (!projectId) {
-      setGroupSaveMessage('Select a project before editing group names or icons.');
-      return;
-    }
     const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, group, projectId);
     setEditingGroupKey(group.toLowerCase());
     setGroupLabelDraft(appearance.label || group);
@@ -183,7 +192,7 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
         iconStoragePath: groupIconStoragePathDraft || null,
         iconUrl: groupIconUrlDraft || null,
         label: groupLabelDraft,
-        projectId,
+        ...getAppearanceScope(),
       });
 
       if (!result.ok) {
@@ -208,7 +217,7 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
         group,
         iconEmoji: groupIconEmojiDraft,
         label: groupLabelDraft,
-        projectId,
+        ...getAppearanceScope(),
       });
 
       if (!result.ok) {
@@ -230,7 +239,7 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
       group,
       iconEmoji: groupIconEmojiDraft,
       label: groupLabelDraft,
-      projectId,
+      ...getAppearanceScope(),
     });
 
     if (!result.ok) {
@@ -325,11 +334,7 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
 
       {subTab === 'groups' && (
         <>
-          {!projectId && (
-            <div className="catalogue-team__group-note">
-              Select a project to edit group name and icon.
-            </div>
-          )}
+          {!projectId && <div className="catalogue-team__group-note">No project selected. Group edits apply to all projects.</div>}
           {groupSaveMessage && (
             <div className="catalogue-team__group-note">
               {groupSaveMessage}
@@ -388,7 +393,7 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
                           <button
                             type="button"
                             className="btn-secondary"
-                            disabled={isUploadingGroupIcon || !projectId}
+                            disabled={isUploadingGroupIcon}
                             onClick={() => iconFileInputRef.current?.click()}
                           >
                             {isUploadingGroupIcon ? 'Uploading...' : 'Upload Icon'}
@@ -397,7 +402,7 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
                             <button
                               type="button"
                               className="btn-secondary"
-                              disabled={isUploadingGroupIcon || isSavingGroupAppearance || !projectId}
+                              disabled={isUploadingGroupIcon || isSavingGroupAppearance}
                               onClick={() => { void handleRemoveUploadedIcon(item.group); }}
                             >
                               Remove Uploaded Icon
@@ -406,7 +411,7 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
                           <button
                             type="button"
                             className="btn-primary"
-                            disabled={isSavingGroupAppearance || isUploadingGroupIcon || !projectId}
+                            disabled={isSavingGroupAppearance || isUploadingGroupIcon}
                             onClick={() => { void saveGroupAppearance(item.group); }}
                           >
                             {isSavingGroupAppearance ? 'Saving...' : 'Save'}
@@ -420,7 +425,6 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
                       <button
                         type="button"
                         className="catalogue-team__group-edit-btn"
-                        disabled={!projectId}
                         onClick={() => beginGroupEdit(item.group)}
                       >
                         Edit Name & Icon

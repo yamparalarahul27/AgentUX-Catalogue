@@ -43,6 +43,16 @@ function normalizeProjectKey(projectId?: string | null) {
   return trimmed || GLOBAL_PROJECT_KEY;
 }
 
+function normalizeProjectKeys(projectIds?: string[] | null) {
+  const unique = new Set<string>();
+  for (const id of projectIds || []) {
+    const key = normalizeProjectKey(id);
+    if (key === GLOBAL_PROJECT_KEY) continue;
+    unique.add(key);
+  }
+  return [...unique];
+}
+
 function canUseStorage() {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 }
@@ -128,9 +138,48 @@ function getScopedGroupAppearance(
   projectId?: string | null,
 ) {
   const groupKey = normalizeGroupKey(group);
-  const scoped = map[normalizeProjectKey(projectId)]?.[groupKey];
+  const normalizedProject = normalizeProjectKey(projectId);
   const fallback = map[GLOBAL_PROJECT_KEY]?.[groupKey];
-  return scoped || fallback || null;
+
+  if (normalizedProject !== GLOBAL_PROJECT_KEY) {
+    const scoped = map[normalizedProject]?.[groupKey];
+    return scoped || fallback || null;
+  }
+
+  if (fallback) return fallback;
+
+  for (const [key, entries] of Object.entries(map)) {
+    if (key === GLOBAL_PROJECT_KEY) continue;
+    const match = entries[groupKey];
+    if (match) return match;
+  }
+
+  return null;
+}
+
+function collectScopedGroupIconStoragePaths(
+  map: CatalogueGroupAppearanceMap,
+  groupKey: string,
+  projectKeys: string[],
+  includeGlobal: boolean,
+) {
+  const paths = new Set<string>();
+
+  for (const projectKey of projectKeys) {
+    const scopedPath = cleanText(map[projectKey]?.[groupKey]?.iconStoragePath);
+    if (scopedPath) {
+      paths.add(scopedPath);
+    }
+  }
+
+  if (includeGlobal) {
+    const globalPath = cleanText(map[GLOBAL_PROJECT_KEY]?.[groupKey]?.iconStoragePath);
+    if (globalPath) {
+      paths.add(globalPath);
+    }
+  }
+
+  return [...paths];
 }
 
 export function readCatalogueGroupAppearanceMap(): CatalogueGroupAppearanceMap {
@@ -236,6 +285,12 @@ export async function ensureCatalogueGroupAppearanceLoaded(projectId?: string | 
   await nextLoad;
 }
 
+export async function ensureCatalogueGroupAppearanceLoadedForProjects(projectIds: string[]) {
+  const keys = normalizeProjectKeys(projectIds);
+  if (keys.length === 0) return;
+  await Promise.all(keys.map((projectKey) => ensureCatalogueGroupAppearanceLoaded(projectKey)));
+}
+
 export function subscribeCatalogueGroupAppearance(listener: () => void) {
   listeners.add(listener);
   return () => {
@@ -250,45 +305,67 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
   iconUrl?: string | null;
   label?: string | null;
   projectId?: string | null;
+  projectIds?: string[] | null;
 }) {
-  const projectKey = normalizeProjectKey(input.projectId);
-  if (projectKey === GLOBAL_PROJECT_KEY) {
+  const scopedProjects = input.projectId
+    ? normalizeProjectKeys([input.projectId])
+    : normalizeProjectKeys(input.projectIds);
+
+  if (scopedProjects.length === 0) {
     return {
-      error: 'Select a specific project to save group icon and display name.',
+      error: 'No projects available to save group appearance.',
       ok: false as const,
     };
   }
 
-  const nextMap = upsertCatalogueGroupAppearance(readCatalogueGroupAppearanceMap(), {
-    group: input.group,
-    iconEmoji: input.iconEmoji,
-    iconStoragePath: input.iconStoragePath,
-    iconUrl: input.iconUrl,
-    label: input.label,
-    projectId: projectKey,
-  });
-
   const groupKey = normalizeGroupKey(input.group);
-  const projectEntries = nextMap[projectKey] || {};
-  const entry = projectEntries[groupKey] || null;
+  let nextMap = readCatalogueGroupAppearanceMap();
 
-  if (entry) {
-    const { error } = await supabase
-      .from('catalogue_group_appearance')
-      .upsert({
-        display_label: entry.label || null,
-        group_key: groupKey,
-        icon_emoji: entry.iconEmoji || null,
-        icon_storage_path: entry.iconStoragePath || null,
-        icon_url: entry.iconUrl || null,
-        project_id: projectKey,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'project_id,group_key' });
+  for (const projectKey of scopedProjects) {
+    nextMap = upsertCatalogueGroupAppearance(nextMap, {
+      group: input.group,
+      iconEmoji: input.iconEmoji,
+      iconStoragePath: input.iconStoragePath,
+      iconUrl: input.iconUrl,
+      label: input.label,
+      projectId: projectKey,
+    });
+  }
 
-    if (error) {
-      return { error: error.message, ok: false as const };
+  if (!input.projectId) {
+    nextMap = upsertCatalogueGroupAppearance(nextMap, {
+      group: input.group,
+      iconEmoji: input.iconEmoji,
+      iconStoragePath: input.iconStoragePath,
+      iconUrl: input.iconUrl,
+      label: input.label,
+      projectId: null,
+    });
+  }
+
+  for (const projectKey of scopedProjects) {
+    const projectEntries = nextMap[projectKey] || {};
+    const entry = projectEntries[groupKey] || null;
+
+    if (entry) {
+      const { error } = await supabase
+        .from('catalogue_group_appearance')
+        .upsert({
+          display_label: entry.label || null,
+          group_key: groupKey,
+          icon_emoji: entry.iconEmoji || null,
+          icon_storage_path: entry.iconStoragePath || null,
+          icon_url: entry.iconUrl || null,
+          project_id: projectKey,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'project_id,group_key' });
+
+      if (error) {
+        return { error: error.message, ok: false as const };
+      }
+      continue;
     }
-  } else {
+
     const { error } = await supabase
       .from('catalogue_group_appearance')
       .delete()
@@ -301,7 +378,9 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
   }
 
   writeCatalogueGroupAppearanceMap(nextMap);
-  syncedProjects.add(projectKey);
+  for (const projectKey of scopedProjects) {
+    syncedProjects.add(projectKey);
+  }
   return { ok: true as const };
 }
 
@@ -311,11 +390,15 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
   iconEmoji?: string | null;
   label?: string | null;
   projectId?: string | null;
+  projectIds?: string[] | null;
 }) {
-  const projectKey = normalizeProjectKey(input.projectId);
-  if (projectKey === GLOBAL_PROJECT_KEY) {
+  const scopedProjects = input.projectId
+    ? normalizeProjectKeys([input.projectId])
+    : normalizeProjectKeys(input.projectIds);
+
+  if (scopedProjects.length === 0) {
     return {
-      error: 'Select a specific project before uploading a group icon.',
+      error: 'No projects available to save the uploaded icon.',
       ok: false as const,
     };
   }
@@ -339,10 +422,15 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
     };
   }
 
-  const storagePath = buildGroupIconStoragePath(projectKey, groupKey, input.file.name);
+  const storageScope = input.projectId ? scopedProjects[0] : 'all-projects';
+  const storagePath = buildGroupIconStoragePath(storageScope, groupKey, input.file.name);
   const currentMap = readCatalogueGroupAppearanceMap();
-  const currentAppearance = getScopedGroupAppearance(currentMap, input.group, projectKey);
-  const previousStoragePath = cleanText(currentAppearance?.iconStoragePath);
+  const previousStoragePaths = collectScopedGroupIconStoragePaths(
+    currentMap,
+    groupKey,
+    scopedProjects,
+    !input.projectId,
+  );
 
   const { error: uploadError } = await supabase
     .storage
@@ -370,7 +458,8 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
     iconStoragePath: storagePath,
     iconUrl: publicUrl,
     label: input.label,
-    projectId: projectKey,
+    projectId: input.projectId,
+    projectIds: input.projectIds,
   });
 
   if (!saveResult.ok) {
@@ -378,7 +467,8 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
     return saveResult;
   }
 
-  if (previousStoragePath && previousStoragePath !== storagePath) {
+  for (const previousStoragePath of previousStoragePaths) {
+    if (previousStoragePath === storagePath) continue;
     await supabase.storage.from(GROUP_ICON_BUCKET).remove([previousStoragePath]);
   }
 
@@ -394,18 +484,27 @@ export async function removeCatalogueGroupUploadedIconFromSupabase(input: {
   iconEmoji?: string | null;
   label?: string | null;
   projectId?: string | null;
+  projectIds?: string[] | null;
 }) {
-  const projectKey = normalizeProjectKey(input.projectId);
-  if (projectKey === GLOBAL_PROJECT_KEY) {
+  const scopedProjects = input.projectId
+    ? normalizeProjectKeys([input.projectId])
+    : normalizeProjectKeys(input.projectIds);
+
+  if (scopedProjects.length === 0) {
     return {
-      error: 'Select a specific project to remove the uploaded icon.',
+      error: 'No projects available to remove the uploaded icon.',
       ok: false as const,
     };
   }
 
   const currentMap = readCatalogueGroupAppearanceMap();
-  const currentAppearance = getScopedGroupAppearance(currentMap, input.group, projectKey);
-  const previousStoragePath = cleanText(currentAppearance?.iconStoragePath);
+  const groupKey = normalizeGroupKey(input.group);
+  const previousStoragePaths = collectScopedGroupIconStoragePaths(
+    currentMap,
+    groupKey,
+    scopedProjects,
+    !input.projectId,
+  );
 
   const saveResult = await saveCatalogueGroupAppearanceToSupabase({
     group: input.group,
@@ -413,12 +512,13 @@ export async function removeCatalogueGroupUploadedIconFromSupabase(input: {
     iconStoragePath: null,
     iconUrl: null,
     label: input.label,
-    projectId: projectKey,
+    projectId: input.projectId,
+    projectIds: input.projectIds,
   });
 
   if (!saveResult.ok) return saveResult;
 
-  if (previousStoragePath) {
+  for (const previousStoragePath of previousStoragePaths) {
     await supabase.storage.from(GROUP_ICON_BUCKET).remove([previousStoragePath]);
   }
 
