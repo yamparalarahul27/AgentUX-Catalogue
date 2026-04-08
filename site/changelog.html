@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Changelog | AgentUX</title>
+    <meta name="description" content="Full changelog for AgentUX — every feature, fix, and improvement since day one." />
+    <link rel="icon" type="image/svg+xml" href="./logo.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .changelog { padding: 12px 0 34px; }
+      .changelog-intro { color: var(--muted); font-size: 1.05rem; margin: 0 0 28px; max-width: 48ch; }
+      .changelog-release { margin-bottom: 28px; }
+      .changelog-release-header {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .changelog-date {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.82rem;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .changelog-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .changelog-section { margin-top: 12px; }
+      .changelog-section-label {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 8px;
+      }
+      .changelog-section-label--added { background: #ecfdf5; color: #059669; }
+      .changelog-section-label--changed { background: #eef2ff; color: #4f46e5; }
+      .changelog-section-label--fixed { background: #fff3ea; color: var(--accent); }
+      .changelog-items { margin: 0; padding: 0; list-style: none; }
+      .changelog-items li {
+        position: relative;
+        padding-left: 16px;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+      .changelog-items li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.6em;
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--line);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="AgentUX home">
+          <img src="./logo.svg" alt="" width="28" height="28" />
+          <span>AgentUX</span>
+        </a>
+        <nav class="nav">
+          <a href="./#products">Products</a>
+          <a href="./#how-it-works">How It Works</a>
+          <a href="./#faq">FAQ</a>
+          <a href="./changelog.html" class="nav-product-link">Changelog</a>
+        </nav>
+      </header>
+
+      <main class="changelog">
+        <p class="eyebrow">Changelog</p>
+        <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX</h1>
+        <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
+
+        <!-- Apr 7-8, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 7 – 8, 2026</span>
+            <span class="changelog-title">Folder View, Group Appearance &amp; Gallery Workflow</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Folder view on CD page — groups render as brand cards with swipeable carousel previews</li>
+              <li>Group appearance system — custom icons (Supabase-backed upload), descriptions, and status badges per brand</li>
+              <li>Gallery inline editor and feedback panel for reviewing screenshots in-context</li>
+              <li>Team section group management with 32px section icons</li>
+              <li>Bulk webapp-to-Figma capture SOP and runner template</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>CD page now uses the same dark theme tokens as the main Catalogue (removed Nothing Design system)</li>
+              <li>Group rename and icon updates no longer require a project selection</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>React hook-order error in gallery view</li>
+              <li>Header tabs styling on CD page</li>
+              <li>CI pipeline — upgraded vite to patch 3 high-severity vulnerabilities</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Apr 6, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 6, 2026</span>
+            <span class="changelog-title">Compare Mode, Team Flows &amp; CD Page Experiments</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Compare mode — side-by-side flow comparison across primary and vs groups</li>
+              <li>Team section with Flows sub-tab and Figma Prototypes tab</li>
+              <li>CD page with Nothing Design light theme for layout experiments</li>
+              <li>Catalogue rename script for local batch execution</li>
+              <li>Quick upload improvements with enhanced naming conventions</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>Max-lines build failures from compare mode additions</li>
+              <li>Gallery preview image fit</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Apr 4-5, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 4 – 5, 2026</span>
+            <span class="changelog-title">Videos Tab, AgentUX Branding &amp; CD Page</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Videos section in Catalogue for design references and competitive UX studies</li>
+              <li>CD test page (<code>/designer/cd</code>) for prototyping new layouts</li>
+              <li>AgentUX logo in all designer headers</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>List-view UX updates with improved inline editing</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>Family grouping and legacy fallback for older screenshots</li>
+              <li>Desktop/mobile UI scoping and card delete modal</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Apr 3, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 3, 2026</span>
+            <span class="changelog-title">Mobile UX Overhaul &amp; Filter Sheet</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Filter bottom sheet replacing inline filters — 11 iterations to get it right</li>
+              <li>Redesigned lightbox preview with compact layout and minimizable bottom sheet</li>
+              <li>Floating search with collapsible pill on mobile</li>
+              <li>Inline toolbar pills for search and upload on mobile</li>
+              <li>Team upload analytics (admin-only)</li>
+              <li>Reference removal actions and gallery zoom toolbar</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>Preview-first catalogue UX restored as default interaction</li>
+              <li>Header tabs repositioned with platform icons</li>
+              <li>Catalogue inline editing and comment workflows refined</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>Modal rendering and list inline editing</li>
+              <li>Details modal sticky save footer</li>
+              <li>Upload modal scroll on small screens</li>
+              <li>Search pill positioning and toolbar overlap on mobile</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Apr 2, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 2, 2026</span>
+            <span class="changelog-title">Catalogue Core Features</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Sorting controls and refined toolbar layout</li>
+              <li>Quick upload flow with lightbox rename</li>
+              <li>Annotations and multiple view modes (grid, list, gallery)</li>
+              <li>Filter and gallery controls</li>
+              <li>700-line max rule enforced in CI</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Apr 1, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 1, 2026</span>
+            <span class="changelog-title">Flow Builder Canvas Enhancements</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Multi-path flow insert with node deduplication</li>
+              <li>Undo support, placeholder flow insertion, and auto-refresh</li>
+              <li>Text-flow studio, flow compare, and catalogue sidebar</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>New flow steps and catalogue additions no longer overlap existing nodes</li>
+              <li>Viewport preserved during canvas auto-refresh</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Mar 28, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Mar 28, 2026</span>
+            <span class="changelog-title">Designer Flow Builder</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Standalone web-based Flow Builder with drag-and-drop canvas</li>
+              <li>Screenshot upload with auto-naming and flow connection</li>
+              <li>Catalogue sidebar for managing screenshots alongside flows</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Mar 21, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Mar 21, 2026</span>
+            <span class="changelog-title">Landing Page &amp; MVP Definition</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Static landing page at agentux.hirahul.xyz</li>
+              <li>Vercel deployment configuration</li>
+              <li>AgentUX flow MVP specification</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Mar 18-19, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Mar 18 – 19, 2026</span>
+            <span class="changelog-title">Project Launch</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Initial appmap package — interactive app map visualization for React</li>
+              <li>Auto-detection for Next.js App Router, Pages Router, and React Router</li>
+              <li>Runtime route transition tracking</li>
+              <li>Floating dev button with draggable positioning</li>
+              <li>Markdown + JSON export for AI agents</li>
+              <li>Published as <code>@yamparala27/agentux</code> on npm</li>
+              <li>CI/CD pipeline, security policy, and open-source governance</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>"use client" directive for Next.js App Router compatibility</li>
+            </ul>
+          </div>
+        </article>
+      </main>
+
+      <footer class="footer">
+        <div>
+          <strong>AgentUX</strong>
+          <p>The UX flow workspace for AI-built apps.</p>
+          <p>Engineered by Yamparala Rahul.</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/yamparalarahul27/agentux">GitHub</a>
+          <a href="./changelog.html">Changelog</a>
+          <a href="https://github.com/yamparalarahul27/agentux/blob/main/docs/agentux-prd.md">PRD</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
