@@ -36,7 +36,7 @@ interface CatalogueFamilyLightboxProps {
 }
 type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; resolved_at?: string | null; resolved_by_email?: string | null };
 type LightboxPanel = 'comments' | 'annotations';
-const shouldStartLightboxSheetMinimized = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 960px)').matches;
+const shouldStartLightboxSheetMinimized = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
 export function CatalogueFamilyLightbox({
   activeVariantKey,
   canEdit = true,
