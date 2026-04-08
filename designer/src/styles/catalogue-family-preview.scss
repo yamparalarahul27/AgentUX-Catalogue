@@ -266,7 +266,7 @@
   border: 1px solid #27272a;
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(18, 18, 24, 0.98), rgba(15, 15, 20, 0.98));
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .catalogue-family-lightbox__actions {
