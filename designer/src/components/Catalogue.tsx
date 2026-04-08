@@ -14,6 +14,7 @@ import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
+import { CatalogueFigmaSection } from './CatalogueFigmaSection';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
@@ -29,7 +30,7 @@ interface CatalogueProps {
   onRequestLogin: (email: string) => void;
 }
 
-type CatalogueSection = 'catalogue' | 'videos' | 'team';
+type CatalogueSection = 'catalogue' | 'videos' | 'figma' | 'team';
 export function Catalogue({
   user,
   isGuest = false,
@@ -69,7 +70,6 @@ export function Catalogue({
     () => projects.map((project) => ({ id: project.id, name: project.name })),
     [projects],
   );
-
   const {
     allFlows,
     allGroups,
@@ -106,7 +106,6 @@ export function Catalogue({
     vsGroups: activeProject?.vs_groups ?? projects[0]?.vs_groups ?? [],
     compareEnabled,
   });
-
   const [showSettings, setShowSettings] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
@@ -120,7 +119,6 @@ export function Catalogue({
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const canViewTeamSection = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
-
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
     [presetByKey, scopedScreenFamilies, scopedScreenshots],
@@ -135,7 +133,6 @@ export function Catalogue({
     [filteredFamilies, selected],
   );
   const previewFamily = previewFamilyId ? familyById[previewFamilyId] ?? null : null;
-
   const {
     handleAnnotationStateChange,
     handleChangeFamilyGroup,
@@ -190,7 +187,6 @@ export function Catalogue({
     confirmDeleteOpen ||
     showAuthPrompt,
   );
-
   function requireEditAccess() {
     if (!isGuest) return true;
     setShowAuthPrompt(true);
@@ -206,7 +202,6 @@ export function Catalogue({
     if (!requireEditAccess()) return;
     action();
   }
-
   const handleGuestAwareDeleteFamily = (id: string) => guardMutation(() => handleDeleteFamily(id), undefined);
   const handleGuestAwareRenameFamily = (id: string, name: string) => guardMutation(() => handleRenameFamily(id, name), undefined);
   const handleGuestAwareChangeFamilyGroup = (id: string, group: string | null) => guardMutation(() => handleChangeFamilyGroup(id, group), undefined);
@@ -218,7 +213,6 @@ export function Catalogue({
     id: string,
     input: { file: File | null; label: string | null },
   ) => guardMutation(() => handleSetReference(id, input), false);
-
   useEffect(() => {
     persistViewMode(viewMode);
   }, [viewMode]);
@@ -228,13 +222,11 @@ export function Catalogue({
       setPreviewFamilyId(null);
     }
   }, [familyById, previewFamilyId]);
-
   useEffect(() => {
     if (!canViewTeamSection && activeSection === 'team') {
       setActiveSection('catalogue');
     }
   }, [activeSection, canViewTeamSection]);
-
   useEffect(() => {
     if (projects.length === 0) {
       setActiveProjectId(null);
@@ -251,7 +243,6 @@ export function Catalogue({
       return projects[0].id;
     });
   }, [projects]);
-
   useEffect(() => {
     if (allFlows.length === 0) {
       setCompareFlow(null);
@@ -266,7 +257,6 @@ export function Catalogue({
       return allFlows[0];
     });
   }, [allFlows]);
-
   useEffect(() => {
     setSelected(new Set());
     setPreviewFamilyId(null);
@@ -275,11 +265,9 @@ export function Catalogue({
 
   useEffect(() => {
     if (!isAnyModalOpen) return;
-
     const previousOverflow = document.body.style.overflow;
     const previousPaddingRight = document.body.style.paddingRight;
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-
     document.body.style.overflow = 'hidden';
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -290,7 +278,6 @@ export function Catalogue({
       document.body.style.paddingRight = previousPaddingRight;
     };
   }, [isAnyModalOpen]);
-
   function openPreview(familyId: string) {
     setPreviewStartInlineEdit(false);
     setPreviewFamilyId(familyId);
@@ -300,7 +287,6 @@ export function Catalogue({
     setPreviewStartInlineEdit(true);
     setPreviewFamilyId(familyId);
   }
-
   function toggleSelect(familyId: string) {
     setSelected((prev) => { const next = new Set(prev); if (next.has(familyId)) next.delete(familyId); else next.add(familyId); return next; });
   }
@@ -332,7 +318,6 @@ export function Catalogue({
       type: result.ok ? 'success' : 'info',
     });
   }
-
   return (
     <div className={`catalogue-page ${canViewTeamSection ? 'catalogue-page--team-enabled' : ''}`}>
       <CatalogueHeader
@@ -355,6 +340,20 @@ export function Catalogue({
               canEdit={!isGuest}
               userEmail={user.email || 'Designer'}
               onRequireAuth={() => setShowAuthPrompt(true)}
+            />
+          </div>
+        </main>
+      ) : activeSection === 'figma' ? (
+        <main className="catalogue-main">
+          <div className="catalogue-shell catalogue-shell--team">
+            <CatalogueFigmaSection
+              activeProjectId={activeProjectId}
+              canAdmin={canViewTeamSection}
+              canEdit={!isGuest}
+              onRequireAuth={() => setShowAuthPrompt(true)}
+              projects={projects}
+              userEmail={user.email || 'Designer'}
+              userId={user.id}
             />
           </div>
         </main>
@@ -473,7 +472,6 @@ export function Catalogue({
           </div>
         </main>
       )}
-
       <CatalogueUploadModal
         flowLabel={upload.uploadFlowLabel}
         isOpen={upload.showUpload}
@@ -521,7 +519,6 @@ export function Catalogue({
         onThemeChange={upload.setUploadTheme}
         onWebPresetKeyChange={upload.setUploadWebPresetKey}
       />
-
       <CatalogueQuickUploadModal
         flowLabel={upload.quickUploadFlowLabel}
         isOpen={upload.showQuickUpload}
@@ -553,7 +550,6 @@ export function Catalogue({
         onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
         onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}
       />
-
       <CatalogueSettingsModal
         isOpen={showSettings}
         presetUsage={presetUsage}
@@ -561,14 +557,12 @@ export function Catalogue({
         onClose={() => setShowSettings(false)}
         onSave={handleSavePresets}
       />
-
       {upload.uploading && (
         <div className="canvas-uploading">
           <div className="loading-spinner" />
           Uploading screenshots...
         </div>
       )}
-
       {previewFamily && (
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
@@ -597,7 +591,6 @@ export function Catalogue({
           onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
         />
       )}
-
       {bulkAction === 'group' && (
         <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
           <div className="flow-assign-modal" onClick={(event) => event.stopPropagation()}>
@@ -637,7 +630,6 @@ export function Catalogue({
           </div>
         </div>
       )}
-
       {confirmDeleteOpen && (
         <ConfirmModal
           title={`Delete ${selected.size} Screen Famil${selected.size === 1 ? 'y' : 'ies'}`}
@@ -649,7 +641,6 @@ export function Catalogue({
           onCancel={() => setConfirmDeleteOpen(false)}
         />
       )}
-
       {toast && (
         <Toast
           message={toast.message}
@@ -657,7 +648,6 @@ export function Catalogue({
           onClose={() => setToast(null)}
         />
       )}
-
       {activeSection === 'catalogue' && (
         <CatalogueBulkBar
           filteredFamiliesCount={filteredFamilies.length}
@@ -676,14 +666,12 @@ export function Catalogue({
           onSelectAllVisible={selectAllVisible}
         />
       )}
-
       <CatalogueBulkRenameModal
         isOpen={bulkRenameOpen}
         families={filteredFamilies.filter((family) => selected.has(family.id))}
         onClose={() => setBulkRenameOpen(false)}
         onRenameFamily={handleRenameFamily}
       />
-
       <CatalogueEmailPromptModal
         isOpen={showAuthPrompt}
         onClose={() => setShowAuthPrompt(false)}

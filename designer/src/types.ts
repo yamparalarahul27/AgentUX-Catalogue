@@ -35,6 +35,27 @@ export interface WebPreset {
   width: number;
 }
 
+export type FigmaRequestStatus = 'queued' | 'parsing' | 'building' | 'review' | 'ready' | 'failed';
+
+export interface CatalogueFigmaRequest {
+  id: string;
+  project_id: string | null;
+  title: string | null;
+  html_snippet: string;
+  reference_image_url: string | null;
+  requested_by_user_id: string;
+  requested_by_email: string | null;
+  status: FigmaRequestStatus;
+  node_url: string | null;
+  node_id: string | null;
+  file_key: string | null;
+  admin_notes: string | null;
+  error_message: string | null;
+  engine_payload: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CatalogueSettingsRecord {
   user_id: string;
   web_presets: WebPreset[];

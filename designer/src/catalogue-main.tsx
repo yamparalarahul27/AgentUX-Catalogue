@@ -13,6 +13,7 @@ import './styles/catalogue-gallery-zoom.scss';
 import './styles/catalogue-lightbox-annotations.scss';
 import './styles/catalogue-team.scss';
 import './styles/catalogue-videos.scss';
+import './styles/catalogue-figma.scss';
 import './styles/canvas-enhancements.scss';
 import './styles/catalogue-filter-sheet.scss';
 

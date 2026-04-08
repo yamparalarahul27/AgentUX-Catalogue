@@ -1,6 +1,6 @@
 import agentuxLogo from '../assets/agentux-logo.svg';
 
-type CatalogueSection = 'catalogue' | 'videos' | 'team';
+type CatalogueSection = 'catalogue' | 'videos' | 'figma' | 'team';
 
 interface CatalogueHeaderProps {
   activeSection: CatalogueSection;
@@ -47,6 +47,15 @@ export function CatalogueHeader({
           onClick={() => onSectionChange('videos')}
         >
           Videos
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className={`catalogue-header__tab ${activeSection === 'figma' ? 'is-active' : ''}`}
+          aria-selected={activeSection === 'figma'}
+          onClick={() => onSectionChange('figma')}
+        >
+          Figma
         </button>
         {canViewTeam && (
           <button
