@@ -1,0 +1,97 @@
+// Grid density overrides
+
+.catalogue-grid {
+  &[data-density="2"] { grid-template-columns: repeat(2, 1fr); }
+  &[data-density="4"] { grid-template-columns: repeat(4, 1fr); }
+  &[data-density="6"] { grid-template-columns: repeat(6, 1fr); }
+}
+
+.catalogue-main.catalogue-main--density-6 { max-width: 1600px; }
+
+// Quick Upload side panel (desktop)
+
+.catalogue-body-layout {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+  min-width: 0;
+  width: 100%;
+}
+
+.catalogue-body-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.catalogue-quick-panel {
+  width: 400px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  max-height: 100dvh;
+  overflow-y: auto;
+  border-left: 1px solid #27272a;
+  background: #111113;
+  animation: quickPanelSlideIn 0.22s ease;
+}
+
+@keyframes quickPanelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.catalogue-quick-panel-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 18px;
+
+  // Stack the two-column quick-upload layout into single column inside panel
+  .catalogue-quick-upload-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .catalogue-upload-subtitle {
+    font-size: 12px;
+  }
+}
+
+.catalogue-quick-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f4f4f5;
+    margin: 0;
+  }
+}
+
+.catalogue-quick-panel-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #303038;
+  border-radius: 10px;
+  background: transparent;
+  color: #a1a1aa;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #6366f1;
+    color: #e4e4e7;
+    background: rgba(99, 102, 241, 0.1);
+  }
+}

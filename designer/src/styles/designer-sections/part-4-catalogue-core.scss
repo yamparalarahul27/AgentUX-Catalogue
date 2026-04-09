@@ -53,8 +53,6 @@
   width: 100%;
   margin: 0 auto;
   padding: 12px 24px 40px;
-
-  &.catalogue-main--density-6 { max-width: 1600px; }
 }
 
 // Toolbar
@@ -182,10 +180,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
-
-  &[data-density="2"] { grid-template-columns: repeat(2, 1fr); }
-  &[data-density="4"] { grid-template-columns: repeat(4, 1fr); }
-  &[data-density="6"] { grid-template-columns: repeat(6, 1fr); }
 }
 
 // Card
