@@ -75,7 +75,6 @@ export function useCatalogueUpload({
 
   const defaultProjectId = projects[0]?.id ?? null;
   const effectiveUploadProjectId = uploadProjectId ?? defaultProjectId;
-  const effectiveQuickUploadProjectId = quickUploadProjectId ?? defaultProjectId;
 
   const uploadProjectGroups = useMemo(() => {
     const families = allFamilies.filter((family) => family.project_id === effectiveUploadProjectId);
