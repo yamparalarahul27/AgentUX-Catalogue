@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
+import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import { CatalogueGridDensity } from './CatalogueGridDensity';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueFilterSheet } from './CatalogueFilterSheet';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
@@ -22,6 +24,7 @@ interface CatalogueToolbarProps {
   filterPlatform: string | null;
   filterTheme: string | null;
   filterWebPreset: string | null;
+  gridDensity: GridDensity;
   groups: string[];
   isSortLocked: boolean;
   onActiveProjectChange: (value: string | null) => void;
@@ -29,6 +32,7 @@ interface CatalogueToolbarProps {
   onCompareFlowChange: (value: string | null) => void;
   onFilterGroupChange: (value: string | null) => void;
   onFilterFlowChange: (value: string | null) => void;
+  onGridDensityChange: (value: GridDensity) => void;
   onFilterMobileOsChange: (value: string | null) => void;
   onFilterPlatformChange: (value: string | null) => void;
   onFilterThemeChange: (value: string | null) => void;
@@ -115,6 +119,7 @@ export function CatalogueToolbar({
   filterPlatform,
   filterTheme,
   filterWebPreset,
+  gridDensity,
   groups,
   isSortLocked,
   onActiveProjectChange,
@@ -122,6 +127,7 @@ export function CatalogueToolbar({
   onCompareFlowChange,
   onFilterGroupChange,
   onFilterFlowChange,
+  onGridDensityChange,
   onFilterMobileOsChange,
   onFilterPlatformChange,
   onFilterThemeChange,
@@ -433,6 +439,10 @@ export function CatalogueToolbar({
               />
 
               <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
+
+              {viewMode === 'grid' && (
+                <CatalogueGridDensity value={gridDensity} onChange={onGridDensityChange} />
+              )}
             </>
           )}
 

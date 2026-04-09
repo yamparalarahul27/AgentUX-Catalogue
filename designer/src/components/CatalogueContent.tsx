@@ -1,4 +1,5 @@
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
+import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueCompareView } from './CatalogueCompareView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
@@ -18,6 +19,7 @@ interface CatalogueContentProps {
   filterPlatform: string | null;
   filterTheme: string | null;
   filterWebPreset: string | null;
+  gridDensity: GridDensity;
   groupedFamilies: Record<string, CatalogueFamilyView[]>;
   loading: boolean;
   primaryGroup: string | null;
@@ -65,6 +67,7 @@ export function CatalogueContent({
   filterPlatform,
   filterTheme,
   filterWebPreset,
+  gridDensity,
   groupedFamilies,
   loading,
   primaryGroup,
@@ -211,7 +214,10 @@ export function CatalogueContent({
               {compareEnabled && vsGroups.includes(groupName) && <span className="catalogue-badge catalogue-badge-vs">Vs</span>}
             </h3>
 
-            <div className="catalogue-grid catalogue-grid--families">
+            <div
+              className="catalogue-grid catalogue-grid--families"
+              {...(gridDensity !== 'auto' ? { 'data-density': gridDensity } : {})}
+            >
               {families.map((family) => (
                 <CatalogueFamilyCard
                   key={family.id}

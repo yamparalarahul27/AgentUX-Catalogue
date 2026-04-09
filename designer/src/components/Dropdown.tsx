@@ -55,13 +55,16 @@ export function Dropdown({
   useLayoutEffect(() => {
     if (!open || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUpward = spaceBelow < 260 && rect.top > spaceBelow;
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
+    const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
+    const availableHeight = openUpward ? spaceAbove : spaceBelow;
 
     setMenuStyle({
       position: 'fixed',
       left: rect.left,
       width: Math.max(rect.width, 140),
+      maxHeight: Math.min(360, Math.max(120, availableHeight)),
       zIndex: 1400,
       ...(openUpward
         ? { bottom: window.innerHeight - rect.top + 4 }

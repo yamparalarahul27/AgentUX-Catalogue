@@ -83,9 +83,8 @@ export function useCatalogueUpload({
   }, [allFamilies, effectiveUploadProjectId]);
 
   const quickUploadProjectGroups = useMemo(() => {
-    const families = allFamilies.filter((family) => family.project_id === effectiveQuickUploadProjectId);
-    return [...new Set(families.map((family) => family.group).filter(Boolean))] as string[];
-  }, [allFamilies, effectiveQuickUploadProjectId]);
+    return [...new Set(allFamilies.map((family) => family.group).filter(Boolean))] as string[];
+  }, [allFamilies]);
 
   const quickUploadQueuePreview = useMemo(
     () => quickUploadQueue.map((item) => ({

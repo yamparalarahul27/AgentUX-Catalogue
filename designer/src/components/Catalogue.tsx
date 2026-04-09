@@ -7,7 +7,8 @@ import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
-import { buildPresetUsage, defaultViewMode, persistViewMode } from '../lib/catalogue-helpers';
+import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
+import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
@@ -116,6 +117,7 @@ export function Catalogue({
   const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
+  const [gridDensity, setGridDensity] = useState<GridDensity>(defaultGridDensity);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const canViewTeamSection = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
@@ -180,7 +182,6 @@ export function Catalogue({
   });
   const isAnyModalOpen = Boolean(
     upload.showUpload ||
-    upload.showQuickUpload ||
     showSettings ||
     previewFamily ||
     bulkAction ||
@@ -216,6 +217,10 @@ export function Catalogue({
   useEffect(() => {
     persistViewMode(viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    persistGridDensity(gridDensity);
+  }, [gridDensity]);
 
   useEffect(() => {
     if (previewFamilyId && !familyById[previewFamilyId]) {
@@ -358,7 +363,7 @@ export function Catalogue({
           </div>
         </main>
       ) : (
-        <main className="catalogue-main">
+        <main className={`catalogue-main${gridDensity !== 'auto' ? ` catalogue-main--density-${gridDensity}` : ''}`}>
           <div className="catalogue-shell">
             <div className="catalogue-body">
               {isGuest && (
@@ -386,6 +391,7 @@ export function Catalogue({
                 filterPlatform={filterPlatform}
                 filterTheme={filterTheme}
                 filterWebPreset={filterWebPreset}
+                gridDensity={gridDensity}
                 groups={allGroups}
                 isSortLocked={isSortLocked}
                 onActiveProjectChange={setActiveProjectId}
@@ -397,6 +403,7 @@ export function Catalogue({
                 onFilterPlatformChange={setFilterPlatform}
                 onFilterThemeChange={setFilterTheme}
                 onFilterWebPresetChange={setFilterWebPreset}
+                onGridDensityChange={setGridDensity}
                 onPrimaryGroupChange={(value) => {
                   void guardMutation(() => handlePrimaryGroupChange(value), undefined);
                 }}
@@ -423,51 +430,87 @@ export function Catalogue({
                 vsGroups={vsGroups}
               />
 
-              <CatalogueContent
-                activeVariantKeys={upload.activeVariantKeys}
-                allFamilies={allFamilies}
-                canEdit={!isGuest}
-                compareEnabled={compareEnabled}
-                compareFlow={compareFlow}
-                filterFlow={filterFlow}
-                filterGroup={filterGroup}
-                filterMobileOs={filterMobileOs}
-                filterPlatform={filterPlatform}
-                filterTheme={filterTheme}
-                filterWebPreset={filterWebPreset}
-                filteredFamilies={filteredFamilies}
-                groupedFamilies={groupedFamilies}
-                loading={loading}
-                primaryGroup={primaryGroup}
-                searchQuery={searchQuery}
-                selected={selected}
-                viewMode={viewMode}
-                vsGroups={vsGroups}
-                onActiveVariantChange={upload.updateActiveVariant}
-                onAnnotationStateChange={handleAnnotationStateChange}
-                onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
-                onCommentCountChange={handleCommentCountChange}
-                onDeleteFamily={handleGuestAwareDeleteFamily}
-                onOpenPreview={openPreview}
-                onOpenPreviewAndEdit={(familyId) => {
-                  if (isGuest) {
-                    openPreview(familyId);
-                    setShowAuthPrompt(true);
-                    return;
-                  }
-                  openPreviewAndEdit(familyId);
-                }}
-                onRequireAuth={() => setShowAuthPrompt(true)}
-                onRenameFamily={handleGuestAwareRenameFamily}
-                onRemoveReference={handleGuestAwareRemoveReference}
-                onReplaceVariantImage={handleGuestAwareReplaceImage}
-                onSetFlowLabel={handleGuestAwareSetFlowLabel}
-                onToggleGroupSelect={toggleGroupSelection}
-                onToggleSelect={toggleSelect}
-                onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
-                userEmail={user.email || 'Designer'}
-                webPresets={webPresets}
-              />
+              <div className="catalogue-body-layout">
+                <div className="catalogue-body-main">
+                  <CatalogueContent
+                    activeVariantKeys={upload.activeVariantKeys}
+                    allFamilies={allFamilies}
+                    canEdit={!isGuest}
+                    compareEnabled={compareEnabled}
+                    compareFlow={compareFlow}
+                    filterFlow={filterFlow}
+                    filterGroup={filterGroup}
+                    filterMobileOs={filterMobileOs}
+                    filterPlatform={filterPlatform}
+                    filterTheme={filterTheme}
+                    filterWebPreset={filterWebPreset}
+                    filteredFamilies={filteredFamilies}
+                    gridDensity={gridDensity}
+                    groupedFamilies={groupedFamilies}
+                    loading={loading}
+                    primaryGroup={primaryGroup}
+                    searchQuery={searchQuery}
+                    selected={selected}
+                    viewMode={viewMode}
+                    vsGroups={vsGroups}
+                    onActiveVariantChange={upload.updateActiveVariant}
+                    onAnnotationStateChange={handleAnnotationStateChange}
+                    onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
+                    onCommentCountChange={handleCommentCountChange}
+                    onDeleteFamily={handleGuestAwareDeleteFamily}
+                    onOpenPreview={openPreview}
+                    onOpenPreviewAndEdit={(familyId) => {
+                      if (isGuest) {
+                        openPreview(familyId);
+                        setShowAuthPrompt(true);
+                        return;
+                      }
+                      openPreviewAndEdit(familyId);
+                    }}
+                    onRequireAuth={() => setShowAuthPrompt(true)}
+                    onRenameFamily={handleGuestAwareRenameFamily}
+                    onRemoveReference={handleGuestAwareRemoveReference}
+                    onReplaceVariantImage={handleGuestAwareReplaceImage}
+                    onSetFlowLabel={handleGuestAwareSetFlowLabel}
+                    onToggleGroupSelect={toggleGroupSelection}
+                    onToggleSelect={toggleSelect}
+                    onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
+                    userEmail={user.email || 'Designer'}
+                    webPresets={webPresets}
+                  />
+                </div>
+                <CatalogueQuickUploadModal
+                  flowLabel={upload.quickUploadFlowLabel}
+                  isOpen={upload.showQuickUpload}
+                  projectId={upload.quickUploadProjectId}
+                  projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+                  quickUploadExistingGroup={upload.quickUploadExistingGroup}
+                  quickUploadGroupMode={upload.quickUploadGroupMode}
+                  quickUploadNewGroup={upload.quickUploadNewGroup}
+                  quickUploadProjectGroups={upload.quickUploadProjectGroups}
+                  quickUploadQueue={upload.quickUploadQueuePreview}
+                  uploading={upload.uploading}
+                  platform={upload.quickUploadPlatform}
+                  theme={upload.quickUploadTheme}
+                  webPresetKey={upload.quickUploadWebPresetKey}
+                  webPresets={webPresets}
+                  mobileOs={upload.quickUploadMobileOs}
+                  onClose={upload.resetQuickUploadState}
+                  onPlatformChange={upload.setQuickUploadPlatform}
+                  onThemeChange={upload.setQuickUploadTheme}
+                  onWebPresetKeyChange={upload.setQuickUploadWebPresetKey}
+                  onMobileOsChange={upload.setQuickUploadMobileOs}
+                  onQuickUploadClearQueue={upload.handleQuickUploadQueueClear}
+                  onQuickUploadExistingGroupChange={upload.setQuickUploadExistingGroup}
+                  onQuickUploadFilesSelected={upload.handleQuickUploadQueueAdd}
+                  onQuickUploadFlowLabelChange={upload.setQuickUploadFlowLabel}
+                  onQuickUploadGroupModeChange={upload.handleQuickUploadGroupModeChange}
+                  onQuickUploadNewGroupChange={upload.setQuickUploadNewGroup}
+                  onQuickUploadProjectChange={upload.handleQuickUploadProjectChange}
+                  onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
+                  onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}
+                />
+              </div>
             </div>
           </div>
         </main>
@@ -518,37 +561,6 @@ export function Catalogue({
         }}
         onThemeChange={upload.setUploadTheme}
         onWebPresetKeyChange={upload.setUploadWebPresetKey}
-      />
-      <CatalogueQuickUploadModal
-        flowLabel={upload.quickUploadFlowLabel}
-        isOpen={upload.showQuickUpload}
-        projectId={upload.quickUploadProjectId}
-        projects={projects.map((project) => ({ id: project.id, name: project.name }))}
-        quickUploadExistingGroup={upload.quickUploadExistingGroup}
-        quickUploadGroupMode={upload.quickUploadGroupMode}
-        quickUploadNewGroup={upload.quickUploadNewGroup}
-        quickUploadProjectGroups={upload.quickUploadProjectGroups}
-        quickUploadQueue={upload.quickUploadQueuePreview}
-        uploading={upload.uploading}
-        platform={upload.quickUploadPlatform}
-        theme={upload.quickUploadTheme}
-        webPresetKey={upload.quickUploadWebPresetKey}
-        webPresets={webPresets}
-        mobileOs={upload.quickUploadMobileOs}
-        onClose={upload.resetQuickUploadState}
-        onPlatformChange={upload.setQuickUploadPlatform}
-        onThemeChange={upload.setQuickUploadTheme}
-        onWebPresetKeyChange={upload.setQuickUploadWebPresetKey}
-        onMobileOsChange={upload.setQuickUploadMobileOs}
-        onQuickUploadClearQueue={upload.handleQuickUploadQueueClear}
-        onQuickUploadExistingGroupChange={upload.setQuickUploadExistingGroup}
-        onQuickUploadFilesSelected={upload.handleQuickUploadQueueAdd}
-        onQuickUploadFlowLabelChange={upload.setQuickUploadFlowLabel}
-        onQuickUploadGroupModeChange={upload.handleQuickUploadGroupModeChange}
-        onQuickUploadNewGroupChange={upload.setQuickUploadNewGroup}
-        onQuickUploadProjectChange={upload.handleQuickUploadProjectChange}
-        onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
-        onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}
       />
       <CatalogueSettingsModal
         isOpen={showSettings}
