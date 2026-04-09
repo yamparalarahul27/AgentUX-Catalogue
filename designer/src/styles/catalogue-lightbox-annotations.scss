@@ -121,7 +121,7 @@
 
 .catalogue-lightbox-collapsible__inner {
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
