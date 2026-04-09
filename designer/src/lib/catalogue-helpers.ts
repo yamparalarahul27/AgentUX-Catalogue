@@ -1,6 +1,6 @@
 import { parseCatalogueViewMode, DEFAULT_CATALOGUE_VIEW_MODE, type CatalogueViewMode } from './catalogue-view';
 
-export type GridDensity = 'auto' | 4 | 6 | 10;
+export type GridDensity = 'auto' | 2 | 4 | 6;
 
 const CATALOGUE_VIEW_MODE_KEY = 'catalogue:view-mode';
 const CATALOGUE_GRID_DENSITY_KEY = 'catalogue:grid-density';
@@ -24,7 +24,7 @@ export function persistViewMode(viewMode: CatalogueViewMode) {
 export function defaultGridDensity(): GridDensity {
   try {
     const raw = window.localStorage.getItem(CATALOGUE_GRID_DENSITY_KEY);
-    if (raw === '4' || raw === '6' || raw === '10') return Number(raw) as 4 | 6 | 10;
+    if (raw === '2' || raw === '4' || raw === '6') return Number(raw) as 2 | 4 | 6;
     return 'auto';
   } catch {
     return 'auto';
