@@ -36,6 +36,7 @@ export function CatalogueHeader({
           className={`catalogue-header__tab ${activeSection === 'catalogue' ? 'is-active' : ''}`}
           aria-selected={activeSection === 'catalogue'}
           onClick={() => onSectionChange('catalogue')}
+          data-short="C"
         >
           Catalogue
         </button>
@@ -45,6 +46,7 @@ export function CatalogueHeader({
           className={`catalogue-header__tab ${activeSection === 'videos' ? 'is-active' : ''}`}
           aria-selected={activeSection === 'videos'}
           onClick={() => onSectionChange('videos')}
+          data-short="V"
         >
           Videos
         </button>
@@ -54,6 +56,7 @@ export function CatalogueHeader({
           className={`catalogue-header__tab ${activeSection === 'figma' ? 'is-active' : ''}`}
           aria-selected={activeSection === 'figma'}
           onClick={() => onSectionChange('figma')}
+          data-short="F"
         >
           Figma
         </button>
@@ -64,6 +67,7 @@ export function CatalogueHeader({
             className={`catalogue-header__tab ${activeSection === 'team' ? 'is-active' : ''}`}
             aria-selected={activeSection === 'team'}
             onClick={() => onSectionChange('team')}
+            data-short="T"
           >
             Team
           </button>

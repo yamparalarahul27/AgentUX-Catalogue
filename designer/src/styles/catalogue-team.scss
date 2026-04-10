@@ -360,6 +360,15 @@
     margin-left: 0;
   }
 
+  .catalogue-header__tab {
+    font-size: 0;
+
+    &::after {
+      content: attr(data-short);
+      font-size: 12px;
+    }
+  }
+
   .catalogue-team {
     padding: 16px;
     border-radius: 14px;
