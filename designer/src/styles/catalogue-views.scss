@@ -651,6 +651,10 @@
 }
 
 @media (max-width: 860px) {
+  .catalogue-grid-density {
+    display: none;
+  }
+
   .catalogue-list-header {
     display: none;
   }
