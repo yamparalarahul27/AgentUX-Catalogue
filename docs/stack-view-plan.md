@@ -163,6 +163,10 @@ Tooltip: "Stack view — inline comments & annotations".
 - Existing users on `list` view: migrate to `stack` silently on first load
 - `persistCatalogueViewMode` accepts `'stack'`, rejects `'list'`
 - No data migration required (comments/annotations already exist)
+- Migration must be explicit in code, not implicit by fallback:
+  - Parser accepts legacy `'list'` but maps it to `'stack'`
+  - Persisted storage key `catalogue:view-mode` is rewritten to `'stack'`
+  - Unknown values still fall back to default `'grid'`
 
 ---
 
@@ -180,6 +184,10 @@ Reuse from Lightbox:
 - `useFamilyComments` hook (if exists) — otherwise extract from lightbox
 - Pin rendering / positioning logic
 - Comment item component
+- Resolve current duplication before shipping Stack:
+  - Extract shared feedback primitives for comments + annotations
+  - Keep behavior parity across Gallery, Lightbox, and Stack
+  - Include resolved-comment handling in the shared path (not only one view)
 
 The point is to not duplicate — Lightbox and Stack view share the same
 data hooks and UI primitives for comments and annotations.
@@ -200,6 +208,12 @@ Key classes:
 Tokens: reuse existing catalogue dark theme colors
 (`#0f0f10`, `#18181b`, `#27272a`, `#6366f1`, Inter font, etc.)
 
+Important style-coupling note:
+- `catalogue-list-*` classes are reused outside List view (Gallery + Lightbox
+  inline editing/actions). Do not remove list styles until replacements are
+  in place for all dependent components.
+- Keep cleanup as a final, verified step after soak.
+
 ---
 
 ## 9. Risks & open questions
@@ -215,31 +229,71 @@ Tokens: reuse existing catalogue dark theme colors
    push back. Option: keep List view as a hidden power-mode or export option.
 5. **Resolved comments** — how do they render in the inline thread? Hidden
    by default with a "show N resolved" toggle?
+6. **Logic divergence risk** — comments/annotation logic currently exists in
+   multiple places; Stack can increase drift unless shared first.
+7. **Hidden style coupling** — `catalogue-list-*` styles are reused by non-list
+   surfaces; premature deletion can regress Gallery/Lightbox.
+8. **Bulk action parity** — Stack must define selection UX that works with
+   existing global bulk actions (rename/group/delete).
+9. **Test gap** — view-mode migration and Stack branching currently need
+   explicit tests to avoid manual-only verification.
 
 ---
 
 ## 10. Milestones
 
+### M0 — Hardening prerequisites (must complete first)
+- Implement view-mode migration (`list` -> `stack`) with explicit parser +
+  storage rewrite behavior
+- Add focused tests for view-mode parsing, persistence migration, and content
+  branching for Stack
+- Extract shared feedback primitives for comments/annotations used by Gallery,
+  Lightbox, and Stack
+- Define and prototype Stack selection model compatible with existing
+  `CatalogueBulkBar` actions
+- Inventory all `catalogue-list-*` dependencies and mark which can/cannot be
+  removed yet
+
 ### M1 — Prototype on CD page
 - Build `CatalogueStackView` with 3 mock screens on `/designer/cd`
 - Validate layout, card sizing, scroll behavior
-- No real data wiring
+- Validate card-level selection affordance and bulk-action ergonomics
+- No real data wiring yet
 
 ### M2 — Wire to real data
 - Consume `CatalogueFamilyView` data
-- Integrate comments hook + annotations hook
+- Integrate shared comments/annotations primitives (not duplicated logic)
 - Add to Catalogue view toggle (behind feature flag if risky)
+- Ensure resolved-comment behavior is consistent with Lightbox
 
 ### M3 — Replace List view
 - Swap List → Stack in the view toggle
-- Migrate persisted `viewMode: 'list'` → `'stack'`
-- Remove unused list components after soak period
+- Release migration for persisted `viewMode: 'list'` → `'stack'`
+- Keep list components/styles during soak if any non-list surface still depends
+  on `catalogue-list-*` styles
+- Remove unused list components only after dependency audit passes
 
 ### M4 — Polish
 - Virtualization for large groups
 - Keyboard shortcuts
 - Resolved-comments handling
 - Mobile gesture tuning
+- Regression pass for Gallery + Lightbox + Stack parity
+
+---
+
+## 11. Release gates (definition of done)
+
+Stack view can replace List only when all are true:
+- Persisted users with `catalogue:view-mode='list'` land in Stack and storage is
+  rewritten safely
+- Comments, annotations, and resolved-comment behavior match across Gallery,
+  Lightbox, and Stack
+- Bulk actions (select all visible, rename, move group, delete) remain fully
+  functional in Stack workflows
+- Gallery/Lightbox styling is intact after Stack merge (no broken
+  `catalogue-list-*` dependencies)
+- Automated tests cover migration + Stack branch rendering paths
 
 ---
 
