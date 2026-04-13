@@ -18,6 +18,7 @@ import './styles/canvas-enhancements.scss';
 import './styles/catalogue-filter-sheet.scss';
 import './styles/catalogue-quick-panel.scss';
 import './styles/catalogue-stack.scss';
+import './styles/catalogue-skeleton.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

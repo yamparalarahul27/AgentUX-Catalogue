@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
+import { useCatalogueCompareData } from '../hooks/use-catalogue-compare-data';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
 import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
+import { useCatalogueGuestGuards } from '../hooks/use-catalogue-guest-guards';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
@@ -12,6 +14,7 @@ import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensi
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
+import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
@@ -125,6 +128,16 @@ export function Catalogue({
     sortBy,
     viewBy,
   });
+
+  // Compare mode bypasses pagination — fetches all screenshots for the chosen flow
+  const { compareFamilies, compareLoading } = useCatalogueCompareData({
+    activeProjectId,
+    projects,
+    screenFamilies,
+    webPresets,
+    compareEnabled,
+    compareFlow,
+  });
   const [showSettings, setShowSettings] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
@@ -206,32 +219,30 @@ export function Catalogue({
     confirmDeleteOpen ||
     showAuthPrompt,
   );
-  function requireEditAccess() {
-    if (!isGuest) return true;
-    setShowAuthPrompt(true);
-    return false;
-  }
-
-  async function guardMutation<T>(action: () => Promise<T>, fallback: T): Promise<T> {
-    if (!requireEditAccess()) return fallback;
-    return action();
-  }
-
-  function guardAction(action: () => void) {
-    if (!requireEditAccess()) return;
-    action();
-  }
-  const handleGuestAwareDeleteFamily = (id: string) => guardMutation(() => handleDeleteFamily(id), undefined);
-  const handleGuestAwareRenameFamily = (id: string, name: string) => guardMutation(() => handleRenameFamily(id, name), undefined);
-  const handleGuestAwareChangeFamilyGroup = (id: string, group: string | null) => guardMutation(() => handleChangeFamilyGroup(id, group), undefined);
-  const handleGuestAwareReplaceImage = (id: string, file: File) => guardMutation(() => handleReplaceImage(id, file), undefined);
-  const handleGuestAwareSetFlowLabel = (id: string, label: string | null) => guardMutation(() => handleSetFlowLabel(id, label), false);
-  const handleGuestAwareUpdateVariantDetails = (id: string, patch: { mobile_os?: 'ios' | 'android' | null; platform?: 'mobile' | 'web' | null; theme?: 'light' | 'dark' | null; web_preset_key?: string | null }) => guardMutation(() => handleUpdateVariantDetails(id, patch), false);
-  const handleGuestAwareRemoveReference = (id: string) => guardMutation(() => handleRemoveReference(id), false);
-  const handleGuestAwareSetReference = (
-    id: string,
-    input: { file: File | null; label: string | null },
-  ) => guardMutation(() => handleSetReference(id, input), false);
+  const {
+    guardAction,
+    guardMutation,
+    requireEditAccess,
+    handleGuestAwareChangeFamilyGroup,
+    handleGuestAwareDeleteFamily,
+    handleGuestAwareRemoveReference,
+    handleGuestAwareRenameFamily,
+    handleGuestAwareReplaceImage,
+    handleGuestAwareSetFlowLabel,
+    handleGuestAwareSetReference,
+    handleGuestAwareUpdateVariantDetails,
+  } = useCatalogueGuestGuards({
+    isGuest,
+    onRequireAuth: () => setShowAuthPrompt(true),
+    handleChangeFamilyGroup,
+    handleDeleteFamily,
+    handleRemoveReference,
+    handleRenameFamily,
+    handleReplaceImage,
+    handleSetFlowLabel,
+    handleSetReference,
+    handleUpdateVariantDetails,
+  });
   useEffect(() => {
     persistViewMode(viewMode);
   }, [viewMode]);
@@ -452,7 +463,8 @@ export function Catalogue({
                 <div className="catalogue-body-main">
                   <CatalogueContent
                     activeVariantKeys={upload.activeVariantKeys}
-                    allFamilies={allFamilies}
+                    allFamilies={compareEnabled ? compareFamilies : allFamilies}
+                    compareLoading={compareLoading}
                     canEdit={!isGuest}
                     compareEnabled={compareEnabled}
                     compareFlow={compareFlow}
@@ -625,43 +637,15 @@ export function Catalogue({
         />
       )}
       {bulkAction === 'group' && (
-        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
-          <div className="flow-assign-modal" onClick={(event) => event.stopPropagation()}>
-            <h3>Move {selected.size} families to Group</h3>
-            <div className="catalogue-upload-groups" style={{ marginTop: 12 }}>
-              {allGroups.map((group) => (
-                <button
-                  key={group}
-                  type="button"
-                  className={`catalogue-upload-group-chip ${bulkGroupValue === group ? 'active' : ''}`}
-                  onClick={() => setBulkGroupValue(group)}
-                >
-                  {group}
-                  {primaryGroup === group && <span className="catalogue-upload-group-primary">Primary</span>}
-                </button>
-              ))}
-            </div>
-            <input
-              className="catalogue-filter"
-              style={{ width: '100%', marginTop: 12 }}
-              type="text"
-              placeholder="Or type a new group name..."
-              value={bulkGroupValue}
-              onChange={(event) => setBulkGroupValue(event.target.value)}
-            />
-            <div className="flow-assign-actions">
-              <button type="button" className="btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={!bulkGroupValue.trim()}
-                onClick={() => void handleBulkChangeGroup(bulkGroupValue)}
-              >
-                Move to "{bulkGroupValue.trim() || '...'}"
-              </button>
-            </div>
-          </div>
-        </div>
+        <CatalogueBulkGroupDialog
+          allGroups={allGroups}
+          primaryGroup={primaryGroup}
+          selectedCount={selected.size}
+          value={bulkGroupValue}
+          onValueChange={setBulkGroupValue}
+          onCancel={() => setBulkAction(null)}
+          onConfirm={(value) => void handleBulkChangeGroup(value)}
+        />
       )}
       {confirmDeleteOpen && (
         <ConfirmModal
@@ -687,15 +671,9 @@ export function Catalogue({
           selectedCount={selected.size}
           selectedVisibleCount={selectedVisibleCount}
           onClearSelection={clearSelection}
-          onOpenDeleteConfirm={() => {
-            guardAction(() => setConfirmDeleteOpen(true));
-          }}
-          onOpenGroupDialog={() => {
-            guardAction(() => setBulkAction('group'));
-          }}
-          onOpenBulkRename={() => {
-            guardAction(() => setBulkRenameOpen(true));
-          }}
+          onOpenDeleteConfirm={() => guardAction(() => setConfirmDeleteOpen(true))}
+          onOpenGroupDialog={() => guardAction(() => setBulkAction('group'))}
+          onOpenBulkRename={() => guardAction(() => setBulkRenameOpen(true))}
           onSelectAllVisible={selectAllVisible}
         />
       )}

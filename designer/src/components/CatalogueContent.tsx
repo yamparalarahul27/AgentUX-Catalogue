@@ -6,6 +6,7 @@ import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueScrollSentinel } from './CatalogueScrollSentinel';
+import { CatalogueSkeletonList } from './CatalogueSkeletonCard';
 import { CatalogueStackView } from './CatalogueStackView';
 
 interface CatalogueContentProps {
@@ -20,6 +21,7 @@ interface CatalogueContentProps {
   filterPlatform: string | null;
   filterTheme: string | null;
   filterWebPreset: string | null;
+  compareLoading?: boolean;
   gridDensity: GridDensity;
   groupedFamilies: Record<string, CatalogueFamilyView[]>;
   hasMore: boolean;
@@ -71,6 +73,7 @@ export function CatalogueContent({
   filterPlatform,
   filterTheme,
   filterWebPreset,
+  compareLoading = false,
   gridDensity,
   groupedFamilies,
   hasMore,
@@ -112,15 +115,20 @@ export function CatalogueContent({
   );
 
   if (loading) {
-    return (
-      <div className="empty-state">
-        <div className="loading-spinner" />
-        <p>Loading catalogue...</p>
-      </div>
-    );
+    const skeletonVariant = viewMode === 'stack' ? 'stack' : 'grid';
+    const skeletonCount = viewMode === 'stack' ? 3 : 8;
+    return <CatalogueSkeletonList variant={skeletonVariant} count={skeletonCount} />;
   }
 
   if (compareEnabled) {
+    if (compareLoading) {
+      return (
+        <div className="empty-state">
+          <div className="loading-spinner" />
+          <p>Loading compare set…</p>
+        </div>
+      );
+    }
     return (
       <CatalogueCompareView
         activeVariantKeys={activeVariantKeys}
