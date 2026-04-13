@@ -5,7 +5,7 @@ import { CatalogueCompareView } from './CatalogueCompareView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
-import { CatalogueFamilyListView } from './CatalogueFamilyListView';
+import { CatalogueStackView } from './CatalogueStackView';
 
 interface CatalogueContentProps {
   activeVariantKeys: Record<string, string>;
@@ -140,21 +140,15 @@ export function CatalogueContent({
     );
   }
 
-  if (viewMode === 'list') {
+  if (viewMode === 'stack') {
     return (
-      <CatalogueFamilyListView
+      <CatalogueStackView
         activeVariantKeys={activeVariantKeys}
-        families={filteredFamilies}
+        groupedFamilies={groupedFamilies}
         selected={selected}
-        onActiveVariantChange={onActiveVariantChange}
-        onChangeFamilyGroup={onChangeFamilyGroup}
-        onDeleteFamily={onDeleteFamily}
         onOpenPreview={onOpenPreview}
-        onRenameFamily={onRenameFamily}
-        onReplaceVariantImage={onReplaceVariantImage}
+        onToggleGroupSelect={onToggleGroupSelect}
         onToggleSelect={onToggleSelect}
-        onUpdateVariantDetails={onUpdateVariantDetails}
-        webPresets={webPresets}
       />
     );
   }

@@ -24,17 +24,14 @@ export function CatalogueViewToggle({ value, onChange }: CatalogueViewToggleProp
 
       <button
         type="button"
-        className={`catalogue-view-toggle__btn ${value === 'list' ? 'is-active' : ''}`}
-        onClick={() => onChange('list')}
-        title="List view"
+        className={`catalogue-view-toggle__btn ${value === 'stack' ? 'is-active' : ''}`}
+        onClick={() => onChange('stack')}
+        title="Stack view — inline comments & annotations"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="8" y1="6" x2="21" y2="6" />
-          <line x1="8" y1="12" x2="21" y2="12" />
-          <line x1="8" y1="18" x2="21" y2="18" />
-          <circle cx="4" cy="6" r="1.5" />
-          <circle cx="4" cy="12" r="1.5" />
-          <circle cx="4" cy="18" r="1.5" />
+          <rect x="3" y="4" width="18" height="5" rx="1" />
+          <rect x="3" y="11" width="18" height="4" rx="1" />
+          <rect x="3" y="17" width="18" height="3" rx="1" />
         </svg>
       </button>
 

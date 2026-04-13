@@ -7,7 +7,17 @@ const CATALOGUE_GRID_DENSITY_KEY = 'catalogue:grid-density';
 
 export function defaultViewMode(): CatalogueViewMode {
   try {
-    return parseCatalogueViewMode(window.localStorage.getItem(CATALOGUE_VIEW_MODE_KEY));
+    const raw = window.localStorage.getItem(CATALOGUE_VIEW_MODE_KEY);
+    const parsed = parseCatalogueViewMode(raw);
+    // Migrate legacy 'list' value by rewriting storage to the new 'stack' key
+    if (raw === 'list' && parsed === 'stack') {
+      try {
+        window.localStorage.setItem(CATALOGUE_VIEW_MODE_KEY, parsed);
+      } catch {
+        // ignore write errors
+      }
+    }
+    return parsed;
   } catch {
     return DEFAULT_CATALOGUE_VIEW_MODE;
   }
