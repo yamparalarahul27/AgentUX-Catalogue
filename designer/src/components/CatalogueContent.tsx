@@ -5,6 +5,7 @@ import { CatalogueCompareView } from './CatalogueCompareView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { CatalogueScrollSentinel } from './CatalogueScrollSentinel';
 import { CatalogueStackView } from './CatalogueStackView';
 
 interface CatalogueContentProps {
@@ -21,7 +22,10 @@ interface CatalogueContentProps {
   filterWebPreset: string | null;
   gridDensity: GridDensity;
   groupedFamilies: Record<string, CatalogueFamilyView[]>;
+  hasMore: boolean;
   loading: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
   primaryGroup: string | null;
   searchQuery: string;
   selected: Set<string>;
@@ -69,7 +73,10 @@ export function CatalogueContent({
   filterWebPreset,
   gridDensity,
   groupedFamilies,
+  hasMore,
   loading,
+  loadingMore,
+  onLoadMore,
   primaryGroup,
   searchQuery,
   selected,
@@ -142,14 +149,17 @@ export function CatalogueContent({
 
   if (viewMode === 'stack') {
     return (
-      <CatalogueStackView
-        activeVariantKeys={activeVariantKeys}
-        groupedFamilies={groupedFamilies}
-        selected={selected}
-        onOpenPreview={onOpenPreview}
-        onToggleGroupSelect={onToggleGroupSelect}
-        onToggleSelect={onToggleSelect}
-      />
+      <>
+        <CatalogueStackView
+          activeVariantKeys={activeVariantKeys}
+          groupedFamilies={groupedFamilies}
+          selected={selected}
+          onOpenPreview={onOpenPreview}
+          onToggleGroupSelect={onToggleGroupSelect}
+          onToggleSelect={onToggleSelect}
+        />
+        <CatalogueScrollSentinel hasMore={hasMore} loadingMore={loadingMore} onLoadMore={onLoadMore} />
+      </>
     );
   }
 
@@ -233,6 +243,7 @@ export function CatalogueContent({
           </section>
         );
       })}
+      <CatalogueScrollSentinel hasMore={hasMore} loadingMore={loadingMore} onLoadMore={onLoadMore} />
     </div>
   );
 }

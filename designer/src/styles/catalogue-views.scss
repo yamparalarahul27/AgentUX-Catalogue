@@ -12,6 +12,28 @@
   min-width: 0;
 }
 
+.catalogue-scroll-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  min-height: 40px;
+  width: 100%;
+}
+
+.catalogue-scroll-sentinel__spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #a1a1aa;
+  font-size: 12px;
+
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 .catalogue-grid-density {
   display: inline-flex;
   align-items: center;

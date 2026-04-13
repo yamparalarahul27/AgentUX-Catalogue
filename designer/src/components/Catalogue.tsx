@@ -37,32 +37,30 @@ export function Catalogue({
   isGuest = false,
   onRequestLogin,
 }: CatalogueProps) {
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const {
     flowMap,
+    hasMore,
     loading,
+    loadingMore,
+    loadMore,
     projects,
     screenFamilies,
     screenshots,
     setProjects,
     setScreenFamilies,
     setScreenshots,
-  } = useCatalogueData();
+  } = useCatalogueData({ activeProjectId });
   const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [compareFlow, setCompareFlow] = useState<string | null>(null);
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [projects, activeProjectId],
   );
-  const scopedScreenshots = useMemo(
-    () => (activeProjectId ? screenshots.filter((screenshot) => screenshot.project_id === activeProjectId) : screenshots),
-    [activeProjectId, screenshots],
-  );
-  const scopedScreenFamilies = useMemo(
-    () => (activeProjectId ? screenFamilies.filter((family) => family.project_id === activeProjectId) : screenFamilies),
-    [activeProjectId, screenFamilies],
-  );
+  // Data is now pre-scoped by useCatalogueData based on activeProjectId
+  const scopedScreenshots = screenshots;
+  const scopedScreenFamilies = screenFamilies;
   const orderedProjectsForUpload = useMemo(() => {
     if (!activeProject) return projects;
     return [activeProject, ...projects.filter((project) => project.id !== activeProject.id)];
@@ -447,7 +445,10 @@ export function Catalogue({
                     filteredFamilies={filteredFamilies}
                     gridDensity={gridDensity}
                     groupedFamilies={groupedFamilies}
+                    hasMore={hasMore}
                     loading={loading}
+                    loadingMore={loadingMore}
+                    onLoadMore={loadMore}
                     primaryGroup={primaryGroup}
                     searchQuery={searchQuery}
                     selected={selected}
