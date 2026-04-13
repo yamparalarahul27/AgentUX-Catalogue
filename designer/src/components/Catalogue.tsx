@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
+import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
 import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
@@ -38,6 +39,35 @@ export function Catalogue({
   onRequestLogin,
 }: CatalogueProps) {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [compareEnabled, setCompareEnabled] = useState(false);
+  const [compareFlow, setCompareFlow] = useState<string | null>(null);
+
+  // Filter UI state (owns filter/sort/search/viewBy state, with debounced search)
+  const filterState = useCatalogueFilterState();
+  const {
+    filters,
+    filterFlow,
+    filterGroup,
+    filterMobileOs,
+    filterPlatform,
+    filterTheme,
+    filterWebPreset,
+    searchQuery,
+    searchQueryDebounced,
+    setFilterFlow,
+    setFilterGroup,
+    setFilterMobileOs,
+    setFilterPlatform,
+    setFilterTheme,
+    setFilterWebPreset,
+    setSearchQuery,
+    setSortBy,
+    setViewBy,
+    sortBy,
+    viewBy,
+  } = filterState;
+
+  // Paginated, server-filtered data
   const {
     flowMap,
     hasMore,
@@ -50,15 +80,21 @@ export function Catalogue({
     setProjects,
     setScreenFamilies,
     setScreenshots,
-  } = useCatalogueData({ activeProjectId });
+  } = useCatalogueData({
+    activeProjectId,
+    filters,
+    sortBy,
+    searchQuery: searchQueryDebounced,
+  });
+
   const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
-  const [compareEnabled, setCompareEnabled] = useState(false);
-  const [compareFlow, setCompareFlow] = useState<string | null>(null);
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [projects, activeProjectId],
   );
-  // Data is now pre-scoped by useCatalogueData based on activeProjectId
+  const primaryGroup = activeProject?.primary_group ?? projects[0]?.primary_group ?? null;
+  const vsGroups = activeProject?.vs_groups ?? projects[0]?.vs_groups ?? [];
+  // Data is pre-scoped + pre-filtered by useCatalogueData
   const scopedScreenshots = screenshots;
   const scopedScreenFamilies = screenFamilies;
   const orderedProjectsForUpload = useMemo(() => {
@@ -69,41 +105,25 @@ export function Catalogue({
     () => projects.map((project) => ({ id: project.id, name: project.name })),
     [projects],
   );
+
+  // Derivations over loaded (and already-filtered) screenshots
   const {
     allFlows,
     allGroups,
     allMobileOs,
     allWebPresets,
-    filterFlow,
-    filterGroup,
-    filterMobileOs,
-    filterPlatform,
-    filterTheme,
-    filterWebPreset,
     filteredFamilies,
     groupedFamilies,
-    primaryGroup,
-    searchQuery,
-    setFilterFlow,
-    setFilterGroup,
-    setFilterMobileOs,
-    setFilterPlatform,
-    setFilterTheme,
-    setFilterWebPreset,
-    setSortBy,
-    setViewBy,
-    setSearchQuery,
-    sortBy,
     isSortLocked,
-    viewBy,
-    vsGroups,
   } = useCatalogueFilters({
     screenshots: scopedScreenshots,
     screenFamilies: scopedScreenFamilies,
     webPresets,
-    primaryGroup: activeProject?.primary_group ?? projects[0]?.primary_group ?? null,
-    vsGroups: activeProject?.vs_groups ?? projects[0]?.vs_groups ?? [],
+    primaryGroup,
+    vsGroups,
     compareEnabled,
+    sortBy,
+    viewBy,
   });
   const [showSettings, setShowSettings] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);

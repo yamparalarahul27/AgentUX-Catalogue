@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-import { DEFAULT_CATALOGUE_VIEW_BY, sortByAnnotationActivity, sortByCommentActivity, type CatalogueViewBy } from '../lib/catalogue-activity';
-import { buildCatalogueFamilies, buildLegacyFamily, getScreenshotFamilyId, getScreenshotFlowLabel, type CatalogueFamilyView } from '../lib/catalogue-families';
-import { DEFAULT_CATALOGUE_SORT, sortCatalogueScreenshots, type CatalogueSortOption } from '../lib/catalogue-sort';
+import { sortByAnnotationActivity, sortByCommentActivity, type CatalogueViewBy } from '../lib/catalogue-activity';
+import { buildCatalogueFamilies, getScreenshotFamilyId, getScreenshotFlowLabel, type CatalogueFamilyView } from '../lib/catalogue-families';
+import { sortCatalogueScreenshots, type CatalogueSortOption } from '../lib/catalogue-sort';
 import type { ScreenFamily, ScreenshotNode, WebPreset } from '../types';
 
 interface UseCatalogueFiltersArgs {
@@ -12,15 +12,28 @@ interface UseCatalogueFiltersArgs {
   primaryGroup: string | null;
   vsGroups: string[];
   compareEnabled: boolean;
+  sortBy: CatalogueSortOption;
+  viewBy: CatalogueViewBy;
 }
 
-function getFamilyForScreenshot(
-  screenshot: ScreenshotNode,
-  familyMap: Map<string, ScreenFamily>,
-): ScreenFamily {
-  return familyMap.get(getScreenshotFamilyId(screenshot)) || buildLegacyFamily(screenshot);
-}
-
+/**
+ * Derivation hook for catalogue listings.
+ *
+ * After the infinite-scroll refactor (commit 3 of catalogue-infinite-scroll-plan.md),
+ * filtering and sorting happen server-side in `useCatalogueData`. This hook no
+ * longer filters screenshots in memory — it only:
+ *
+ *   - Builds families from the (already-filtered) loaded screenshots
+ *   - Applies `viewBy` (comments-added / annotations-added) client-side because
+ *     it depends on count fields that hydrate after the screenshot fetch
+ *   - Groups families by section and applies compare-mode priority ordering
+ *   - Derives the available filter options (`allGroups`, `allFlows`) from the
+ *     currently-loaded project data
+ *
+ * Note: `allFlows` can be incomplete when the user has scrolled through only
+ * part of the paginated list. Follow-up work may add a distinct-flow query
+ * for complete filter options.
+ */
 export function useCatalogueFilters({
   screenshots,
   screenFamilies,
@@ -28,123 +41,75 @@ export function useCatalogueFilters({
   primaryGroup,
   vsGroups,
   compareEnabled,
+  sortBy,
+  viewBy,
 }: UseCatalogueFiltersArgs) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterGroup, setFilterGroup] = useState<string | null>(null);
-  const [filterFlow, setFilterFlow] = useState<string | null>(null);
-  const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
-  const [filterTheme, setFilterTheme] = useState<string | null>(null);
-  const [filterWebPreset, setFilterWebPreset] = useState<string | null>(null);
-  const [filterMobileOs, setFilterMobileOs] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<CatalogueSortOption>(DEFAULT_CATALOGUE_SORT);
-  const [viewBy, setViewBy] = useState<CatalogueViewBy>(DEFAULT_CATALOGUE_VIEW_BY);
+  const presetMap = useMemo(
+    () => Object.fromEntries(webPresets.map((preset) => [preset.key, preset])),
+    [webPresets],
+  );
 
-  const familyMap = useMemo(() => new Map(screenFamilies.map((family) => [family.id, family])), [screenFamilies]);
-  const presetMap = useMemo(() => Object.fromEntries(webPresets.map((preset) => [preset.key, preset])), [webPresets]);
+  // allGroups: complete (derived from screen_families, which the data hook
+  // loads fully per project on every initial fetch).
+  const allGroups = useMemo(
+    () => [...new Set(screenFamilies.map((family) => family.group).filter(Boolean))] as string[],
+    [screenFamilies],
+  );
 
-
-  const allGroups = useMemo(() => {
-    return [...new Set(screenshots.map((screenshot) => getFamilyForScreenshot(screenshot, familyMap).group).filter(Boolean))] as string[];
-  }, [familyMap, screenshots]);
-
-  const allFlows = useMemo(() => (
-    [...new Set(
+  // allFlows: currently derived from the loaded screenshots. Incomplete across
+  // paginated pages. See note above.
+  const allFlows = useMemo(
+    () => [...new Set(
       screenshots
         .map((screenshot) => getScreenshotFlowLabel(screenshot))
         .filter((label): label is string => Boolean(label)),
-    )].sort((left, right) => left.localeCompare(right))
-  ), [screenshots]);
+    )].sort((left, right) => left.localeCompare(right)),
+    [screenshots],
+  );
 
-  const allWebPresets = useMemo(() => webPresets.map((preset) => ({
-    id: preset.key,
-    label: `${preset.label} (${preset.width}px)`,
-  })), [webPresets]);
+  const allWebPresets = useMemo(
+    () => webPresets.map((preset) => ({
+      id: preset.key,
+      label: `${preset.label} (${preset.width}px)`,
+    })),
+    [webPresets],
+  );
 
-  const allMobileOs = useMemo(() => [
-    { id: 'ios', label: 'iOS' },
-    { id: 'android', label: 'Android' },
-  ], []);
+  const allMobileOs = useMemo(
+    () => [
+      { id: 'ios', label: 'iOS' },
+      { id: 'android', label: 'Android' },
+    ],
+    [],
+  );
 
-  useEffect(() => {
-    if (filterGroup && !allGroups.includes(filterGroup)) setFilterGroup(null);
-  }, [allGroups, filterGroup]);
-
-  useEffect(() => {
-    if (filterFlow && !allFlows.includes(filterFlow)) {
-      setFilterFlow(null);
-    }
-  }, [allFlows, filterFlow]);
-
-  useEffect(() => {
-    if (filterPlatform !== 'web' && filterWebPreset) setFilterWebPreset(null);
-    if (filterPlatform !== 'mobile' && filterMobileOs) setFilterMobileOs(null);
-  }, [filterMobileOs, filterPlatform, filterWebPreset]);
-
-  const baseScreenshots = useMemo(() => screenshots.filter((screenshot) => {
-    const family = getFamilyForScreenshot(screenshot, familyMap);
-    const flowLabel = getScreenshotFlowLabel(screenshot) || '';
-    const query = searchQuery.trim().toLowerCase();
-    const presetLabel = screenshot.web_preset_key ? presetMap[screenshot.web_preset_key]?.label.toLowerCase() || '' : '';
-    const mobileOs = screenshot.mobile_os || '';
-    const group = family.group || '';
-    const matchesSearch = !query
-      || screenshot.name.toLowerCase().includes(query)
-      || family.name.toLowerCase().includes(query)
-      || flowLabel.toLowerCase().includes(query)
-      || group.toLowerCase().includes(query)
-      || screenshot.file_name.toLowerCase().includes(query)
-      || presetLabel.includes(query)
-      || mobileOs.toLowerCase().includes(query);
-    const matchesGroup = !filterGroup || family.group === filterGroup;
-    const matchesFlow = !filterFlow || flowLabel === filterFlow;
-    const matchesPlatform = !filterPlatform || screenshot.platform === filterPlatform;
-    const matchesTheme = !filterTheme || screenshot.theme === filterTheme;
-    const matchesWebPreset = !filterWebPreset || screenshot.web_preset_key === filterWebPreset;
-    const matchesMobileOs = !filterMobileOs || screenshot.mobile_os === filterMobileOs;
-
-    return matchesSearch
-      && matchesGroup
-      && matchesFlow
-      && matchesPlatform
-      && matchesTheme
-      && matchesWebPreset
-      && matchesMobileOs;
-  }), [
-    familyMap,
-    filterFlow,
-    filterGroup,
-    filterMobileOs,
-    filterPlatform,
-    filterTheme,
-    filterWebPreset,
-    presetMap,
-    screenshots,
-    searchQuery,
-  ]);
-
+  // Apply viewBy filter client-side (requires hydrated counts).
   const viewByScreenshots = useMemo(() => {
     if (viewBy === 'comments-added') {
-      return baseScreenshots.filter((screenshot) => (screenshot.comment_count ?? 0) > 0);
+      return screenshots.filter((screenshot) => (screenshot.comment_count ?? 0) > 0);
     }
-
     if (viewBy === 'annotations-added') {
-      return baseScreenshots.filter((screenshot) => (screenshot.annotation_count ?? 0) > 0);
+      return screenshots.filter((screenshot) => (screenshot.annotation_count ?? 0) > 0);
     }
-
-    return baseScreenshots;
-  }, [baseScreenshots, viewBy]);
+    return screenshots;
+  }, [screenshots, viewBy]);
 
   const baseFamilies = useMemo(
     () => buildCatalogueFamilies(viewByScreenshots, screenFamilies, presetMap),
     [presetMap, screenFamilies, viewByScreenshots],
   );
+
   const filteredScreenshots = useMemo(
     () => baseFamilies.flatMap((family) => family.variants.map((variant) => variant.screenshot)),
     [baseFamilies],
   );
+
   const isGlobalLatestSort = viewBy === 'all' && sortBy === 'date-desc-global';
 
   const sortedFamilies = useMemo(() => {
+    // Server already returns in sort order; this re-sort is only meaningful
+    // for viewBy overrides and compare-mode priority. JS stable sort preserves
+    // existing order for equal keys otherwise.
     const sortedVariants = viewBy === 'comments-added'
       ? sortByCommentActivity(filteredScreenshots)
       : viewBy === 'annotations-added'
@@ -200,29 +165,9 @@ export function useCatalogueFilters({
     allGroups,
     allMobileOs,
     allWebPresets,
-    filterFlow,
-    filterGroup,
-    filterMobileOs,
-    filterPlatform,
-    filterTheme,
-    filterWebPreset,
     filteredFamilies: sortedFamilies,
     filteredScreenshots,
     groupedFamilies,
-    primaryGroup,
-    searchQuery,
-    setFilterFlow,
-    setFilterGroup,
-    setFilterMobileOs,
-    setFilterPlatform,
-    setFilterTheme,
-    setFilterWebPreset,
-    setSortBy,
-    setViewBy,
-    setSearchQuery,
-    sortBy,
     isSortLocked,
-    viewBy,
-    vsGroups,
   };
 }

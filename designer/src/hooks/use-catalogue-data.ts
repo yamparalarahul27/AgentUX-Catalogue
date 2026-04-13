@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Flow, Project, ScreenFamily, ScreenshotNode } from '../types';
 import { getAnnotationActivity } from '../lib/catalogue-activity';
+import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import { supabase } from '../lib/supabase';
 
 function parseTimestamp(value: string | null | undefined): number | null {
@@ -13,37 +14,78 @@ function parseTimestamp(value: string | null | undefined): number | null {
 // Pagination constants
 const PAGE_SIZE = 50;
 
+export interface CatalogueQueryFilters {
+  group: string | null;
+  flow: string | null;
+  platform: 'web' | 'mobile' | null;
+  theme: 'light' | 'dark' | null;
+  webPreset: string | null;
+  mobileOs: 'ios' | 'android' | null;
+}
+
+export const EMPTY_CATALOGUE_FILTERS: CatalogueQueryFilters = {
+  group: null,
+  flow: null,
+  platform: null,
+  theme: null,
+  webPreset: null,
+  mobileOs: null,
+};
+
+type CursorColumn = 'created_at' | 'name';
 interface PaginationCursor {
-  createdAt: string;
+  column: CursorColumn;
+  value: string;
   id: string;
+}
+
+interface SortConfig {
+  column: CursorColumn;
+  ascending: boolean;
+}
+
+function sortConfigFor(sortBy: CatalogueSortOption): SortConfig {
+  switch (sortBy) {
+    case 'date-asc':
+      return { column: 'created_at', ascending: true };
+    case 'name-asc':
+      return { column: 'name', ascending: true };
+    case 'date-desc':
+    case 'date-desc-global':
+    default:
+      return { column: 'created_at', ascending: false };
+  }
 }
 
 interface UseCatalogueDataArgs {
   activeProjectId: string | null;
+  filters: CatalogueQueryFilters;
+  sortBy: CatalogueSortOption;
+  searchQuery: string;
 }
 
 /**
- * Cursor-paginated catalogue data hook.
+ * Cursor-paginated catalogue data hook with server-side filtering + sort + search.
  *
- * Cold start:
- *   - loads all user projects (small)
- *   - loads first PAGE_SIZE screenshots for the scoped project set
- *   - loads flows + screen_families for the scoped project set (not paginated;
- *     small bounded sets relative to screenshots)
- *   - hydrates version/comment counts for the first page only
+ * Sort options map to cursor columns:
+ *   date-desc / date-desc-global → (created_at DESC, id DESC)
+ *   date-asc                      → (created_at ASC, id ASC)
+ *   name-asc                      → (name ASC, id ASC)
  *
- * Scroll / explicit `loadMore()`:
- *   - fetches next PAGE_SIZE screenshots using cursor (created_at, id)
- *   - hydrates counts for just that page
+ * Filters are applied as Supabase query predicates. Search is ilike on
+ * name + file_name (requires pg_trgm indexes — see SQL migration).
  *
- * Project change:
- *   - `reset()` clears cursor and refetches from page 1
+ * Any change to activeProjectId, filters, sortBy, or searchQuery resets
+ * pagination and refetches page 1.
  *
- * NOTE (commit 2 of infinite-scroll plan): sort is hard-coded to
- * created_at DESC, id DESC. Filters still run client-side over loaded rows.
- * Commit 3 will move filters/sort to server predicates.
+ * Counts (comments, versions) are hydrated per-page.
  */
-export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { activeProjectId: null }) {
+export function useCatalogueData({
+  activeProjectId,
+  filters,
+  sortBy,
+  searchQuery,
+}: UseCatalogueDataArgs) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [flows, setFlows] = useState<Flow[]>([]);
   const [screenFamilies, setScreenFamilies] = useState<ScreenFamily[]>([]);
@@ -55,6 +97,8 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
   const cursorRef = useRef<PaginationCursor | null>(null);
   const loadVersionRef = useRef(0);
   const loadingMoreRef = useRef(false);
+
+  const sortConfig = useMemo(() => sortConfigFor(sortBy), [sortBy]);
 
   // Map a raw screenshot row to our ScreenshotNode shape (with image_url, counts, etc.)
   const mapScreenshotRow = useCallback((row: Record<string, unknown>): ScreenshotNode => {
@@ -112,7 +156,6 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
       }
     }
 
-    // Only patch screenshots that were in the hydration batch (not all)
     const idSet = new Set(screenshotIds);
     setScreenshots((previous) => previous.map((screenshot) => {
       if (!idSet.has(screenshot.id)) return screenshot;
@@ -125,10 +168,14 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
     }));
   }, []);
 
-  // Core page fetch — scoped by project set, cursor, and page size.
+  /**
+   * Core page fetch — applies filters + sort + cursor + search to the Supabase query.
+   * Returns [] on error.
+   */
   const fetchScreenshotsPage = useCallback(
     async (
       projectIds: string[],
+      familyIdsMatchingGroup: string[] | null,
       cursor: PaginationCursor | null,
     ): Promise<ScreenshotNode[]> => {
       if (projectIds.length === 0) return [];
@@ -136,25 +183,70 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
       let query = supabase
         .from('screenshots')
         .select('*')
-        .in('project_id', projectIds)
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
+        .in('project_id', projectIds);
+
+      // Filter by group → via matching screen_family_id set (computed by caller)
+      if (familyIdsMatchingGroup !== null) {
+        if (familyIdsMatchingGroup.length === 0) return []; // group filter excludes everything
+        query = query.in('screen_family_id', familyIdsMatchingGroup);
+      }
+
+      if (filters.flow) {
+        query = query.filter('metadata->>catalogue_flow_label', 'eq', filters.flow);
+      }
+      if (filters.platform) {
+        query = query.eq('platform', filters.platform);
+      }
+      if (filters.theme) {
+        query = query.eq('theme', filters.theme);
+      }
+      if (filters.webPreset) {
+        query = query.eq('web_preset_key', filters.webPreset);
+      }
+      if (filters.mobileOs) {
+        query = query.eq('mobile_os', filters.mobileOs);
+      }
+
+      const trimmedSearch = searchQuery.trim();
+      if (trimmedSearch) {
+        // Escape commas and percent signs which have special meaning in Supabase or-clauses
+        const safe = trimmedSearch.replace(/[,%]/g, ' ');
+        query = query.or(`name.ilike.%${safe}%,file_name.ilike.%${safe}%`);
+      }
+
+      query = query
+        .order(sortConfig.column, { ascending: sortConfig.ascending })
+        .order('id', { ascending: sortConfig.ascending })
         .limit(PAGE_SIZE);
 
       if (cursor) {
-        // Cursor pagination: fetch rows strictly older than the last one
-        // `or` clause: created_at < cursor OR (created_at = cursor AND id < cursor.id)
-        query = query.or(
-          `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`,
-        );
+        // Cursor pagination for sort order
+        if (sortConfig.ascending) {
+          query = query.or(
+            `${cursor.column}.gt.${cursor.value},and(${cursor.column}.eq.${cursor.value},id.gt.${cursor.id})`,
+          );
+        } else {
+          query = query.or(
+            `${cursor.column}.lt.${cursor.value},and(${cursor.column}.eq.${cursor.value},id.lt.${cursor.id})`,
+          );
+        }
       }
 
       const { data, error } = await query;
       if (error || !data) return [];
       return data.map((row) => mapScreenshotRow(row as Record<string, unknown>));
     },
-    [mapScreenshotRow],
+    [filters, mapScreenshotRow, searchQuery, sortConfig],
   );
+
+  // Given the current active project and the current `group` filter, compute the
+  // set of family IDs that belong to that group (so we can pass it to the page fetch).
+  const familyIdsMatchingGroup = useMemo(() => {
+    if (!filters.group) return null;
+    return screenFamilies
+      .filter((family) => family.group === filters.group)
+      .map((family) => family.id);
+  }, [filters.group, screenFamilies]);
 
   const loadInitial = useCallback(async () => {
     const loadVersion = loadVersionRef.current + 1;
@@ -183,28 +275,38 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
 
       setProjects(projectData);
 
-      // Scope to the active project if one is picked, otherwise all user projects
       const scopedProjectIds = activeProjectId
         ? [activeProjectId]
         : projectData.map((project) => project.id);
 
-      const [flowRes, familyRes, firstPage] = await Promise.all([
+      const [flowRes, familyRes] = await Promise.all([
         supabase.from('flows').select('*').in('project_id', scopedProjectIds).order('created_at'),
         supabase.from('screen_families').select('*').in('project_id', scopedProjectIds).order('created_at'),
-        fetchScreenshotsPage(scopedProjectIds, null),
       ]);
 
       if (loadVersionRef.current !== loadVersion) return;
 
+      const loadedFamilies = familyRes.data ?? [];
       setFlows(flowRes.data ?? []);
-      setScreenFamilies(familyRes.data ?? []);
+      setScreenFamilies(loadedFamilies);
+
+      // Compute group filter's matching family IDs with the freshly-loaded families
+      const groupFamilyIds = filters.group
+        ? loadedFamilies.filter((family) => family.group === filters.group).map((family) => family.id)
+        : null;
+
+      const firstPage = await fetchScreenshotsPage(scopedProjectIds, groupFamilyIds, null);
+
+      if (loadVersionRef.current !== loadVersion) return;
+
       setScreenshots(firstPage);
       setHasMore(firstPage.length === PAGE_SIZE);
 
       if (firstPage.length > 0) {
         const last = firstPage[firstPage.length - 1];
         cursorRef.current = {
-          createdAt: last.created_at ?? '',
+          column: sortConfig.column,
+          value: sortConfig.column === 'name' ? last.name : (last.created_at ?? ''),
           id: last.id,
         };
         void hydrateActivity(loadVersion, firstPage.map((screenshot) => screenshot.id));
@@ -214,7 +316,7 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
         setLoading(false);
       }
     }
-  }, [activeProjectId, fetchScreenshotsPage, hydrateActivity]);
+  }, [activeProjectId, fetchScreenshotsPage, filters.group, hydrateActivity, sortConfig.column]);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current) return;
@@ -231,7 +333,11 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
         : projects.map((project) => project.id);
       if (scopedProjectIds.length === 0) return;
 
-      const nextPage = await fetchScreenshotsPage(scopedProjectIds, cursorRef.current);
+      const nextPage = await fetchScreenshotsPage(
+        scopedProjectIds,
+        familyIdsMatchingGroup,
+        cursorRef.current,
+      );
       if (loadVersionRef.current !== loadVersion) return;
 
       if (nextPage.length === 0) {
@@ -240,7 +346,6 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
       }
 
       setScreenshots((previous) => {
-        // Deduplicate in case of concurrent inserts overlap
         const seen = new Set(previous.map((item) => item.id));
         const additions = nextPage.filter((item) => !seen.has(item.id));
         return [...previous, ...additions];
@@ -249,7 +354,8 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
       setHasMore(nextPage.length === PAGE_SIZE);
       const last = nextPage[nextPage.length - 1];
       cursorRef.current = {
-        createdAt: last.created_at ?? '',
+        column: sortConfig.column,
+        value: sortConfig.column === 'name' ? last.name : (last.created_at ?? ''),
         id: last.id,
       };
       void hydrateActivity(loadVersion, nextPage.map((screenshot) => screenshot.id));
@@ -259,9 +365,17 @@ export function useCatalogueData({ activeProjectId }: UseCatalogueDataArgs = { a
         setLoadingMore(false);
       }
     }
-  }, [activeProjectId, fetchScreenshotsPage, hasMore, hydrateActivity, projects]);
+  }, [
+    activeProjectId,
+    familyIdsMatchingGroup,
+    fetchScreenshotsPage,
+    hasMore,
+    hydrateActivity,
+    projects,
+    sortConfig.column,
+  ]);
 
-  // Auto-reset on project change
+  // Auto-reset on any query-shaping param change
   useEffect(() => {
     void loadInitial();
   }, [loadInitial]);
