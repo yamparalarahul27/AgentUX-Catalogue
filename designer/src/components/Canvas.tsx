@@ -32,7 +32,6 @@ import { UploadZone } from './UploadZone';
 import { FlowInput } from './FlowInput';
 import { EdgePopup } from './EdgePopup';
 import { Toast } from './Toast';
-import { CompareModal } from './CompareModal';
 import { MobileFlowView } from './MobileFlowView';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -208,7 +207,7 @@ export function Canvas({ user }: CanvasProps) {
     setNodes(initialNodes);
   }, [initialNodes, relayoutKey, screenshotKey, setNodes]);
 
-  const { compareData, setCompareData } = useCanvasNodeEvents({
+  useCanvasNodeEvents({
     supabase,
     flowId,
     projectId,
@@ -577,17 +576,6 @@ export function Canvas({ user }: CanvasProps) {
             <div className="loading-spinner" />
             Uploading screenshots...
           </div>
-        )}
-
-        {compareData && (
-          <CompareModal
-            screenshotId={compareData.id}
-            screenshotUrl={compareData.imageUrl}
-            screenshotName={compareData.name}
-            projectId={projectId || ''}
-            userId={user.id}
-            onClose={() => setCompareData(null)}
-          />
         )}
 
         {toast && (

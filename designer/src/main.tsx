@@ -4,7 +4,6 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import './styles/designer.scss';
 import './styles/canvas-enhancements.scss';
-import './styles/flow-compare.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -1,13 +1,7 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Edge, Node } from '@xyflow/react';
 import type { Connection, ScreenshotNode } from '../types';
-
-export interface CompareModalData {
-  id: string;
-  imageUrl: string;
-  name: string;
-}
 
 interface UseCanvasNodeEventsParams {
   supabase: SupabaseClient;
@@ -40,8 +34,6 @@ export function useCanvasNodeEvents({
   pushUndoSnapshot,
   markLocalEdit,
 }: UseCanvasNodeEventsParams) {
-  const [compareData, setCompareData] = useState<CompareModalData | null>(null);
-
   useEffect(() => {
     const handler = (event: Event) => {
       const { id } = (event as CustomEvent).detail as { id: string };
@@ -147,18 +139,4 @@ export function useCanvasNodeEvents({
     return () => window.removeEventListener('attach-screenshot-image', handler);
   }, [flowId, markLocalEdit, projectId, pushUndoSnapshot, setScreenshots, setToast, supabase, touchFlow, userId]);
 
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const { id, imageUrl, name } = (event as CustomEvent).detail as CompareModalData;
-      setCompareData({ id, imageUrl, name });
-    };
-
-    window.addEventListener('compare-screenshot', handler);
-    return () => window.removeEventListener('compare-screenshot', handler);
-  }, []);
-
-  return {
-    compareData,
-    setCompareData,
-  };
 }

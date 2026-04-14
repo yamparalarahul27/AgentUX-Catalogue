@@ -6,7 +6,6 @@ import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueGridDensity } from './CatalogueGridDensity';
-import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueFilterSheet } from './CatalogueFilterSheet';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
@@ -16,8 +15,6 @@ interface CatalogueToolbarProps {
   allFlows: string[];
   allMobileOs: { id: string; label: string }[];
   allWebPresets: { id: string; label: string }[];
-  compareEnabled: boolean;
-  compareFlow: string | null;
   filterFlow: string | null;
   filterGroup: string | null;
   filterMobileOs: string | null;
@@ -28,8 +25,6 @@ interface CatalogueToolbarProps {
   groups: string[];
   isSortLocked: boolean;
   onActiveProjectChange: (value: string | null) => void;
-  onCompareEnabledChange: (value: boolean) => void;
-  onCompareFlowChange: (value: string | null) => void;
   onFilterGroupChange: (value: string | null) => void;
   onFilterFlowChange: (value: string | null) => void;
   onGridDensityChange: (value: GridDensity) => void;
@@ -37,21 +32,16 @@ interface CatalogueToolbarProps {
   onFilterPlatformChange: (value: string | null) => void;
   onFilterThemeChange: (value: string | null) => void;
   onFilterWebPresetChange: (value: string | null) => void;
-  onPrimaryGroupChange: (value: string | null) => void;
   onQuickUploadClick: () => void;
   onSearchChange: (value: string) => void;
   onSortByChange: (value: CatalogueSortOption) => void;
   onViewByChange: (value: CatalogueViewBy) => void;
   onViewModeChange: (value: CatalogueViewMode) => void;
-  onVsGroupsChange: (value: string[]) => void;
-  primaryGroup: string | null;
   projectOptions: Array<{ id: string; name: string }>;
   searchQuery: string;
-  showGroupConfig: boolean;
   sortBy: CatalogueSortOption;
   viewBy: CatalogueViewBy;
   viewMode: CatalogueViewMode;
-  vsGroups: string[];
 }
 
 type ToolbarFilterKey =
@@ -111,8 +101,6 @@ export function CatalogueToolbar({
   allFlows,
   allMobileOs,
   allWebPresets,
-  compareEnabled,
-  compareFlow,
   filterFlow,
   filterGroup,
   filterMobileOs,
@@ -123,8 +111,6 @@ export function CatalogueToolbar({
   groups,
   isSortLocked,
   onActiveProjectChange,
-  onCompareEnabledChange,
-  onCompareFlowChange,
   onFilterGroupChange,
   onFilterFlowChange,
   onGridDensityChange,
@@ -132,28 +118,21 @@ export function CatalogueToolbar({
   onFilterPlatformChange,
   onFilterThemeChange,
   onFilterWebPresetChange,
-  onPrimaryGroupChange,
   onQuickUploadClick,
   onSearchChange,
   onSortByChange,
   onViewByChange,
   onViewModeChange,
-  onVsGroupsChange,
-  primaryGroup,
   projectOptions,
   searchQuery,
-  showGroupConfig,
   sortBy,
   viewBy,
   viewMode,
-  vsGroups,
 }: CatalogueToolbarProps) {
-  const nonPrimaryGroups = groups.filter((group) => group !== primaryGroup);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
-  const [compareAll, setCompareAll] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [visibleFilters, setVisibleFilters] = useState<Set<ToolbarFilterKey>>(() => {
     try {
@@ -279,32 +258,22 @@ export function CatalogueToolbar({
     return visibleFilters.has(key);
   }
 
-  function toggleVsGroup(group: string) {
-    if (vsGroups.includes(group)) {
-      onVsGroupsChange(vsGroups.filter((value) => value !== group));
-      return;
-    }
-    onVsGroupsChange([...vsGroups, group]);
-  }
-
   return (
     <div className="catalogue-toolbar-wrapper">
       <div className="catalogue-toolbar">
         <div className="catalogue-toolbar-left">
-          {!compareEnabled && (
-            <div className="catalogue-search catalogue-search--desktop">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search screen families..."
-                value={searchQuery}
-                onChange={(event) => onSearchChange(event.target.value)}
-              />
-            </div>
-          )}
+          <div className="catalogue-search catalogue-search--desktop">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search screen families..."
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.target.value)}
+            />
+          </div>
 
           {projectOptions.length > 0 && (
             <Dropdown
@@ -316,29 +285,27 @@ export function CatalogueToolbar({
             />
           )}
 
-          {!compareEnabled && (
-            <button
-              ref={triggerRef}
-              type="button"
-              className="btn-secondary catalogue-filter-toggle catalogue-toolbar--desktop-only"
-              aria-expanded={filterMenuOpen}
-              aria-controls="catalogue-filter-menu"
-              onClick={() => setFilterMenuOpen((previous) => !previous)}
-            >
-              + Filter
-            </button>
-          )}
+          <button
+            ref={triggerRef}
+            type="button"
+            className="btn-secondary catalogue-filter-toggle catalogue-toolbar--desktop-only"
+            aria-expanded={filterMenuOpen}
+            aria-controls="catalogue-filter-menu"
+            onClick={() => setFilterMenuOpen((previous) => !previous)}
+          >
+            + Filter
+          </button>
 
-          {!compareEnabled && isFilterVisible('group') && (
+          {isFilterVisible('group') && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               value={filterGroup}
               placeholder="Group"
-              options={groups.map((group) => ({ value: group, label: group, badge: group === primaryGroup ? 'Primary' : undefined }))}
+              options={groups.map((group) => ({ value: group, label: group }))}
               onChange={onFilterGroupChange}
             />
           )}
-          {!compareEnabled && isFilterVisible('flow') && (
+          {isFilterVisible('flow') && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               value={filterFlow}
@@ -347,7 +314,7 @@ export function CatalogueToolbar({
               onChange={onFilterFlowChange}
             />
           )}
-          {!compareEnabled && isFilterVisible('platform') && (
+          {isFilterVisible('platform') && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               value={filterPlatform}
@@ -359,7 +326,7 @@ export function CatalogueToolbar({
               onChange={onFilterPlatformChange}
             />
           )}
-          {!compareEnabled && isFilterVisible('theme') && (
+          {isFilterVisible('theme') && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               value={filterTheme}
@@ -371,7 +338,7 @@ export function CatalogueToolbar({
               onChange={onFilterThemeChange}
             />
           )}
-          {!compareEnabled && isFilterVisible('webPreset') && filterPlatform === 'web' && (
+          {isFilterVisible('webPreset') && filterPlatform === 'web' && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               value={filterWebPreset}
@@ -380,7 +347,7 @@ export function CatalogueToolbar({
               onChange={onFilterWebPresetChange}
             />
           )}
-          {!compareEnabled && isFilterVisible('mobileOs') && filterPlatform === 'mobile' && (
+          {isFilterVisible('mobileOs') && filterPlatform === 'mobile' && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               value={filterMobileOs}
@@ -389,7 +356,7 @@ export function CatalogueToolbar({
               onChange={onFilterMobileOsChange}
             />
           )}
-          {!compareEnabled && isFilterVisible('view') && (
+          {isFilterVisible('view') && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               value={viewBy}
@@ -403,66 +370,47 @@ export function CatalogueToolbar({
             />
           )}
 
-          {!compareEnabled && (
-            <>
-              {/* Mobile: filter icon pill — hidden on desktop */}
-              <button
-                type="button"
-                className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
-                onClick={() => setFilterSheetOpen(true)}
-                title="Filter"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="4" y1="6" x2="20" y2="6" />
-                  <line x1="4" y1="12" x2="20" y2="12" />
-                  <line x1="4" y1="18" x2="20" y2="18" />
-                  <circle cx="8" cy="6" r="2" fill="currentColor" />
-                  <circle cx="16" cy="12" r="2" fill="currentColor" />
-                  <circle cx="10" cy="18" r="2" fill="currentColor" />
-                </svg>
-                {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
-              </button>
+          <>
+            {/* Mobile: filter icon pill — hidden on desktop */}
+            <button
+              type="button"
+              className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
+              onClick={() => setFilterSheetOpen(true)}
+              title="Filter"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+                <circle cx="8" cy="6" r="2" fill="currentColor" />
+                <circle cx="16" cy="12" r="2" fill="currentColor" />
+                <circle cx="10" cy="18" r="2" fill="currentColor" />
+              </svg>
+              {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
+            </button>
 
-              {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
-              <Dropdown
-                value={sortBy}
-                placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
-                options={[
-                  { value: 'date-desc', label: 'Date: Latest' },
-                  { value: 'date-desc-global', label: 'Date: Latest (All groups)' },
-                  { value: 'date-asc', label: 'Date: Oldest' },
-                  { value: 'name-asc', label: 'Name: A-Z' },
-                ]}
-                onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
-                disabled={isSortLocked}
-                className="catalogue-sort-dropdown"
-              />
-
-              <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
-
-              {viewMode === 'grid' && (
-                <CatalogueGridDensity value={gridDensity} onChange={onGridDensityChange} />
-              )}
-            </>
-          )}
-
-          <button
-            type="button"
-            className={`btn-secondary catalogue-toolbar--desktop-only catalogue-compare-toggle ${compareEnabled ? 'is-active' : ''}`}
-            onClick={() => onCompareEnabledChange(!compareEnabled)}
-          >
-            {compareEnabled ? 'Compare: ON' : 'Compare'}
-          </button>
-
-          {compareEnabled && (
+            {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
             <Dropdown
-              className="catalogue-toolbar--desktop-only catalogue-compare-flow-dropdown"
-              value={compareFlow}
-              placeholder="Flow to compare"
-              options={allFlows.map((flow) => ({ value: flow, label: flow }))}
-              onChange={onCompareFlowChange}
+              value={sortBy}
+              placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
+              options={[
+                { value: 'date-desc', label: 'Date: Latest' },
+                { value: 'date-desc-global', label: 'Date: Latest (All groups)' },
+                { value: 'date-asc', label: 'Date: Oldest' },
+                { value: 'name-asc', label: 'Name: A-Z' },
+              ]}
+              onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
+              disabled={isSortLocked}
+              className="catalogue-sort-dropdown"
             />
-          )}
+
+            <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
+
+            {viewMode === 'grid' && (
+              <CatalogueGridDensity value={gridDensity} onChange={onGridDensityChange} />
+            )}
+          </>
+
         </div>
 
         <div className="catalogue-toolbar-right">
@@ -478,14 +426,6 @@ export function CatalogueToolbar({
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             {searchQuery && <span className="catalogue-toolbar-pill__dot" />}
-          </button>
-          <button
-            type="button"
-            className={`catalogue-toolbar-pill catalogue-toolbar-pill--compare catalogue-toolbar--mobile-only ${compareEnabled ? 'is-active' : ''}`}
-            onClick={() => onCompareEnabledChange(!compareEnabled)}
-            title={compareEnabled ? 'Disable compare mode' : 'Enable compare mode'}
-          >
-            <span>CMP</span>
           </button>
           <button
             type="button"
@@ -520,18 +460,6 @@ export function CatalogueToolbar({
               Cancel
             </button>
           </div>
-        </div>
-      )}
-
-      {compareEnabled && (
-        <div className="catalogue-mobile-compare-row catalogue-toolbar--mobile-only">
-          <Dropdown
-            className="catalogue-mobile-compare-dropdown"
-            value={compareFlow}
-            placeholder="Flow to compare"
-            options={allFlows.map((flow) => ({ value: flow, label: flow }))}
-            onChange={onCompareFlowChange}
-          />
         </div>
       )}
 
@@ -586,65 +514,6 @@ export function CatalogueToolbar({
         onApply={handleApplyFilters}
       />
 
-      {showGroupConfig && (
-        <div className="catalogue-group-config">
-          <div className="catalogue-group-config-row">
-            <label className="catalogue-group-config-label">Primary</label>
-            <Dropdown
-              value={primaryGroup}
-              placeholder="Select primary group..."
-              options={groups.map((group) => ({ value: group, label: group }))}
-              onChange={onPrimaryGroupChange}
-            />
-          </div>
-
-          {primaryGroup && nonPrimaryGroups.length > 0 && (
-            <div className="catalogue-group-config-row">
-              <label className="catalogue-group-config-label">Compare</label>
-              {compareAll ? (
-                <div className="catalogue-vs-chips">
-                  {nonPrimaryGroups.map((group) => (
-                    <button
-                      key={group}
-                      className={`catalogue-vs-chip ${vsGroups.includes(group) ? 'active' : ''}`}
-                      onClick={() => toggleVsGroup(group)}
-                    >
-                      <CatalogueGroupLabel group={group} projectId={activeProjectId} />
-                      {vsGroups.includes(group) && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <Dropdown
-                  value={vsGroups[0] || null}
-                  placeholder="Select compare group..."
-                  options={nonPrimaryGroups.map((group) => ({ value: group, label: group }))}
-                  onChange={(value) => onVsGroupsChange(value ? [value] : [])}
-                />
-              )}
-              <label className="catalogue-compare-all-toggle">
-                <input
-                  type="checkbox"
-                  checked={compareAll}
-                  onChange={(event) => {
-                    const checked = event.target.checked;
-                    setCompareAll(checked);
-                    if (!checked && vsGroups.length > 1) {
-                      onVsGroupsChange(vsGroups.slice(0, 1));
-                    }
-                  }}
-                />
-                Compare all
-              </label>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

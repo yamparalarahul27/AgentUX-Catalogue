@@ -7,11 +7,9 @@ import type { ScreenFamily, ScreenshotNode, WebPreset } from '../types';
 
 interface UseCatalogueFiltersArgs {
   screenshots: ScreenshotNode[];
+  facetScreenshots: ScreenshotNode[];
   screenFamilies: ScreenFamily[];
   webPresets: WebPreset[];
-  primaryGroup: string | null;
-  vsGroups: string[];
-  compareEnabled: boolean;
   sortBy: CatalogueSortOption;
   viewBy: CatalogueViewBy;
 }
@@ -26,21 +24,15 @@ interface UseCatalogueFiltersArgs {
  *   - Builds families from the (already-filtered) loaded screenshots
  *   - Applies `viewBy` (comments-added / annotations-added) client-side because
  *     it depends on count fields that hydrate after the screenshot fetch
- *   - Groups families by section and applies compare-mode priority ordering
- *   - Derives the available filter options (`allGroups`, `allFlows`) from the
- *     currently-loaded project data
- *
- * Note: `allFlows` can be incomplete when the user has scrolled through only
- * part of the paginated list. Follow-up work may add a distinct-flow query
- * for complete filter options.
+ *   - Groups families by section for rendering
+ *   - Derives the available filter options (`allGroups`, `allFlows`) from a
+ *     full DB-scoped screenshot set passed via `facetScreenshots`
  */
 export function useCatalogueFilters({
   screenshots,
+  facetScreenshots,
   screenFamilies,
   webPresets,
-  primaryGroup,
-  vsGroups,
-  compareEnabled,
   sortBy,
   viewBy,
 }: UseCatalogueFiltersArgs) {
@@ -49,23 +41,31 @@ export function useCatalogueFilters({
     [webPresets],
   );
 
-  // allGroups: complete (derived from screen_families, which the data hook
-  // loads fully per project on every initial fetch).
-  const allGroups = useMemo(
-    () => [...new Set(screenFamilies.map((family) => family.group).filter(Boolean))] as string[],
-    [screenFamilies],
-  );
+  // allGroups/allFlows are sourced from full-scope screenshots for the active
+  // project selection (not from the currently paginated card slice).
+  const allGroups = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const screenshot of facetScreenshots) {
+      const group = screenshot.group?.trim();
+      if (!group) continue;
+      const key = group.toLowerCase();
+      if (!seen.has(key)) {
+        seen.set(key, group);
+      }
+    }
 
-  // allFlows: currently derived from the loaded screenshots. Incomplete across
-  // paginated pages. See note above.
-  const allFlows = useMemo(
-    () => [...new Set(
-      screenshots
-        .map((screenshot) => getScreenshotFlowLabel(screenshot))
-        .filter((label): label is string => Boolean(label)),
-    )].sort((left, right) => left.localeCompare(right)),
-    [screenshots],
-  );
+    return [...seen.values()].sort((left, right) => left.localeCompare(right));
+  }, [facetScreenshots]);
+
+  const allFlows = useMemo(() => {
+    const seen = new Set<string>();
+    for (const screenshot of facetScreenshots) {
+      const flow = getScreenshotFlowLabel(screenshot);
+      if (!flow) continue;
+      seen.add(flow);
+    }
+    return [...seen].sort((left, right) => left.localeCompare(right));
+  }, [facetScreenshots]);
 
   const allWebPresets = useMemo(
     () => webPresets.map((preset) => ({
@@ -108,8 +108,8 @@ export function useCatalogueFilters({
 
   const sortedFamilies = useMemo(() => {
     // Server already returns in sort order; this re-sort is only meaningful
-    // for viewBy overrides and compare-mode priority. JS stable sort preserves
-    // existing order for equal keys otherwise.
+    // for viewBy overrides. JS stable sort preserves existing order for equal
+    // keys otherwise.
     const sortedVariants = viewBy === 'comments-added'
       ? sortByCommentActivity(filteredScreenshots)
       : viewBy === 'annotations-added'
@@ -117,20 +117,10 @@ export function useCatalogueFilters({
         : sortCatalogueScreenshots(filteredScreenshots, sortBy);
     const order = new Map(sortedVariants.map((screenshot, index) => [getScreenshotFamilyId(screenshot), index]));
 
-    return [...baseFamilies].sort((left, right) => {
-      if (compareEnabled && !isGlobalLatestSort) {
-        const leftIsPrimary = left.group === primaryGroup;
-        const rightIsPrimary = right.group === primaryGroup;
-        if (leftIsPrimary !== rightIsPrimary) return leftIsPrimary ? -1 : 1;
-
-        const leftIsVs = vsGroups.includes(left.group || '');
-        const rightIsVs = vsGroups.includes(right.group || '');
-        if (leftIsVs !== rightIsVs) return leftIsVs ? -1 : 1;
-      }
-
-      return (order.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(right.id) ?? Number.MAX_SAFE_INTEGER);
-    });
-  }, [baseFamilies, compareEnabled, filteredScreenshots, isGlobalLatestSort, primaryGroup, sortBy, viewBy, vsGroups]);
+    return [...baseFamilies].sort(
+      (left, right) => (order.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(right.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [baseFamilies, filteredScreenshots, sortBy, viewBy]);
 
   const groupedFamilies = useMemo(() => {
     if (isGlobalLatestSort) {
@@ -143,20 +133,8 @@ export function useCatalogueFilters({
       return accumulator;
     }, {});
 
-    return Object.fromEntries(Object.entries(grouped).sort(([left], [right]) => {
-      if (compareEnabled) {
-        const leftIsPrimary = left === primaryGroup;
-        const rightIsPrimary = right === primaryGroup;
-        if (leftIsPrimary !== rightIsPrimary) return leftIsPrimary ? -1 : 1;
-
-        const leftIsVs = vsGroups.includes(left);
-        const rightIsVs = vsGroups.includes(right);
-        if (leftIsVs !== rightIsVs) return leftIsVs ? -1 : 1;
-      }
-
-      return left.localeCompare(right);
-    }));
-  }, [compareEnabled, isGlobalLatestSort, primaryGroup, sortedFamilies, vsGroups]);
+    return Object.fromEntries(Object.entries(grouped).sort(([left], [right]) => left.localeCompare(right)));
+  }, [isGlobalLatestSort, sortedFamilies]);
 
   const isSortLocked = viewBy !== 'all';
 

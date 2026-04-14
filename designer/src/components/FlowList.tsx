@@ -5,7 +5,6 @@ import type { Project, Flow } from '../types';
 import { supabase } from '../lib/supabase';
 import { Dropdown } from './Dropdown';
 import { ConfirmModal } from './ConfirmModal';
-import { FlowCompareModal } from './FlowCompareModal';
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -41,9 +40,6 @@ export function FlowList({ user: _user }: FlowListProps) {
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
   const [editingFlowName, setEditingFlowName] = useState('');
-  const [compareMode, setCompareMode] = useState(false);
-  const [compareSelection, setCompareSelection] = useState<string[]>([]);
-  const [comparePair, setComparePair] = useState<[Flow, Flow] | null>(null);
   const editRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -88,46 +84,6 @@ export function FlowList({ user: _user }: FlowListProps) {
       return matchesSearch && matchesPlatform;
     });
   }, [flows, searchQuery, filterPlatform]);
-
-  const selectedCompareFlows = useMemo(() => {
-    return compareSelection
-      .map((id) => flows.find((flow) => flow.id === id))
-      .filter((flow): flow is Flow => Boolean(flow));
-  }, [compareSelection, flows]);
-
-  const compareReady = selectedCompareFlows.length === 2;
-
-  function toggleCompareMode() {
-    setCompareMode((active) => {
-      const nextActive = !active;
-      if (!nextActive) {
-        setCompareSelection([]);
-        setComparePair(null);
-      }
-      return nextActive;
-    });
-  }
-
-  function toggleCompareSelection(flowId: string) {
-    setCompareSelection((current) => {
-      if (current.includes(flowId)) return current.filter((id) => id !== flowId);
-      if (current.length < 2) return [...current, flowId];
-      return [current[1], flowId];
-    });
-  }
-
-  function openCompareModal() {
-    if (!compareReady) return;
-    const [left, right] = selectedCompareFlows;
-    if (!left || !right) return;
-    setComparePair([left, right]);
-  }
-
-  function closeCompareModal() {
-    setComparePair(null);
-    setCompareSelection([]);
-    setCompareMode(false);
-  }
 
   async function createFlow() {
     if (!newName.trim() || !projectId) return;
@@ -199,22 +155,6 @@ export function FlowList({ user: _user }: FlowListProps) {
       <main className="flow-list-main">
         <div className="flow-list-actions">
           <h2 className="flow-list-title">Flows</h2>
-          <div className="flow-list-compare-controls">
-            <button className={`btn-secondary ${compareMode ? 'flow-list-compare-toggle-active' : ''}`} onClick={toggleCompareMode}>
-              {compareMode ? 'Exit compare' : 'Compare flows'}
-            </button>
-            {compareMode && (
-              <>
-                <span className="flow-list-compare-count">{compareSelection.length}/2 selected</span>
-                <button className="btn-secondary" onClick={() => setCompareSelection([])} disabled={compareSelection.length === 0}>
-                  Clear
-                </button>
-                <button className="btn-primary" onClick={openCompareModal} disabled={!compareReady}>
-                  Compare selected
-                </button>
-              </>
-            )}
-          </div>
           <div className="flow-list-filters">
             <div className="flow-list-search">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -283,20 +223,11 @@ export function FlowList({ user: _user }: FlowListProps) {
             {filteredFlows.map((flow) => (
               <div
                 key={flow.id}
-                className={`project-card ${compareMode ? 'flow-card--compare' : ''} ${compareSelection.includes(flow.id) ? 'flow-card--selected' : ''}`}
+                className="project-card"
                 onClick={() => {
-                  if (compareMode) {
-                    toggleCompareSelection(flow.id);
-                    return;
-                  }
                   navigate(`/project/${projectId}/flow/${flow.id}`);
                 }}
               >
-                {compareMode && (
-                  <div className={`flow-compare-badge ${compareSelection.includes(flow.id) ? 'flow-compare-badge-selected' : ''}`}>
-                    {compareSelection.includes(flow.id) ? 'Selected' : 'Select'}
-                  </div>
-                )}
                 <div className="project-card-icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
@@ -359,7 +290,6 @@ export function FlowList({ user: _user }: FlowListProps) {
                       e.stopPropagation();
                       navigate(`/project/${projectId}/flow/${flow.id}/text`);
                     }}
-                    disabled={compareMode}
                   >
                     Text Studio
                   </button>
@@ -379,14 +309,6 @@ export function FlowList({ user: _user }: FlowListProps) {
           </div>
         )}
       </main>
-
-      {comparePair && (
-        <FlowCompareModal
-          flowA={comparePair[0]}
-          flowB={comparePair[1]}
-          onClose={closeCompareModal}
-        />
-      )}
 
       {deleteFlowId && (
         <ConfirmModal

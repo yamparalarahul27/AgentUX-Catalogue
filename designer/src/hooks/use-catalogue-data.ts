@@ -175,7 +175,6 @@ export function useCatalogueData({
   const fetchScreenshotsPage = useCallback(
     async (
       projectIds: string[],
-      familyIdsMatchingGroup: string[] | null,
       cursor: PaginationCursor | null,
     ): Promise<ScreenshotNode[]> => {
       if (projectIds.length === 0) return [];
@@ -185,10 +184,10 @@ export function useCatalogueData({
         .select('*')
         .in('project_id', projectIds);
 
-      // Filter by group → via matching screen_family_id set (computed by caller)
-      if (familyIdsMatchingGroup !== null) {
-        if (familyIdsMatchingGroup.length === 0) return []; // group filter excludes everything
-        query = query.in('screen_family_id', familyIdsMatchingGroup);
+      // Group filter is sourced from screenshots.group so the dropdown reflects
+      // what users expect to see in the catalogue results.
+      if (filters.group) {
+        query = query.eq('group', filters.group);
       }
 
       if (filters.flow) {
@@ -239,15 +238,6 @@ export function useCatalogueData({
     [filters, mapScreenshotRow, searchQuery, sortConfig],
   );
 
-  // Given the current active project and the current `group` filter, compute the
-  // set of family IDs that belong to that group (so we can pass it to the page fetch).
-  const familyIdsMatchingGroup = useMemo(() => {
-    if (!filters.group) return null;
-    return screenFamilies
-      .filter((family) => family.group === filters.group)
-      .map((family) => family.id);
-  }, [filters.group, screenFamilies]);
-
   const loadInitial = useCallback(async () => {
     const loadVersion = loadVersionRef.current + 1;
     loadVersionRef.current = loadVersion;
@@ -290,12 +280,7 @@ export function useCatalogueData({
       setFlows(flowRes.data ?? []);
       setScreenFamilies(loadedFamilies);
 
-      // Compute group filter's matching family IDs with the freshly-loaded families
-      const groupFamilyIds = filters.group
-        ? loadedFamilies.filter((family) => family.group === filters.group).map((family) => family.id)
-        : null;
-
-      const firstPage = await fetchScreenshotsPage(scopedProjectIds, groupFamilyIds, null);
+      const firstPage = await fetchScreenshotsPage(scopedProjectIds, null);
 
       if (loadVersionRef.current !== loadVersion) return;
 
@@ -316,7 +301,7 @@ export function useCatalogueData({
         setLoading(false);
       }
     }
-  }, [activeProjectId, fetchScreenshotsPage, filters.group, hydrateActivity, sortConfig.column]);
+  }, [activeProjectId, fetchScreenshotsPage, hydrateActivity, sortConfig.column]);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current) return;
@@ -335,7 +320,6 @@ export function useCatalogueData({
 
       const nextPage = await fetchScreenshotsPage(
         scopedProjectIds,
-        familyIdsMatchingGroup,
         cursorRef.current,
       );
       if (loadVersionRef.current !== loadVersion) return;
@@ -367,7 +351,6 @@ export function useCatalogueData({
     }
   }, [
     activeProjectId,
-    familyIdsMatchingGroup,
     fetchScreenshotsPage,
     hasMore,
     hydrateActivity,

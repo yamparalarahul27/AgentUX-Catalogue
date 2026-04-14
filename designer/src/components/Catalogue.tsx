@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
-import { useCatalogueCompareData } from '../hooks/use-catalogue-compare-data';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
 import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
+import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
 import { useCatalogueGuestGuards } from '../hooks/use-catalogue-guest-guards';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
+import { getAnnotationActivity } from '../lib/catalogue-activity';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
 import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
 import type { GridDensity } from '../lib/catalogue-helpers';
@@ -42,8 +43,6 @@ export function Catalogue({
   onRequestLogin,
 }: CatalogueProps) {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-  const [compareEnabled, setCompareEnabled] = useState(false);
-  const [compareFlow, setCompareFlow] = useState<string | null>(null);
 
   // Filter UI state (owns filter/sort/search/viewBy state, with debounced search)
   const filterState = useCatalogueFilterState();
@@ -96,7 +95,6 @@ export function Catalogue({
     [projects, activeProjectId],
   );
   const primaryGroup = activeProject?.primary_group ?? projects[0]?.primary_group ?? null;
-  const vsGroups = activeProject?.vs_groups ?? projects[0]?.vs_groups ?? [];
   // Data is pre-scoped + pre-filtered by useCatalogueData
   const scopedScreenshots = screenshots;
   const scopedScreenFamilies = screenFamilies;
@@ -108,6 +106,29 @@ export function Catalogue({
     () => projects.map((project) => ({ id: project.id, name: project.name })),
     [projects],
   );
+  const { commentedScreenshotIds, screenshots: fullScopeScreenshots } = useCatalogueFullScope({
+    projects,
+    includeCommentedScreenshots: viewBy === 'comments-added',
+  });
+  const scopedFacetBaseScreenshots = useMemo(() => {
+    if (activeProjectId) {
+      return fullScopeScreenshots.filter((screenshot) => screenshot.project_id === activeProjectId);
+    }
+    return fullScopeScreenshots;
+  }, [activeProjectId, fullScopeScreenshots]);
+  const facetScreenshots = useMemo(() => {
+    if (viewBy === 'all') {
+      return scopedFacetBaseScreenshots;
+    }
+
+    if (viewBy === 'annotations-added') {
+      return scopedFacetBaseScreenshots.filter(
+        (screenshot) => getAnnotationActivity(screenshot.metadata).count > 0,
+      );
+    }
+
+    return scopedFacetBaseScreenshots.filter((screenshot) => commentedScreenshotIds.has(screenshot.id));
+  }, [commentedScreenshotIds, scopedFacetBaseScreenshots, viewBy]);
 
   // Derivations over loaded (and already-filtered) screenshots
   const {
@@ -120,23 +141,11 @@ export function Catalogue({
     isSortLocked,
   } = useCatalogueFilters({
     screenshots: scopedScreenshots,
+    facetScreenshots,
     screenFamilies: scopedScreenFamilies,
     webPresets,
-    primaryGroup,
-    vsGroups,
-    compareEnabled,
     sortBy,
     viewBy,
-  });
-
-  // Compare mode bypasses pagination — fetches all screenshots for the chosen flow
-  const { compareFamilies, compareLoading } = useCatalogueCompareData({
-    activeProjectId,
-    projects,
-    screenFamilies,
-    webPresets,
-    compareEnabled,
-    compareFlow,
   });
   const [showSettings, setShowSettings] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
@@ -171,14 +180,12 @@ export function Catalogue({
     handleChangeFamilyGroup,
     handleCommentCountChange,
     handleDeleteFamily,
-    handlePrimaryGroupChange,
     handleRenameFamily,
     handleRemoveReference,
     handleSetReference,
     handleReplaceImage,
     handleSetFlowLabel,
     handleUpdateVariantDetails,
-    handleVsGroupsChange,
   } = useCatalogueFamilyActions({
     familyById,
     filterProject: activeProject?.id ?? projects[0]?.id ?? null,
@@ -221,7 +228,6 @@ export function Catalogue({
   );
   const {
     guardAction,
-    guardMutation,
     requireEditAccess,
     handleGuestAwareChangeFamilyGroup,
     handleGuestAwareDeleteFamily,
@@ -277,20 +283,6 @@ export function Catalogue({
       return projects[0].id;
     });
   }, [projects]);
-  useEffect(() => {
-    if (allFlows.length === 0) {
-      setCompareFlow(null);
-      setCompareEnabled(false);
-      return;
-    }
-
-    setCompareFlow((previous) => {
-      if (previous && allFlows.includes(previous)) {
-        return previous;
-      }
-      return allFlows[0];
-    });
-  }, [allFlows]);
   useEffect(() => {
     setSelected(new Set());
     setPreviewFamilyId(null);
@@ -364,7 +356,7 @@ export function Catalogue({
       {activeSection === 'team' && canViewTeamSection ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
-            <CatalogueTeamSection projects={projects} screenshots={screenshots} />
+            <CatalogueTeamSection projects={projects} screenshots={fullScopeScreenshots} />
           </div>
         </main>
       ) : activeSection === 'videos' ? (
@@ -412,8 +404,6 @@ export function Catalogue({
                 allFlows={allFlows}
                 allMobileOs={allMobileOs}
                 allWebPresets={allWebPresets}
-                compareEnabled={compareEnabled}
-                compareFlow={compareFlow}
                 filterFlow={filterFlow}
                 filterGroup={filterGroup}
                 filterMobileOs={filterMobileOs}
@@ -424,8 +414,6 @@ export function Catalogue({
                 groups={allGroups}
                 isSortLocked={isSortLocked}
                 onActiveProjectChange={setActiveProjectId}
-                onCompareEnabledChange={setCompareEnabled}
-                onCompareFlowChange={setCompareFlow}
                 onFilterFlowChange={setFilterFlow}
                 onFilterGroupChange={setFilterGroup}
                 onFilterMobileOsChange={setFilterMobileOs}
@@ -433,9 +421,6 @@ export function Catalogue({
                 onFilterThemeChange={setFilterTheme}
                 onFilterWebPresetChange={setFilterWebPreset}
                 onGridDensityChange={setGridDensity}
-                onPrimaryGroupChange={(value) => {
-                  void guardMutation(() => handlePrimaryGroupChange(value), undefined);
-                }}
                 onQuickUploadClick={() => {
                   guardAction(() => {
                     upload.handleQuickUploadProjectChange(activeProjectId);
@@ -446,28 +431,18 @@ export function Catalogue({
                 onSortByChange={setSortBy}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
-                onVsGroupsChange={(groups) => {
-                  void guardMutation(() => handleVsGroupsChange(groups), undefined);
-                }}
-                primaryGroup={primaryGroup}
                 projectOptions={projectOptions}
                 searchQuery={searchQuery}
-                showGroupConfig={compareEnabled}
                 sortBy={sortBy}
                 viewBy={viewBy}
                 viewMode={viewMode}
-                vsGroups={vsGroups}
               />
 
               <div className="catalogue-body-layout">
                 <div className="catalogue-body-main">
                   <CatalogueContent
                     activeVariantKeys={upload.activeVariantKeys}
-                    allFamilies={compareEnabled ? compareFamilies : allFamilies}
-                    compareLoading={compareLoading}
                     canEdit={!isGuest}
-                    compareEnabled={compareEnabled}
-                    compareFlow={compareFlow}
                     filterFlow={filterFlow}
                     filterGroup={filterGroup}
                     filterMobileOs={filterMobileOs}
@@ -481,11 +456,9 @@ export function Catalogue({
                     loading={loading}
                     loadingMore={loadingMore}
                     onLoadMore={loadMore}
-                    primaryGroup={primaryGroup}
                     searchQuery={searchQuery}
                     selected={selected}
                     viewMode={viewMode}
-                    vsGroups={vsGroups}
                     onActiveVariantChange={upload.updateActiveVariant}
                     onAnnotationStateChange={handleAnnotationStateChange}
                     onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}

@@ -77,21 +77,6 @@ export const ScreenshotNodeComponent = memo(({ data, id }: NodeProps) => {
 
       {nodeData.imageUrl && (
         <button
-          className="screenshot-node-vs"
-          title="Compare screenshots"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.dispatchEvent(new CustomEvent('compare-screenshot', {
-              detail: { id, imageUrl: nodeData.imageUrl, name: nodeData.label },
-            }));
-          }}
-        >
-          VS
-        </button>
-      )}
-
-      {nodeData.imageUrl && (
-        <button
           className="screenshot-node-expand"
           title={expanded ? 'Collapse' : 'Expand'}
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}

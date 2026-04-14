@@ -1,7 +1,6 @@
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
-import { CatalogueCompareView } from './CatalogueCompareView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
@@ -11,29 +10,23 @@ import { CatalogueStackView } from './CatalogueStackView';
 
 interface CatalogueContentProps {
   activeVariantKeys: Record<string, string>;
-  allFamilies: CatalogueFamilyView[];
   canEdit: boolean;
-  compareEnabled: boolean;
-  compareFlow: string | null;
   filterFlow: string | null;
   filterGroup: string | null;
   filterMobileOs: string | null;
   filterPlatform: string | null;
   filterTheme: string | null;
   filterWebPreset: string | null;
-  compareLoading?: boolean;
   gridDensity: GridDensity;
   groupedFamilies: Record<string, CatalogueFamilyView[]>;
   hasMore: boolean;
   loading: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
-  primaryGroup: string | null;
   searchQuery: string;
   selected: Set<string>;
   viewMode: CatalogueViewMode;
   filteredFamilies: CatalogueFamilyView[];
-  vsGroups: string[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
   onAnnotationStateChange: (screenshotId: string, metadata: Record<string, unknown>) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
@@ -63,29 +56,23 @@ interface CatalogueContentProps {
 
 export function CatalogueContent({
   activeVariantKeys,
-  allFamilies,
   canEdit,
-  compareEnabled,
-  compareFlow,
   filterFlow,
   filterGroup,
   filterMobileOs,
   filterPlatform,
   filterTheme,
   filterWebPreset,
-  compareLoading = false,
   gridDensity,
   groupedFamilies,
   hasMore,
   loading,
   loadingMore,
   onLoadMore,
-  primaryGroup,
   searchQuery,
   selected,
   viewMode,
   filteredFamilies,
-  vsGroups,
   onActiveVariantChange,
   onAnnotationStateChange,
   onChangeFamilyGroup,
@@ -118,27 +105,6 @@ export function CatalogueContent({
     const skeletonVariant = viewMode === 'stack' ? 'stack' : 'grid';
     const skeletonCount = viewMode === 'stack' ? 3 : 8;
     return <CatalogueSkeletonList variant={skeletonVariant} count={skeletonCount} />;
-  }
-
-  if (compareEnabled) {
-    if (compareLoading) {
-      return (
-        <div className="empty-state">
-          <div className="loading-spinner" />
-          <p>Loading compare set…</p>
-        </div>
-      );
-    }
-    return (
-      <CatalogueCompareView
-        activeVariantKeys={activeVariantKeys}
-        families={allFamilies}
-        flowLabel={compareFlow}
-        primaryGroup={primaryGroup}
-        vsGroups={vsGroups}
-        onOpenPreview={onOpenPreview}
-      />
-    );
   }
 
   if (filteredFamilies.length === 0) {
@@ -222,8 +188,6 @@ export function CatalogueContent({
                 iconSize={32}
               />
               <span className="catalogue-section-count">{families.length}</span>
-              {compareEnabled && primaryGroup === groupName && <span className="catalogue-badge catalogue-badge-primary">Primary</span>}
-              {compareEnabled && vsGroups.includes(groupName) && <span className="catalogue-badge catalogue-badge-vs">Vs</span>}
             </h3>
 
             <div
@@ -236,9 +200,9 @@ export function CatalogueContent({
                   family={family}
                   activeVariantKey={activeVariantKeys[family.id] ?? null}
                   flowName={family.flow_label}
-                  isPrimary={compareEnabled && Boolean(primaryGroup && family.group === primaryGroup)}
+                  isPrimary={false}
                   isSelected={selected.has(family.id)}
-                  isVs={compareEnabled && vsGroups.includes(family.group || '')}
+                  isVs={false}
                   onDeleteFamily={onDeleteFamily}
                   onOpenPreview={onOpenPreview}
                   onOpenPreviewAndEdit={onOpenPreviewAndEdit}
