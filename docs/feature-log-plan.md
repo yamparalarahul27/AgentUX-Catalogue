@@ -1,608 +1,480 @@
-# Feature Log — Plan
+# Feature Log & Navigation Restructure — Plan
 
 **Status:** Proposed
-**Scope:** Catalogue page — new top-level tab
-**Related:** Catalogue (screenshots), Videos (stays), Hamburger menu (new)
+**Date:** Apr 14, 2026
 
 ---
 
-## 1. What Feature Log is
+## 1. Vision
 
-Feature Log is a design ops tracker inside the Catalogue. It lets teams track
-features they are working on — from planned to designed to shipped — with
-screenshots as evidence at each stage.
+AgentUX is shifting from a canvas/flow-builder tool to a **design ops tracker**.
+The real unit of work isn't a "project with flows" — it's a **feature that moves
+from designed to shipped**, with screenshots as evidence at each stage.
 
-A feature is a named unit of work (e.g. "PnL Share", "Deposit V2", "Dark Mode")
-that links to existing Catalogue screenshots. Screenshots are tagged as either
-`design` (what was planned) or `shipped` (what went live). The feature itself
-has a lifecycle status: Planned → Designed → Shipped.
-
-The primary job: answer "what did we ship, what does the design look like vs
-what actually shipped, and what's still in progress?"
+Feature Log makes this workflow explicit. Every feature the team is working on
+gets a tracked entry that connects Catalogue screenshots to a lifecycle:
+Planned → Designed → Shipped.
 
 ---
 
-## 2. Why this feature
+## 2. What changes
 
-AgentUX started as a flow-builder + canvas tool, but the real daily use is:
-upload screenshots, organize by group, review, comment. Feature Log makes this
-workflow explicit by giving features a name, a lifecycle, and a direct link to
-the screenshots that prove the work.
+### New
 
-This replaces the need for separate project management around "which screens
-belong to which feature" — that context now lives inside the tool where the
-screenshots already are.
+| Item | Description |
+|---|---|
+| **Feature Log** | New top-level tab in the Catalogue header, between Catalogue and Videos. Users create features, link screenshots, track status. |
+| **Hamburger menu** | Replaces the settings gear icon. Contains: Settings, Figma, Team, Archive. |
+| **Archive section** | Inside the hamburger menu. Shows archived features (Flow Builder, Projects) as read-only. |
 
----
+### Archived (not deleted)
 
-## 3. What gets archived
+| Item | Action |
+|---|---|
+| **Flow Builder** (`/designer/`) | Comment out from nav. Keep all code. Visible in hamburger Archive section. |
+| **Projects concept** | Comment out project selector from Catalogue toolbar. Features replace projects as the organizing unit. |
+| **Figma component section** | Move from header tab into hamburger menu. |
 
-| Feature | Action | Notes |
-|---|---|---|
-| Flow Builder (`/designer/`) | Archive — comment out from nav | Keep code, don't delete |
-| Projects concept | Archive — remove from UI | Features replace projects as organizer |
-| Figma component section | Move to hamburger menu | Not deleted, accessible from menu |
-| Canvas / node system | Archive with Flow Builder | Keep code |
+### Stays unchanged
 
-### What stays
-
-| Feature | Why |
+| Item | Why |
 |---|---|
 | Catalogue (screenshots, groups, views) | Core — Feature Log links into it |
-| Videos section | Stays as top tab |
+| Videos section | Stays as header tab |
 | Comments + Annotations | Stays — works on linked screenshots |
 | Upload / Quick Upload | Stays — screenshots still need uploading |
 | Group appearance (icons, descriptions) | Stays — groups are the brand/product axis |
-| Compare mode | Stays — standalone Catalogue feature |
+| Compare mode | Stays as standalone Catalogue feature |
+
+### Header tab structure after
+
+```
+[ Catalogue ]  [ Feature Log ]  [ Videos ]  [☰]
+                                              │
+                                    ┌─────────┴──────────┐
+                                    │  Settings           │
+                                    │  Figma              │
+                                    │  Team (admin)       │
+                                    │  ──────────         │
+                                    │  Archive            │
+                                    │    Flow Builder     │
+                                    │    Projects         │
+                                    └─────────────────────┘
+```
+
+On mobile (≤ 900px), tab labels shorten to: **C**, **F**, **V**, **☰**
 
 ---
 
-## 4. Navigation changes
+## 3. Feature Log — overview
 
-### Header tabs (before)
+### What a feature is
 
-```
-[ Catalogue ]  [ Videos ]  [ Figma ]  [⚙ Settings]
-```
-
-### Header tabs (after)
+A tracked unit of work that connects screenshots to a lifecycle:
 
 ```
-[ Catalogue ]  [ Feature Log ]  [ Videos ]  [☰ Menu]
+┌───────────────────────────────────────────────────────┐
+│  PnL Share                                 🟡 Designed │
+│  "Allow users to share their PnL as an image card"    │
+│                                                       │
+│  Linked: 3 designs · 0 shipped                        │
+└───────────────────────────────────────────────────────┘
 ```
 
-### Hamburger menu contents
+### Feature statuses
 
-```
-┌─────────────────────────┐
-│  Settings               │
-│  ────────────────────── │
-│  Team (admin only)      │
-│  Figma                  │
-│  ────────────────────── │
-│  Archive                │
-│  ├─ Flow Builder        │
-│  └─ Projects            │
-└─────────────────────────┘
-```
-
-- Settings moves from dedicated icon to first menu item
-- Team section (admin-only) moves into menu
-- Figma section moves into menu
-- Archive section shows Flow Builder and Projects (read-only, clearly marked)
-- Archived code is commented out from main UI, not deleted
-
----
-
-## 5. Feature lifecycle
-
-| Status | Meaning | Badge | Required to enter |
+| Status | Badge | Meaning | Required |
 |---|---|---|---|
-| **Planned** | Idea logged, no screenshots yet | ⚪ | Title + description |
-| **Designed** | Design screenshots linked | 🟡 | At least 1 `design` link |
-| **Shipped** | Production screenshots added | 🟢 | At least 1 `shipped` link |
-
-### Status transitions
-
-```
-Planned ──→ Designed ──→ Shipped
-   │                        │
-   └────────────────────────┘
-         (can skip to Shipped directly)
-```
-
-- **Planned → Designed**: Automatic when first `design` screenshot is linked
-- **Designed → Shipped**: User clicks "Mark Shipped" → prompted to add at
-  least one `shipped` screenshot → status flips
-- **Planned → Shipped**: Allowed — skip designed if shipping directly
-- **Shipped → Designed**: User can revert if needed (reopen)
-
----
-
-## 6. Feature list view (main tab)
-
-### Desktop
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  FEATURE LOG                                        [+ New Feature]  │
-│                                                                      │
-│  ── SHIPPED ──────────────────────────────────────────────────────── │
-│                                                                      │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  Deposit V2                                       🟢 Shipped   │  │
-│  │  Redesigned deposit flow with coin search                      │  │
-│  │  4 designs · 3 shipped · Updated Apr 10                        │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-│                                                                      │
-│  ── DESIGNED ─────────────────────────────────────────────────────── │
-│                                                                      │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  PnL Share                                        🟡 Designed  │  │
-│  │  Allow users to share their PnL as an image card               │  │
-│  │  3 designs · 0 shipped · Updated Apr 8                         │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-│                                                                      │
-│  ── PLANNED ──────────────────────────────────────────────────────── │
-│                                                                      │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  Dark Mode                                        ⚪ Planned   │  │
-│  │  Full dark theme across all screens                            │  │
-│  │  0 screenshots · Created Apr 7                                 │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘
-```
+| **Planned** | ⚪ | Idea logged, no screenshots yet | Title + description |
+| **Designed** | 🟡 | Design screenshots linked | ≥1 `design` link |
+| **Shipped** | 🟢 | Production screenshots added | ≥1 `shipped` link |
 
 ### Ordering
 
-Features are sorted by:
-1. Status group: Shipped first, then Designed, then Planned
-2. Within each group: latest `updated_at` first
-
-### Mobile
-
-Same vertical list, full-width cards. "+ New Feature" becomes a FAB or sticky
-bottom button.
+Features sorted by **latest first**, grouped by status:
+1. Shipped (most recently shipped on top)
+2. Designed
+3. Planned
 
 ---
 
-## 7. Feature detail view (drill-in)
-
-When user clicks a feature card, they see the detail page using Stack card
-layout for linked screenshots.
-
-### Desktop
+## 4. Feature Log — list view
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  ← Feature Log     PnL Share                  [Edit] [Mark Shipped] │
-│  "Allow users to share their PnL as an image card"                   │
-│  🟡 Designed · 3 designs · 0 shipped · Updated Apr 8                │
+│  FEATURE LOG                                      [+ New Feature]    │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│  ── SHIPPED (what went live) ────────────── [+ Upload] [+ Link]  ── │
+│  ── SHIPPED ─────────────────────────────────────────────────────── │
 │                                                                      │
-│  No shipped screenshots yet.                                         │
-│  Click "Mark Shipped" to add production screenshots.                 │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  Deposit V2                                      🟢 Shipped   │  │
+│  │  "Redesigned deposit flow with coin search"                   │  │
+│  │  Linked: 4 designs · 3 shipped          Updated 2h ago        │  │
+│  └───────────────────────────────────────────────────────────────┘  │
 │                                                                      │
-│  ── DESIGNED (what was planned) ─────────── [+ Upload] [+ Link]  ── │
+│  ── DESIGNED ────────────────────────────────────────────────────── │
 │                                                                      │
-│  ┌───────────────┬──────────────────────────────────────────────┐   │
-│  │               │  PnL Card - Mockup                     [⋯]   │   │
-│  │               │  Crpko · Deposit · Dark / Web                │   │
-│  │   SCREENSHOT  │  ──────────────────────────────              │   │
-│  │               │  💬 2 comments                               │   │
-│  │               │                                              │   │
-│  │               │  🅡 Rahul · 2h                                │   │
-│  │               │  Rounded corners on the card look off        │   │
-│  │               │                                              │   │
-│  │               │  ┌─────────────────┐  [💬] [Unlink]          │   │
-│  │               │  │ Add comment... │                           │   │
-│  └───────────────┴──────────────────────────────────────────────┘   │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  PnL Share                                      🟡 Designed   │  │
+│  │  "Allow users to share PnL as image card"                     │  │
+│  │  Linked: 3 designs · 0 shipped          Updated 1d ago        │  │
+│  └───────────────────────────────────────────────────────────────┘  │
 │                                                                      │
-│  ┌───────────────┬──────────────────────────────────────────────┐   │
-│  │               │  PnL Share Flow - Step 2               [⋯]   │   │
-│  │   SCREENSHOT  │  Crpko · Share · Dark / Web                  │   │
-│  │               │  ──────────────────────────────              │   │
-│  │               │  💬 0 comments                               │   │
-│  │               │  ┌─────────────────┐  [💬] [Unlink]          │   │
-│  │               │  │ Add comment... │                           │   │
-│  └───────────────┴──────────────────────────────────────────────┘   │
+│  ── PLANNED ─────────────────────────────────────────────────────── │
 │                                                                      │
-│  ┌───────────────┬──────────────────────────────────────────────┐   │
-│  │               │  Binance PnL Reference                 [⋯]   │   │
-│  │   SCREENSHOT  │  Binance · Trade · Dark / Web                │   │
-│  │               │  ──────────────────────────────              │   │
-│  │               │  💬 1 comment                                │   │
-│  │               │  ┌─────────────────┐  [💬] [Unlink]          │   │
-│  │               │  │ Add comment... │                           │   │
-│  └───────────────┴──────────────────────────────────────────────┘   │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  Dark Mode                                      ⚪ Planned    │  │
+│  │  "Full dark theme across all screens"                         │  │
+│  │  Linked: 0                              Updated 3d ago        │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│  ── Empty state (first visit) ──────────────────────────────────── │
+│                                                                      │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │                                                               │  │
+│  │  Track features from design to shipped.                       │  │
+│  │  Create a feature, link screenshots from the Catalogue,       │  │
+│  │  and mark it shipped when it goes live.                       │  │
+│  │                                                               │  │
+│  │              [+ Create your first feature]                    │  │
+│  │                                                               │  │
+│  └───────────────────────────────────────────────────────────────┘  │
 │                                                                      │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-### Key elements
+---
 
-- **Back button** → returns to Feature Log list
-- **Edit button** → edit title, description
-- **Mark Shipped button** → triggers shipped flow (see section 10)
-- **Two sections**: Shipped (top) and Designed (bottom)
-- Each section has **[+ Upload]** and **[+ Link]** buttons
-- Each linked screenshot renders as a **Stack card** (screenshot left, meta +
-  comments right)
-- Each card has an **[Unlink]** action — removes link, keeps screenshot in
-  Catalogue
-- Cross-group: screenshots from any group can appear (Crpko, Binance, etc.)
+## 5. Feature Log — detail view (Stack card layout)
 
-### Mobile
+When a user clicks into a feature, they see shipped vs designed sections
+using the Stack card layout (screenshot on left, meta + comments on right):
 
-Cards switch to vertical layout (screenshot on top, meta + comments below).
-Same two sections. Upload/Link buttons at section headers.
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  ← Feature Log     PnL Share                 [Edit] [Mark Shipped]  │
+├──────────────────────────────────────────────────────────────────────┤
+│  "Allow users to share their PnL as an image card"                   │
+│  🟡 Designed · 3 designs · 0 shipped                                │
+│                                                                      │
+│  ── SHIPPED (what actually went live) ────────────────────────────── │
+│                                                                      │
+│  No shipped screenshots yet.                                         │
+│  [Mark Shipped] to add production screenshots.                       │
+│                                                                      │
+│  ── DESIGNED (what was planned) ──────────────────────────────────── │
+│                                                                      │
+│  ┌───────────────┬──────────────────────────────────────────────┐   │
+│  │               │  PnL Card - Mockup                    [unlink]   │
+│  │  SCREENSHOT   │  Crpko · Deposit · Dark / Web                │   │
+│  │               │  ──────────────────────────                  │   │
+│  │               │  💬 2 comments                               │   │
+│  │               │  🅡 Rahul · 2h                                │   │
+│  │               │  Copy feels too cramped…                     │   │
+│  └───────────────┴──────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌───────────────┬──────────────────────────────────────────────┐   │
+│  │               │  PnL Share Flow - Step 2              [unlink]   │
+│  │  SCREENSHOT   │  Crpko · Share · Figma ref                   │   │
+│  │               │  ──────────────────────────                  │   │
+│  │               │  No comments                                 │   │
+│  └───────────────┴──────────────────────────────────────────────┘   │
+│                                                                      │
+│  [Link existing screenshot]  [Upload new to this feature]            │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+After marking shipped:
+
+```
+│  ── SHIPPED (what actually went live) ────────────────────────────── │
+│                                                                      │
+│  ┌───────────────┬──────────────────────────────────────────────┐   │
+│  │               │  PnL Card - Final                     [unlink]   │
+│  │   SHIPPED     │  Crpko · Deposit · Web 1512                  │   │
+│  │   SCREENSHOT  │  ──────────────────────────                  │   │
+│  │               │  💬 1 comment                                │   │
+│  │               │  🅡 Rahul · shipped Apr 10                    │   │
+│  │               │  "Shipped with rounded corners per design"   │   │
+│  └───────────────┴──────────────────────────────────────────────┘   │
+│                                                                      │
+│  ── DESIGNED (what was planned) ──────────────────────────────────── │
+│  ...                                                                 │
+```
 
 ---
 
-## 8. Upload — Hybrid model (Option C)
+## 6. Feature creation
 
-### From Catalogue (normal path)
+- Only from Feature Log tab (dedicated "+ New Feature" button)
+- **Not** from screenshot context menus
 
-Upload works exactly as today. Screenshot lands in Catalogue with
-group/flow/variant metadata. No feature link.
+### Create modal
 
-### From inside a Feature detail page
+```
+┌─────────────────────────────────┐
+│  New Feature                    │
+│                                 │
+│  Title:                         │
+│  [ PnL Share______________ ]    │
+│                                 │
+│  Description:                   │
+│  [ Allow users to share... ]    │
+│                                 │
+│         [Cancel]  [Create]      │
+└─────────────────────────────────┘
+```
 
-Upload button context-aware:
+Creates with status `planned`. User can immediately link screenshots or
+come back later.
 
-1. User clicks **[+ Upload]** in the Shipped or Designed section
-2. Upload modal opens — same as Catalogue upload modal
-3. The `link_type` is pre-set based on which section they clicked:
-   - [+ Upload] in Shipped section → `link_type: 'shipped'`
-   - [+ Upload] in Designed section → `link_type: 'design'`
-4. Screenshot gets created in Catalogue (normal) AND auto-linked to the
-   feature with the correct `link_type`
-5. User can still set group, flow, variant, theme, etc. as usual
+---
+
+## 7. Linking screenshots — hybrid model (Option C)
+
+### From Catalogue (normal upload)
+
+- Upload works exactly as today
+- Screenshot lands in Catalogue with group/flow/variant metadata
+- No feature link — just a screenshot in the library
+
+### From inside a Feature detail page — upload new
+
+- Upload button says "Upload to [Feature Name]"
+- User picks link type: `design` or `shipped`
+- Screenshot created in Catalogue (with normal group/variant metadata)
+  AND auto-linked to the feature in one step
+- The link type is set at upload time
 
 ### From inside a Feature detail page — link existing
 
-1. User clicks **[+ Link]** in either section
-2. **Mini Catalogue picker** opens:
-   - Shows a grid of existing screenshots
-   - Search bar + filter by group
-   - User selects one or more screenshots
-   - Confirms selection
-3. Selected screenshots get linked with `link_type` matching the section
-4. Screenshots remain in Catalogue, only a link row is created
+- "Link screenshot" button opens a **mini Catalogue picker**
+- Mini picker: search + filter, grid of existing screenshots, multi-select
+- User picks link type: `design` or `shipped` for the batch
+- Screenshots stay in Catalogue, just get linked via `feature_log_links`
 
-### Unlinking
+### Unlink
 
-- Each linked screenshot card has an **[Unlink]** action
+- Each linked screenshot card has an "Unlink" action
 - Removes the `feature_log_links` row only
-- Screenshot stays in Catalogue completely untouched
-- No confirmation modal needed (it's reversible — just re-link)
+- Screenshot remains in Catalogue untouched
+
+### Cross-group linking
+
+- A feature can link screenshots from **any group** (Crpko, Binance, etc.)
+- A screenshot can belong to **multiple features**
+- Example: "Dashboard" screenshot linked to both "Dark Mode" and "Dashboard V2"
 
 ---
 
-## 9. Feature CRUD
+## 8. Marking shipped
 
-### Create
+1. User clicks "Mark Shipped" on a Planned/Designed feature
+2. Prompt: "Add shipped screenshots to complete"
+3. Opens upload or link picker with `shipped` type pre-selected
+4. User adds ≥1 screenshot as `shipped`
+5. Status flips to **Shipped**
+6. Feature detail now shows Shipped section on top, Designed below
 
-1. User clicks **[+ New Feature]** on Feature Log tab
-2. Modal opens with:
-   - Title (required) — text input
-   - Description (optional) — textarea
-3. User submits → feature created with status `planned`
-4. Redirects to feature detail page
+### Auto status transitions
 
-### Edit
-
-1. User clicks **[Edit]** on feature detail page
-2. Same modal as create, pre-filled
-3. Can edit title and description
-4. Status is NOT edited here — it changes via Mark Shipped flow
-
-### Delete
-
-1. User clicks **[⋯]** overflow → Delete
-2. Confirmation modal: "Delete PnL Share? This will remove the feature and
-   all screenshot links. Screenshots themselves will NOT be deleted."
-3. On confirm: delete `feature_log` row + all `feature_log_links` rows
-4. Screenshots remain in Catalogue
+- **Planned → Designed**: automatic when first `design` screenshot is linked
+- **Designed → Shipped**: explicit via "Mark Shipped" button (requires ≥1 shipped link)
+- **Manual override**: user can always edit status directly via Edit modal
 
 ---
 
-## 10. Mark Shipped flow
+## 9. Decisions record
 
-1. User clicks **[Mark Shipped]** button on feature detail
-2. If no shipped screenshots linked yet:
-   - Bottom sheet / modal appears: "Add at least one shipped screenshot"
-   - Two options: **Upload new** or **Link existing**
-   - User completes upload/link with `link_type: 'shipped'`
-3. Once at least 1 shipped screenshot is linked:
-   - Status flips to `shipped`
-   - `updated_at` refreshed
-   - Feature moves to top of the Shipped group in the list
-4. If shipped screenshots already exist (e.g. added earlier):
-   - Status flips immediately, no prompt
-
-### Revert to Designed
-
-- Overflow menu → "Reopen feature"
-- Status flips back to `designed` (or `planned` if no design links)
-- No screenshots are removed
+| # | Question | Answer |
+|---|---|---|
+| 1 | Cross-group linking? | Yes — a feature can link screenshots from any group |
+| 2 | Screenshot in multiple features? | Yes |
+| 3 | Auth model | Same as Catalogue (email-based, guest read-only) |
+| 4 | Feature ordering | Latest first, grouped by status (Shipped → Designed → Planned) |
+| 5 | Shipped section layout | Separate section above Designed in detail view |
+| 6 | Link picker UI | Mini Catalogue grid with search + filter |
+| 7 | Unlink without deleting? | Yes — removes link only, screenshot stays in Catalogue |
+| 8 | Where to create features | Only from Feature Log tab |
+| 9 | Empty state | CTA + short explainer of what Feature Log is |
+| 10 | Activity feed / notifications | No — just visible in feature detail |
+| 11 | Upload auto-linking | Option C hybrid — context-aware from Feature detail, normal from Catalogue |
+| 12 | Compare mode in Feature Log? | No — Compare stays as standalone Catalogue feature |
 
 ---
 
-## 11. Mini Catalogue picker
+## 10. Data model
 
-The picker for linking existing screenshots to a feature:
-
-```
-┌──────────────────────────────────────────────────┐
-│  Link screenshots to "PnL Share"          [✕]    │
-│  ┌────────────────────────────────────────────┐  │
-│  │ 🔍 Search screenshots...                  │  │
-│  └────────────────────────────────────────────┘  │
-│  Filter: [All groups ▾]                          │
-│                                                  │
-│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐            │
-│  │ ░░░░ │ │ ░░░░ │ │ ░░░░ │ │ ░░░░ │            │
-│  │      │ │  ✓   │ │      │ │  ✓   │            │
-│  │ ░░░░ │ │ ░░░░ │ │ ░░░░ │ │ ░░░░ │            │
-│  └──────┘ └──────┘ └──────┘ └──────┘            │
-│  PnL Card  PnL Flow  Dashboard  Share Btn        │
-│  Crpko     Crpko     Binance    Crpko            │
-│                                                  │
-│  ┌──────┐ ┌──────┐                               │
-│  │ ░░░░ │ │ ░░░░ │                               │
-│  │      │ │      │                               │
-│  │ ░░░░ │ │ ░░░░ │                               │
-│  └──────┘ └──────┘                               │
-│  Trade View  Wallet                              │
-│  Binance     Coinbase                            │
-│                                                  │
-│              [Cancel]  [Link 2 screenshots]      │
-└──────────────────────────────────────────────────┘
-```
-
-- Grid of screenshot thumbnails from Catalogue
-- Search by name
-- Filter by group dropdown
-- Multi-select with checkmarks
-- Already-linked screenshots shown as disabled/grayed
-- "Link N screenshots" confirms and creates `feature_log_links` rows
-
----
-
-## 12. Data model
-
-### New table: `feature_log`
+### New tables
 
 ```sql
-create table if not exists public.feature_log (
-  id          uuid primary key default gen_random_uuid(),
-  user_id     text not null,
-  title       text not null,
-  description text,
-  status      text not null default 'planned',
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now(),
-
-  constraint feature_log_status_check
-    check (status in ('planned', 'designed', 'shipped'))
+-- Features
+create table public.feature_log (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       text not null,
+  title         text not null,
+  description   text,
+  status        text not null default 'planned'
+                  check (status in ('planned', 'designed', 'shipped')),
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 
-create index if not exists feature_log_user_status_idx
+create index feature_log_user_idx
   on public.feature_log (user_id, status, updated_at desc);
-```
 
-### New table: `feature_log_links`
-
-```sql
-create table if not exists public.feature_log_links (
-  id             uuid primary key default gen_random_uuid(),
-  feature_id     uuid not null references public.feature_log (id) on delete cascade,
-  screenshot_id  uuid not null,
-  link_type      text not null default 'design',
-  note           text,
-  created_at     timestamptz not null default now(),
-
-  constraint feature_log_links_type_check
-    check (link_type in ('design', 'shipped')),
-
-  constraint feature_log_links_unique
-    unique (feature_id, screenshot_id)
+-- Links between features and screenshots
+create table public.feature_log_links (
+  id            uuid primary key default gen_random_uuid(),
+  feature_id    uuid not null references public.feature_log (id) on delete cascade,
+  screenshot_id uuid not null references public.screenshots (id) on delete cascade,
+  link_type     text not null check (link_type in ('design', 'shipped')),
+  note          text,
+  created_at    timestamptz not null default now(),
+  unique (feature_id, screenshot_id)
 );
 
-create index if not exists feature_log_links_feature_idx
+create index feature_log_links_feature_idx
   on public.feature_log_links (feature_id, link_type, created_at desc);
 
-create index if not exists feature_log_links_screenshot_idx
+create index feature_log_links_screenshot_idx
   on public.feature_log_links (screenshot_id);
 ```
 
-### Key constraints
+### Existing tables — no changes
 
-- `feature_log_links_unique`: a screenshot can only be linked once per feature
-  (but can appear in multiple features)
-- `on delete cascade`: deleting a feature removes all its links
-- `screenshot_id` has no FK constraint to avoid cross-schema coupling — the app
-  validates existence at link time
+- `screenshots` — untouched, features link to existing rows
+- `screenshot_comments` — untouched, comments on linked screenshots work as-is
+- `screenshot_annotations` — untouched
 
 ---
 
-## 13. Component structure
+## 11. Component structure
 
 ```
 components/
-  CatalogueFeatureLog.tsx            ← feature list tab
-  CatalogueFeatureCard.tsx           ← card in the list
-  CatalogueFeatureDetail.tsx         ← detail / drill-in page
-  CatalogueFeatureCreateModal.tsx    ← create / edit modal
-  CatalogueFeatureLinker.tsx         ← mini Catalogue picker for linking
-  CatalogueHamburgerMenu.tsx         ← new hamburger menu component
+  CatalogueFeatureLog.tsx           ← feature list view (the tab content)
+  CatalogueFeatureCard.tsx          ← single feature in the list
+  CatalogueFeatureDetail.tsx        ← detail view with shipped/designed sections
+  CatalogueFeatureCreateModal.tsx   ← create/edit feature modal
+  CatalogueFeatureLinkPicker.tsx    ← mini catalogue grid picker for linking
+  CatalogueHamburgerMenu.tsx        ← hamburger dropdown (settings, figma, team, archive)
 
 hooks/
-  use-feature-log.ts                 ← CRUD + link/unlink operations
-
-lib/
-  feature-log-helpers.ts             ← status logic, sorting
+  use-feature-log.ts                ← CRUD + link/unlink operations
+  use-feature-log-data.ts           ← fetch features + linked screenshots
 
 styles/
-  catalogue-feature-log.scss         ← all feature log styles
-
-sql/
-  feature-log.sql                    ← both tables + indexes
+  catalogue-feature-log.scss        ← all feature log styles
+  catalogue-hamburger.scss          ← hamburger menu styles
 ```
 
-### Reuse
+### Reuse from existing
 
-- Stack card layout from `CatalogueStackCard.tsx` (already shipped)
-- Comments/annotations from existing hooks
-- Upload modal from existing `CatalogueUploadModal` / `CatalogueQuickUploadModal`
-- Auth from existing `useAuth` + guest guard pattern
-
----
-
-## 14. Auth model
-
-Same as Catalogue:
-
-- **Authenticated user**: full CRUD on features, can link/unlink, upload,
-  comment
-- **Guest (no email)**: read-only — can view features and linked screenshots,
-  cannot create/edit/link/upload. Prompted to enter email on any write action.
+- `CatalogueStackCard` — for rendering linked screenshots in detail view
+- Comment/annotation primitives from Lightbox/Gallery
+- Upload modal/quick upload — triggered from feature context
+- Mini Catalogue grid — simplified version of existing grid view
 
 ---
 
-## 15. Empty state
+## 12. Hamburger menu
 
-First time opening Feature Log with zero features:
+### What goes inside
 
 ```
-┌──────────────────────────────────────────────────┐
-│                                                  │
-│           📋                                     │
-│                                                  │
-│     Track your features from                     │
-│     design to shipped                            │
-│                                                  │
-│     Create a feature, link screenshots from      │
-│     your Catalogue, and mark it shipped when      │
-│     it goes live.                                │
-│                                                  │
-│          [+ Create your first feature]           │
-│                                                  │
-└──────────────────────────────────────────────────┘
+┌─────────────────────────┐
+│  Settings               │  ← current settings modal
+│  ──────────────         │
+│  Figma                  │  ← moved from header tab
+│  Team                   │  ← admin only, moved from header tab
+│  ──────────────         │
+│  Archive                │
+│    Flow Builder         │  ← commented out, read-only link
+│    Projects             │  ← commented out, read-only
+└─────────────────────────┘
 ```
 
----
+### Implementation
 
-## 16. Risks and considerations
+- Replace settings gear icon with hamburger (☰) icon in `CatalogueHeader.tsx`
+- Dropdown panel, right-aligned, closes on outside click / Escape
+- Settings opens existing `CatalogueSettingsModal`
+- Figma and Team render their existing section components
+- Archive items link to `/designer/` (Flow Builder) and show a
+  "This feature is archived" banner
 
-1. **Cross-group linking** — a feature can link screenshots from any group.
-   The mini picker must show all groups, not just the active filter.
+### Archiving approach
 
-2. **Screenshot deletion** — if a screenshot is deleted from Catalogue, the
-   `feature_log_links` row becomes orphaned. The detail view should handle
-   this gracefully (show "Screenshot deleted" placeholder, allow unlink).
-
-3. **Feature count scale** — most teams will have 10-50 features. No
-   virtualization needed for V1. Revisit if usage grows.
-
-4. **Status auto-transitions** — linking a `design` screenshot to a `planned`
-   feature should auto-promote to `designed`. This should be explicit in the
-   hook, not implicit side-effect.
-
-5. **Hamburger menu** — replacing the settings icon is a visual regression risk.
-   The hamburger must be clearly tappable and not confused with a back button.
-
-6. **Archive visibility** — archived features (Flow Builder, Projects) should
-   be clearly marked as "archived" with reduced visual weight. Users should
-   understand these are historical, not active.
+- **Do not delete code** — comment out imports/renders in the main
+  `Catalogue.tsx` and `CatalogueHeader.tsx`
+- Keep all Flow Builder, Project, and Figma components in the codebase
+- Hamburger Archive section re-enables them in a read-only context
+- Add `/* ARCHIVED */` comment markers for easy grep
 
 ---
 
-## 17. Out of scope for V1
+## 13. Milestones
+
+### M0 — Navigation restructure
+
+- Build `CatalogueHamburgerMenu` component
+- Replace settings gear with hamburger icon
+- Move Figma + Team tabs into hamburger
+- Comment out Flow Builder from nav, add to Archive
+- Comment out Project selector from toolbar, add to Archive
+- Update mobile tab shortening (C, F, V, ☰)
+
+### M1 — Feature Log — list view
+
+- Create `feature_log` + `feature_log_links` tables in Supabase
+- Build `CatalogueFeatureLog` list view with status grouping
+- Feature CRUD (create, edit title/description, delete)
+- Empty state with explainer + CTA
+- Add "Feature Log" tab to header
+
+### M2 — Feature Log — detail + linking
+
+- Build `CatalogueFeatureDetail` with shipped/designed sections
+- Build `CatalogueFeatureLinkPicker` (mini Catalogue grid)
+- Link/unlink existing screenshots
+- Context-aware upload from feature detail (auto-links)
+- Unlink action per card
+
+### M3 — Mark shipped flow
+
+- "Mark Shipped" button on feature detail
+- Prompts user to add ≥1 shipped screenshot
+- Status transitions: planned → designed (auto on first design link),
+  designed → shipped (explicit via Mark Shipped)
+- Shipped section renders above Designed in detail view
+
+### M4 — Polish
+
+- Search/filter within Feature Log list
+- Feature edit modal (update title, description, status)
+- Delete feature (with confirmation, removes links, keeps screenshots)
+- Mobile layout for feature detail (stack cards go vertical)
+- Update landing page and changelog
+
+---
+
+## 14. Out of scope for V1
 
 - Due dates / timelines on features
 - Assignees / team members per feature
 - Kanban board view of features
 - Notifications when features ship
-- Side-by-side designed vs shipped comparison view
-- Feature templates or recurring feature types
-- Export / reporting on feature velocity
+- Side-by-side designed vs shipped comparison
+- Telegram bot integration
 
 ---
 
-## 18. Milestones
+## 15. References
 
-### M0 — Hamburger menu + archive
-
-- Replace settings icon with hamburger menu
-- Move Settings, Team, Figma into hamburger
-- Add Archive section with Flow Builder and Projects (commented out from nav)
-- Comment out Flow Builder and Projects from main tab area
-
-### M1 — Feature Log tab (empty + CRUD)
-
-- Add "Feature Log" tab to header
-- `feature_log` table in Supabase
-- Create / edit / delete features
-- Feature list view with status badges and ordering
-- Empty state
-
-### M2 — Screenshot linking
-
-- `feature_log_links` table in Supabase
-- Mini Catalogue picker (search + filter + multi-select)
-- Link / unlink screenshots from feature detail
-- Auto-status promotion (planned → designed when first design linked)
-
-### M3 — Feature detail with Stack cards
-
-- Detail page with Shipped and Designed sections
-- Stack card layout for linked screenshots
-- Comments on linked screenshots (reuse existing)
-- Mark Shipped flow with prompt
-
-### M4 — Context-aware upload
-
-- Upload from feature detail auto-links to feature
-- Pre-set `link_type` based on section (shipped/designed)
-- Upload modal works same as Catalogue, just adds the link
-
-### M5 — Polish
-
-- Mobile responsive tuning
-- Keyboard shortcuts
-- Orphaned screenshot handling
-- Feature search / filter (if needed at scale)
-
----
-
-## 19. Decision log
-
-| # | Question | Decision |
-|---|---|---|
-| 1 | Cross-group features? | Yes — any group |
-| 2 | Screenshot in multiple features? | Yes |
-| 3 | Auth model | Same as Catalogue (email-based) |
-| 4 | Feature ordering | Latest first, grouped by status |
-| 5 | Shipped section layout | Separate section above designed |
-| 6 | Link picker | Mini Catalogue grid (search + filter) |
-| 7 | Unlink without deleting screenshot? | Yes |
-| 8 | Where to create features | Only from Feature Log tab |
-| 9 | Empty state | CTA + short explainer |
-| 10 | Activity feed / notifications | No — visible in feature detail only |
-| 11 | Upload auto-link model | Option C — hybrid (context-aware) |
-| 12 | Compare mode in Feature Log? | No — already in Catalogue |
-
----
-
-## References
-
-- Catalogue data model: `ScreenshotNode`, `ScreenFamily`, `CatalogueFamilyView`
-- Stack card component: `CatalogueStackCard.tsx`, `CatalogueStackView.tsx`
-- Upload system: `use-catalogue-upload.ts`, `CatalogueUploadModal.tsx`
-- Auth: `useAuth`, `CatalogueEmailPromptModal.tsx`
-- Hamburger menu: new component, replaces `CatalogueHeader.__settings`
+- Existing: `CatalogueStackView`, `CatalogueStackCard` (shipped)
+- Data: `ScreenshotNode`, `CatalogueFamilyView`, comments, annotations
+- Auth: `useAuth` hook, guest user pattern
+- Stack view plan: `docs/stack-view-plan.md`
