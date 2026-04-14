@@ -11,7 +11,6 @@ import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
 
 interface CatalogueToolbarProps {
-  activeProjectId: string | null;
   allFlows: string[];
   allMobileOs: { id: string; label: string }[];
   allWebPresets: { id: string; label: string }[];
@@ -24,7 +23,6 @@ interface CatalogueToolbarProps {
   gridDensity: GridDensity;
   groups: string[];
   isSortLocked: boolean;
-  onActiveProjectChange: (value: string | null) => void;
   onFilterGroupChange: (value: string | null) => void;
   onFilterFlowChange: (value: string | null) => void;
   onGridDensityChange: (value: GridDensity) => void;
@@ -37,7 +35,6 @@ interface CatalogueToolbarProps {
   onSortByChange: (value: CatalogueSortOption) => void;
   onViewByChange: (value: CatalogueViewBy) => void;
   onViewModeChange: (value: CatalogueViewMode) => void;
-  projectOptions: Array<{ id: string; name: string }>;
   searchQuery: string;
   sortBy: CatalogueSortOption;
   viewBy: CatalogueViewBy;
@@ -97,7 +94,6 @@ function CloseIcon() {
 }
 
 export function CatalogueToolbar({
-  activeProjectId,
   allFlows,
   allMobileOs,
   allWebPresets,
@@ -110,7 +106,6 @@ export function CatalogueToolbar({
   gridDensity,
   groups,
   isSortLocked,
-  onActiveProjectChange,
   onFilterGroupChange,
   onFilterFlowChange,
   onGridDensityChange,
@@ -123,7 +118,6 @@ export function CatalogueToolbar({
   onSortByChange,
   onViewByChange,
   onViewModeChange,
-  projectOptions,
   searchQuery,
   sortBy,
   viewBy,
@@ -274,16 +268,6 @@ export function CatalogueToolbar({
               onChange={(event) => onSearchChange(event.target.value)}
             />
           </div>
-
-          {projectOptions.length > 0 && (
-            <Dropdown
-              className="catalogue-toolbar--desktop-only catalogue-project-dropdown"
-              value={activeProjectId}
-              placeholder="All"
-              options={projectOptions.map((project) => ({ value: project.id, label: project.name }))}
-              onChange={onActiveProjectChange}
-            />
-          )}
 
           <button
             ref={triggerRef}

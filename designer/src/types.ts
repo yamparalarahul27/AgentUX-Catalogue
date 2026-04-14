@@ -143,3 +143,32 @@ export interface ParsedScreenshotName {
   name: string;
   depth: number;
 }
+
+export type FeatureLogStatus = 'planned' | 'designed' | 'shipped';
+export type FeatureLogLinkType = 'design' | 'shipped';
+
+export interface FeatureLog {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  status: FeatureLogStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeatureLogLink {
+  id: string;
+  feature_id: string;
+  screenshot_id: string;
+  link_type: FeatureLogLinkType;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeatureLogSummary extends FeatureLog {
+  design_count: number;
+  shipped_count: number;
+  total_count: number;
+}

@@ -6,7 +6,7 @@
     <title>AgentUX | UX Flow Workspace For AI-Built Apps</title>
     <meta
       name="description"
-      content="Three tools to understand, shape, and manage the screens your AI builds. Dev Mode, Flow Builder, and Catalogue."
+      content="Three tools to understand, shape, and manage the screens your AI builds. Dev Mode, Flow Builder, and a global Catalogue with Feature Log lifecycle tracking."
     />
     <link rel="icon" type="image/svg+xml" href="./logo.svg" />
     <link rel="stylesheet" href="./styles.css" />
@@ -147,7 +147,7 @@ function App() {
                 <ul class="check-list">
                   <li>Drag-and-drop screenshots onto an infinite canvas</li>
                   <li>Auto-connect screens based on naming conventions</li>
-                  <li>Compare screenshot versions side by side</li>
+                  <li>Sequence and group-aware layout for journey mapping</li>
                   <li>Export the flow as a structured Markdown spec for AI</li>
                 </ul>
               </details>
@@ -175,29 +175,29 @@ function App() {
                 </svg>
               </div>
               <h3>Catalogue</h3>
-              <p class="product-tagline">Central screenshot library with four view modes, compare, and team analytics.</p>
+              <p class="product-tagline">Global screenshot library with four view modes, Feature Log lifecycle tracking, and team analytics.</p>
               <span class="product-audience">For Teams</span>
 
               <details class="product-details">
                 <summary>What it does</summary>
                 <ul class="check-list">
-                  <li>Upload and organize screenshots by project and group</li>
+                  <li>Upload and organize screenshots by group with full DB scope</li>
                   <li>Four views: Grid, List, Gallery, and Folder (brand cards with carousel previews)</li>
-                  <li>Compare mode to diff flows across groups side by side</li>
+                  <li>Feature Log to track Planned → Designed → Shipped with linked screenshots</li>
                   <li>Lightbox with annotations, comments, and inline editing</li>
                   <li>Bulk operations — rename, re-group, or delete multiple families at once</li>
                   <li>Group appearance — custom icons, descriptions, and status badges per brand</li>
-                  <li>Filter sheet with platform, theme, web preset, and flow filters</li>
+                  <li>Global filters for group, platform, theme, flow, and search</li>
                   <li>Videos section for design references and competitive UX studies</li>
-                  <li>Team analytics with upload activity and group management</li>
+                  <li>Team analytics and group management across full DB data</li>
                 </ul>
               </details>
 
               <details class="product-details">
                 <summary>How sync works</summary>
                 <p class="product-naming-example">
-                  Catalogue and Flow Builder share the same database. Uploading, renaming, or
-                  assigning a screenshot in either place is reflected everywhere instantly.
+                  Catalogue and Flow Builder share the same database. Uploading, renaming, linking to features,
+                  or regrouping screenshots in either place is reflected everywhere on next load.
                 </p>
               </details>
 
@@ -310,7 +310,7 @@ node scripts/bulk_webapp_capture_template.cjs</code></pre>
             </details>
             <details class="faq-item">
               <summary>Who is this for?</summary>
-              <p>Anyone building apps with AI coding agents. Dev Mode is for developers inspecting routes. Flow Builder is for designers and PMs shaping the journey visually. Catalogue is for teams managing screenshots across projects.</p>
+              <p>Anyone building apps with AI coding agents. Dev Mode is for developers inspecting routes. Flow Builder is for designers and PMs shaping the journey visually. Catalogue is for teams managing screenshots globally and tracking feature lifecycle evidence.</p>
             </details>
             <details class="faq-item">
               <summary>What frameworks does Dev Mode support?</summary>

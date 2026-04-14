@@ -1,7 +1,28 @@
 # Feature Log & Navigation Restructure — Plan
 
-**Status:** Proposed
+**Status:** Completed (context-aware upload intentionally deferred)
 **Date:** Apr 14, 2026
+**Last Updated:** Apr 14, 2026 (docs-sidecar sync)
+
+---
+
+## 0. Notes locations + progress snapshot
+
+### Where release/landing notes are maintained
+
+| Note type | Canonical file |
+|---|---|
+| Release notes / changelog | `site/changelog.html` |
+| Landing page update notes | `site/index.html` |
+| Implementation progress for this track | `docs/feature-log-plan.md` |
+
+### Current progress (Apr 14, 2026)
+
+- Navigation restructure is complete.
+- Feature Log list view is complete.
+- Feature Log detail view and link existing/unlink flows are complete.
+- Context-aware upload from feature detail is intentionally deferred for this pass.
+- Pending docs-only sync items requested in this pass are now completed in this document.
 
 ---
 
@@ -418,46 +439,46 @@ styles/
 
 ## 13. Milestones
 
-### M0 — Navigation restructure
+### M0 — Navigation restructure (Completed)
 
-- Build `CatalogueHamburgerMenu` component
-- Replace settings gear with hamburger icon
-- Move Figma + Team tabs into hamburger
-- Comment out Flow Builder from nav, add to Archive
-- Comment out Project selector from toolbar, add to Archive
-- Update mobile tab shortening (C, F, V, ☰)
+- [x] Build `CatalogueHamburgerMenu` component
+- [x] Replace settings gear with hamburger icon
+- [x] Move Figma + Team tabs into hamburger
+- [x] Comment out Flow Builder from nav, add to Archive
+- [x] Comment out Project selector from toolbar, add to Archive
+- [x] Update mobile tab shortening (C, F, V, ☰)
 
-### M1 — Feature Log — list view
+### M1 — Feature Log — list view (Completed)
 
-- Create `feature_log` + `feature_log_links` tables in Supabase
-- Build `CatalogueFeatureLog` list view with status grouping
-- Feature CRUD (create, edit title/description, delete)
-- Empty state with explainer + CTA
-- Add "Feature Log" tab to header
+- [x] Create `feature_log` + `feature_log_links` tables in Supabase
+- [x] Build `CatalogueFeatureLog` list view with status grouping
+- [x] Feature CRUD (create, edit title/description, delete)
+- [x] Empty state with explainer + CTA
+- [x] Add "Feature Log" tab to header
 
-### M2 — Feature Log — detail + linking
+### M2 — Feature Log — detail + linking (Completed except deferred upload)
 
-- Build `CatalogueFeatureDetail` with shipped/designed sections
-- Build `CatalogueFeatureLinkPicker` (mini Catalogue grid)
-- Link/unlink existing screenshots
-- Context-aware upload from feature detail (auto-links)
-- Unlink action per card
+- [x] Build `CatalogueFeatureDetail` with shipped/designed sections
+- [x] Build `CatalogueFeatureLinkPicker` (mini Catalogue grid)
+- [x] Link/unlink existing screenshots
+- [ ] Context-aware upload from feature detail (auto-links) — intentionally deferred for this pass
+- [x] Unlink action per card
 
-### M3 — Mark shipped flow
+### M3 — Mark shipped flow (Completed)
 
-- "Mark Shipped" button on feature detail
-- Prompts user to add ≥1 shipped screenshot
-- Status transitions: planned → designed (auto on first design link),
+- [x] "Mark Shipped" button on feature detail
+- [x] Prompts user to add ≥1 shipped screenshot
+- [x] Status transitions: planned → designed (auto on first design link),
   designed → shipped (explicit via Mark Shipped)
-- Shipped section renders above Designed in detail view
+- [x] Shipped section renders above Designed in detail view
 
-### M4 — Polish
+### M4 — Polish (Completed)
 
-- Search/filter within Feature Log list
-- Feature edit modal (update title, description, status)
-- Delete feature (with confirmation, removes links, keeps screenshots)
-- Mobile layout for feature detail (stack cards go vertical)
-- Update landing page and changelog
+- [x] Search/filter within Feature Log list
+- [x] Feature edit modal (update title, description, status)
+- [x] Delete feature (with confirmation, removes links, keeps screenshots)
+- [x] Mobile layout for feature detail (stack cards go vertical)
+- [x] Update landing page and changelog
 
 ---
 

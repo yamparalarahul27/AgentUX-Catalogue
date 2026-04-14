@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
@@ -46,8 +46,22 @@ export function CatalogueFamilyCard({
     [activeVariantKey, family],
   );
   const screenshot = activeVariant?.screenshot ?? null;
+  const imageUrl = screenshot?.image_url ?? '';
   const groupColor = getGroupColor(family.group);
   const platform = screenshot?.platform;
+  const [isImageLoading, setIsImageLoading] = useState(Boolean(imageUrl));
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    if (!imageUrl) {
+      setIsImageLoading(false);
+      setHasImageError(false);
+      return;
+    }
+
+    setIsImageLoading(true);
+    setHasImageError(false);
+  }, [imageUrl, screenshot?.id]);
 
   async function confirmDelete() {
     setIsDeleting(true);
@@ -84,8 +98,30 @@ export function CatalogueFamilyCard({
 
           <button type="button" className="catalogue-family-card__preview" onClick={() => onOpenPreview(family.id)}>
             <div className="catalogue-card-image">
-              {screenshot?.image_url ? (
-                <img src={screenshot.image_url} alt={`${family.name} ${activeVariant?.label || ''}`} draggable={false} />
+              {imageUrl && !hasImageError ? (
+                <>
+                  {isImageLoading && (
+                    <span
+                      className="catalogue-card-image-progress"
+                      role="progressbar"
+                      aria-label="Loading screenshot preview"
+                      aria-valuetext="Loading"
+                    >
+                      <span className="catalogue-card-image-progress__bar" />
+                    </span>
+                  )}
+                  <img
+                    src={imageUrl}
+                    alt={`${family.name} ${activeVariant?.label || ''}`}
+                    draggable={false}
+                    className={isImageLoading ? 'is-loading' : 'is-ready'}
+                    onLoad={() => setIsImageLoading(false)}
+                    onError={() => {
+                      setIsImageLoading(false);
+                      setHasImageError(true);
+                    }}
+                  />
+                </>
               ) : (
                 <div className="catalogue-card-placeholder">No image</div>
               )}

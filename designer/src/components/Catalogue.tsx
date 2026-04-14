@@ -17,8 +17,10 @@ import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
+import { CatalogueArchiveSection } from './CatalogueArchiveSection';
 import { CatalogueContent } from './CatalogueContent';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
+import { CatalogueFeatureLogSection } from './CatalogueFeatureLogSection';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueFigmaSection } from './CatalogueFigmaSection';
 import { CatalogueHeader } from './CatalogueHeader';
@@ -36,14 +38,19 @@ interface CatalogueProps {
   onRequestLogin: (email: string) => void;
 }
 
-type CatalogueSection = 'catalogue' | 'videos' | 'figma' | 'team';
+type CatalogueSection =
+  | 'catalogue'
+  | 'feature-log'
+  | 'videos'
+  | 'figma'
+  | 'team'
+  | 'archive-flow-builder'
+  | 'archive-projects';
 export function Catalogue({
   user,
   isGuest = false,
   onRequestLogin,
 }: CatalogueProps) {
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-
   // Filter UI state (owns filter/sort/search/viewBy state, with debounced search)
   const filterState = useCatalogueFilterState();
   const {
@@ -83,52 +90,34 @@ export function Catalogue({
     setScreenFamilies,
     setScreenshots,
   } = useCatalogueData({
-    activeProjectId,
+    activeProjectId: null,
     filters,
     sortBy,
     searchQuery: searchQueryDebounced,
   });
 
   const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
-  const activeProject = useMemo(
-    () => projects.find((project) => project.id === activeProjectId) ?? null,
-    [projects, activeProjectId],
-  );
-  const primaryGroup = activeProject?.primary_group ?? projects[0]?.primary_group ?? null;
+  const primaryGroup = projects[0]?.primary_group ?? null;
   // Data is pre-scoped + pre-filtered by useCatalogueData
   const scopedScreenshots = screenshots;
   const scopedScreenFamilies = screenFamilies;
-  const orderedProjectsForUpload = useMemo(() => {
-    if (!activeProject) return projects;
-    return [activeProject, ...projects.filter((project) => project.id !== activeProject.id)];
-  }, [activeProject, projects]);
-  const projectOptions = useMemo(
-    () => projects.map((project) => ({ id: project.id, name: project.name })),
-    [projects],
-  );
   const { commentedScreenshotIds, screenshots: fullScopeScreenshots } = useCatalogueFullScope({
     projects,
     includeCommentedScreenshots: viewBy === 'comments-added',
   });
-  const scopedFacetBaseScreenshots = useMemo(() => {
-    if (activeProjectId) {
-      return fullScopeScreenshots.filter((screenshot) => screenshot.project_id === activeProjectId);
-    }
-    return fullScopeScreenshots;
-  }, [activeProjectId, fullScopeScreenshots]);
   const facetScreenshots = useMemo(() => {
     if (viewBy === 'all') {
-      return scopedFacetBaseScreenshots;
+      return fullScopeScreenshots;
     }
 
     if (viewBy === 'annotations-added') {
-      return scopedFacetBaseScreenshots.filter(
+      return fullScopeScreenshots.filter(
         (screenshot) => getAnnotationActivity(screenshot.metadata).count > 0,
       );
     }
 
-    return scopedFacetBaseScreenshots.filter((screenshot) => commentedScreenshotIds.has(screenshot.id));
-  }, [commentedScreenshotIds, scopedFacetBaseScreenshots, viewBy]);
+    return fullScopeScreenshots.filter((screenshot) => commentedScreenshotIds.has(screenshot.id));
+  }, [commentedScreenshotIds, fullScopeScreenshots, viewBy]);
 
   // Derivations over loaded (and already-filtered) screenshots
   const {
@@ -188,7 +177,7 @@ export function Catalogue({
     handleUpdateVariantDetails,
   } = useCatalogueFamilyActions({
     familyById,
-    filterProject: activeProject?.id ?? projects[0]?.id ?? null,
+    filterProject: projects[0]?.id ?? null,
     flowMap,
     onFamilyDeleted: (familyId) => {
       setPreviewFamilyId((previous) => (previous === familyId ? null : previous));
@@ -211,7 +200,7 @@ export function Catalogue({
   });
   const upload = useCatalogueUpload({
     allFamilies,
-    projects: orderedProjectsForUpload,
+    projects,
     setScreenshots,
     setToast,
     userEmail: user.email || null,
@@ -267,27 +256,6 @@ export function Catalogue({
       setActiveSection('catalogue');
     }
   }, [activeSection, canViewTeamSection]);
-  useEffect(() => {
-    if (projects.length === 0) {
-      setActiveProjectId(null);
-      return;
-    }
-
-    setActiveProjectId((previous) => {
-      if (previous === null) {
-        return null;
-      }
-      if (previous && projects.some((project) => project.id === previous)) {
-        return previous;
-      }
-      return projects[0].id;
-    });
-  }, [projects]);
-  useEffect(() => {
-    setSelected(new Set());
-    setPreviewFamilyId(null);
-    setPreviewStartInlineEdit(false);
-  }, [activeProjectId]);
 
   useEffect(() => {
     if (!isAnyModalOpen) return;
@@ -359,6 +327,25 @@ export function Catalogue({
             <CatalogueTeamSection projects={projects} screenshots={fullScopeScreenshots} />
           </div>
         </main>
+      ) : activeSection === 'archive-flow-builder' || activeSection === 'archive-projects' ? (
+        <main className="catalogue-main">
+          <div className="catalogue-shell catalogue-shell--team">
+            <CatalogueArchiveSection
+              archiveItem={activeSection === 'archive-flow-builder' ? 'flow-builder' : 'projects'}
+              onBackToCatalogue={() => setActiveSection('catalogue')}
+            />
+          </div>
+        </main>
+      ) : activeSection === 'feature-log' ? (
+        <main className="catalogue-main">
+          <div className="catalogue-shell catalogue-shell--team">
+            <CatalogueFeatureLogSection
+              canEdit={!isGuest}
+              onRequireAuth={() => setShowAuthPrompt(true)}
+              userId={user.id}
+            />
+          </div>
+        </main>
       ) : activeSection === 'videos' ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
@@ -373,7 +360,7 @@ export function Catalogue({
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueFigmaSection
-              activeProjectId={activeProjectId}
+              activeProjectId={null}
               canAdmin={canViewTeamSection}
               canEdit={!isGuest}
               onRequireAuth={() => setShowAuthPrompt(true)}
@@ -400,7 +387,6 @@ export function Catalogue({
                 </div>
               )}
               <CatalogueToolbar
-                activeProjectId={activeProjectId}
                 allFlows={allFlows}
                 allMobileOs={allMobileOs}
                 allWebPresets={allWebPresets}
@@ -413,7 +399,6 @@ export function Catalogue({
                 gridDensity={gridDensity}
                 groups={allGroups}
                 isSortLocked={isSortLocked}
-                onActiveProjectChange={setActiveProjectId}
                 onFilterFlowChange={setFilterFlow}
                 onFilterGroupChange={setFilterGroup}
                 onFilterMobileOsChange={setFilterMobileOs}
@@ -423,7 +408,6 @@ export function Catalogue({
                 onGridDensityChange={setGridDensity}
                 onQuickUploadClick={() => {
                   guardAction(() => {
-                    upload.handleQuickUploadProjectChange(activeProjectId);
                     upload.setShowQuickUpload(true);
                   });
                 }}
@@ -431,7 +415,6 @@ export function Catalogue({
                 onSortByChange={setSortBy}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
-                projectOptions={projectOptions}
                 searchQuery={searchQuery}
                 sortBy={sortBy}
                 viewBy={viewBy}
