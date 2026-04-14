@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { DEFAULT_CATALOGUE_VIEW_BY, type CatalogueViewBy } from '../lib/catalogue-activity';
 import { DEFAULT_CATALOGUE_SORT, type CatalogueSortOption } from '../lib/catalogue-sort';
@@ -40,14 +40,14 @@ export function useCatalogueFilterState() {
     if (filterPlatform !== 'mobile' && filterMobileOs) setFilterMobileOs(null);
   }, [filterMobileOs, filterPlatform, filterWebPreset]);
 
-  const filters: CatalogueQueryFilters = {
+  const filters = useMemo<CatalogueQueryFilters>(() => ({
     group: filterGroup,
     flow: filterFlow,
     platform: filterPlatform as 'web' | 'mobile' | null,
     theme: filterTheme as 'light' | 'dark' | null,
     webPreset: filterWebPreset,
     mobileOs: filterMobileOs as 'ios' | 'android' | null,
-  };
+  }), [filterFlow, filterGroup, filterMobileOs, filterPlatform, filterTheme, filterWebPreset]);
 
   return {
     filters,
