@@ -38,6 +38,62 @@ async function sendReply(chatId: number, text: string) {
   });
 }
 
+// --- X / Twitter URL parsing ---
+// Mirror of extractXUrlCandidate / parseXPostInput in
+// designer/src/components/CatalogueVideosSection.tsx (~lines 78-115).
+// Keep both copies in sync until we extract a shared package.
+
+interface XPostMatch {
+  tweetId: string;
+  normalizedUrl: string;
+}
+
+function parseXPostInput(raw: string): XPostMatch | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.toLowerCase();
+    const isXHost =
+      host === "x.com" ||
+      host.endsWith(".x.com") ||
+      host === "twitter.com" ||
+      host.endsWith(".twitter.com");
+    if (!isXHost) return null;
+
+    const parts = url.pathname.split("/").filter(Boolean);
+    const statusIndex = parts.findIndex(
+      (part) => part === "status" || part === "statuses",
+    );
+    if (statusIndex === -1 || !parts[statusIndex + 1]) return null;
+    const tweetId = parts[statusIndex + 1];
+    if (!/^\d+$/.test(tweetId)) return null;
+    return {
+      tweetId,
+      normalizedUrl: `https://x.com/i/status/${tweetId}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function parseAllXPostsInText(raw: string): XPostMatch[] {
+  const matches = raw.match(
+    /https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/[^\s"'<>]+/gi,
+  );
+  if (!matches) return [];
+  const seen = new Set<string>();
+  const results: XPostMatch[] = [];
+  for (const candidate of matches) {
+    const parsed = parseXPostInput(candidate.replace(/&amp;/g, "&"));
+    if (!parsed) continue;
+    if (seen.has(parsed.tweetId)) continue;
+    seen.add(parsed.tweetId);
+    results.push(parsed);
+  }
+  return results;
+}
+
 async function downloadTelegramFile(
   fileId: string,
 ): Promise<{ buffer: ArrayBuffer; fileName: string }> {
@@ -167,6 +223,54 @@ async function handlePhoto(
   await sendReply(chatId, `Uploaded: ${name}`);
 }
 
+async function handleXPostLinks(chatId: number, matches: XPostMatch[]) {
+  const supabase = getSupabase();
+  const added: string[] = [];
+  const duplicates: string[] = [];
+  const failed: string[] = [];
+
+  for (const match of matches) {
+    const { error } = await supabase
+      .from("catalogue_video_references")
+      .insert({
+        source_type: "x_post",
+        external_id: match.tweetId,
+        url: match.normalizedUrl,
+        added_by_email: "telegram-bot",
+      });
+
+    if (!error) {
+      added.push(match.normalizedUrl);
+    } else if (error.code === "23505") {
+      duplicates.push(match.normalizedUrl);
+    } else {
+      console.error("X post insert failed:", error);
+      failed.push(match.normalizedUrl);
+    }
+  }
+
+  const lines: string[] = [];
+  if (added.length > 0) {
+    lines.push(`Added ${added.length} video${added.length === 1 ? "" : "s"}:`);
+    lines.push(...added);
+  }
+  if (duplicates.length > 0) {
+    if (lines.length > 0) lines.push("");
+    lines.push(
+      `Already in catalogue (${duplicates.length}):`,
+      ...duplicates,
+    );
+  }
+  if (failed.length > 0) {
+    if (lines.length > 0) lines.push("");
+    lines.push(`Failed (${failed.length}):`, ...failed);
+  }
+  if (lines.length === 0) {
+    lines.push("No X post URLs recognized.");
+  }
+  await sendReply(chatId, lines.join("\n"));
+}
+
 // --- Main handler ---
 
 Deno.serve(async (req) => {
@@ -193,7 +297,7 @@ Deno.serve(async (req) => {
     if (message.text?.startsWith("/start")) {
       await sendReply(
         chatId,
-        'Welcome to Catalogue Bot! Send me a screenshot image and I\'ll upload it to the "Social" group in your catalogue.',
+        'Welcome to Catalogue Bot! Send me a screenshot image to upload it to the "Social" group, or paste an X (Twitter) post URL to add it to the videos section.',
       );
       return new Response("OK", { status: 200 });
     }
@@ -218,10 +322,19 @@ Deno.serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
+    // Text message with X/Twitter links
+    if (message.text && !message.text.startsWith("/")) {
+      const xMatches = parseAllXPostsInText(message.text);
+      if (xMatches.length > 0) {
+        await handleXPostLinks(chatId, xMatches);
+        return new Response("OK", { status: 200 });
+      }
+    }
+
     // Anything else
     await sendReply(
       chatId,
-      "Send me a screenshot image to upload it to the catalogue.",
+      "Send me a screenshot image to upload it to the catalogue, or paste an X (Twitter) post URL to add it to the videos section.",
     );
     return new Response("OK", { status: 200 });
   } catch (err) {
