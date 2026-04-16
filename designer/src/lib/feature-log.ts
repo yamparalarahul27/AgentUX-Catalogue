@@ -1,10 +1,10 @@
 import type { FeatureLogStatus, FeatureLogSummary } from '../types';
 
-export const FEATURE_LOG_STATUS_ORDER: FeatureLogStatus[] = ['shipped', 'designed', 'planned'];
+export const FEATURE_LOG_STATUS_ORDER: FeatureLogStatus[] = ['shipped', 'reference', 'planned'];
 export const FEATURE_LOG_PAGE_SIZE = 40;
 
 export function normalizeFeatureLogStatus(value: unknown): FeatureLogStatus {
-  if (value === 'planned' || value === 'designed' || value === 'shipped') {
+  if (value === 'planned' || value === 'reference' || value === 'shipped') {
     return value;
   }
   return 'planned';
@@ -37,7 +37,7 @@ export function toFeatureLogSummary(row: Record<string, unknown>): FeatureLogSum
     status: normalizeFeatureLogStatus(row.status),
     created_at: String(row.created_at || new Date(0).toISOString()),
     updated_at: String(row.updated_at || new Date(0).toISOString()),
-    design_count: parseCount(row.design_count),
+    reference_count: parseCount(row.reference_count),
     shipped_count: parseCount(row.shipped_count),
     total_count: parseCount(row.total_count),
   };
@@ -46,7 +46,7 @@ export function toFeatureLogSummary(row: Record<string, unknown>): FeatureLogSum
 export function groupFeatureLogsByStatus(features: FeatureLogSummary[]) {
   const grouped: Record<FeatureLogStatus, FeatureLogSummary[]> = {
     shipped: [],
-    designed: [],
+    reference: [],
     planned: [],
   };
 

@@ -20,13 +20,13 @@ interface CatalogueFeatureLogSectionProps {
 
 const STATUS_LABEL: Record<FeatureLogStatus, string> = {
   planned: 'Planned',
-  designed: 'Designed',
+  reference: 'Reference',
   shipped: 'Shipped',
 };
 
 const STATUS_HINT: Record<FeatureLogStatus, string> = {
   planned: 'Ideas and upcoming work',
-  designed: 'Ready in design',
+  reference: 'Has reference material',
   shipped: 'Live in production',
 };
 
@@ -54,7 +54,10 @@ function FeatureLogCard({
   onOpen: (feature: FeatureLogSummary) => void;
 }) {
   return (
-    <article className="catalogue-feature-log__card">
+    <article
+      className="catalogue-feature-log__card catalogue-feature-log__card--clickable"
+      onClick={() => onOpen(feature)}
+    >
       <div className="catalogue-feature-log__card-head">
         <h3 title={feature.title}>{feature.title}</h3>
         <span className={`catalogue-feature-log__badge ${statusClass(feature.status)}`}>
@@ -67,39 +70,30 @@ function FeatureLogCard({
       </p>
 
       <div className="catalogue-feature-log__card-meta">
-        <span>{feature.design_count} design</span>
+        <span>{feature.reference_count} reference</span>
         <span>{feature.shipped_count} shipped</span>
         <span>{feature.total_count} total</span>
         <span>{formatTimestamp(feature.updated_at)}</span>
       </div>
 
-      <div className="catalogue-feature-log__card-actions">
-        <button
-          type="button"
-          className="btn-secondary"
-          onClick={() => onOpen(feature)}
-        >
-          Open
-        </button>
-        {canEdit && (
-          <>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => onEdit(feature)}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => onDelete(feature)}
-            >
-              Delete
-            </button>
-          </>
-        )}
-      </div>
+      {canEdit && (
+        <div className="catalogue-feature-log__card-actions" onClick={(event) => event.stopPropagation()}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => onEdit(feature)}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => onDelete(feature)}
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </article>
   );
 }
@@ -167,7 +161,7 @@ export function CatalogueFeatureLogSection({
   const [markShippedPromptOpen, setMarkShippedPromptOpen] = useState(false);
 
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerLinkType, setPickerLinkType] = useState<FeatureLogLinkType>('design');
+  const [pickerLinkType, setPickerLinkType] = useState<FeatureLogLinkType>('reference');
   const [pickerSearchQuery, setPickerSearchQuery] = useState('');
   const [pickerGroupQuery, setPickerGroupQuery] = useState('');
   const [pickerFlowQuery, setPickerFlowQuery] = useState('');
@@ -178,8 +172,8 @@ export function CatalogueFeatureLogSection({
   const [pickerCandidates, setPickerCandidates] = useState<Awaited<ReturnType<typeof loadCandidates>>>([]);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<Set<string>>(new Set());
 
-  const totalDesignCount = useMemo(
-    () => features.reduce((sum, feature) => sum + feature.design_count, 0),
+  const totalReferenceCount = useMemo(
+    () => features.reduce((sum, feature) => sum + feature.reference_count, 0),
     [features],
   );
   const totalShippedCount = useMemo(
@@ -457,8 +451,8 @@ export function CatalogueFeatureLogSection({
             <strong>{features.length}</strong>
           </div>
           <div className="catalogue-feature-log__metric">
-            <span className="catalogue-feature-log__metric-label">Design links</span>
-            <strong>{totalDesignCount}</strong>
+            <span className="catalogue-feature-log__metric-label">Reference links</span>
+            <strong>{totalReferenceCount}</strong>
           </div>
           <div className="catalogue-feature-log__metric">
             <span className="catalogue-feature-log__metric-label">Shipped links</span>
@@ -486,7 +480,7 @@ export function CatalogueFeatureLogSection({
             placeholder="All statuses"
             options={[
               { value: 'planned', label: 'Planned' },
-              { value: 'designed', label: 'Designed' },
+              { value: 'reference', label: 'Reference' },
               { value: 'shipped', label: 'Shipped' },
             ]}
             onChange={(value) => setStatus((value ?? 'all') as FeatureLogStatus | 'all')}
@@ -645,7 +639,7 @@ export function CatalogueFeatureLogSection({
                     placeholder="Status"
                     options={[
                       { value: 'planned', label: 'Planned' },
-                      { value: 'designed', label: 'Designed' },
+                      { value: 'reference', label: 'Reference' },
                       { value: 'shipped', label: 'Shipped' },
                     ]}
                     onChange={(value) => setEditorStatus((value ?? 'planned') as FeatureLogStatus)}

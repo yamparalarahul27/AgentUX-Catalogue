@@ -147,10 +147,10 @@ export function CatalogueFeatureLinkPicker({
             value={linkType}
             placeholder="Link as"
             options={[
-              { value: 'design', label: 'Design' },
+              { value: 'reference', label: 'Reference' },
               { value: 'shipped', label: 'Shipped' },
             ]}
-            onChange={(value) => onLinkTypeChange((value ?? 'design') as FeatureLogLinkType)}
+            onChange={(value) => onLinkTypeChange((value ?? 'reference') as FeatureLogLinkType)}
           />
         </div>
 

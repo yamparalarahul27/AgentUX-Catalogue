@@ -144,8 +144,8 @@ export interface ParsedScreenshotName {
   depth: number;
 }
 
-export type FeatureLogStatus = 'planned' | 'designed' | 'shipped';
-export type FeatureLogLinkType = 'design' | 'shipped';
+export type FeatureLogStatus = 'planned' | 'reference' | 'shipped';
+export type FeatureLogLinkType = 'reference' | 'shipped';
 
 export interface FeatureLog {
   id: string;
@@ -168,7 +168,7 @@ export interface FeatureLogLink {
 }
 
 export interface FeatureLogSummary extends FeatureLog {
-  design_count: number;
+  reference_count: number;
   shipped_count: number;
   total_count: number;
 }

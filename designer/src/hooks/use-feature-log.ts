@@ -64,7 +64,7 @@ function toFeatureLog(row: Record<string, unknown>): FeatureLog {
 function toSummaryFromFeature(feature: FeatureLog): FeatureLogSummary {
   return {
     ...feature,
-    design_count: 0,
+    reference_count: 0,
     shipped_count: 0,
     total_count: 0,
   };
@@ -242,11 +242,11 @@ export function useFeatureLog({ autoLoad = true, filters }: UseFeatureLogArgs) {
     if (linksError) throw linksError;
 
     const hasShipped = (links ?? []).some((row) => row.link_type === 'shipped');
-    const hasDesign = (links ?? []).some((row) => row.link_type === 'design');
+    const hasReference = (links ?? []).some((row) => row.link_type === 'reference');
     const nextStatus: FeatureLogStatus = hasShipped
       ? 'shipped'
-      : hasDesign
-        ? 'designed'
+      : hasReference
+        ? 'reference'
         : 'planned';
 
     const { error: updateError } = await supabase
@@ -497,15 +497,15 @@ export function useFeatureLog({ autoLoad = true, filters }: UseFeatureLogArgs) {
           throw rpcError;
         }
 
-        const { count: designCount, error: designCountError } = await supabase
+        const { count: referenceCount, error: referenceCountError } = await supabase
           .from('feature_log_links')
           .select('id', { count: 'exact', head: true })
           .eq('feature_id', featureId)
-          .eq('link_type', 'design');
+          .eq('link_type', 'reference');
 
-        if (designCountError) throw designCountError;
+        if (referenceCountError) throw referenceCountError;
 
-        const nextStatus: FeatureLogStatus = designCount ? 'designed' : 'planned';
+        const nextStatus: FeatureLogStatus = referenceCount ? 'reference' : 'planned';
         const { error: updateError } = await supabase
           .from('feature_log')
           .update({ status: nextStatus })

@@ -21,7 +21,7 @@ interface CatalogueFeatureDetailProps {
 
 const STATUS_LABEL: Record<FeatureLogStatus, string> = {
   planned: 'Planned',
-  designed: 'Designed',
+  reference: 'Reference',
   shipped: 'Shipped',
 };
 
@@ -200,8 +200,8 @@ export function CatalogueFeatureDetail({
   onUnlink,
   saving,
 }: CatalogueFeatureDetailProps) {
-  const designLinks = useMemo(
-    () => linkedScreenshots.filter((item) => item.link_type === 'design'),
+  const referenceLinks = useMemo(
+    () => linkedScreenshots.filter((item) => item.link_type === 'reference'),
     [linkedScreenshots],
   );
 
@@ -216,10 +216,14 @@ export function CatalogueFeatureDetail({
         <div className="catalogue-feature-log-detail__head-left">
           <button
             type="button"
-            className="btn-secondary"
+            className="catalogue-feature-log-detail__back"
             onClick={onBack}
+            title="Back"
           >
-            Back
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
           </button>
 
           <div className="catalogue-feature-log-detail__copy">
@@ -229,7 +233,7 @@ export function CatalogueFeatureDetail({
               <span className={`catalogue-feature-log__badge ${statusClass(feature.status)}`}>
                 {STATUS_LABEL[feature.status]}
               </span>
-              <span>{designLinks.length} design</span>
+              <span>{referenceLinks.length} reference</span>
               <span>{shippedLinks.length} shipped</span>
               <span>{linkedScreenshots.length} total links</span>
             </div>
@@ -295,10 +299,10 @@ export function CatalogueFeatureDetail({
 
           <LinkSection
             canEdit={canEdit}
-            title="Designed"
-            emptyCopy="No design screenshots linked yet."
-            items={designLinks}
-            onOpenLinkPicker={() => onOpenLinkPicker('design')}
+            title="Reference"
+            emptyCopy="No reference screenshots linked yet."
+            items={referenceLinks}
+            onOpenLinkPicker={() => onOpenLinkPicker('reference')}
             onUnlink={onUnlink}
             saving={saving}
           />

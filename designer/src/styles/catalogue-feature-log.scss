@@ -223,6 +223,16 @@
   gap: 10px;
 }
 
+.catalogue-feature-log__card--clickable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    border-color: #3f3f46;
+    background: rgba(24, 24, 27, 0.92);
+  }
+}
+
 .catalogue-feature-log__card-head {
   display: flex;
   align-items: flex-start;
@@ -253,7 +263,7 @@
   color: #d4d4d8;
 }
 
-.catalogue-feature-log__badge--designed {
+.catalogue-feature-log__badge--reference {
   background: rgba(250, 204, 21, 0.18);
   color: #fde68a;
 }
