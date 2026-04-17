@@ -6,7 +6,7 @@
     <title>AgentUX | UX Flow Workspace For AI-Built Apps</title>
     <meta
       name="description"
-      content="Three tools to understand, shape, and manage the screens your AI builds. Dev Mode, Flow Builder, and a global Catalogue with Feature Log lifecycle tracking, Telegram bot integration, and archive compare."
+      content="Detect what your AI built with Dev Mode. Manage every screen, track features, and collect references with Catalogue — including Telegram bot, archive compare, and X video links."
     />
     <link rel="icon" type="image/svg+xml" href="./logo.svg" />
     <link rel="stylesheet" href="./styles.css" />
@@ -35,11 +35,12 @@
         <section class="hero" id="overview">
           <div class="hero-copy">
             <p class="eyebrow">UX workspace for AI-built apps</p>
-            <h1>Three tools. One flow.</h1>
+            <h1>Detect. Manage. Ship.</h1>
             <p class="hero-text">
               AI builds screens fast, but loses the thread of how they connect.
-              AgentUX gives you the tools to see what your AI built, shape the journey
-              it should follow, and keep every screen organized as you iterate.
+              AgentUX gives you Dev Mode to see what your AI built and Catalogue
+              to organize every screen, track feature lifecycle, and collect
+              design references — all in one workspace.
             </p>
             <div class="install-command" aria-label="Install command">
               <code>npm install @yamparala27/agentux -D</code>
@@ -61,16 +62,16 @@
             </div>
             <div class="story-step">
               <span class="story-number">2</span>
-              <span class="story-label">Shape</span>
-              <span class="story-desc">Flow Builder</span>
+              <span class="story-label">Manage</span>
+              <span class="story-desc">Catalogue</span>
             </div>
             <div class="story-arrow">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
             <div class="story-step">
               <span class="story-number">3</span>
-              <span class="story-label">Manage</span>
-              <span class="story-desc">Catalogue</span>
+              <span class="story-label">Ship</span>
+              <span class="story-desc">Feature Log</span>
             </div>
           </div>
         </section>
@@ -127,44 +128,6 @@ function App() {
               </div>
             </article>
 
-            <!-- Flow Builder -->
-            <article class="product-card">
-              <div class="product-icon product-icon-builder">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="7" height="7" rx="1"/>
-                  <rect x="14" y="3" width="7" height="7" rx="1"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1"/>
-                  <rect x="14" y="14" width="7" height="7" rx="1"/>
-                  <path d="M10 6.5h4M6.5 10v4M17.5 10v4M10 17.5h4"/>
-                </svg>
-              </div>
-              <h3>Flow Builder</h3>
-              <p class="product-tagline">Visual canvas to build and shape UX flows from screenshots.</p>
-              <span class="product-audience">For Designers & PMs</span>
-
-              <details class="product-details">
-                <summary>What it does</summary>
-                <ul class="check-list">
-                  <li>Drag-and-drop screenshots onto an infinite canvas</li>
-                  <li>Auto-connect screens based on naming conventions</li>
-                  <li>Sequence and group-aware layout for journey mapping</li>
-                  <li>Export the flow as a structured Markdown spec for AI</li>
-                </ul>
-              </details>
-
-              <details class="product-details">
-                <summary>How naming works</summary>
-                <p class="product-naming-example">
-                  Name files like <code>01-auth-login.png</code> and Flow Builder auto-parses
-                  sequence, group, and screen name. Screens in the same group connect automatically.
-                </p>
-              </details>
-
-              <div class="product-cta">
-                <a class="button button-primary" href="/designer/">Open Flow Builder</a>
-              </div>
-            </article>
-
             <!-- Catalogue -->
             <article class="product-card">
               <div class="product-icon product-icon-catalogue">
@@ -175,32 +138,67 @@ function App() {
                 </svg>
               </div>
               <h3>Catalogue</h3>
-              <p class="product-tagline">Global screenshot library with four view modes, Feature Log lifecycle tracking, Telegram bot integration, and team analytics.</p>
+              <p class="product-tagline">Your team's single source of truth for screenshots, feature tracking, design references, and competitive research — all in one place.</p>
               <span class="product-audience">For Teams</span>
 
-              <details class="product-details">
-                <summary>What it does</summary>
+              <details class="product-details" open>
+                <summary>Views &amp; Organization</summary>
                 <ul class="check-list">
-                  <li>Upload and organize screenshots by group with full DB scope</li>
                   <li>Four views: Grid, List, Gallery, and Folder (brand cards with carousel previews)</li>
-                  <li>Feature Log to track Planned → Reference → Shipped with linked screenshots</li>
-                  <li>Telegram bot — share screenshots or X (Twitter) video links from your phone to the catalogue</li>
-                  <li>Archive compare — side-by-side flow comparison across primary and vs groups</li>
+                  <li>Upload and organize screenshots by group with full DB scope</li>
                   <li>Lightbox with annotations, comments, and inline editing</li>
                   <li>Bulk operations — rename, re-group, or delete multiple families at once</li>
-                  <li>Group appearance — custom icons, descriptions, and status badges per brand</li>
                   <li>Global filters for group, platform, theme, flow, and search</li>
-                  <li>Videos section for design references, competitive UX studies, and X post embeds</li>
-                  <li>Team analytics and group management across full DB data</li>
+                  <li>Group appearance — custom icons, descriptions, and status badges per brand</li>
                 </ul>
               </details>
 
               <details class="product-details">
-                <summary>How sync works</summary>
-                <p class="product-naming-example">
-                  Catalogue and Flow Builder share the same database. Uploading, renaming, linking to features,
-                  or regrouping screenshots in either place is reflected everywhere on next load.
-                </p>
+                <summary>Feature Log</summary>
+                <ul class="check-list">
+                  <li>Track every feature through Planned → Reference → Shipped lifecycle</li>
+                  <li>Link existing screenshots as evidence for each status transition</li>
+                  <li>Clickable feature cards with detail views showing shipped and reference evidence</li>
+                  <li>Manual status override alongside title and description edits</li>
+                </ul>
+              </details>
+
+              <details class="product-details">
+                <summary>Telegram Bot</summary>
+                <ul class="check-list">
+                  <li>Share screenshot images from your phone — they land in the "Social" group automatically</li>
+                  <li>Paste X (Twitter) post URLs — they're added to the Videos section as embedded references</li>
+                  <li>Allowlist-based access control so only your team can contribute</li>
+                  <li>Duplicate detection — the bot tells you if a post is already in the catalogue</li>
+                </ul>
+              </details>
+
+              <details class="product-details">
+                <summary>Archive &amp; Compare</summary>
+                <ul class="check-list">
+                  <li>Side-by-side flow comparison across primary and vs groups</li>
+                  <li>Read-only archive surfaces for Flow Builder and Projects</li>
+                  <li>Full history preserved — nothing is deleted when you iterate</li>
+                </ul>
+              </details>
+
+              <details class="product-details">
+                <summary>Videos &amp; References</summary>
+                <ul class="check-list">
+                  <li>Curated video library for design references and competitive UX studies</li>
+                  <li>Embed X (Twitter) posts with native rendering via Twitter Widgets API</li>
+                  <li>Add references from the web UI or directly from Telegram</li>
+                  <li>Comments per video for team discussion and annotation</li>
+                </ul>
+              </details>
+
+              <details class="product-details">
+                <summary>Team &amp; Analytics</summary>
+                <ul class="check-list">
+                  <li>Team upload analytics with per-member contribution tracking</li>
+                  <li>Group management across the full database scope</li>
+                  <li>Shared Supabase backend — all data syncs across Catalogue and Flow Builder</li>
+                </ul>
               </details>
 
               <div class="product-cta">
@@ -220,18 +218,18 @@ function App() {
           <div class="steps-grid">
             <article class="step-card">
               <span class="step-number">1</span>
-              <h3>Upload or detect screens</h3>
-              <p>Use Dev Mode to auto-detect routes, or upload screenshots directly into Flow Builder or Catalogue.</p>
+              <h3>Detect or upload screens</h3>
+              <p>Use Dev Mode to auto-detect routes in your app, upload screenshots to the Catalogue, or share them via the Telegram bot from your phone.</p>
             </article>
             <article class="step-card">
               <span class="step-number">2</span>
-              <h3>Shape the intended flow</h3>
-              <p>Connect screens, define the journey users should take, and mark what changes before the next AI build.</p>
+              <h3>Organize and track features</h3>
+              <p>Group screenshots by brand, track each feature from Planned through Reference to Shipped, and collect competitive video references.</p>
             </article>
             <article class="step-card">
               <span class="step-number">3</span>
-              <h3>Export back to your AI agent</h3>
-              <p>Copy a structured flow spec — Markdown for humans, JSON for agents — so the next build follows a UX model.</p>
+              <h3>Compare, review, and ship</h3>
+              <p>Use archive compare to review changes side by side, then export structured specs for your AI agent to build the next iteration.</p>
             </article>
           </div>
         </section>
@@ -312,15 +310,15 @@ node scripts/bulk_webapp_capture_template.cjs</code></pre>
             </details>
             <details class="faq-item">
               <summary>Who is this for?</summary>
-              <p>Anyone building apps with AI coding agents. Dev Mode is for developers inspecting routes. Flow Builder is for designers and PMs shaping the journey visually. Catalogue is for teams managing screenshots globally and tracking feature lifecycle evidence.</p>
+              <p>Anyone building apps with AI coding agents. Dev Mode is for developers inspecting routes. Catalogue is for teams managing screenshots, tracking feature lifecycle, collecting design references, and comparing flows across iterations.</p>
             </details>
             <details class="faq-item">
               <summary>What frameworks does Dev Mode support?</summary>
               <p>Next.js App Router, Next.js Pages Router, and React Router. Framework detection is automatic based on your project structure.</p>
             </details>
             <details class="faq-item">
-              <summary>How do Flow Builder and Catalogue stay in sync?</summary>
-              <p>Both read from the same database. Uploading, renaming, or assigning a screenshot in either tool is reflected in the other immediately on next load.</p>
+              <summary>Can I add screenshots from my phone?</summary>
+              <p>Yes. The Telegram bot lets you share screenshot images or X (Twitter) post URLs directly from your phone. Images go to the Catalogue and X links go to the Videos section — no desktop needed.</p>
             </details>
             <details class="faq-item">
               <summary>Is this analytics?</summary>
