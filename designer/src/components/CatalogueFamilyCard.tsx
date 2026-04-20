@@ -6,6 +6,7 @@ import { getActiveFamilyVariant } from '../lib/catalogue-families';
 import { getGroupColor } from '../lib/naming';
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { ThumbHashImage } from './ThumbHashImage';
 
 interface CatalogueFamilyCardProps {
   family: CatalogueFamilyView;
@@ -110,10 +111,10 @@ export function CatalogueFamilyCard({
                       <span className="catalogue-card-image-progress__bar" />
                     </span>
                   )}
-                  <img
+                  <ThumbHashImage
                     src={imageUrl}
+                    thumbHash={screenshot?.thumb_hash ?? null}
                     alt={`${family.name} ${activeVariant?.label || ''}`}
-                    draggable={false}
                     className={isImageLoading ? 'is-loading' : 'is-ready'}
                     onLoad={() => setIsImageLoading(false)}
                     onError={() => {

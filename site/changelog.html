@@ -86,6 +86,30 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- Apr 20, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 20, 2026</span>
+            <span class="changelog-title">ThumbHash Image Placeholders</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>ThumbHash placeholder system — blurry 28-byte previews render instantly before full images load</li>
+              <li>ThumbHash generated on every screenshot upload and stored in the database</li>
+              <li>ThumbHashImage component with blur-to-sharp crossfade transition (0.3s ease-in)</li>
+              <li>Database migration adding <code>thumb_hash</code> column to screenshots table</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>Catalogue family cards now use ThumbHash placeholders instead of blank/progress-bar-only loading</li>
+              <li>Landing page updated with ThumbHash feature mention</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- Apr 15-17, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">

@@ -6,6 +6,7 @@ import { compressImage } from '../lib/catalogue-image';
 import { buildConventionName, isConventionName, parseScreenshotName } from '../lib/naming';
 import { insertScreenshotWithUploader } from '../lib/screenshot-write';
 import { supabase } from '../lib/supabase';
+import { generateThumbHash } from '../lib/thumbhash';
 import type { MobileOs, Project, ScreenshotNode, WebPreset } from '../types';
 
 interface ToastState {
@@ -278,6 +279,7 @@ export function useCatalogueUpload({
     for (const file of files) {
       try {
         const compressed = await compressImage(file);
+        const thumbHash = await generateThumbHash(compressed).catch(() => null);
         const parsed = parseScreenshotName(file.name);
         const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
         const storagePath = `${userId}/${projectId}/${safeName}`;
@@ -307,6 +309,7 @@ export function useCatalogueUpload({
             reference_url: reference.referenceUrl,
             reference_storage_path: reference.referenceStoragePath,
             reference_label: reference.referenceLabel,
+            thumb_hash: thumbHash,
           },
           uploader: { userEmail, userId },
         });

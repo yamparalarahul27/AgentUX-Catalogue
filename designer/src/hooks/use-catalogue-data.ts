@@ -117,6 +117,7 @@ export function useCatalogueData({
       image_url: storagePath
         ? supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl
         : '',
+      thumb_hash: (row.thumb_hash as string | null) || null,
       version_count: 0,
       comment_count: 0,
       comment_last_added_at: null,
