@@ -24,6 +24,8 @@ interface CatalogueFamilyLightboxProps {
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
   onAnnotationStateChange: (screenshotId: string, metadata: Record<string, unknown>) => void;
   onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
   onCommentCountChange?: (screenshotId: string, delta: number) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onDeleteFamily: (familyId: string) => Promise<void>;
@@ -50,6 +52,8 @@ export function CatalogueFamilyLightbox({
   onActiveVariantChange,
   onAnnotationStateChange,
   onClose,
+  onPrev,
+  onNext,
   onCommentCountChange,
   onChangeFamilyGroup,
   onDeleteFamily,
@@ -161,6 +165,28 @@ export function CatalogueFamilyLightbox({
     annotationInputRef.current?.focus();
     annotationInputRef.current?.select();
   }, [annotationDraft]);
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleNavKey(event: KeyboardEvent) {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
+      if (annotationMode || annotationDraft) return;
+      if (event.key === 'ArrowLeft' && onPrev) {
+        event.preventDefault();
+        onPrev();
+      } else if (event.key === 'ArrowRight' && onNext) {
+        event.preventDefault();
+        onNext();
+      }
+    }
+    window.addEventListener('keydown', handleNavKey);
+    return () => window.removeEventListener('keydown', handleNavKey);
+  }, [isOpen, onPrev, onNext, annotationMode, annotationDraft]);
   const saveAnnotations = useCallback(async (nextAnnotations: LightboxAnnotation[]) => {
     if (!ensureCanEdit()) return false;
     if (!screenshot) return false;

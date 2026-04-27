@@ -14,8 +14,8 @@ interface CatalogueToolbarProps {
   allFlows: string[];
   allMobileOs: { id: string; label: string }[];
   allWebPresets: { id: string; label: string }[];
-  filterFlow: string | null;
-  filterGroup: string | null;
+  filterFlow: string[];
+  filterGroup: string[];
   filterMobileOs: string | null;
   filterPlatform: string | null;
   filterTheme: string | null;
@@ -23,8 +23,8 @@ interface CatalogueToolbarProps {
   gridDensity: GridDensity;
   groups: string[];
   isSortLocked: boolean;
-  onFilterGroupChange: (value: string | null) => void;
-  onFilterFlowChange: (value: string | null) => void;
+  onFilterGroupChange: (value: string[]) => void;
+  onFilterFlowChange: (value: string[]) => void;
   onGridDensityChange: (value: GridDensity) => void;
   onFilterMobileOsChange: (value: string | null) => void;
   onFilterPlatformChange: (value: string | null) => void;
@@ -196,13 +196,23 @@ export function CatalogueToolbar({
     }
   }, [visibleFilters]);
 
-  const activeFilterCount = [
-    filterGroup, filterFlow, filterPlatform, filterTheme, filterWebPreset, filterMobileOs,
-  ].filter(Boolean).length + (viewBy !== 'all' ? 1 : 0);
+  const activeFilterCount =
+    filterGroup.length +
+    filterFlow.length +
+    [filterPlatform, filterTheme, filterWebPreset, filterMobileOs].filter(Boolean).length +
+    (viewBy !== 'all' ? 1 : 0);
 
   const activePills: Array<{ key: string; label: string; onRemove: () => void }> = [];
-  if (filterGroup) activePills.push({ key: 'group', label: `Group: ${filterGroup}`, onRemove: () => onFilterGroupChange(null) });
-  if (filterFlow) activePills.push({ key: 'flow', label: `Flow: ${filterFlow}`, onRemove: () => onFilterFlowChange(null) });
+  filterGroup.forEach((group) => activePills.push({
+    key: `group:${group}`,
+    label: `Group: ${group}`,
+    onRemove: () => onFilterGroupChange(filterGroup.filter((g) => g !== group)),
+  }));
+  filterFlow.forEach((flow) => activePills.push({
+    key: `flow:${flow}`,
+    label: `Flow: ${flow}`,
+    onRemove: () => onFilterFlowChange(filterFlow.filter((f) => f !== flow)),
+  }));
   if (filterPlatform) activePills.push({ key: 'platform', label: `Platform: ${filterPlatform}`, onRemove: () => onFilterPlatformChange(null) });
   if (filterTheme) activePills.push({ key: 'theme', label: `Theme: ${filterTheme}`, onRemove: () => onFilterThemeChange(null) });
   if (filterWebPreset) activePills.push({ key: 'webPreset', label: `Preset: ${filterWebPreset}`, onRemove: () => onFilterWebPresetChange(null) });
@@ -210,8 +220,8 @@ export function CatalogueToolbar({
   if (viewBy !== 'all') activePills.push({ key: 'viewBy', label: `View: ${VIEW_BY_LABELS[viewBy]}`, onRemove: () => onViewByChange('all') });
 
   function handleApplyFilters(filters: {
-    flow: string | null;
-    group: string | null;
+    flow: string[];
+    group: string[];
     mobileOs: string | null;
     platform: string | null;
     theme: string | null;
@@ -231,8 +241,8 @@ export function CatalogueToolbar({
     const isVisible = visibleFilters.has(key);
 
     if (isVisible) {
-      if (key === 'flow') onFilterFlowChange(null);
-      if (key === 'group') onFilterGroupChange(null);
+      if (key === 'flow') onFilterFlowChange([]);
+      if (key === 'group') onFilterGroupChange([]);
       if (key === 'platform') onFilterPlatformChange(null);
       if (key === 'theme') onFilterThemeChange(null);
       if (key === 'webPreset') onFilterWebPresetChange(null);
@@ -283,19 +293,21 @@ export function CatalogueToolbar({
           {isFilterVisible('group') && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
-              value={filterGroup}
+              multiple
+              values={filterGroup}
               placeholder="Group"
               options={groups.map((group) => ({ value: group, label: group }))}
-              onChange={onFilterGroupChange}
+              onMultiChange={onFilterGroupChange}
             />
           )}
           {isFilterVisible('flow') && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
-              value={filterFlow}
+              multiple
+              values={filterFlow}
               placeholder="Flow"
               options={allFlows.map((flow) => ({ value: flow, label: flow }))}
-              onChange={onFilterFlowChange}
+              onMultiChange={onFilterFlowChange}
             />
           )}
           {isFilterVisible('platform') && (

@@ -15,8 +15,8 @@ function parseTimestamp(value: string | null | undefined): number | null {
 const PAGE_SIZE = 50;
 
 export interface CatalogueQueryFilters {
-  group: string | null;
-  flow: string | null;
+  group: string[];
+  flow: string[];
   platform: 'web' | 'mobile' | null;
   theme: 'light' | 'dark' | null;
   webPreset: string | null;
@@ -24,8 +24,8 @@ export interface CatalogueQueryFilters {
 }
 
 export const EMPTY_CATALOGUE_FILTERS: CatalogueQueryFilters = {
-  group: null,
-  flow: null,
+  group: [],
+  flow: [],
   platform: null,
   theme: null,
   webPreset: null,
@@ -187,12 +187,17 @@ export function useCatalogueData({
 
       // Group filter is sourced from screenshots.group so the dropdown reflects
       // what users expect to see in the catalogue results.
-      if (filters.group) {
-        query = query.eq('group', filters.group);
+      if (filters.group.length > 0) {
+        query = query.in('group', filters.group);
       }
 
-      if (filters.flow) {
-        query = query.filter('metadata->>catalogue_flow_label', 'eq', filters.flow);
+      if (filters.flow.length > 0) {
+        // PostgREST .or() needs double-quoted values to safely embed commas,
+        // periods, parens, etc. that can appear in flow labels.
+        const flowOr = filters.flow
+          .map((flow) => `metadata->>catalogue_flow_label.eq."${flow.replace(/"/g, '\\"')}"`)
+          .join(',');
+        query = query.or(flowOr);
       }
       if (filters.platform) {
         query = query.eq('platform', filters.platform);
