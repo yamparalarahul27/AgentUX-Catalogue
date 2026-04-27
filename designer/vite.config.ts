@@ -8,12 +8,8 @@ function spaFallback(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, _res, next) => {
         const url = req.url || '';
-        if (url.startsWith('/designer/catalogue')) {
+        if (url.startsWith('/designer/catalogue') || url.startsWith('/designer/')) {
           req.url = '/designer/catalogue.html';
-        } else if (url.startsWith('/designer/cd') || url.startsWith('/cd')) {
-          req.url = '/designer/cd.html';
-        } else if (url.startsWith('/designer/project/')) {
-          req.url = '/designer/index.html';
         }
         next();
       });
@@ -29,15 +25,8 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'),
         catalogue: path.resolve(__dirname, 'catalogue.html'),
-        cd: path.resolve(__dirname, 'cd.html'),
       },
-    },
-  },
-  resolve: {
-    alias: {
-      '@shared': path.resolve(__dirname, '../src'),
     },
   },
 });

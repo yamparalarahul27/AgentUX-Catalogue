@@ -10,9 +10,11 @@ import type { MobileOs, WebPreset } from '../types';
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
   canEdit?: boolean;
+  existingGroups: string[];
   family: CatalogueFamilyView;
   flowName: string | null;
   isOpen: boolean;
@@ -26,28 +28,19 @@ interface CatalogueFamilyLightboxProps {
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
+  onSetReference: (screenshotId: string, input: { file: File | null; label: string | null }) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onUpdateVariantDetails: (screenshotId: string, patch: { mobile_os?: MobileOs | null; platform?: 'mobile' | 'web' | null; theme?: 'light' | 'dark' | null; web_preset_key?: string | null }) => Promise<boolean>;
   webPresets: WebPreset[];
 }
-interface ScreenshotComment {
-  id: string;
-  user_email: string;
-  text: string;
-  created_at: string;
-  resolved_at?: string | null;
-  resolved_by_email?: string | null;
-}
+type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; resolved_at?: string | null; resolved_by_email?: string | null };
 type LightboxPanel = 'comments' | 'annotations';
-
-function shouldStartLightboxSheetMinimized() {
-  return typeof window !== 'undefined' && window.matchMedia('(max-width: 960px)').matches;
-}
-
+const shouldStartLightboxSheetMinimized = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
 export function CatalogueFamilyLightbox({
   activeVariantKey,
   canEdit = true,
+  existingGroups,
   family,
   flowName,
   isOpen,
@@ -61,6 +54,7 @@ export function CatalogueFamilyLightbox({
   onChangeFamilyGroup,
   onDeleteFamily,
   onRenameFamily,
+  onSetReference,
   onReplaceVariantImage,
   onSetFlowLabel,
   onUpdateVariantDetails,
@@ -73,26 +67,14 @@ export function CatalogueFamilyLightbox({
   const [sheetMinimized, setSheetMinimized] = useState(shouldStartLightboxSheetMinimized);
   const [isInlineEditing, setIsInlineEditing] = useState(startInlineEdit && canEdit);
   const [isSavingInline, setIsSavingInline] = useState(false);
-  const [nameDraft, setNameDraft] = useState(family.name);
-  const [groupDraft, setGroupDraft] = useState(family.group || '');
-  const [flowDraft, setFlowDraft] = useState(flowName || '');
-  const [themeDraft, setThemeDraft] = useState<'light' | 'dark' | null>(null);
-  const [platformDraft, setPlatformDraft] = useState<'mobile' | 'web' | null>(null);
-  const [webPresetDraft, setWebPresetDraft] = useState<string | null>(null);
-  const [mobileOsDraft, setMobileOsDraft] = useState<MobileOs | null>(null);
-  const [comments, setComments] = useState<ScreenshotComment[]>([]);
-  const [newComment, setNewComment] = useState('');
-  const [loadingComments, setLoadingComments] = useState(false);
-  const [commentsError, setCommentsError] = useState('');
-  const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]);
-  const [annotationMetadata, setAnnotationMetadata] = useState<Record<string, unknown>>({});
-  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
-  const [annotationMode, setAnnotationMode] = useState(false);
-  const [annotationDraftText, setAnnotationDraftText] = useState('');
-  const [annotationDraft, setAnnotationDraft] = useState<{ x: number; y: number } | null>(null);
-  const [annotationError, setAnnotationError] = useState('');
-  const [imageSize, setImageSize] = useState<ImageSize | null>(null);
-  const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
+  const [nameDraft, setNameDraft] = useState(family.name); const [groupDraft, setGroupDraft] = useState(family.group || ''); const [flowDraft, setFlowDraft] = useState(flowName || '');
+  const [themeDraft, setThemeDraft] = useState<'light' | 'dark' | null>(null); const [platformDraft, setPlatformDraft] = useState<'mobile' | 'web' | null>(null);
+  const [webPresetDraft, setWebPresetDraft] = useState<string | null>(null); const [mobileOsDraft, setMobileOsDraft] = useState<MobileOs | null>(null);
+  const [referenceLabelDraft, setReferenceLabelDraft] = useState(''); const [referenceFileDraft, setReferenceFileDraft] = useState<File | null>(null);
+  const [comments, setComments] = useState<ScreenshotComment[]>([]); const [newComment, setNewComment] = useState(''); const [loadingComments, setLoadingComments] = useState(false); const [commentsError, setCommentsError] = useState('');
+  const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]); const [annotationMetadata, setAnnotationMetadata] = useState<Record<string, unknown>>({}); const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [annotationMode, setAnnotationMode] = useState(false); const [annotationDraftText, setAnnotationDraftText] = useState(''); const [annotationDraft, setAnnotationDraft] = useState<{ x: number; y: number } | null>(null); const [annotationError, setAnnotationError] = useState('');
+  const [imageSize, setImageSize] = useState<ImageSize | null>(null); const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
   const sortedComments = useMemo(
     () => [...comments].sort((a, b) => {
       const aResolved = Boolean(a.resolved_at);
@@ -102,8 +84,7 @@ export function CatalogueFamilyLightbox({
     }),
     [comments],
   );
-  const activeVariant = useMemo(() => getActiveFamilyVariant(family, activeVariantKey), [activeVariantKey, family]);
-  const screenshot = activeVariant?.screenshot ?? null;
+  const activeVariant = useMemo(() => getActiveFamilyVariant(family, activeVariantKey), [activeVariantKey, family]); const screenshot = activeVariant?.screenshot ?? null;
   const mediaLayout = useMemo(() => getContainLayout(mediaSize, imageSize), [imageSize, mediaSize]);
   const groupColor = getGroupColor(family.group);
 
@@ -155,6 +136,8 @@ export function CatalogueFamilyLightbox({
     setPlatformDraft(screenshot.platform || null);
     setWebPresetDraft(screenshot.web_preset_key || null);
     setMobileOsDraft(screenshot.mobile_os || null);
+    setReferenceLabelDraft(screenshot.reference_label || '');
+    setReferenceFileDraft(null);
     setIsInlineEditing(startInlineEdit && canEdit);
     setIsSavingInline(false);
   }, [canEdit, family, flowName, screenshot, startInlineEdit]);
@@ -333,6 +316,10 @@ export function CatalogueFamilyLightbox({
     setWebPresetDraft(null);
     setMobileOsDraft(null);
   }
+  function handleInlineReferenceFileSelect(file: File | null) {
+    if (!file) return setReferenceFileDraft(null);
+    if (file.type.startsWith('image/')) setReferenceFileDraft(file);
+  }
   async function saveInlineDetails() {
     if (!ensureCanEdit()) return;
     if (!screenshot) return;
@@ -341,6 +328,7 @@ export function CatalogueFamilyLightbox({
       const trimmedName = nameDraft.trim();
       const trimmedGroup = groupDraft.trim();
       const trimmedFlow = flowDraft.trim();
+      const trimmedReferenceLabel = referenceLabelDraft.trim();
       const nextVariant = buildLightboxDraftVariant(screenshot, {
         mobileOs: mobileOsDraft,
         platform: platformDraft,
@@ -373,6 +361,14 @@ export function CatalogueFamilyLightbox({
         if (!updated) return;
         onActiveVariantChange(family.id, getVariantKey(nextVariant));
       }
+      const referenceChanged = referenceFileDraft !== null || trimmedReferenceLabel !== (screenshot.reference_label || '');
+      if (referenceChanged) {
+        const referenceUpdated = await onSetReference(screenshot.id, {
+          file: referenceFileDraft,
+          label: trimmedReferenceLabel || null,
+        });
+        if (!referenceUpdated) return;
+      }
       setIsInlineEditing(false);
     } finally {
       setIsSavingInline(false);
@@ -387,6 +383,8 @@ export function CatalogueFamilyLightbox({
     setPlatformDraft(screenshot.platform || null);
     setWebPresetDraft(screenshot.web_preset_key || null);
     setMobileOsDraft(screenshot.mobile_os || null);
+    setReferenceLabelDraft(screenshot.reference_label || '');
+    setReferenceFileDraft(null);
     setIsInlineEditing(false);
   }
   if (!isOpen || !screenshot || !activeVariant) {
@@ -398,7 +396,7 @@ export function CatalogueFamilyLightbox({
         <div className="catalogue-lightbox-name-wrap">
           <span className="catalogue-lightbox-name">{family.name}</span>
         </div>
-        {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}>{family.group}</span>}
+        {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={family.project_id} /></span>}
         {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
         {screenshot.theme && <span className="catalogue-lightbox-tag">{screenshot.theme}</span>}
         <button type="button" className="catalogue-lightbox-close" onClick={onClose}>
@@ -460,7 +458,7 @@ export function CatalogueFamilyLightbox({
           <div className="catalogue-family-lightbox">
             <div className="catalogue-family-lightbox__summary">
               <div className="catalogue-lightbox-meta-line">
-                {family.group && <span className="catalogue-lightbox-meta-chip" style={{ borderColor: groupColor, color: groupColor }}>{family.group}</span>}
+                {family.group && <span className="catalogue-lightbox-meta-chip" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={family.project_id} /></span>}
                 {flowName && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--flow">{flowName}</span></>}
                 {activeVariant.label && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--variant">{activeVariant.label}</span></>}
               </div>
@@ -483,6 +481,7 @@ export function CatalogueFamilyLightbox({
               <CatalogueFamilyLightboxActions
                 annotationsCount={annotations.length}
                 commentsCount={comments.length}
+                existingGroups={existingGroups}
                 flowDraft={flowDraft}
                 groupDraft={groupDraft}
                 isInlineEditing={isInlineEditing}
@@ -490,6 +489,9 @@ export function CatalogueFamilyLightbox({
                 mobileOsDraft={mobileOsDraft}
                 nameDraft={nameDraft}
                 platformDraft={platformDraft}
+                referenceLabelDraft={referenceLabelDraft}
+                referenceFileName={referenceFileDraft?.name ?? null}
+                hasReference={Boolean(screenshot.reference_url || screenshot.reference_storage_path)}
                 themeDraft={themeDraft}
                 webPresetDraft={webPresetDraft}
                 webPresets={webPresets}
@@ -501,6 +503,8 @@ export function CatalogueFamilyLightbox({
                 onOpenAnnotations={() => { setSheetMinimized(false); setLightboxPanel('annotations'); toggleAnnotationMode(); }}
                 onOpenComments={() => { setSheetMinimized(false); setLightboxPanel('comments'); }}
                 onPlatformChange={handleInlinePlatformChange}
+                onReferenceFileSelect={handleInlineReferenceFileSelect}
+                onReferenceLabelChange={setReferenceLabelDraft}
                 onReupload={() => fileRef.current?.click()}
                 onSave={() => void saveInlineDetails()}
                 onThemeChange={setThemeDraft}

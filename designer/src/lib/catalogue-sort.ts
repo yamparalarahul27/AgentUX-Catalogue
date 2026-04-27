@@ -1,8 +1,8 @@
 import type { ScreenshotNode } from '../types';
 
-export type CatalogueSortOption = 'date-desc' | 'date-asc' | 'name-asc';
+export type CatalogueSortOption = 'date-desc' | 'date-desc-global' | 'date-asc' | 'name-asc';
 
-export const DEFAULT_CATALOGUE_SORT: CatalogueSortOption = 'date-desc';
+export const DEFAULT_CATALOGUE_SORT: CatalogueSortOption = 'date-desc-global';
 
 function normalizeName(value: string): string {
   return value.trim().toLowerCase();
@@ -50,6 +50,9 @@ export function sortCatalogueScreenshots(
       return sorted;
     case 'date-asc':
       sorted.sort((left, right) => compareByDate(left, right, 'asc'));
+      return sorted;
+    case 'date-desc-global':
+      sorted.sort((left, right) => compareByDate(left, right, 'desc'));
       return sorted;
     case 'date-desc':
     default:

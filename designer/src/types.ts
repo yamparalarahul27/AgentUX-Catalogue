@@ -35,6 +35,27 @@ export interface WebPreset {
   width: number;
 }
 
+export type FigmaRequestStatus = 'queued' | 'parsing' | 'building' | 'review' | 'ready' | 'failed';
+
+export interface CatalogueFigmaRequest {
+  id: string;
+  project_id: string | null;
+  title: string | null;
+  html_snippet: string;
+  reference_image_url: string | null;
+  requested_by_user_id: string;
+  requested_by_email: string | null;
+  status: FigmaRequestStatus;
+  node_url: string | null;
+  node_id: string | null;
+  file_key: string | null;
+  admin_notes: string | null;
+  error_message: string | null;
+  engine_payload: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CatalogueSettingsRecord {
   user_id: string;
   web_presets: WebPreset[];
@@ -68,6 +89,7 @@ export interface ScreenshotNode {
   position_x: number | null;
   position_y: number | null;
   metadata: Record<string, unknown>;
+  thumb_hash?: string | null;
   uploader_user_id?: string | null;
   uploader_email?: string | null;
   created_at?: string;
@@ -121,4 +143,33 @@ export interface ParsedScreenshotName {
   group: string | null;
   name: string;
   depth: number;
+}
+
+export type FeatureLogStatus = 'planned' | 'reference' | 'shipped';
+export type FeatureLogLinkType = 'reference' | 'shipped';
+
+export interface FeatureLog {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  status: FeatureLogStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeatureLogLink {
+  id: string;
+  feature_id: string;
+  screenshot_id: string;
+  link_type: FeatureLogLinkType;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeatureLogSummary extends FeatureLog {
+  reference_count: number;
+  shipped_count: number;
+  total_count: number;
 }

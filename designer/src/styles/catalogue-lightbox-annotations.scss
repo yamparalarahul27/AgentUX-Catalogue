@@ -114,12 +114,14 @@
 .catalogue-lightbox-collapsible {
   display: grid;
   grid-template-rows: 1fr;
+  flex: 1 1 auto;
+  min-height: 0;
   transition: grid-template-rows 0.25s ease;
 }
 
 .catalogue-lightbox-collapsible__inner {
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -127,6 +129,13 @@
 
 .catalogue-lightbox-comments.is-minimized .catalogue-lightbox-collapsible {
   grid-template-rows: 0fr;
+}
+
+@media (max-width: 1200px) and (min-width: 721px) {
+  .catalogue-lightbox-comments {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .catalogue-lightbox-panel-tabs {

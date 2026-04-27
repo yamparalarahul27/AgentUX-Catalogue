@@ -98,8 +98,7 @@ export function useCatalogueFamilyActions({
     setProjects((previous) => previous.map((project) => (
       project.id === filterProject ? { ...project, primary_group: group } : project
     )));
-    setToast({ message: group ? `Primary group set to "${group}"` : 'Primary group cleared', type: 'success' });
-  }, [filterProject, setProjects, setToast]);
+  }, [filterProject, setProjects]);
 
   const handleVsGroupsChange = useCallback(async (groups: string[]) => {
     if (!filterProject) return;
@@ -371,6 +370,66 @@ export function useCatalogueFamilyActions({
     setToast({ message: 'Variant image replaced', type: 'success' });
   }, [screenshots, setScreenshots, setToast, userId]);
 
+  const handleSetReference = useCallback(async (
+    screenshotId: string,
+    input: { file: File | null; label: string | null },
+  ) => {
+    const screenshot = screenshots.find((item) => item.id === screenshotId);
+    if (!screenshot) return false;
+
+    const normalizedLabel = input.label?.trim() || null;
+    let nextStoragePath = screenshot.reference_storage_path;
+    let nextUrl = screenshot.reference_url;
+
+    if (input.file) {
+      const compressed = await compressImage(input.file);
+      const safeName = input.file.name.replace(/\s+/g, '-');
+      nextStoragePath = `${userId}/${screenshot.project_id}/references/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from('screenshots')
+        .upload(nextStoragePath, compressed, { upsert: true });
+
+      if (uploadError) {
+        setToast({ message: `Reference upload failed: ${uploadError.message}`, type: 'error' });
+        return false;
+      }
+
+      nextUrl = supabase.storage.from('screenshots').getPublicUrl(nextStoragePath).data.publicUrl;
+    }
+
+    const patch: Pick<ScreenshotNode, 'reference_label' | 'reference_storage_path' | 'reference_url'> = {
+      reference_label: normalizedLabel,
+      reference_storage_path: nextStoragePath,
+      reference_url: nextUrl,
+    };
+
+    const { error } = await supabase.from('screenshots').update(patch).eq('id', screenshotId);
+    if (error) {
+      setToast({ message: `Could not update reference details: ${error.message}`, type: 'error' });
+      return false;
+    }
+
+    setScreenshots((previous) => previous.map((item) => (
+      item.id === screenshotId ? { ...item, ...patch } : item
+    )));
+
+    if (input.file && screenshot.reference_storage_path && screenshot.reference_storage_path !== nextStoragePath) {
+      const { error: cleanupError } = await supabase.storage
+        .from('screenshots')
+        .remove([screenshot.reference_storage_path]);
+      if (cleanupError) {
+        setToast({
+          message: `Reference updated, but old file cleanup failed: ${cleanupError.message}`,
+          type: 'info',
+        });
+        return true;
+      }
+    }
+
+    setToast({ message: input.file ? 'Reference updated' : 'Reference label updated', type: 'success' });
+    return true;
+  }, [screenshots, setScreenshots, setToast, userId]);
+
   const handleRemoveReference = useCallback(async (screenshotId: string) => {
     const screenshot = screenshots.find((item) => item.id === screenshotId);
     if (!screenshot) return false;
@@ -429,6 +488,7 @@ export function useCatalogueFamilyActions({
     handlePrimaryGroupChange,
     handleRenameFamily,
     handleRemoveReference,
+    handleSetReference,
     handleReplaceImage,
     handleSetFlowLabel,
     handleUpdateVariantDetails,

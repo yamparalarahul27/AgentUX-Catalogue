@@ -1,0 +1,334 @@
+// Stack view — vertical feed of review cards
+// Replaces List view. Each card: screenshot left, meta + comments thread right.
+
+.catalogue-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+}
+
+.catalogue-stack__section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.catalogue-stack__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.catalogue-stack__card {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
+  gap: 0;
+  align-items: stretch;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  background: #111113;
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    border-color: #33333a;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  }
+
+  &.is-selected {
+    border-color: rgba(99, 102, 241, 0.55);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.25), 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
+// Left — screenshot
+
+.catalogue-stack__media {
+  position: relative;
+  min-height: 320px;
+  background: #0a0a0c;
+  border-right: 1px solid #27272a;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.catalogue-stack__image {
+  position: relative;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  min-height: 320px;
+  max-height: 520px;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+  }
+}
+
+.catalogue-stack__image-placeholder {
+  color: #52525b;
+  font-size: 13px;
+}
+
+.catalogue-stack__select {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
+  background: rgba(9, 9, 11, 0.8);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #6366f1;
+  }
+
+  &.is-selected {
+    background: #6366f1;
+    border-color: #6366f1;
+  }
+}
+
+.catalogue-stack__pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+// Right — review panel
+
+.catalogue-stack__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  min-width: 0;
+}
+
+.catalogue-stack__panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid #1f1f23;
+  padding-bottom: 12px;
+}
+
+.catalogue-stack__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.catalogue-stack__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #f4f4f5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.catalogue-stack__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.catalogue-stack__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid #2f2f37;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #d4d4d8;
+  font-size: 11px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogue-stack__chip--flow {
+  background: rgba(99, 102, 241, 0.12);
+  color: #c7d2fe;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.catalogue-stack__chip--variant {
+  color: #a1a1aa;
+}
+
+.catalogue-stack__counters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a1a1aa;
+  font-size: 12px;
+}
+
+.catalogue-stack__counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.catalogue-stack__thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 60px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #2a2a31; border-radius: 4px; }
+}
+
+.catalogue-stack__thread-empty,
+.catalogue-stack__thread-error {
+  margin: 0;
+  padding: 10px 0;
+  color: #71717a;
+  font-size: 12px;
+}
+
+.catalogue-stack__thread-error {
+  color: #fca5a5;
+}
+
+.catalogue-stack__comment {
+  border: 1px solid #2a2a31;
+  border-radius: 12px;
+  background: #0f0f12;
+  padding: 10px 12px;
+
+  &.is-resolved {
+    opacity: 0.6;
+  }
+}
+
+.catalogue-stack__comment-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.catalogue-stack__comment-email {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e4e4e7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.catalogue-stack__comment-time {
+  margin-left: auto;
+  color: #71717a;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.catalogue-stack__comment-text {
+  margin: 0;
+  color: #d4d4d8;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.catalogue-stack__comment-resolved {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 10px;
+  color: #86efac;
+  letter-spacing: 0.03em;
+}
+
+.catalogue-stack__composer {
+  border-top: 1px solid #1f1f23;
+  padding-top: 12px;
+  display: flex;
+}
+
+.catalogue-stack__open-btn {
+  width: 100%;
+  justify-content: center;
+  font-size: 12px;
+}
+
+// Responsive — stack vertically on narrow widths
+
+@media (max-width: 860px) {
+  .catalogue-stack__card {
+    grid-template-columns: 1fr;
+  }
+
+  .catalogue-stack__media {
+    border-right: 0;
+    border-bottom: 1px solid #27272a;
+    min-height: 260px;
+  }
+
+  .catalogue-stack__image {
+    min-height: 260px;
+    max-height: 360px;
+  }
+
+  .catalogue-stack__thread {
+    max-height: 240px;
+  }
+}

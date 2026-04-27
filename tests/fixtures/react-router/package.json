@@ -1,6 +1,0 @@
-{
-  "name": "test-react-router-app",
-  "dependencies": {
-    "react-router-dom": "^6.0.0"
-  }
-}

@@ -153,6 +153,24 @@ cd designer
 npm run build
 ```
 
+## Authenticated Webapp -> Figma Capture
+
+For teams documenting real product journeys (auth, trade, wallet, history) into Figma at `1512/720/320`:
+
+- SOP: [`docs/bulk-figma-capture-sop.md`](docs/bulk-figma-capture-sop.md)
+- Skill prompt: [`docs/bulk-figma-capture-skill.md`](docs/bulk-figma-capture-skill.md)
+- Script template: [`scripts/bulk_webapp_capture_template.cjs`](scripts/bulk_webapp_capture_template.cjs)
+
+Typical usage:
+
+```bash
+URL=https://early.bulk.trade \
+PROFILE_DIR=/tmp/bulk-trade-keepalive \
+PAUSE_FOR_LOGIN=1 \
+KEEP_OPEN=1 \
+node scripts/bulk_webapp_capture_template.cjs
+```
+
 ## Deployment Notes
 
 - Vercel config is in `vercel.json`

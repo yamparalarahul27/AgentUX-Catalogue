@@ -12,8 +12,11 @@ import './styles/catalogue-gallery-zoom.scss';
 import './styles/catalogue-lightbox-annotations.scss';
 import './styles/catalogue-team.scss';
 import './styles/catalogue-videos.scss';
-import './styles/canvas-enhancements.scss';
+import './styles/catalogue-header-menu.scss';
 import './styles/catalogue-filter-sheet.scss';
+import './styles/catalogue-quick-panel.scss';
+import './styles/catalogue-stack.scss';
+import './styles/catalogue-skeleton.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

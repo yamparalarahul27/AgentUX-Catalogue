@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
+import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import { CatalogueGridDensity } from './CatalogueGridDensity';
 import { CatalogueFilterSheet } from './CatalogueFilterSheet';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
@@ -18,29 +20,25 @@ interface CatalogueToolbarProps {
   filterPlatform: string | null;
   filterTheme: string | null;
   filterWebPreset: string | null;
+  gridDensity: GridDensity;
   groups: string[];
   isSortLocked: boolean;
   onFilterGroupChange: (value: string | null) => void;
   onFilterFlowChange: (value: string | null) => void;
+  onGridDensityChange: (value: GridDensity) => void;
   onFilterMobileOsChange: (value: string | null) => void;
   onFilterPlatformChange: (value: string | null) => void;
   onFilterThemeChange: (value: string | null) => void;
   onFilterWebPresetChange: (value: string | null) => void;
-  onPrimaryGroupChange: (value: string | null) => void;
   onQuickUploadClick: () => void;
   onSearchChange: (value: string) => void;
   onSortByChange: (value: CatalogueSortOption) => void;
-  onUploadClick: () => void;
   onViewByChange: (value: CatalogueViewBy) => void;
   onViewModeChange: (value: CatalogueViewMode) => void;
-  onVsGroupsChange: (value: string[]) => void;
-  primaryGroup: string | null;
   searchQuery: string;
-  showGroupConfig: boolean;
   sortBy: CatalogueSortOption;
   viewBy: CatalogueViewBy;
   viewMode: CatalogueViewMode;
-  vsGroups: string[];
 }
 
 type ToolbarFilterKey =
@@ -105,31 +103,26 @@ export function CatalogueToolbar({
   filterPlatform,
   filterTheme,
   filterWebPreset,
+  gridDensity,
   groups,
   isSortLocked,
   onFilterGroupChange,
   onFilterFlowChange,
+  onGridDensityChange,
   onFilterMobileOsChange,
   onFilterPlatformChange,
   onFilterThemeChange,
   onFilterWebPresetChange,
-  onPrimaryGroupChange,
   onQuickUploadClick,
   onSearchChange,
   onSortByChange,
-  onUploadClick,
   onViewByChange,
   onViewModeChange,
-  onVsGroupsChange,
-  primaryGroup,
   searchQuery,
-  showGroupConfig,
   sortBy,
   viewBy,
   viewMode,
-  vsGroups,
 }: CatalogueToolbarProps) {
-  const nonPrimaryGroups = groups.filter((group) => group !== primaryGroup);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
@@ -259,19 +252,10 @@ export function CatalogueToolbar({
     return visibleFilters.has(key);
   }
 
-  function toggleVsGroup(group: string) {
-    if (vsGroups.includes(group)) {
-      onVsGroupsChange(vsGroups.filter((value) => value !== group));
-      return;
-    }
-    onVsGroupsChange([...vsGroups, group]);
-  }
-
   return (
     <div className="catalogue-toolbar-wrapper">
       <div className="catalogue-toolbar">
         <div className="catalogue-toolbar-left">
-          {/* Desktop search - hidden on mobile */}
           <div className="catalogue-search catalogue-search--desktop">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" />
@@ -285,7 +269,6 @@ export function CatalogueToolbar({
             />
           </div>
 
-          {/* Desktop filter picker */}
           <button
             ref={triggerRef}
             type="button"
@@ -302,7 +285,7 @@ export function CatalogueToolbar({
               className="catalogue-toolbar--desktop-only"
               value={filterGroup}
               placeholder="Group"
-              options={groups.map((group) => ({ value: group, label: group, badge: group === primaryGroup ? 'Primary' : undefined }))}
+              options={groups.map((group) => ({ value: group, label: group }))}
               onChange={onFilterGroupChange}
             />
           )}
@@ -371,48 +354,53 @@ export function CatalogueToolbar({
             />
           )}
 
-          {/* Mobile: filter icon pill — hidden on desktop */}
-          <button
-            type="button"
-            className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
-            onClick={() => setFilterSheetOpen(true)}
-            title="Filter"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="4" y1="6" x2="20" y2="6" />
-              <line x1="4" y1="12" x2="20" y2="12" />
-              <line x1="4" y1="18" x2="20" y2="18" />
-              <circle cx="8" cy="6" r="2" fill="currentColor" />
-              <circle cx="16" cy="12" r="2" fill="currentColor" />
-              <circle cx="10" cy="18" r="2" fill="currentColor" />
-            </svg>
-            {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
-          </button>
+          <>
+            {/* Mobile: filter icon pill — hidden on desktop */}
+            <button
+              type="button"
+              className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
+              onClick={() => setFilterSheetOpen(true)}
+              title="Filter"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+                <circle cx="8" cy="6" r="2" fill="currentColor" />
+                <circle cx="16" cy="12" r="2" fill="currentColor" />
+                <circle cx="10" cy="18" r="2" fill="currentColor" />
+              </svg>
+              {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
+            </button>
 
-          {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
-          <Dropdown
-            value={sortBy}
-            placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
-            options={[
-              { value: 'date-desc', label: 'Date: Latest' },
-              { value: 'date-asc', label: 'Date: Oldest' },
-              { value: 'name-asc', label: 'Name: A-Z' },
-            ]}
-            onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
-            disabled={isSortLocked}
-            className="catalogue-sort-dropdown"
-          />
+            {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
+            <Dropdown
+              value={sortBy}
+              placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
+              options={[
+                { value: 'date-desc', label: 'Date: Latest' },
+                { value: 'date-desc-global', label: 'Date: Latest (All groups)' },
+                { value: 'date-asc', label: 'Date: Oldest' },
+                { value: 'name-asc', label: 'Name: A-Z' },
+              ]}
+              onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
+              disabled={isSortLocked}
+              className="catalogue-sort-dropdown"
+            />
 
-          <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
+            <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
+
+            {viewMode === 'grid' && (
+              <CatalogueGridDensity value={gridDensity} onChange={onGridDensityChange} />
+            )}
+          </>
+
         </div>
 
         <div className="catalogue-toolbar-right">
           {/* Desktop buttons - hidden on mobile */}
-          <button className="btn-secondary catalogue-toolbar--desktop-only" onClick={onQuickUploadClick}>
+          <button className="btn-primary catalogue-toolbar--desktop-only" onClick={onQuickUploadClick}>
             Quick Upload
-          </button>
-          <button className="btn-primary catalogue-toolbar--desktop-only" onClick={onUploadClick}>
-            + Upload
           </button>
 
           {/* Mobile pills - hidden on desktop */}
@@ -423,7 +411,12 @@ export function CatalogueToolbar({
             </svg>
             {searchQuery && <span className="catalogue-toolbar-pill__dot" />}
           </button>
-          <button type="button" className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only" onClick={onUploadClick}>
+          <button
+            type="button"
+            className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only"
+            onClick={onQuickUploadClick}
+            title="Quick upload"
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
@@ -505,42 +498,6 @@ export function CatalogueToolbar({
         onApply={handleApplyFilters}
       />
 
-      {showGroupConfig && (
-        <div className="catalogue-group-config">
-          <div className="catalogue-group-config-row">
-            <label className="catalogue-group-config-label">Primary</label>
-            <Dropdown
-              value={primaryGroup}
-              placeholder="Select primary group..."
-              options={groups.map((group) => ({ value: group, label: group }))}
-              onChange={onPrimaryGroupChange}
-            />
-          </div>
-
-          {primaryGroup && nonPrimaryGroups.length > 0 && (
-            <div className="catalogue-group-config-row">
-              <label className="catalogue-group-config-label">Vs</label>
-              <div className="catalogue-vs-chips">
-                {nonPrimaryGroups.map((group) => (
-                  <button
-                    key={group}
-                    className={`catalogue-vs-chip ${vsGroups.includes(group) ? 'active' : ''}`}
-                    onClick={() => toggleVsGroup(group)}
-                  >
-                    {group}
-                    {vsGroups.includes(group) && (
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

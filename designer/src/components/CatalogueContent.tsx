@@ -1,30 +1,40 @@
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
+import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
-import { CatalogueFamilyListView } from './CatalogueFamilyListView';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { CatalogueScrollSentinel } from './CatalogueScrollSentinel';
+import { CatalogueSkeletonList } from './CatalogueSkeletonCard';
+import { CatalogueStackView } from './CatalogueStackView';
 
 interface CatalogueContentProps {
   activeVariantKeys: Record<string, string>;
+  canEdit: boolean;
   filterFlow: string | null;
   filterGroup: string | null;
   filterMobileOs: string | null;
   filterPlatform: string | null;
   filterTheme: string | null;
   filterWebPreset: string | null;
+  gridDensity: GridDensity;
   groupedFamilies: Record<string, CatalogueFamilyView[]>;
+  hasMore: boolean;
   loading: boolean;
-  primaryGroup: string | null;
+  loadingMore: boolean;
+  onLoadMore: () => void;
   searchQuery: string;
   selected: Set<string>;
   viewMode: CatalogueViewMode;
   filteredFamilies: CatalogueFamilyView[];
-  vsGroups: string[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
+  onAnnotationStateChange: (screenshotId: string, metadata: Record<string, unknown>) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
+  onCommentCountChange: (screenshotId: string, delta: number) => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenPreview: (familyId: string) => void;
   onOpenPreviewAndEdit: (familyId: string) => void;
+  onRequireAuth?: () => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onRemoveReference: (screenshotId: string) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
@@ -40,30 +50,37 @@ interface CatalogueContentProps {
       web_preset_key?: string | null;
     },
   ) => Promise<boolean>;
+  userEmail: string;
   webPresets: { key: string; label: string; width: number }[];
 }
 
 export function CatalogueContent({
   activeVariantKeys,
+  canEdit,
   filterFlow,
   filterGroup,
   filterMobileOs,
   filterPlatform,
   filterTheme,
   filterWebPreset,
+  gridDensity,
   groupedFamilies,
+  hasMore,
   loading,
-  primaryGroup,
+  loadingMore,
+  onLoadMore,
   searchQuery,
   selected,
   viewMode,
   filteredFamilies,
-  vsGroups,
   onActiveVariantChange,
+  onAnnotationStateChange,
   onChangeFamilyGroup,
+  onCommentCountChange,
   onDeleteFamily,
   onOpenPreview,
   onOpenPreviewAndEdit,
+  onRequireAuth,
   onRenameFamily,
   onRemoveReference,
   onReplaceVariantImage,
@@ -71,6 +88,7 @@ export function CatalogueContent({
   onToggleGroupSelect,
   onToggleSelect,
   onUpdateVariantDetails,
+  userEmail,
   webPresets,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
@@ -84,12 +102,9 @@ export function CatalogueContent({
   );
 
   if (loading) {
-    return (
-      <div className="empty-state">
-        <div className="loading-spinner" />
-        <p>Loading catalogue...</p>
-      </div>
-    );
+    const skeletonVariant = viewMode === 'stack' ? 'stack' : 'grid';
+    const skeletonCount = viewMode === 'stack' ? 3 : 8;
+    return <CatalogueSkeletonList variant={skeletonVariant} count={skeletonCount} />;
   }
 
   if (filteredFamilies.length === 0) {
@@ -106,22 +121,19 @@ export function CatalogueContent({
     );
   }
 
-  if (viewMode === 'list') {
+  if (viewMode === 'stack') {
     return (
-      <CatalogueFamilyListView
-        activeVariantKeys={activeVariantKeys}
-        families={filteredFamilies}
-        selected={selected}
-        onActiveVariantChange={onActiveVariantChange}
-        onChangeFamilyGroup={onChangeFamilyGroup}
-        onDeleteFamily={onDeleteFamily}
-        onOpenPreview={onOpenPreview}
-        onRenameFamily={onRenameFamily}
-        onReplaceVariantImage={onReplaceVariantImage}
-        onToggleSelect={onToggleSelect}
-        onUpdateVariantDetails={onUpdateVariantDetails}
-        webPresets={webPresets}
-      />
+      <>
+        <CatalogueStackView
+          activeVariantKeys={activeVariantKeys}
+          groupedFamilies={groupedFamilies}
+          selected={selected}
+          onOpenPreview={onOpenPreview}
+          onToggleGroupSelect={onToggleGroupSelect}
+          onToggleSelect={onToggleSelect}
+        />
+        <CatalogueScrollSentinel hasMore={hasMore} loadingMore={loadingMore} onLoadMore={onLoadMore} />
+      </>
     );
   }
 
@@ -129,16 +141,20 @@ export function CatalogueContent({
     return (
       <CatalogueGalleryView
         activeVariantKeys={activeVariantKeys}
+        canEdit={canEdit}
         families={filteredFamilies}
         onActiveVariantChange={onActiveVariantChange}
+        onAnnotationStateChange={onAnnotationStateChange}
         onChangeFamilyGroup={onChangeFamilyGroup}
+        onCommentCountChange={onCommentCountChange}
         onDeleteFamily={onDeleteFamily}
-        onOpenPreview={onOpenPreview}
+        onRequireAuth={onRequireAuth}
         onRenameFamily={onRenameFamily}
         onRemoveReference={onRemoveReference}
         onReplaceVariantImage={onReplaceVariantImage}
         onSetFlowLabel={onSetFlowLabel}
         onUpdateVariantDetails={onUpdateVariantDetails}
+        userEmail={userEmail}
         webPresets={webPresets}
       />
     );
@@ -165,25 +181,32 @@ export function CatalogueContent({
                     : <rect x="3" y="3" width="18" height="18" rx="2" />}
                 </svg>
               </button>
-              {groupName}
+              <CatalogueGroupLabel
+                group={groupName}
+                projectId={families[0]?.project_id ?? null}
+                fallback="Ungrouped"
+                iconSize={32}
+              />
               <span className="catalogue-section-count">{families.length}</span>
-              {primaryGroup === groupName && <span className="catalogue-badge catalogue-badge-primary">Primary</span>}
-              {vsGroups.includes(groupName) && <span className="catalogue-badge catalogue-badge-vs">Vs</span>}
             </h3>
 
-            <div className="catalogue-grid catalogue-grid--families">
+            <div
+              className="catalogue-grid catalogue-grid--families"
+              {...(gridDensity !== 'auto' ? { 'data-density': gridDensity } : {})}
+            >
               {families.map((family) => (
                 <CatalogueFamilyCard
                   key={family.id}
                   family={family}
                   activeVariantKey={activeVariantKeys[family.id] ?? null}
                   flowName={family.flow_label}
-                  isPrimary={Boolean(primaryGroup && family.group === primaryGroup)}
+                  isPrimary={false}
                   isSelected={selected.has(family.id)}
-                  isVs={vsGroups.includes(family.group || '')}
+                  isVs={false}
                   onDeleteFamily={onDeleteFamily}
                   onOpenPreview={onOpenPreview}
                   onOpenPreviewAndEdit={onOpenPreviewAndEdit}
+                  onRenameFamily={onRenameFamily}
                   onReplaceVariantImage={onReplaceVariantImage}
                   onToggleSelect={onToggleSelect}
                 />
@@ -192,6 +215,7 @@ export function CatalogueContent({
           </section>
         );
       })}
+      <CatalogueScrollSentinel hasMore={hasMore} loadingMore={loadingMore} onLoadMore={onLoadMore} />
     </div>
   );
 }

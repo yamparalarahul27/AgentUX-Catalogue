@@ -1,10 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
 import { getGroupColor } from '../lib/naming';
 import { ConfirmModal } from './ConfirmModal';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { ThumbHashImage } from './ThumbHashImage';
 
 interface CatalogueFamilyCardProps {
   family: CatalogueFamilyView;
@@ -16,6 +18,7 @@ interface CatalogueFamilyCardProps {
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenPreview: (familyId: string) => void;
   onOpenPreviewAndEdit: (familyId: string) => void;
+  onRenameFamily: (familyId: string, newName: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onToggleSelect: (familyId: string) => void;
 }
@@ -30,19 +33,36 @@ export function CatalogueFamilyCard({
   onDeleteFamily,
   onOpenPreview,
   onOpenPreviewAndEdit,
+  onRenameFamily,
   onReplaceVariantImage,
   onToggleSelect,
 }: CatalogueFamilyCardProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(family.name);
   const activeVariant = useMemo(
     () => getActiveFamilyVariant(family, activeVariantKey),
     [activeVariantKey, family],
   );
   const screenshot = activeVariant?.screenshot ?? null;
+  const imageUrl = screenshot?.image_url ?? '';
   const groupColor = getGroupColor(family.group);
   const platform = screenshot?.platform;
+  const [isImageLoading, setIsImageLoading] = useState(Boolean(imageUrl));
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    if (!imageUrl) {
+      setIsImageLoading(false);
+      setHasImageError(false);
+      return;
+    }
+
+    setIsImageLoading(true);
+    setHasImageError(false);
+  }, [imageUrl, screenshot?.id]);
 
   async function confirmDelete() {
     setIsDeleting(true);
@@ -79,8 +99,30 @@ export function CatalogueFamilyCard({
 
           <button type="button" className="catalogue-family-card__preview" onClick={() => onOpenPreview(family.id)}>
             <div className="catalogue-card-image">
-              {screenshot?.image_url ? (
-                <img src={screenshot.image_url} alt={`${family.name} ${activeVariant?.label || ''}`} draggable={false} />
+              {imageUrl && !hasImageError ? (
+                <>
+                  {isImageLoading && (
+                    <span
+                      className="catalogue-card-image-progress"
+                      role="progressbar"
+                      aria-label="Loading screenshot preview"
+                      aria-valuetext="Loading"
+                    >
+                      <span className="catalogue-card-image-progress__bar" />
+                    </span>
+                  )}
+                  <ThumbHashImage
+                    src={imageUrl}
+                    thumbHash={screenshot?.thumb_hash ?? null}
+                    alt={`${family.name} ${activeVariant?.label || ''}`}
+                    className={isImageLoading ? 'is-loading' : 'is-ready'}
+                    onLoad={() => setIsImageLoading(false)}
+                    onError={() => {
+                      setIsImageLoading(false);
+                      setHasImageError(true);
+                    }}
+                  />
+                </>
               ) : (
                 <div className="catalogue-card-placeholder">No image</div>
               )}
@@ -172,15 +214,45 @@ export function CatalogueFamilyCard({
 
         <div className="catalogue-card-info">
           <div className="catalogue-family-card__head">
-            <button type="button" className="catalogue-family-card__name" onClick={() => onOpenPreview(family.id)}>
-              {family.name}
-            </button>
+            {isEditing ? (
+              <input
+                className="catalogue-card-edit"
+                type="text"
+                value={editValue}
+                autoFocus
+                onChange={(event) => setEditValue(event.target.value)}
+                onBlur={() => {
+                  const trimmed = editValue.trim();
+                  if (trimmed && trimmed !== family.name) {
+                    void onRenameFamily(family.id, trimmed);
+                  }
+                  setIsEditing(false);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') event.currentTarget.blur();
+                  if (event.key === 'Escape') { setEditValue(family.name); setIsEditing(false); }
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                className="catalogue-family-card__name"
+                onClick={() => onOpenPreview(family.id)}
+                onDoubleClick={(event) => { event.preventDefault(); setEditValue(family.name); setIsEditing(true); }}
+              >
+                {family.name}
+              </button>
+            )}
           </div>
 
           <div className="catalogue-card-meta">
             <div className="catalogue-card-group">
               <span className="catalogue-card-dot" style={{ background: groupColor }} />
-              <span className="catalogue-family-card__group">{family.group || 'No group'}</span>
+              <CatalogueGroupLabel
+                className="catalogue-family-card__group"
+                group={family.group}
+                projectId={family.project_id}
+              />
             </div>
             <div className="catalogue-card-meta-right">
               {platform === 'mobile' && (

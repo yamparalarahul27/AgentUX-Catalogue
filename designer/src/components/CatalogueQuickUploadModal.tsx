@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { CatalogueQuickUploadPanel } from './CatalogueQuickUploadPanel';
@@ -6,8 +7,16 @@ import { Dropdown } from './Dropdown';
 interface QuickUploadQueuePreviewItem {
   id: string;
   fileName: string;
+  previewUrl: string;
   parsedName: string;
   parsedGroup: string | null;
+  parsedSequence: number | null;
+}
+
+interface WebPresetOption {
+  key: string;
+  label: string;
+  width: number;
 }
 
 interface CatalogueQuickUploadModalProps {
@@ -21,7 +30,16 @@ interface CatalogueQuickUploadModalProps {
   quickUploadProjectGroups: string[];
   quickUploadQueue: QuickUploadQueuePreviewItem[];
   uploading: boolean;
+  platform: 'web' | 'mobile' | null;
+  theme: 'light' | 'dark' | null;
+  webPresetKey: string | null;
+  webPresets: WebPresetOption[];
+  mobileOs: 'ios' | 'android' | null;
   onClose: () => void;
+  onPlatformChange: (value: 'web' | 'mobile' | null) => void;
+  onThemeChange: (value: 'light' | 'dark' | null) => void;
+  onWebPresetKeyChange: (value: string | null) => void;
+  onMobileOsChange: (value: 'ios' | 'android' | null) => void;
   onQuickUploadFlowLabelChange: (value: string) => void;
   onQuickUploadProjectChange: (value: string | null) => void;
   onQuickUploadFilesSelected: (files: File[]) => void;
@@ -33,9 +51,23 @@ interface CatalogueQuickUploadModalProps {
   onQuickUploadUploadAll: () => void;
 }
 
-export function CatalogueQuickUploadModal({
+function useIsMobile(breakpoint = 860) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= breakpoint);
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    function handler(event: MediaQueryListEvent) {
+      setIsMobile(event.matches);
+    }
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [breakpoint]);
+
+  return isMobile;
+}
+
+function QuickUploadContent({
   flowLabel,
-  isOpen,
   projects,
   projectId,
   quickUploadGroupMode,
@@ -44,7 +76,16 @@ export function CatalogueQuickUploadModal({
   quickUploadProjectGroups,
   quickUploadQueue,
   uploading,
+  platform,
+  theme,
+  webPresetKey,
+  webPresets,
+  mobileOs,
   onClose,
+  onPlatformChange,
+  onThemeChange,
+  onWebPresetKeyChange,
+  onMobileOsChange,
   onQuickUploadFlowLabelChange,
   onQuickUploadProjectChange,
   onQuickUploadFilesSelected,
@@ -54,54 +95,104 @@ export function CatalogueQuickUploadModal({
   onQuickUploadRemoveQueuedFile,
   onQuickUploadClearQueue,
   onQuickUploadUploadAll,
-}: CatalogueQuickUploadModalProps) {
+  showCloseButton,
+}: Omit<CatalogueQuickUploadModalProps, 'isOpen'> & { showCloseButton?: boolean }) {
+  return (
+    <>
+      <div className="catalogue-quick-panel-header">
+        <h3 id="catalogue-quick-upload-title">Quick Upload</h3>
+        {showCloseButton && (
+          <button
+            type="button"
+            className="catalogue-quick-panel-close"
+            onClick={onClose}
+            aria-label="Close upload panel"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+      <p className="catalogue-upload-subtitle">
+        Name files as <code>{'{sequence}-{flow}-{screen-name}.png'}</code> (e.g. <code>01-deposit-select-coin.png</code>). Queue files, then upload all.
+      </p>
+
+      <Dropdown
+        className="catalogue-upload-project-dropdown"
+        value={projectId}
+        placeholder="Project (optional)"
+        options={projects.map((project) => ({ value: project.id, label: project.name }))}
+        onChange={onQuickUploadProjectChange}
+      />
+
+      <CatalogueQuickUploadPanel
+        flowLabel={flowLabel}
+        uploading={uploading}
+        quickUploadGroupMode={quickUploadGroupMode}
+        quickUploadExistingGroup={quickUploadExistingGroup}
+        quickUploadNewGroup={quickUploadNewGroup}
+        quickUploadProjectGroups={quickUploadProjectGroups}
+        quickUploadQueue={quickUploadQueue}
+        platform={platform}
+        theme={theme}
+        webPresetKey={webPresetKey}
+        webPresets={webPresets}
+        mobileOs={mobileOs}
+        onPlatformChange={onPlatformChange}
+        onThemeChange={onThemeChange}
+        onWebPresetKeyChange={onWebPresetKeyChange}
+        onMobileOsChange={onMobileOsChange}
+        onQuickUploadFlowLabelChange={onQuickUploadFlowLabelChange}
+        onQuickUploadFilesSelected={onQuickUploadFilesSelected}
+        onQuickUploadGroupModeChange={onQuickUploadGroupModeChange}
+        onQuickUploadExistingGroupChange={onQuickUploadExistingGroupChange}
+        onQuickUploadNewGroupChange={onQuickUploadNewGroupChange}
+        onQuickUploadRemoveQueuedFile={onQuickUploadRemoveQueuedFile}
+        onQuickUploadClearQueue={onQuickUploadClearQueue}
+        onQuickUploadUploadAll={onQuickUploadUploadAll}
+      />
+    </>
+  );
+}
+
+export function CatalogueQuickUploadModal(props: CatalogueQuickUploadModalProps) {
+  const { isOpen, onClose } = props;
+  const isMobile = useIsMobile();
+
   if (!isOpen) {
     return null;
   }
 
-  return createPortal(
-    <div
-      className="catalogue-upload-overlay"
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 1300 }}
-    >
+  // Mobile: bottom sheet via portal (existing behavior)
+  if (isMobile) {
+    return createPortal(
       <div
-        className="catalogue-upload-modal catalogue-upload-modal-quick"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="catalogue-quick-upload-title"
-        onClick={(event) => event.stopPropagation()}
+        className="catalogue-upload-overlay"
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, zIndex: 1300 }}
       >
-        <h3 id="catalogue-quick-upload-title">Quick Upload</h3>
-        <p className="catalogue-upload-subtitle">Project selection is optional. Queue files first, then upload all.</p>
+        <div
+          className="catalogue-upload-modal catalogue-upload-modal-quick"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="catalogue-quick-upload-title"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <QuickUploadContent {...props} showCloseButton={false} />
+        </div>
+      </div>,
+      document.body,
+    );
+  }
 
-        <Dropdown
-          className="catalogue-upload-project-dropdown"
-          value={projectId}
-          placeholder="Project (optional)"
-          options={projects.map((project) => ({ value: project.id, label: project.name }))}
-          onChange={onQuickUploadProjectChange}
-        />
-
-        <CatalogueQuickUploadPanel
-          flowLabel={flowLabel}
-          uploading={uploading}
-          quickUploadGroupMode={quickUploadGroupMode}
-          quickUploadExistingGroup={quickUploadExistingGroup}
-          quickUploadNewGroup={quickUploadNewGroup}
-          quickUploadProjectGroups={quickUploadProjectGroups}
-          quickUploadQueue={quickUploadQueue}
-          onQuickUploadFlowLabelChange={onQuickUploadFlowLabelChange}
-          onQuickUploadFilesSelected={onQuickUploadFilesSelected}
-          onQuickUploadGroupModeChange={onQuickUploadGroupModeChange}
-          onQuickUploadExistingGroupChange={onQuickUploadExistingGroupChange}
-          onQuickUploadNewGroupChange={onQuickUploadNewGroupChange}
-          onQuickUploadRemoveQueuedFile={onQuickUploadRemoveQueuedFile}
-          onQuickUploadClearQueue={onQuickUploadClearQueue}
-          onQuickUploadUploadAll={onQuickUploadUploadAll}
-        />
+  // Desktop: inline side panel
+  return (
+    <aside className="catalogue-quick-panel" role="complementary" aria-label="Quick Upload">
+      <div className="catalogue-quick-panel-inner">
+        <QuickUploadContent {...props} showCloseButton />
       </div>
-    </div>,
-    document.body,
+    </aside>
   );
 }

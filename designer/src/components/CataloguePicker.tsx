@@ -3,6 +3,7 @@ import type { ScreenshotNode } from '../types';
 import { supabase } from '../lib/supabase';
 import { getGroupColor } from '../lib/naming';
 import { Dropdown } from './Dropdown';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 
 interface CataloguePickerProps {
   projectId: string;
@@ -209,7 +210,7 @@ export function CataloguePicker({ projectId, flowId, userId: _userId, onAdd, onC
                     {s.group && (
                       <span className="catalogue-picker-card-group">
                         <span className="catalogue-picker-dot" style={{ background: getGroupColor(s.group) }} />
-                        {s.group}
+                        <CatalogueGroupLabel group={s.group} projectId={s.project_id} />
                       </span>
                     )}
                   </div>

@@ -1,97 +1,14 @@
 {
-  "name": "@yamparala27/agentux",
-  "version": "0.1.0",
-  "description": "AgentUX: UX flow workspace for AI-built apps. Includes a React dev module plus Flow Builder and Catalogue web tools.",
+  "name": "agentux-catalogue",
+  "version": "1.0.0",
+  "description": "AgentUX Catalogue: Screenshot library, video references, and link collection for product teams.",
+  "private": true,
   "type": "module",
-  "bin": {
-    "agentux": "./dist/cli.js"
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./analysis": {
-      "types": "./dist/analysis/index.d.ts",
-      "import": "./dist/analysis/index.js",
-      "require": "./dist/analysis/index.cjs"
-    }
-  },
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "npm run check:max-lines && tsup",
-    "dev": "tsup --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src/",
-    "check:max-lines": "node scripts/check-max-lines.mjs src designer/src --max 700",
-    "quality:catalogue:inventory": "node scripts/catalogue-quality-inventory.mjs",
-    "quality:catalogue:run": "node scripts/catalogue-quality-runner.mjs",
-    "quality:catalogue": "npm run quality:catalogue:inventory && npm run quality:catalogue:run",
-    "quality:catalogue:report": "if [ -f docs/local/catalogue-quality-report.md ]; then cat docs/local/catalogue-quality-report.md; else echo 'No catalogue quality report found. Run npm run quality:catalogue:run first.'; fi",
-    "prepack": "npm run build",
-    "pack:local": "node scripts/pack-local.mjs",
-    "prepublishOnly": "npm run build",
     "build:site": "cd designer && npm install && npm run build"
   },
-  "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
-  },
-  "dependencies": {
-    "@babel/generator": "^7.28.0",
-    "@babel/parser": "^7.27.0",
-    "@babel/traverse": "^7.27.0",
-    "@babel/types": "^7.27.0",
-    "@dagrejs/dagre": "^1.1.4",
-    "@xyflow/react": "^12.6.0"
-  },
-  "devDependencies": {
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/react": "^16.3.0",
-    "@types/babel__generator": "^7.27.0",
-    "@types/babel__traverse": "^7.28.0",
-    "@types/node": "^22.15.0",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
-    "agentation": "^3.0.2",
-    "eslint": "^10.1.0",
-    "jsdom": "^26.1.0",
-    "playwright": "^1.59.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "sass": "^1.87.0",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.0",
-    "typescript-eslint": "^8.57.1",
-    "vitest": "^3.1.0"
-  },
-  "keywords": [
-    "react",
-    "agentux",
-    "ux",
-    "flow-builder",
-    "catalogue",
-    "visualization",
-    "routes",
-    "navigation",
-    "developer-tools",
-    "ai-agents",
-    "mermaid",
-    "flowchart"
-  ],
   "engines": {
     "node": ">=18.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "license": "MIT",
   "repository": {

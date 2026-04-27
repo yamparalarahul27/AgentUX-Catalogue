@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-
 import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
+import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
 import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
+import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
+import { useCatalogueGuestGuards } from '../hooks/use-catalogue-guest-guards';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
+import { getAnnotationActivity } from '../lib/catalogue-activity';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
-import { DEFAULT_CATALOGUE_VIEW_MODE, parseCatalogueViewMode, type CatalogueViewMode } from '../lib/catalogue-view';
+import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
+import type { GridDensity } from '../lib/catalogue-helpers';
+import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
+import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
+import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
@@ -22,127 +29,148 @@ import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
 import { ConfirmModal } from './ConfirmModal';
 import { Toast } from './Toast';
-
 interface CatalogueProps {
   user: User;
   isGuest?: boolean;
   onRequestLogin: (email: string) => void;
 }
 
-const CATALOGUE_VIEW_MODE_KEY = 'catalogue:view-mode';
-
-type BulkAction = 'group' | null;
-type CatalogueSection = 'catalogue' | 'videos' | 'team';
-
-function defaultViewMode() {
-  try {
-    return parseCatalogueViewMode(window.localStorage.getItem(CATALOGUE_VIEW_MODE_KEY));
-  } catch {
-    return DEFAULT_CATALOGUE_VIEW_MODE;
-  }
-}
-
-function buildPresetUsage(screenshots: { web_preset_key: string | null }[]) {
-  return screenshots.reduce<Record<string, number>>((accumulator, screenshot) => {
-    if (!screenshot.web_preset_key) return accumulator;
-    accumulator[screenshot.web_preset_key] = (accumulator[screenshot.web_preset_key] || 0) + 1;
-    return accumulator;
-  }, {});
-}
-
+type CatalogueSection =
+  | 'catalogue'
+  | 'videos'
+  | 'team';
 export function Catalogue({
   user,
   isGuest = false,
   onRequestLogin,
 }: CatalogueProps) {
+  // Filter UI state (owns filter/sort/search/viewBy state, with debounced search)
+  const filterState = useCatalogueFilterState();
   const {
-    flowMap,
-    loading,
-    projects,
-    screenFamilies,
-    screenshots,
-    setProjects,
-    setScreenFamilies,
-    setScreenshots,
-  } = useCatalogueData();
-  const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
-  const {
-    allFlows,
-    allGroups,
-    allMobileOs,
-    allWebPresets,
+    filters,
     filterFlow,
     filterGroup,
     filterMobileOs,
     filterPlatform,
     filterTheme,
     filterWebPreset,
-    filteredFamilies,
-    groupedFamilies,
-    primaryGroup,
     searchQuery,
+    searchQueryDebounced,
     setFilterFlow,
     setFilterGroup,
     setFilterMobileOs,
     setFilterPlatform,
     setFilterTheme,
     setFilterWebPreset,
+    setSearchQuery,
     setSortBy,
     setViewBy,
-    setSearchQuery,
     sortBy,
-    isSortLocked,
     viewBy,
-    vsGroups,
-  } = useCatalogueFilters({
-    screenshots,
+  } = filterState;
+
+  // Paginated, server-filtered data
+  const {
+    flowMap,
+    hasMore,
+    loading,
+    loadingMore,
+    loadMore,
+    projects,
     screenFamilies,
-    webPresets,
+    screenshots,
+    setProjects,
+    setScreenFamilies,
+    setScreenshots,
+  } = useCatalogueData({
+    activeProjectId: null,
+    filters,
+    sortBy,
+    searchQuery: searchQueryDebounced,
   });
 
+  const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
+  const primaryGroup = projects[0]?.primary_group ?? null;
+  // Data is pre-scoped + pre-filtered by useCatalogueData
+  const scopedScreenshots = screenshots;
+  const scopedScreenFamilies = screenFamilies;
+  const { commentedScreenshotIds, screenshots: fullScopeScreenshots } = useCatalogueFullScope({
+    projects,
+    includeCommentedScreenshots: viewBy === 'comments-added',
+  });
+  const facetScreenshots = useMemo(() => {
+    if (viewBy === 'all') {
+      return fullScopeScreenshots;
+    }
+
+    if (viewBy === 'annotations-added') {
+      return fullScopeScreenshots.filter(
+        (screenshot) => getAnnotationActivity(screenshot.metadata).count > 0,
+      );
+    }
+
+    return fullScopeScreenshots.filter((screenshot) => commentedScreenshotIds.has(screenshot.id));
+  }, [commentedScreenshotIds, fullScopeScreenshots, viewBy]);
+
+  // Derivations over loaded (and already-filtered) screenshots
+  const {
+    allFlows,
+    allGroups,
+    allMobileOs,
+    allWebPresets,
+    filteredFamilies,
+    groupedFamilies,
+    isSortLocked,
+  } = useCatalogueFilters({
+    screenshots: scopedScreenshots,
+    facetScreenshots,
+    screenFamilies: scopedScreenFamilies,
+    webPresets,
+    sortBy,
+    viewBy,
+  });
   const [showSettings, setShowSettings] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<BulkAction>(null);
+  const [bulkAction, setBulkAction] = useState<'group' | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [bulkRenameOpen, setBulkRenameOpen] = useState(false);
   const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
+  const [gridDensity, setGridDensity] = useState<GridDensity>(defaultGridDensity);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const canViewTeamSection = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
-
   const allFamilies = useMemo(
-    () => buildCatalogueFamilies(screenshots, screenFamilies, presetByKey),
-    [presetByKey, screenFamilies, screenshots],
+    () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
+    [presetByKey, scopedScreenFamilies, scopedScreenshots],
   );
   const familyById = useMemo(
     () => Object.fromEntries(allFamilies.map((family) => [family.id, family])),
     [allFamilies],
   );
-  const presetUsage = useMemo(() => buildPresetUsage(screenshots), [screenshots]);
+  const presetUsage = useMemo(() => buildPresetUsage(scopedScreenshots), [scopedScreenshots]);
   const selectedVisibleCount = useMemo(
     () => filteredFamilies.filter((family) => selected.has(family.id)).length,
     [filteredFamilies, selected],
   );
   const previewFamily = previewFamilyId ? familyById[previewFamilyId] ?? null : null;
-
   const {
     handleAnnotationStateChange,
     handleChangeFamilyGroup,
     handleCommentCountChange,
     handleDeleteFamily,
-    handlePrimaryGroupChange,
     handleRenameFamily,
     handleRemoveReference,
+    handleSetReference,
     handleReplaceImage,
     handleSetFlowLabel,
     handleUpdateVariantDetails,
-    handleVsGroupsChange,
   } = useCatalogueFamilyActions({
     familyById,
-    filterProject: null,
+    filterProject: projects[0]?.id ?? null,
     flowMap,
     onFamilyDeleted: (familyId) => {
       setPreviewFamilyId((previous) => (previous === familyId ? null : previous));
@@ -154,8 +182,8 @@ export function Catalogue({
       });
     },
     projects,
-    screenFamilies,
-    screenshots,
+    screenFamilies: scopedScreenFamilies,
+    screenshots: scopedScreenshots,
     setProjects,
     setScreenFamilies,
     setScreenshots,
@@ -174,80 +202,48 @@ export function Catalogue({
   });
   const isAnyModalOpen = Boolean(
     upload.showUpload ||
-    upload.showQuickUpload ||
     showSettings ||
     previewFamily ||
     bulkAction ||
     confirmDeleteOpen ||
     showAuthPrompt,
   );
-
-  function requireEditAccess() {
-    if (!isGuest) return true;
-    setShowAuthPrompt(true);
-    return false;
-  }
-
-  async function guardMutation<T>(action: () => Promise<T>, fallback: T): Promise<T> {
-    if (!requireEditAccess()) return fallback;
-    return action();
-  }
-
-  function guardAction(action: () => void) {
-    if (!requireEditAccess()) return;
-    action();
-  }
-
-  async function handleGuestAwareDeleteFamily(familyId: string) {
-    await guardMutation(() => handleDeleteFamily(familyId), undefined);
-  }
-
-  async function handleGuestAwareRenameFamily(familyId: string, name: string) {
-    await guardMutation(() => handleRenameFamily(familyId, name), undefined);
-  }
-
-  async function handleGuestAwareChangeFamilyGroup(familyId: string, group: string | null) {
-    await guardMutation(() => handleChangeFamilyGroup(familyId, group), undefined);
-  }
-
-  async function handleGuestAwareReplaceImage(screenshotId: string, file: File) {
-    await guardMutation(() => handleReplaceImage(screenshotId, file), undefined);
-  }
-
-  async function handleGuestAwareSetFlowLabel(familyId: string, flowLabel: string | null) {
-    return guardMutation(() => handleSetFlowLabel(familyId, flowLabel), false);
-  }
-
-  async function handleGuestAwareUpdateVariantDetails(
-    screenshotId: string,
-    patch: {
-      mobile_os?: 'ios' | 'android' | null;
-      platform?: 'mobile' | 'web' | null;
-      theme?: 'light' | 'dark' | null;
-      web_preset_key?: string | null;
-    },
-  ) {
-    return guardMutation(() => handleUpdateVariantDetails(screenshotId, patch), false);
-  }
-
-  async function handleGuestAwareRemoveReference(screenshotId: string) {
-    return guardMutation(() => handleRemoveReference(screenshotId), false);
-  }
+  const {
+    guardAction,
+    requireEditAccess,
+    handleGuestAwareChangeFamilyGroup,
+    handleGuestAwareDeleteFamily,
+    handleGuestAwareRemoveReference,
+    handleGuestAwareRenameFamily,
+    handleGuestAwareReplaceImage,
+    handleGuestAwareSetFlowLabel,
+    handleGuestAwareSetReference,
+    handleGuestAwareUpdateVariantDetails,
+  } = useCatalogueGuestGuards({
+    isGuest,
+    onRequireAuth: () => setShowAuthPrompt(true),
+    handleChangeFamilyGroup,
+    handleDeleteFamily,
+    handleRemoveReference,
+    handleRenameFamily,
+    handleReplaceImage,
+    handleSetFlowLabel,
+    handleSetReference,
+    handleUpdateVariantDetails,
+  });
+  useEffect(() => {
+    persistViewMode(viewMode);
+  }, [viewMode]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(CATALOGUE_VIEW_MODE_KEY, viewMode);
-    } catch {
-      // ignore write errors
-    }
-  }, [viewMode]);
+    persistGridDensity(gridDensity);
+  }, [gridDensity]);
 
   useEffect(() => {
     if (previewFamilyId && !familyById[previewFamilyId]) {
       setPreviewFamilyId(null);
     }
   }, [familyById, previewFamilyId]);
-
   useEffect(() => {
     if (!canViewTeamSection && activeSection === 'team') {
       setActiveSection('catalogue');
@@ -256,11 +252,9 @@ export function Catalogue({
 
   useEffect(() => {
     if (!isAnyModalOpen) return;
-
     const previousOverflow = document.body.style.overflow;
     const previousPaddingRight = document.body.style.paddingRight;
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-
     document.body.style.overflow = 'hidden';
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -271,7 +265,6 @@ export function Catalogue({
       document.body.style.paddingRight = previousPaddingRight;
     };
   }, [isAnyModalOpen]);
-
   function openPreview(familyId: string) {
     setPreviewStartInlineEdit(false);
     setPreviewFamilyId(familyId);
@@ -281,63 +274,26 @@ export function Catalogue({
     setPreviewStartInlineEdit(true);
     setPreviewFamilyId(familyId);
   }
-
   function toggleSelect(familyId: string) {
-    setSelected((previous) => {
-      const next = new Set(previous);
-      if (next.has(familyId)) next.delete(familyId);
-      else next.add(familyId);
-      return next;
-    });
+    setSelected((prev) => { const next = new Set(prev); if (next.has(familyId)) next.delete(familyId); else next.add(familyId); return next; });
   }
-
   function toggleGroupSelection(familyIds: string[]) {
-    setSelected((previous) => {
-      const next = new Set(previous);
-      const allSelected = familyIds.every((familyId) => next.has(familyId));
-      familyIds.forEach((familyId) => {
-        if (allSelected) next.delete(familyId);
-        else next.add(familyId);
-      });
-      return next;
-    });
+    setSelected((prev) => { const next = new Set(prev); const all = familyIds.every((id) => next.has(id)); familyIds.forEach((id) => { if (all) next.delete(id); else next.add(id); }); return next; });
   }
-
   function selectAllVisible() {
-    setSelected((previous) => {
-      const next = new Set(previous);
-      const allVisibleSelected = filteredFamilies.length > 0 && filteredFamilies.every((family) => next.has(family.id));
-      filteredFamilies.forEach((family) => {
-        if (allVisibleSelected) next.delete(family.id);
-        else next.add(family.id);
-      });
-      return next;
-    });
+    setSelected((prev) => { const next = new Set(prev); const all = filteredFamilies.length > 0 && filteredFamilies.every((f) => next.has(f.id)); filteredFamilies.forEach((f) => { if (all) next.delete(f.id); else next.add(f.id); }); return next; });
   }
-
-  function clearSelection() {
-    setSelected(new Set());
-    setBulkAction(null);
-    setBulkGroupValue('');
-  }
-
+  function clearSelection() { setSelected(new Set()); setBulkAction(null); setBulkGroupValue(''); }
   async function handleBulkDelete() {
-    if (!requireEditAccess()) return;
-    if (selected.size === 0) return;
-    for (const familyId of selected) {
-      await handleDeleteFamily(familyId);
-    }
+    if (!requireEditAccess() || selected.size === 0) return;
+    for (const id of selected) await handleDeleteFamily(id);
     clearSelection();
   }
-
   async function handleBulkChangeGroup(group: string) {
     if (!requireEditAccess()) return;
-    const trimmedGroup = group.trim();
-    if (selected.size === 0 || !trimmedGroup) return;
-    for (const familyId of selected) {
-      await handleChangeFamilyGroup(familyId, trimmedGroup);
-    }
-    setToast({ message: `${selected.size} families moved to "${trimmedGroup}"`, type: 'success' });
+    const g = group.trim(); if (selected.size === 0 || !g) return;
+    for (const id of selected) await handleChangeFamilyGroup(id, g);
+    setToast({ message: `${selected.size} families moved to "${g}"`, type: 'success' });
     clearSelection();
   }
 
@@ -349,7 +305,6 @@ export function Catalogue({
       type: result.ok ? 'success' : 'info',
     });
   }
-
   return (
     <div className={`catalogue-page ${canViewTeamSection ? 'catalogue-page--team-enabled' : ''}`}>
       <CatalogueHeader
@@ -362,7 +317,7 @@ export function Catalogue({
       {activeSection === 'team' && canViewTeamSection ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
-            <CatalogueTeamSection projects={projects} screenshots={screenshots} />
+            <CatalogueTeamSection projects={projects} screenshots={fullScopeScreenshots} />
           </div>
         </main>
       ) : activeSection === 'videos' ? (
@@ -376,7 +331,7 @@ export function Catalogue({
           </div>
         </main>
       ) : (
-        <main className="catalogue-main">
+        <main className={`catalogue-main${gridDensity !== 'auto' ? ` catalogue-main--density-${gridDensity}` : ''}`}>
           <div className="catalogue-shell">
             <div className="catalogue-body">
               {isGuest && (
@@ -401,6 +356,7 @@ export function Catalogue({
                 filterPlatform={filterPlatform}
                 filterTheme={filterTheme}
                 filterWebPreset={filterWebPreset}
+                gridDensity={gridDensity}
                 groups={allGroups}
                 isSortLocked={isSortLocked}
                 onFilterFlowChange={setFilterFlow}
@@ -409,73 +365,105 @@ export function Catalogue({
                 onFilterPlatformChange={setFilterPlatform}
                 onFilterThemeChange={setFilterTheme}
                 onFilterWebPresetChange={setFilterWebPreset}
-                onPrimaryGroupChange={(value) => {
-                  void guardMutation(() => handlePrimaryGroupChange(value), undefined);
-                }}
+                onGridDensityChange={setGridDensity}
                 onQuickUploadClick={() => {
-                  guardAction(() => upload.setShowQuickUpload(true));
+                  guardAction(() => {
+                    upload.setShowQuickUpload(true);
+                  });
                 }}
                 onSearchChange={setSearchQuery}
                 onSortByChange={setSortBy}
-                onUploadClick={() => {
-                  guardAction(() => upload.setShowUpload(true));
-                }}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
-                onVsGroupsChange={(groups) => {
-                  void guardMutation(() => handleVsGroupsChange(groups), undefined);
-                }}
-                primaryGroup={primaryGroup}
                 searchQuery={searchQuery}
-                showGroupConfig={false}
                 sortBy={sortBy}
                 viewBy={viewBy}
                 viewMode={viewMode}
-                vsGroups={vsGroups}
               />
 
-              <CatalogueContent
-                activeVariantKeys={upload.activeVariantKeys}
-                filterFlow={filterFlow}
-                filterGroup={filterGroup}
-                filterMobileOs={filterMobileOs}
-                filterPlatform={filterPlatform}
-                filterTheme={filterTheme}
-                filterWebPreset={filterWebPreset}
-                filteredFamilies={filteredFamilies}
-                groupedFamilies={groupedFamilies}
-                loading={loading}
-                primaryGroup={primaryGroup}
-                searchQuery={searchQuery}
-                selected={selected}
-                viewMode={viewMode}
-                vsGroups={vsGroups}
-                onActiveVariantChange={upload.updateActiveVariant}
-                onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
-                onDeleteFamily={handleGuestAwareDeleteFamily}
-                onOpenPreview={openPreview}
-                onOpenPreviewAndEdit={(familyId) => {
-                  if (isGuest) {
-                    openPreview(familyId);
-                    setShowAuthPrompt(true);
-                    return;
-                  }
-                  openPreviewAndEdit(familyId);
-                }}
-                onRenameFamily={handleGuestAwareRenameFamily}
-                onRemoveReference={handleGuestAwareRemoveReference}
-                onReplaceVariantImage={handleGuestAwareReplaceImage}
-                onSetFlowLabel={handleGuestAwareSetFlowLabel}
-                onToggleGroupSelect={toggleGroupSelection}
-                onToggleSelect={toggleSelect}
-                onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
-                webPresets={webPresets}
-              />
+              <div className="catalogue-body-layout">
+                <div className="catalogue-body-main">
+                  <CatalogueContent
+                    activeVariantKeys={upload.activeVariantKeys}
+                    canEdit={!isGuest}
+                    filterFlow={filterFlow}
+                    filterGroup={filterGroup}
+                    filterMobileOs={filterMobileOs}
+                    filterPlatform={filterPlatform}
+                    filterTheme={filterTheme}
+                    filterWebPreset={filterWebPreset}
+                    filteredFamilies={filteredFamilies}
+                    gridDensity={gridDensity}
+                    groupedFamilies={groupedFamilies}
+                    hasMore={hasMore}
+                    loading={loading}
+                    loadingMore={loadingMore}
+                    onLoadMore={loadMore}
+                    searchQuery={searchQuery}
+                    selected={selected}
+                    viewMode={viewMode}
+                    onActiveVariantChange={upload.updateActiveVariant}
+                    onAnnotationStateChange={handleAnnotationStateChange}
+                    onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
+                    onCommentCountChange={handleCommentCountChange}
+                    onDeleteFamily={handleGuestAwareDeleteFamily}
+                    onOpenPreview={openPreview}
+                    onOpenPreviewAndEdit={(familyId) => {
+                      if (isGuest) {
+                        openPreview(familyId);
+                        setShowAuthPrompt(true);
+                        return;
+                      }
+                      openPreviewAndEdit(familyId);
+                    }}
+                    onRequireAuth={() => setShowAuthPrompt(true)}
+                    onRenameFamily={handleGuestAwareRenameFamily}
+                    onRemoveReference={handleGuestAwareRemoveReference}
+                    onReplaceVariantImage={handleGuestAwareReplaceImage}
+                    onSetFlowLabel={handleGuestAwareSetFlowLabel}
+                    onToggleGroupSelect={toggleGroupSelection}
+                    onToggleSelect={toggleSelect}
+                    onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
+                    userEmail={user.email || 'Designer'}
+                    webPresets={webPresets}
+                  />
+                </div>
+                <CatalogueQuickUploadModal
+                  flowLabel={upload.quickUploadFlowLabel}
+                  isOpen={upload.showQuickUpload}
+                  projectId={upload.quickUploadProjectId}
+                  projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+                  quickUploadExistingGroup={upload.quickUploadExistingGroup}
+                  quickUploadGroupMode={upload.quickUploadGroupMode}
+                  quickUploadNewGroup={upload.quickUploadNewGroup}
+                  quickUploadProjectGroups={upload.quickUploadProjectGroups}
+                  quickUploadQueue={upload.quickUploadQueuePreview}
+                  uploading={upload.uploading}
+                  platform={upload.quickUploadPlatform}
+                  theme={upload.quickUploadTheme}
+                  webPresetKey={upload.quickUploadWebPresetKey}
+                  webPresets={webPresets}
+                  mobileOs={upload.quickUploadMobileOs}
+                  onClose={upload.resetQuickUploadState}
+                  onPlatformChange={upload.setQuickUploadPlatform}
+                  onThemeChange={upload.setQuickUploadTheme}
+                  onWebPresetKeyChange={upload.setQuickUploadWebPresetKey}
+                  onMobileOsChange={upload.setQuickUploadMobileOs}
+                  onQuickUploadClearQueue={upload.handleQuickUploadQueueClear}
+                  onQuickUploadExistingGroupChange={upload.setQuickUploadExistingGroup}
+                  onQuickUploadFilesSelected={upload.handleQuickUploadQueueAdd}
+                  onQuickUploadFlowLabelChange={upload.setQuickUploadFlowLabel}
+                  onQuickUploadGroupModeChange={upload.handleQuickUploadGroupModeChange}
+                  onQuickUploadNewGroupChange={upload.setQuickUploadNewGroup}
+                  onQuickUploadProjectChange={upload.handleQuickUploadProjectChange}
+                  onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
+                  onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}
+                />
+              </div>
             </div>
           </div>
         </main>
       )}
-
       <CatalogueUploadModal
         flowLabel={upload.uploadFlowLabel}
         isOpen={upload.showUpload}
@@ -523,30 +511,6 @@ export function Catalogue({
         onThemeChange={upload.setUploadTheme}
         onWebPresetKeyChange={upload.setUploadWebPresetKey}
       />
-
-      <CatalogueQuickUploadModal
-        flowLabel={upload.quickUploadFlowLabel}
-        isOpen={upload.showQuickUpload}
-        projectId={upload.quickUploadProjectId}
-        projects={projects.map((project) => ({ id: project.id, name: project.name }))}
-        quickUploadExistingGroup={upload.quickUploadExistingGroup}
-        quickUploadGroupMode={upload.quickUploadGroupMode}
-        quickUploadNewGroup={upload.quickUploadNewGroup}
-        quickUploadProjectGroups={upload.quickUploadProjectGroups}
-        quickUploadQueue={upload.quickUploadQueuePreview}
-        uploading={upload.uploading}
-        onClose={upload.resetQuickUploadState}
-        onQuickUploadClearQueue={upload.handleQuickUploadQueueClear}
-        onQuickUploadExistingGroupChange={upload.setQuickUploadExistingGroup}
-        onQuickUploadFilesSelected={upload.handleQuickUploadQueueAdd}
-        onQuickUploadFlowLabelChange={upload.setQuickUploadFlowLabel}
-        onQuickUploadGroupModeChange={upload.handleQuickUploadGroupModeChange}
-        onQuickUploadNewGroupChange={upload.setQuickUploadNewGroup}
-        onQuickUploadProjectChange={upload.handleQuickUploadProjectChange}
-        onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
-        onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}
-      />
-
       <CatalogueSettingsModal
         isOpen={showSettings}
         presetUsage={presetUsage}
@@ -554,18 +518,17 @@ export function Catalogue({
         onClose={() => setShowSettings(false)}
         onSave={handleSavePresets}
       />
-
       {upload.uploading && (
         <div className="canvas-uploading">
           <div className="loading-spinner" />
           Uploading screenshots...
         </div>
       )}
-
       {previewFamily && (
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
           canEdit={!isGuest}
+          existingGroups={allGroups}
           family={previewFamily}
           flowName={previewFamily.flow_label}
           isOpen
@@ -584,51 +547,22 @@ export function Catalogue({
           onDeleteFamily={handleGuestAwareDeleteFamily}
           onRenameFamily={handleGuestAwareRenameFamily}
           onReplaceVariantImage={handleGuestAwareReplaceImage}
+          onSetReference={handleGuestAwareSetReference}
           onSetFlowLabel={handleGuestAwareSetFlowLabel}
           onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
         />
       )}
-
       {bulkAction === 'group' && (
-        <div className="flow-assign-overlay" onClick={() => setBulkAction(null)}>
-          <div className="flow-assign-modal" onClick={(event) => event.stopPropagation()}>
-            <h3>Move {selected.size} families to Group</h3>
-            <div className="catalogue-upload-groups" style={{ marginTop: 12 }}>
-              {allGroups.map((group) => (
-                <button
-                  key={group}
-                  type="button"
-                  className={`catalogue-upload-group-chip ${bulkGroupValue === group ? 'active' : ''}`}
-                  onClick={() => setBulkGroupValue(group)}
-                >
-                  {group}
-                  {primaryGroup === group && <span className="catalogue-upload-group-primary">Primary</span>}
-                </button>
-              ))}
-            </div>
-            <input
-              className="catalogue-filter"
-              style={{ width: '100%', marginTop: 12 }}
-              type="text"
-              placeholder="Or type a new group name..."
-              value={bulkGroupValue}
-              onChange={(event) => setBulkGroupValue(event.target.value)}
-            />
-            <div className="flow-assign-actions">
-              <button type="button" className="btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={!bulkGroupValue.trim()}
-                onClick={() => void handleBulkChangeGroup(bulkGroupValue)}
-              >
-                Move to "{bulkGroupValue.trim() || '...'}"
-              </button>
-            </div>
-          </div>
-        </div>
+        <CatalogueBulkGroupDialog
+          allGroups={allGroups}
+          primaryGroup={primaryGroup}
+          selectedCount={selected.size}
+          value={bulkGroupValue}
+          onValueChange={setBulkGroupValue}
+          onCancel={() => setBulkAction(null)}
+          onConfirm={(value) => void handleBulkChangeGroup(value)}
+        />
       )}
-
       {confirmDeleteOpen && (
         <ConfirmModal
           title={`Delete ${selected.size} Screen Famil${selected.size === 1 ? 'y' : 'ies'}`}
@@ -640,7 +574,6 @@ export function Catalogue({
           onCancel={() => setConfirmDeleteOpen(false)}
         />
       )}
-
       {toast && (
         <Toast
           message={toast.message}
@@ -648,23 +581,24 @@ export function Catalogue({
           onClose={() => setToast(null)}
         />
       )}
-
       {activeSection === 'catalogue' && (
         <CatalogueBulkBar
           filteredFamiliesCount={filteredFamilies.length}
           selectedCount={selected.size}
           selectedVisibleCount={selectedVisibleCount}
           onClearSelection={clearSelection}
-          onOpenDeleteConfirm={() => {
-            guardAction(() => setConfirmDeleteOpen(true));
-          }}
-          onOpenGroupDialog={() => {
-            guardAction(() => setBulkAction('group'));
-          }}
+          onOpenDeleteConfirm={() => guardAction(() => setConfirmDeleteOpen(true))}
+          onOpenGroupDialog={() => guardAction(() => setBulkAction('group'))}
+          onOpenBulkRename={() => guardAction(() => setBulkRenameOpen(true))}
           onSelectAllVisible={selectAllVisible}
         />
       )}
-
+      <CatalogueBulkRenameModal
+        isOpen={bulkRenameOpen}
+        families={filteredFamilies.filter((family) => selected.has(family.id))}
+        onClose={() => setBulkRenameOpen(false)}
+        onRenameFamily={handleRenameFamily}
+      />
       <CatalogueEmailPromptModal
         isOpen={showAuthPrompt}
         onClose={() => setShowAuthPrompt(false)}

@@ -1,0 +1,120 @@
+// Pagination loading UI — skeleton shimmer placeholders and scroll sentinel.
+
+.catalogue-scroll-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  min-height: 40px;
+  width: 100%;
+}
+
+.catalogue-scroll-sentinel__spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #a1a1aa;
+  font-size: 12px;
+
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// Skeleton loading placeholders — shimmer on background during initial
+// paginated fetch or compare-mode load.
+
+@keyframes catalogueShimmer {
+  0% { background-position: -480px 0; }
+  100% { background-position: 480px 0; }
+}
+
+.catalogue-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.catalogue-skeleton {
+  background: #111113;
+  border: 1px solid #1f1f23;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.catalogue-skeleton__image,
+.catalogue-skeleton__media,
+.catalogue-skeleton__line,
+.catalogue-skeleton__chip {
+  background: linear-gradient(90deg, #18181b 0%, #27272a 50%, #18181b 100%);
+  background-size: 960px 100%;
+  animation: catalogueShimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+.catalogue-skeleton--grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.catalogue-skeleton__image {
+  aspect-ratio: 16 / 9;
+  border-radius: 0;
+}
+
+.catalogue-skeleton__meta {
+  padding: 10px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.catalogue-skeleton--stack {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 280px;
+}
+
+.catalogue-skeleton__media {
+  min-height: 280px;
+  border-radius: 0;
+  border-right: 1px solid #1f1f23;
+}
+
+.catalogue-skeleton__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+}
+
+.catalogue-skeleton__line {
+  height: 10px;
+  width: 100%;
+}
+
+.catalogue-skeleton__line--title {
+  height: 16px;
+  width: 60%;
+}
+
+.catalogue-skeleton__line--short {
+  width: 40%;
+}
+
+.catalogue-skeleton__chip-row {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.catalogue-skeleton__chip {
+  height: 18px;
+  width: 60px;
+  border-radius: 999px;
+}
