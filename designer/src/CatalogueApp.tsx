@@ -1,4 +1,3 @@
-import { Agentation } from 'agentation';
 import type { User } from '@supabase/supabase-js';
 import { useAuth } from './lib/useAuth';
 import { Catalogue } from './components/Catalogue';
@@ -19,13 +18,10 @@ export function CatalogueApp() {
   const effectiveUser = user ?? createGuestUser();
 
   return (
-    <>
-      <Catalogue
-        user={effectiveUser}
-        isGuest={!user}
-        onRequestLogin={login}
-      />
-      {import.meta.env.DEV && <Agentation />}
-    </>
+    <Catalogue
+      user={effectiveUser}
+      isGuest={!user}
+      onRequestLogin={login}
+    />
   );
 }
