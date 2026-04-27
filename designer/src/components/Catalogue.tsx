@@ -438,6 +438,7 @@ export function Catalogue({
                   />
                 </div>
                 <CatalogueQuickUploadModal
+                  existingFlows={allFlows}
                   flowLabel={upload.quickUploadFlowLabel}
                   isOpen={upload.showQuickUpload}
                   projectId={upload.quickUploadProjectId}
