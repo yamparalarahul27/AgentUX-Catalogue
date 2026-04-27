@@ -22,6 +22,9 @@ function spaFallback(): Plugin {
 export default defineConfig({
   plugins: [spaFallback(), react()],
   base: '/designer/',
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   build: {
     outDir: '../site/designer',
     emptyOutDir: true,
