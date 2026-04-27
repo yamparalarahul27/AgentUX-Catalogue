@@ -8,7 +8,9 @@ function spaFallback(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, _res, next) => {
         const url = req.url || '';
-        if (url.startsWith('/designer/catalogue') || url.startsWith('/designer/')) {
+        const accept = req.headers.accept || '';
+        const isNavigation = accept.includes('text/html');
+        if (isNavigation && url.startsWith('/designer/') && !url.includes('.')) {
           req.url = '/designer/catalogue.html';
         }
         next();
