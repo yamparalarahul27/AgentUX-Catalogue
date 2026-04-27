@@ -83,8 +83,34 @@
 
       <main class="changelog">
         <p class="eyebrow">Changelog</p>
-        <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX</h1>
+        <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
+
+        <!-- Apr 27, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 27, 2026</span>
+            <span class="changelog-title">Catalogue Goes Solo — Repo Split &amp; Cleanup</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Links section announced (coming soon) — save URLs alongside screenshots and videos</li>
+              <li>Dedicated Telegram Bot section on landing page</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>Repository stripped to Catalogue-only: screenshots, videos, and links (144 files removed, 28k lines trimmed)</li>
+              <li>Dev Mode, Flow Builder, Feature Log, Compare View, Archive, and Figma sections moved to <a href="https://github.com/yamparalarahul27/AgentUX-other" style="color: var(--accent);">AgentUX-other</a></li>
+              <li>Landing page rewritten: "Screenshots. Videos. Links." — focused entirely on Catalogue</li>
+              <li>Header tabs simplified to Catalogue + Videos</li>
+              <li>Vite config and Vercel rewrites updated for single-app deployment</li>
+              <li>Removed <code>@xyflow/react</code> and <code>@dagrejs/dagre</code> dependencies (Flow Builder only)</li>
+            </ul>
+          </div>
+        </article>
 
         <!-- Apr 20, 2026 -->
         <article class="changelog-release">
