@@ -1,18 +1,15 @@
 {
-  "name": "@yamparala27/agentux-designer",
-  "version": "0.1.0",
+  "name": "agentux-catalogue",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check:max-lines": "node ../scripts/check-max-lines.mjs src --max 700",
-    "build": "npm run check:max-lines && tsc && vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dagrejs/dagre": "^1.1.4",
     "@supabase/supabase-js": "^2.49.0",
-    "@xyflow/react": "^12.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.0",

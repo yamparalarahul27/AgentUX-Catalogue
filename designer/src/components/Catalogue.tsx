@@ -17,12 +17,9 @@ import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
-import { CatalogueArchiveSection } from './CatalogueArchiveSection';
 import { CatalogueContent } from './CatalogueContent';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
-import { CatalogueFeatureLogSection } from './CatalogueFeatureLogSection';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
-import { CatalogueFigmaSection } from './CatalogueFigmaSection';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
@@ -40,12 +37,8 @@ interface CatalogueProps {
 
 type CatalogueSection =
   | 'catalogue'
-  | 'feature-log'
   | 'videos'
-  | 'figma'
-  | 'team'
-  | 'archive-flow-builder'
-  | 'archive-projects';
+  | 'team';
 export function Catalogue({
   user,
   isGuest = false,
@@ -327,25 +320,6 @@ export function Catalogue({
             <CatalogueTeamSection projects={projects} screenshots={fullScopeScreenshots} />
           </div>
         </main>
-      ) : activeSection === 'archive-flow-builder' || activeSection === 'archive-projects' ? (
-        <main className="catalogue-main">
-          <div className="catalogue-shell catalogue-shell--team">
-            <CatalogueArchiveSection
-              archiveItem={activeSection === 'archive-flow-builder' ? 'flow-builder' : 'projects'}
-              onBackToCatalogue={() => setActiveSection('catalogue')}
-            />
-          </div>
-        </main>
-      ) : activeSection === 'feature-log' ? (
-        <main className="catalogue-main">
-          <div className="catalogue-shell catalogue-shell--team">
-            <CatalogueFeatureLogSection
-              canEdit={!isGuest}
-              onRequireAuth={() => setShowAuthPrompt(true)}
-              userId={user.id}
-            />
-          </div>
-        </main>
       ) : activeSection === 'videos' ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
@@ -353,20 +327,6 @@ export function Catalogue({
               canEdit={!isGuest}
               userEmail={user.email || 'Designer'}
               onRequireAuth={() => setShowAuthPrompt(true)}
-            />
-          </div>
-        </main>
-      ) : activeSection === 'figma' ? (
-        <main className="catalogue-main">
-          <div className="catalogue-shell catalogue-shell--team">
-            <CatalogueFigmaSection
-              activeProjectId={null}
-              canAdmin={canViewTeamSection}
-              canEdit={!isGuest}
-              onRequireAuth={() => setShowAuthPrompt(true)}
-              projects={projects}
-              userEmail={user.email || 'Designer'}
-              userId={user.id}
             />
           </div>
         </main>

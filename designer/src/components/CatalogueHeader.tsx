@@ -4,12 +4,8 @@ import agentuxLogo from '../assets/agentux-logo.svg';
 
 type CatalogueSection =
   | 'catalogue'
-  | 'feature-log'
   | 'videos'
-  | 'figma'
-  | 'team'
-  | 'archive-flow-builder'
-  | 'archive-projects';
+  | 'team';
 
 interface CatalogueHeaderProps {
   activeSection: CatalogueSection;
@@ -17,10 +13,6 @@ interface CatalogueHeaderProps {
   onBack: () => void;
   onOpenSettings: () => void;
   onSectionChange: (section: CatalogueSection) => void;
-}
-
-function isPrimarySection(section: CatalogueSection): boolean {
-  return section === 'catalogue' || section === 'feature-log' || section === 'videos';
 }
 
 export function CatalogueHeader({
@@ -98,16 +90,6 @@ export function CatalogueHeader({
         <button
           type="button"
           role="tab"
-          className={`catalogue-header__tab ${activeSection === 'feature-log' ? 'is-active' : ''}`}
-          aria-selected={activeSection === 'feature-log'}
-          onClick={() => onSectionChange('feature-log')}
-          data-short="F"
-        >
-          Feature Log
-        </button>
-        <button
-          type="button"
-          role="tab"
           className={`catalogue-header__tab ${activeSection === 'videos' ? 'is-active' : ''}`}
           aria-selected={activeSection === 'videos'}
           onClick={() => onSectionChange('videos')}
@@ -120,7 +102,7 @@ export function CatalogueHeader({
       <button
         ref={menuButtonRef}
         type="button"
-        className={`catalogue-header__settings catalogue-header__menu-trigger ${!isPrimarySection(activeSection) ? 'is-active' : ''}`}
+        className={`catalogue-header__settings catalogue-header__menu-trigger ${activeSection !== 'catalogue' && activeSection !== 'videos' ? 'is-active' : ''}`}
         aria-label="Open catalogue menu"
         aria-haspopup="menu"
         aria-expanded={menuOpen}
@@ -135,15 +117,6 @@ export function CatalogueHeader({
             Settings
           </button>
 
-          <button
-            type="button"
-            className={`catalogue-header-menu__item ${activeSection === 'figma' ? 'is-active' : ''}`}
-            role="menuitem"
-            onClick={() => openSection('figma')}
-          >
-            Figma
-          </button>
-
           {canViewTeam && (
             <button
               type="button"
@@ -154,27 +127,6 @@ export function CatalogueHeader({
               Team
             </button>
           )}
-
-          <div className="catalogue-header-menu__divider" />
-          <div className="catalogue-header-menu__label">Archive</div>
-
-          <button
-            type="button"
-            className={`catalogue-header-menu__item ${activeSection === 'archive-flow-builder' ? 'is-active' : ''}`}
-            role="menuitem"
-            onClick={() => openSection('archive-flow-builder')}
-          >
-            Flow Builder
-          </button>
-
-          <button
-            type="button"
-            className={`catalogue-header-menu__item ${activeSection === 'archive-projects' ? 'is-active' : ''}`}
-            role="menuitem"
-            onClick={() => openSection('archive-projects')}
-          >
-            Projects
-          </button>
         </div>
       )}
     </header>

@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgentUX | UX Flow Workspace For AI-Built Apps</title>
+    <title>AgentUX Catalogue | Screenshot Library for Product Teams</title>
     <meta
       name="description"
-      content="Detect what your AI built with Dev Mode. Manage every screen, track features, and collect references with Catalogue — including Telegram bot, archive compare, and X video links."
+      content="Organize screenshots, collect video references, and save links — all in one workspace. Telegram bot integration, ThumbHash instant previews, and team analytics."
     />
     <link rel="icon" type="image/svg+xml" href="./logo.svg" />
     <link rel="stylesheet" href="./styles.css" />
@@ -16,17 +16,15 @@
       <header class="topbar">
         <a class="brand" href="#top" aria-label="AgentUX home">
           <img src="./logo.svg" alt="" width="28" height="28" />
-          <span>AgentUX</span>
+          <span>AgentUX Catalogue</span>
         </a>
         <nav class="nav">
-          <a href="#products">Products</a>
+          <a href="#features">Features</a>
           <a href="#how-it-works">How It Works</a>
           <a href="#faq">FAQ</a>
           <a href="./changelog.html">Changelog</a>
           <span class="nav-divider"></span>
-          <a href="#dev-mode">Dev Mode</a>
-          <a href="/designer/catalogue" class="nav-product-link">Catalogue</a>
-          <a href="/designer/catalogue?tab=archive" class="nav-product-link">Archive</a>
+          <a href="/designer/" class="nav-product-link">Open Catalogue</a>
         </nav>
       </header>
 
@@ -34,101 +32,52 @@
         <!-- ─── Hero ─── -->
         <section class="hero" id="overview">
           <div class="hero-copy">
-            <p class="eyebrow">UX workspace for AI-built apps</p>
-            <h1>Detect. Manage. Ship.</h1>
+            <p class="eyebrow">Screenshot library for product teams</p>
+            <h1>Screenshots. Videos. Links.</h1>
             <p class="hero-text">
-              AI builds screens fast, but loses the thread of how they connect.
-              AgentUX gives you Dev Mode to see what your AI built and Catalogue
-              to organize every screen, track feature lifecycle, and collect
-              design references — all in one workspace.
+              Your team's single source of truth for product screenshots,
+              competitive video references, and saved links — organized by
+              brand, searchable, and accessible from anywhere including Telegram.
             </p>
-            <div class="install-command" aria-label="Install command">
-              <code>npm install @yamparala27/agentux -D</code>
-            </div>
             <div class="hero-actions">
-              <a class="button button-primary" href="https://github.com/yamparalarahul27/agentux">View GitHub</a>
-              <a class="button button-secondary" href="#products">Explore Products</a>
+              <a class="button button-primary" href="/designer/">Open Catalogue</a>
+              <a class="button button-secondary" href="https://github.com/yamparalarahul27/agentux">View GitHub</a>
             </div>
           </div>
 
           <div class="hero-story">
             <div class="story-step">
               <span class="story-number">1</span>
-              <span class="story-label">Detect</span>
-              <span class="story-desc">Dev Mode</span>
+              <span class="story-label">Capture</span>
+              <span class="story-desc">Screenshots</span>
             </div>
             <div class="story-arrow">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
             <div class="story-step">
               <span class="story-number">2</span>
-              <span class="story-label">Manage</span>
-              <span class="story-desc">Catalogue</span>
+              <span class="story-label">Collect</span>
+              <span class="story-desc">Videos &amp; Links</span>
             </div>
             <div class="story-arrow">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
             <div class="story-step">
               <span class="story-number">3</span>
-              <span class="story-label">Ship</span>
-              <span class="story-desc">Feature Log</span>
+              <span class="story-label">Organize</span>
+              <span class="story-desc">By Brand</span>
             </div>
           </div>
         </section>
 
-        <!-- ─── Products ─── -->
-        <section class="section" id="products">
+        <!-- ─── Features ─── -->
+        <section class="section" id="features">
           <div class="section-heading">
-            <p class="eyebrow">Products</p>
-            <h2>What you get with AgentUX</h2>
+            <p class="eyebrow">Features</p>
+            <h2>Everything your team needs in one place</h2>
           </div>
 
           <div class="product-grid">
-            <!-- Dev Mode -->
-            <article class="product-card" id="dev-mode">
-              <div class="product-icon product-icon-dev">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="16 18 22 12 16 6"/>
-                  <polyline points="8 6 2 12 8 18"/>
-                </svg>
-              </div>
-              <h3>Dev Mode</h3>
-              <p class="product-tagline">Install in your app. See routes and flows in real time.</p>
-              <span class="product-audience">For Developers</span>
-
-              <details class="product-details">
-                <summary>What it does</summary>
-                <ul class="check-list">
-                  <li>Auto-detects Next.js App Router, Pages Router, and React Router</li>
-                  <li>Tracks runtime route transitions as users navigate</li>
-                  <li>Identifies dead ends, orphan routes, and hub pages</li>
-                  <li>Exports current flow as Markdown + structured JSON for your AI agent</li>
-                </ul>
-              </details>
-
-              <details class="product-details">
-                <summary>Quick start</summary>
-                <pre class="product-code"><code>import { AppMap } from '@yamparala27/agentux';
-
-function App() {
-  return (
-    &lt;&gt;
-      &lt;YourApp /&gt;
-      &lt;AppMap /&gt;
-    &lt;/&gt;
-  );
-}</code></pre>
-                <p class="product-code-hint">A floating button appears in dev mode to inspect the flow graph.</p>
-              </details>
-
-              <div class="product-cta">
-                <div class="install-command install-command-sm">
-                  <code>npm install @yamparala27/agentux -D</code>
-                </div>
-              </div>
-            </article>
-
-            <!-- Catalogue -->
             <article class="product-card">
               <div class="product-icon product-icon-catalogue">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -137,54 +86,37 @@ function App() {
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
               </div>
-              <h3>Catalogue</h3>
-              <p class="product-tagline">Your team's single source of truth for screenshots, feature tracking, design references, and competitive research — all in one place.</p>
-              <span class="product-audience">For Teams</span>
+              <h3>Screenshots</h3>
+              <p class="product-tagline">Upload, organize, and browse product screenshots across brands with four view modes and instant ThumbHash previews.</p>
+              <span class="product-audience">Core</span>
 
               <details class="product-details" open>
-                <summary>Views &amp; Organization</summary>
+                <summary>What it does</summary>
                 <ul class="check-list">
                   <li>Four views: Grid, List, Gallery, and Folder (brand cards with carousel previews)</li>
                   <li>ThumbHash placeholders — instant blurry previews before full images load (28 bytes per image)</li>
                   <li>Upload and organize screenshots by group with full DB scope</li>
                   <li>Lightbox with annotations, comments, and inline editing</li>
                   <li>Bulk operations — rename, re-group, or delete multiple families at once</li>
-                  <li>Global filters for group, platform, theme, flow, and search</li>
+                  <li>Global filters for group, platform, theme, and search</li>
                   <li>Group appearance — custom icons, descriptions, and status badges per brand</li>
                 </ul>
               </details>
+            </article>
 
-              <details class="product-details">
-                <summary>Feature Log</summary>
-                <ul class="check-list">
-                  <li>Track every feature through Planned → Reference → Shipped lifecycle</li>
-                  <li>Link existing screenshots as evidence for each status transition</li>
-                  <li>Clickable feature cards with detail views showing shipped and reference evidence</li>
-                  <li>Manual status override alongside title and description edits</li>
-                </ul>
-              </details>
+            <article class="product-card">
+              <div class="product-icon product-icon-dev">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="23 7 16 12 23 17 23 7"/>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+              </div>
+              <h3>Videos</h3>
+              <p class="product-tagline">Collect design reference videos and embed X (Twitter) posts for competitive UX research.</p>
+              <span class="product-audience">References</span>
 
-              <details class="product-details">
-                <summary>Telegram Bot</summary>
-                <ul class="check-list">
-                  <li>Share screenshot images from your phone — they land in the "Social" group automatically</li>
-                  <li>Paste X (Twitter) post URLs — they're added to the Videos section as embedded references</li>
-                  <li>Allowlist-based access control so only your team can contribute</li>
-                  <li>Duplicate detection — the bot tells you if a post is already in the catalogue</li>
-                </ul>
-              </details>
-
-              <details class="product-details">
-                <summary>Archive &amp; Compare</summary>
-                <ul class="check-list">
-                  <li>Side-by-side flow comparison across primary and vs groups</li>
-                  <li>Read-only archive surfaces for Flow Builder and Projects</li>
-                  <li>Full history preserved — nothing is deleted when you iterate</li>
-                </ul>
-              </details>
-
-              <details class="product-details">
-                <summary>Videos &amp; References</summary>
+              <details class="product-details" open>
+                <summary>What it does</summary>
                 <ul class="check-list">
                   <li>Curated video library for design references and competitive UX studies</li>
                   <li>Embed X (Twitter) posts with native rendering via Twitter Widgets API</li>
@@ -192,107 +124,83 @@ function App() {
                   <li>Comments per video for team discussion and annotation</li>
                 </ul>
               </details>
-
-              <details class="product-details">
-                <summary>Team &amp; Analytics</summary>
-                <ul class="check-list">
-                  <li>Team upload analytics with per-member contribution tracking</li>
-                  <li>Group management across the full database scope</li>
-                  <li>Shared Supabase backend — all data syncs across Catalogue and Flow Builder</li>
-                </ul>
-              </details>
-
-              <div class="product-cta">
-                <a class="button button-primary" href="/designer/catalogue">Open Catalogue</a>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <!-- ─── How It Works ─── -->
-        <section class="section section-band" id="how-it-works">
-          <div class="section-heading">
-            <p class="eyebrow">How it works</p>
-            <h2>A feedback cycle for builders shipping with AI.</h2>
-          </div>
-
-          <div class="steps-grid">
-            <article class="step-card">
-              <span class="step-number">1</span>
-              <h3>Detect or upload screens</h3>
-              <p>Use Dev Mode to auto-detect routes in your app, upload screenshots to the Catalogue, or share them via the Telegram bot from your phone.</p>
-            </article>
-            <article class="step-card">
-              <span class="step-number">2</span>
-              <h3>Organize and track features</h3>
-              <p>Group screenshots by brand, track each feature from Planned through Reference to Shipped, and collect competitive video references.</p>
-            </article>
-            <article class="step-card">
-              <span class="step-number">3</span>
-              <h3>Compare, review, and ship</h3>
-              <p>Use archive compare to review changes side by side, then export structured specs for your AI agent to build the next iteration.</p>
-            </article>
-          </div>
-        </section>
-
-        <!-- ─── Bulk Capture ─── -->
-        <section class="section" id="bulk-capture">
-          <div class="section-heading">
-            <p class="eyebrow">Workflow</p>
-            <h2>Bulk Webapp-to-Figma Capture</h2>
-          </div>
-
-          <div class="product-grid" style="grid-template-columns: 1fr 1fr;">
-            <article class="product-card">
-              <div class="product-icon" style="background: #fff3ea; color: var(--accent);">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                  <line x1="8" y1="21" x2="16" y2="21"/>
-                  <line x1="12" y1="17" x2="12" y2="21"/>
-                </svg>
-              </div>
-              <h3>What it does</h3>
-              <p class="product-tagline">Captures authenticated web apps into Figma at three breakpoints — automatically.</p>
-
-              <ul class="check-list">
-                <li>Logs into auth-gated products using a persistent browser session</li>
-                <li>Screenshots every state at 1512px (desktop), 720px (tablet), and 320px (mobile)</li>
-                <li>Imports frames into a single Figma file organized by user journey sections</li>
-                <li>Preserves previous captures in archive/legacy sections — nothing is deleted</li>
-                <li>Pauses for manual login when anti-bot challenges appear, then resumes</li>
-              </ul>
             </article>
 
             <article class="product-card">
               <div class="product-icon" style="background: #eef2ff; color: #4f46e5;">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10 9 9 9 8 9"/>
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                 </svg>
               </div>
-              <h3>What you get</h3>
-              <p class="product-tagline">A ready-to-annotate Figma file with every screen in your product.</p>
+              <h3>Links</h3>
+              <p class="product-tagline">Save and organize important URLs — competitor pages, design inspiration, documentation, and more.</p>
+              <span class="product-audience">Coming Soon</span>
 
-              <ul class="check-list">
-                <li>Figma sections: Core Journey, Extended Auth, Orders &amp; History, Account &amp; Wallet, Product Areas</li>
-                <li>Frames named with UJ-## / EX-## conventions across all three widths</li>
-                <li>A run log mapping each state to its capture ID and status</li>
-                <li>Old/incorrect frames moved to archive — full history preserved</li>
-                <li>Re-runnable from a single script + SOP with no tribal knowledge needed</li>
-              </ul>
-
-              <details class="product-details" style="margin-top: 14px;">
-                <summary>Quick start</summary>
-                <pre class="product-code"><code>URL=https://app.example.com \
-PROFILE_DIR=/tmp/app-session \
-PAUSE_FOR_LOGIN=1 \
-KEEP_OPEN=1 \
-node scripts/bulk_webapp_capture_template.cjs</code></pre>
-                <p class="product-code-hint">Uses Playwright with a persistent Chrome profile. Pairs with the <a href="https://github.com/yamparalarahul27/agentux/blob/main/docs/bulk-figma-capture-sop.md" style="color: var(--accent); font-weight: 600;">full SOP</a> for team use.</p>
+              <details class="product-details" open>
+                <summary>Planned</summary>
+                <ul class="check-list">
+                  <li>Save URLs with title, description, and optional thumbnail</li>
+                  <li>Organize links by category or brand</li>
+                  <li>Share links via Telegram bot</li>
+                  <li>Comments and team discussion per link</li>
+                </ul>
               </details>
+            </article>
+          </div>
+        </section>
+
+        <!-- ─── Telegram Bot ─── -->
+        <section class="section section-band" id="telegram">
+          <div class="section-heading">
+            <p class="eyebrow">Mobile-first</p>
+            <h2>Share from your phone via Telegram</h2>
+          </div>
+
+          <div class="product-grid" style="grid-template-columns: 1fr 1fr;">
+            <article class="product-card">
+              <h3>Screenshots</h3>
+              <p class="product-tagline">Share a screenshot image from your phone and it lands in the Catalogue "Social" group automatically.</p>
+              <ul class="check-list">
+                <li>Send any image to the bot — it uploads to Supabase and appears in Catalogue</li>
+                <li>Auto-named with date-based sequencing</li>
+                <li>Allowlist-based access control</li>
+              </ul>
+            </article>
+            <article class="product-card">
+              <h3>X Video Links</h3>
+              <p class="product-tagline">Paste an X (Twitter) post URL and it's added to the Videos section as an embedded reference.</p>
+              <ul class="check-list">
+                <li>Supports x.com and twitter.com URLs</li>
+                <li>Duplicate detection — bot tells you if it's already saved</li>
+                <li>Normalizes URLs to canonical format</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <!-- ─── How It Works ─── -->
+        <section class="section" id="how-it-works">
+          <div class="section-heading">
+            <p class="eyebrow">How it works</p>
+            <h2>Three ways to add content</h2>
+          </div>
+
+          <div class="steps-grid">
+            <article class="step-card">
+              <span class="step-number">1</span>
+              <h3>Upload from browser</h3>
+              <p>Drag and drop screenshots into the Catalogue, or paste X post URLs into the Videos section.</p>
+            </article>
+            <article class="step-card">
+              <span class="step-number">2</span>
+              <h3>Share from Telegram</h3>
+              <p>Send screenshots or X links to the Telegram bot from your phone — they appear in the Catalogue instantly.</p>
+            </article>
+            <article class="step-card">
+              <span class="step-number">3</span>
+              <h3>Browse and organize</h3>
+              <p>Use Grid, List, Gallery, or Folder views. Filter by brand, platform, or theme. Annotate and comment inline.</p>
             </article>
           </div>
         </section>
@@ -306,24 +214,20 @@ node scripts/bulk_webapp_capture_template.cjs</code></pre>
 
           <div class="faq-accordion">
             <details class="faq-item">
-              <summary>Is AgentUX a framework?</summary>
-              <p>No. It is a React and TypeScript library you install as a dev dependency. It works alongside your existing framework — Next.js or React Router.</p>
-            </details>
-            <details class="faq-item">
-              <summary>Who is this for?</summary>
-              <p>Anyone building apps with AI coding agents. Dev Mode is for developers inspecting routes. Catalogue is for teams managing screenshots, tracking feature lifecycle, collecting design references, and comparing flows across iterations.</p>
-            </details>
-            <details class="faq-item">
-              <summary>What frameworks does Dev Mode support?</summary>
-              <p>Next.js App Router, Next.js Pages Router, and React Router. Framework detection is automatic based on your project structure.</p>
+              <summary>What is AgentUX Catalogue?</summary>
+              <p>A web-based screenshot library and reference collection tool for product teams. Organize screenshots by brand, save video references, and collect links — all in one place.</p>
             </details>
             <details class="faq-item">
               <summary>Can I add screenshots from my phone?</summary>
               <p>Yes. The Telegram bot lets you share screenshot images or X (Twitter) post URLs directly from your phone. Images go to the Catalogue and X links go to the Videos section — no desktop needed.</p>
             </details>
             <details class="faq-item">
-              <summary>Is this analytics?</summary>
-              <p>No. AgentUX is a development-time UX workspace, not production session replay or funnel analytics.</p>
+              <summary>What are ThumbHash placeholders?</summary>
+              <p>Each screenshot is encoded into a tiny 28-byte hash on upload. This hash renders as a blurry preview instantly — before the full image loads. You see color and shape immediately, then the real image fades in.</p>
+            </details>
+            <details class="faq-item">
+              <summary>Is this free?</summary>
+              <p>Yes. AgentUX Catalogue is open source. You need a Supabase project for the database and storage backend.</p>
             </details>
           </div>
         </section>
@@ -331,15 +235,13 @@ node scripts/bulk_webapp_capture_template.cjs</code></pre>
 
       <footer class="footer">
         <div>
-          <strong>AgentUX</strong>
-          <p>The UX flow workspace for AI-built apps.</p>
+          <strong>AgentUX Catalogue</strong>
+          <p>Screenshot library for product teams.</p>
           <p>Engineered by Yamparala Rahul.</p>
         </div>
         <div class="footer-links">
           <a href="https://github.com/yamparalarahul27/agentux">GitHub</a>
           <a href="./changelog.html">Changelog</a>
-          <a href="https://github.com/yamparalarahul27/agentux/blob/main/docs/agentux-prd.md">PRD</a>
-          <a href="https://github.com/yamparalarahul27/agentux/blob/main/docs/agentux-v0.1-implementation-plan.md">v0.1 plan</a>
         </div>
       </footer>
     </div>
