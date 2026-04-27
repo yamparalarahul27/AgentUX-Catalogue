@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildConventionName } from '../lib/naming';
 import { Dropdown } from './Dropdown';
 import { UploadZone } from './UploadZone';
@@ -19,6 +19,7 @@ interface WebPresetOption {
 }
 
 interface CatalogueQuickUploadPanelProps {
+  existingFlows: string[];
   flowLabel: string;
   uploading: boolean;
   quickUploadGroupMode: 'auto' | 'existing' | 'new';
@@ -46,6 +47,7 @@ interface CatalogueQuickUploadPanelProps {
 }
 
 export function CatalogueQuickUploadPanel({
+  existingFlows,
   flowLabel,
   uploading,
   quickUploadGroupMode,
@@ -72,6 +74,36 @@ export function CatalogueQuickUploadPanel({
   onQuickUploadUploadAll,
 }: CatalogueQuickUploadPanelProps) {
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
+  const [flowMenuOpen, setFlowMenuOpen] = useState(false);
+  const flowComboboxRef = useRef<HTMLDivElement>(null);
+
+  const filteredFlowOptions = useMemo(() => {
+    const query = flowLabel.trim().toLowerCase();
+    const exactMatch = existingFlows.find((flow) => flow.toLowerCase() === query);
+    const matches = query
+      ? existingFlows.filter((flow) => flow.toLowerCase().includes(query))
+      : existingFlows;
+    return { matches: matches.slice(0, 8), exactMatch: Boolean(exactMatch) };
+  }, [existingFlows, flowLabel]);
+
+  useEffect(() => {
+    if (!flowMenuOpen) return;
+    function handlePointer(event: MouseEvent) {
+      if (flowComboboxRef.current && !flowComboboxRef.current.contains(event.target as Node)) {
+        setFlowMenuOpen(false);
+      }
+    }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setFlowMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [flowMenuOpen]);
+
   const quickUploadGroupReady = quickUploadGroupMode === 'auto'
     || (quickUploadGroupMode === 'existing'
       ? Boolean(quickUploadExistingGroup)
@@ -105,13 +137,45 @@ export function CatalogueQuickUploadPanel({
     <div className="catalogue-quick-upload-layout">
       <div className="catalogue-quick-upload-left">
         <label className="catalogue-upload-label">Flow</label>
-        <input
-          className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
-          type="text"
-          placeholder="Flow name (e.g. Deposit)"
-          value={flowLabel}
-          onChange={(event) => onQuickUploadFlowLabelChange(event.target.value)}
-        />
+        <div className="catalogue-flow-combobox" ref={flowComboboxRef}>
+          <input
+            className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
+            type="text"
+            placeholder="Flow name (e.g. Deposit)"
+            value={flowLabel}
+            onChange={(event) => {
+              onQuickUploadFlowLabelChange(event.target.value);
+              setFlowMenuOpen(true);
+            }}
+            onFocus={() => setFlowMenuOpen(true)}
+            autoComplete="off"
+          />
+          {flowMenuOpen && filteredFlowOptions.matches.length > 0 && (
+            <div className="catalogue-flow-combobox__menu" role="listbox">
+              {filteredFlowOptions.matches.map((flow) => (
+                <button
+                  key={flow}
+                  type="button"
+                  role="option"
+                  aria-selected={flow === flowLabel}
+                  className={`catalogue-flow-combobox__item ${flow === flowLabel ? 'is-active' : ''}`}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    onQuickUploadFlowLabelChange(flow);
+                    setFlowMenuOpen(false);
+                  }}
+                >
+                  {flow}
+                </button>
+              ))}
+              {flowLabel.trim() && !filteredFlowOptions.exactMatch && (
+                <div className="catalogue-flow-combobox__hint">
+                  Press Enter or click outside to use new flow “{flowLabel.trim()}”
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="catalogue-upload-row">
           <div className="catalogue-upload-row__col">

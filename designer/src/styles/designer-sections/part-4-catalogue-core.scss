@@ -512,6 +512,68 @@
   margin-bottom: 8px;
 }
 
+.catalogue-flow-combobox {
+  position: relative;
+  margin-bottom: 8px;
+
+  .catalogue-quick-upload-flow-input {
+    margin-bottom: 0;
+    width: 100%;
+  }
+}
+
+.catalogue-flow-combobox__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1500;
+  max-height: 240px;
+  overflow-y: auto;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.catalogue-flow-combobox__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  color: $text-muted;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s, color 0.1s;
+
+  &:hover { background: rgba($accent, 0.08); color: $text; }
+
+  &.is-active {
+    color: $accent;
+    font-weight: 500;
+  }
+}
+
+.catalogue-flow-combobox__hint {
+  padding: 8px 10px 6px;
+  font-size: 11px;
+  color: $text-dim;
+  border-top: 1px solid $border;
+  margin-top: 4px;
+}
+
 .catalogue-upload-label--group-assignment {
   margin-top: 8px;
 }

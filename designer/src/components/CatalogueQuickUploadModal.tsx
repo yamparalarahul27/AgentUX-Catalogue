@@ -19,6 +19,7 @@ interface WebPresetOption {
 }
 
 interface CatalogueQuickUploadModalProps {
+  existingFlows: string[];
   flowLabel: string;
   isOpen: boolean;
   projects: { id: string; name: string }[];
@@ -66,6 +67,7 @@ function useIsMobile(breakpoint = 860) {
 }
 
 function QuickUploadContent({
+  existingFlows,
   flowLabel,
   quickUploadGroupMode,
   quickUploadExistingGroup,
@@ -112,6 +114,7 @@ function QuickUploadContent({
         )}
       </div>
       <CatalogueQuickUploadPanel
+        existingFlows={existingFlows}
         flowLabel={flowLabel}
         uploading={uploading}
         quickUploadGroupMode={quickUploadGroupMode}
