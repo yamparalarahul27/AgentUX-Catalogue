@@ -102,6 +102,33 @@ $success: #22c55e;
   }
 }
 
+.dropdown__item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dropdown__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid $border;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1;
+  color: transparent;
+  flex-shrink: 0;
+
+  &--on {
+    background: $accent;
+    border-color: $accent;
+    color: #fff;
+  }
+}
+
 .dropdown__badge {
   font-size: 10px;
   font-weight: 600;

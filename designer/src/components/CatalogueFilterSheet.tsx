@@ -7,8 +7,8 @@ interface CatalogueFilterSheetProps {
   allFlows: string[];
   allMobileOs: { id: string; label: string }[];
   allWebPresets: { id: string; label: string }[];
-  filterFlow: string | null;
-  filterGroup: string | null;
+  filterFlow: string[];
+  filterGroup: string[];
   filterMobileOs: string | null;
   filterPlatform: string | null;
   filterTheme: string | null;
@@ -16,8 +16,8 @@ interface CatalogueFilterSheetProps {
   groups: string[];
   isOpen: boolean;
   onApply: (filters: {
-    flow: string | null;
-    group: string | null;
+    flow: string[];
+    group: string[];
     mobileOs: string | null;
     platform: string | null;
     theme: string | null;
@@ -44,8 +44,8 @@ export function CatalogueFilterSheet({
   onClose,
   viewBy,
 }: CatalogueFilterSheetProps) {
-  const [draftGroup, setDraftGroup] = useState<string | null>(filterGroup);
-  const [draftFlow, setDraftFlow] = useState<string | null>(filterFlow);
+  const [draftGroup, setDraftGroup] = useState<string[]>(filterGroup);
+  const [draftFlow, setDraftFlow] = useState<string[]>(filterFlow);
   const [draftPlatform, setDraftPlatform] = useState<string | null>(filterPlatform);
   const [draftTheme, setDraftTheme] = useState<string | null>(filterTheme);
   const [draftWebPreset, setDraftWebPreset] = useState<string | null>(filterWebPreset);
@@ -82,13 +82,17 @@ export function CatalogueFilterSheet({
   if (!isOpen) return null;
 
   function handleClearAll() {
-    setDraftGroup(null);
-    setDraftFlow(null);
+    setDraftGroup([]);
+    setDraftFlow([]);
     setDraftPlatform(null);
     setDraftTheme(null);
     setDraftWebPreset(null);
     setDraftMobileOs(null);
     setDraftViewBy('all');
+  }
+
+  function toggleListValue(list: string[], value: string, setter: (v: string[]) => void) {
+    setter(list.includes(value) ? list.filter((item) => item !== value) : [...list, value]);
   }
 
   function handleApply() {
@@ -137,8 +141,8 @@ export function CatalogueFilterSheet({
                   <button
                     key={group}
                     type="button"
-                    className={`catalogue-filter-chip ${draftGroup === group ? 'is-active' : ''}`}
-                    onClick={() => toggleChip(draftGroup, group, setDraftGroup)}
+                    className={`catalogue-filter-chip ${draftGroup.includes(group) ? 'is-active' : ''}`}
+                    onClick={() => toggleListValue(draftGroup, group, setDraftGroup)}
                   >
                     {group}
                   </button>
@@ -155,8 +159,8 @@ export function CatalogueFilterSheet({
                   <button
                     key={flow}
                     type="button"
-                    className={`catalogue-filter-chip ${draftFlow === flow ? 'is-active' : ''}`}
-                    onClick={() => toggleChip(draftFlow, flow, setDraftFlow)}
+                    className={`catalogue-filter-chip ${draftFlow.includes(flow) ? 'is-active' : ''}`}
+                    onClick={() => toggleListValue(draftFlow, flow, setDraftFlow)}
                   >
                     {flow}
                   </button>

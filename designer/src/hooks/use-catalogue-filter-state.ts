@@ -18,8 +18,8 @@ const SEARCH_DEBOUNCE_MS = 300;
 export function useCatalogueFilterState() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryDebounced, setSearchQueryDebounced] = useState('');
-  const [filterGroup, setFilterGroup] = useState<string | null>(null);
-  const [filterFlow, setFilterFlow] = useState<string | null>(null);
+  const [filterGroup, setFilterGroup] = useState<string[]>([]);
+  const [filterFlow, setFilterFlow] = useState<string[]>([]);
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [filterTheme, setFilterTheme] = useState<string | null>(null);
   const [filterWebPreset, setFilterWebPreset] = useState<string | null>(null);

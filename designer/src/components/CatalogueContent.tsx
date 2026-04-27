@@ -11,8 +11,8 @@ import { CatalogueStackView } from './CatalogueStackView';
 interface CatalogueContentProps {
   activeVariantKeys: Record<string, string>;
   canEdit: boolean;
-  filterFlow: string | null;
-  filterGroup: string | null;
+  filterFlow: string[];
+  filterGroup: string[];
   filterMobileOs: string | null;
   filterPlatform: string | null;
   filterTheme: string | null;
@@ -93,8 +93,8 @@ export function CatalogueContent({
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
     searchQuery ||
-    filterFlow ||
-    filterGroup ||
+    filterFlow.length > 0 ||
+    filterGroup.length > 0 ||
     filterPlatform ||
     filterTheme ||
     filterWebPreset ||
