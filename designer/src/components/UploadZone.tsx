@@ -105,20 +105,28 @@ async function readDirectoryEntry(entry: FileSystemDirectoryEntry): Promise<File
 
 async function extractDroppedFiles(dataTransfer: DataTransfer): Promise<File[]> {
   const items = Array.from(dataTransfer.items || []);
-  if (items.length === 0) return Array.from(dataTransfer.files || []);
+  // DataTransfer references become invalid after the first `await`, so snapshot
+  // entries and any direct files synchronously before any async work.
+  const directFiles = Array.from(dataTransfer.files || []);
 
-  const files: File[] = [];
-  let hasEntrySupport = false;
+  if (items.length === 0) return directFiles;
 
+  const entries: FileSystemEntry[] = [];
+  const syncFiles: File[] = [];
   for (const item of items) {
     const entry = item.webkitGetAsEntry?.();
-    if (!entry) {
-      const file = item.getAsFile();
-      if (file) files.push(file);
+    if (entry) {
+      entries.push(entry);
       continue;
     }
+    const file = item.getAsFile();
+    if (file) syncFiles.push(file);
+  }
 
-    hasEntrySupport = true;
+  if (entries.length === 0) return syncFiles.length > 0 ? syncFiles : directFiles;
+
+  const files: File[] = [...syncFiles];
+  for (const entry of entries) {
     if (isFileEntry(entry)) {
       const file = await readFileEntry(entry);
       if (file) files.push(file);
@@ -128,9 +136,7 @@ async function extractDroppedFiles(dataTransfer: DataTransfer): Promise<File[]> 
       files.push(...await readDirectoryEntry(entry));
     }
   }
-
-  if (hasEntrySupport) return files;
-  return Array.from(dataTransfer.files || []);
+  return files;
 }
 
 export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
