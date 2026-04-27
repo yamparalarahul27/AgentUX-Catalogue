@@ -113,29 +113,49 @@ export function CatalogueQuickUploadPanel({
           onChange={(event) => onQuickUploadFlowLabelChange(event.target.value)}
         />
 
-        <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Group assignment</label>
-        <div className="catalogue-upload-groups">
-          <button
-            type="button"
-            className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'auto' ? 'active' : ''}`}
-            onClick={() => onQuickUploadGroupModeChange('auto')}
-          >
-            Auto from filename
-          </button>
-          <button
-            type="button"
-            className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'existing' ? 'active' : ''}`}
-            onClick={() => onQuickUploadGroupModeChange('existing')}
-          >
-            Existing group
-          </button>
-          <button
-            type="button"
-            className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'new' ? 'active' : ''}`}
-            onClick={() => onQuickUploadGroupModeChange('new')}
-          >
-            New group
-          </button>
+        <div className="catalogue-upload-row">
+          <div className="catalogue-upload-row__col">
+            <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Group assignment</label>
+            <div className="catalogue-upload-groups">
+              <button
+                type="button"
+                className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'auto' ? 'active' : ''}`}
+                onClick={() => onQuickUploadGroupModeChange('auto')}
+              >
+                Auto from filename
+              </button>
+              <button
+                type="button"
+                className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'existing' ? 'active' : ''}`}
+                onClick={() => onQuickUploadGroupModeChange('existing')}
+              >
+                Existing group
+              </button>
+              <button
+                type="button"
+                className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'new' ? 'active' : ''}`}
+                onClick={() => onQuickUploadGroupModeChange('new')}
+              >
+                New group
+              </button>
+            </div>
+          </div>
+
+          <div className="catalogue-upload-row__col catalogue-upload-row__col--theme">
+            <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Theme</label>
+            <div className="catalogue-upload-groups">
+              {(['light', 'dark'] as const).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`catalogue-upload-group-chip ${theme === item ? 'active' : ''}`}
+                  onClick={() => onThemeChange(theme === item ? null : item)}
+                >
+                  {item === 'light' ? 'Light' : 'Dark'}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {quickUploadGroupMode === 'existing' && (
@@ -161,20 +181,6 @@ export function CatalogueQuickUploadPanel({
             onChange={(event) => onQuickUploadNewGroupChange(event.target.value)}
           />
         )}
-
-        <label className="catalogue-upload-label">Theme</label>
-        <div className="catalogue-upload-groups">
-          {(['light', 'dark'] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`catalogue-upload-group-chip ${theme === item ? 'active' : ''}`}
-              onClick={() => onThemeChange(theme === item ? null : item)}
-            >
-              {item === 'light' ? 'Light' : 'Dark'}
-            </button>
-          ))}
-        </div>
 
         <label className="catalogue-upload-label">Platform</label>
         <div className="catalogue-upload-groups">

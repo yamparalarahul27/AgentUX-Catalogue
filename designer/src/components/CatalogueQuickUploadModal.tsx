@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { CatalogueQuickUploadPanel } from './CatalogueQuickUploadPanel';
-import { Dropdown } from './Dropdown';
 
 interface QuickUploadQueuePreviewItem {
   id: string;
@@ -68,8 +67,6 @@ function useIsMobile(breakpoint = 860) {
 
 function QuickUploadContent({
   flowLabel,
-  projects,
-  projectId,
   quickUploadGroupMode,
   quickUploadExistingGroup,
   quickUploadNewGroup,
@@ -87,7 +84,6 @@ function QuickUploadContent({
   onWebPresetKeyChange,
   onMobileOsChange,
   onQuickUploadFlowLabelChange,
-  onQuickUploadProjectChange,
   onQuickUploadFilesSelected,
   onQuickUploadGroupModeChange,
   onQuickUploadExistingGroupChange,
@@ -115,18 +111,6 @@ function QuickUploadContent({
           </button>
         )}
       </div>
-      <p className="catalogue-upload-subtitle">
-        Name files as <code>{'{sequence}-{flow}-{screen-name}.png'}</code> (e.g. <code>01-deposit-select-coin.png</code>). Queue files, then upload all.
-      </p>
-
-      <Dropdown
-        className="catalogue-upload-project-dropdown"
-        value={projectId}
-        placeholder="Project (optional)"
-        options={projects.map((project) => ({ value: project.id, label: project.name }))}
-        onChange={onQuickUploadProjectChange}
-      />
-
       <CatalogueQuickUploadPanel
         flowLabel={flowLabel}
         uploading={uploading}

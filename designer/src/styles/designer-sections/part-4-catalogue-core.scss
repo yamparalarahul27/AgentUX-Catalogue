@@ -523,6 +523,25 @@
   margin-bottom: 16px;
 }
 
+.catalogue-upload-row {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.catalogue-upload-row__col {
+  min-width: 0;
+
+  &--theme {
+    flex: 0 0 auto;
+  }
+
+  .catalogue-upload-groups {
+    margin-bottom: 0;
+  }
+}
+
 .catalogue-upload-group-chip {
   display: inline-flex;
   align-items: center;
