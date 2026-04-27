@@ -274,6 +274,16 @@ export function Catalogue({
     setPreviewStartInlineEdit(true);
     setPreviewFamilyId(familyId);
   }
+
+  function stepPreview(direction: -1 | 1) {
+    if (!previewFamilyId || filteredFamilies.length === 0) return;
+    const currentIndex = filteredFamilies.findIndex((family) => family.id === previewFamilyId);
+    if (currentIndex < 0) return;
+    const nextIndex = currentIndex + direction;
+    if (nextIndex < 0 || nextIndex >= filteredFamilies.length) return;
+    setPreviewStartInlineEdit(false);
+    setPreviewFamilyId(filteredFamilies[nextIndex].id);
+  }
   function toggleSelect(familyId: string) {
     setSelected((prev) => { const next = new Set(prev); if (next.has(familyId)) next.delete(familyId); else next.add(familyId); return next; });
   }
@@ -542,6 +552,8 @@ export function Catalogue({
             setPreviewFamilyId(null);
             setPreviewStartInlineEdit(false);
           }}
+          onPrev={() => stepPreview(-1)}
+          onNext={() => stepPreview(1)}
           onCommentCountChange={handleCommentCountChange}
           onDeleteFamily={handleGuestAwareDeleteFamily}
           onRenameFamily={handleGuestAwareRenameFamily}
