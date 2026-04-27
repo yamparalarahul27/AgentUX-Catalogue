@@ -310,7 +310,6 @@ export function Catalogue({
       <CatalogueHeader
         activeSection={activeSection}
         canViewTeam={canViewTeamSection}
-        onBack={() => { window.location.href = '/designer/'; }}
         onOpenSettings={() => setShowSettings(true)}
         onSectionChange={setActiveSection}
       />

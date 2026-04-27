@@ -10,7 +10,6 @@ type CatalogueSection =
 interface CatalogueHeaderProps {
   activeSection: CatalogueSection;
   canViewTeam: boolean;
-  onBack: () => void;
   onOpenSettings: () => void;
   onSectionChange: (section: CatalogueSection) => void;
 }
@@ -18,7 +17,6 @@ interface CatalogueHeaderProps {
 export function CatalogueHeader({
   activeSection,
   canViewTeam,
-  onBack,
   onOpenSettings,
   onSectionChange,
 }: CatalogueHeaderProps) {
@@ -66,12 +64,6 @@ export function CatalogueHeader({
 
   return (
     <header className="catalogue-header catalogue-header--centered">
-      <button className="catalogue-back" onClick={onBack} title="Back to projects">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
-
       <div className="catalogue-header__title">
         <img src={agentuxLogo} alt="AgentUX logo" className="catalogue-header-logo" />
       </div>

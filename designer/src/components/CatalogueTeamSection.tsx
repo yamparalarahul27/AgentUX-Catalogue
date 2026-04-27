@@ -16,9 +16,7 @@ import type { Project, ScreenshotNode } from '../types';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { Dropdown } from './Dropdown';
 
-type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'prototypes';
-
-const PROTOTYPE_LINKS_KEY = 'catalogue:prototype-links';
+type TeamSubTab = 'analytics' | 'flows' | 'groups';
 
 interface CatalogueTeamSectionProps {
   projects: Project[];
@@ -33,12 +31,6 @@ interface FlowChecklistItem {
 interface GroupChecklistItem {
   group: string;
   count: number;
-}
-
-interface PrototypeLink {
-  id: string;
-  label: string;
-  url: string;
 }
 
 function buildFlowChecklist(screenshots: ScreenshotNode[]): FlowChecklistItem[] {
@@ -70,23 +62,9 @@ function buildGroupChecklist(screenshots: ScreenshotNode[]): GroupChecklistItem[
   return [...counts.values()].sort((left, right) => left.group.localeCompare(right.group));
 }
 
-function loadPrototypeLinks(): PrototypeLink[] {
-  try {
-    const raw = localStorage.getItem(PROTOTYPE_LINKS_KEY);
-    return raw ? JSON.parse(raw) as PrototypeLink[] : [];
-  } catch { return []; }
-}
-
-function savePrototypeLinks(links: PrototypeLink[]) {
-  try { localStorage.setItem(PROTOTYPE_LINKS_KEY, JSON.stringify(links)); } catch { /* ignore */ }
-}
-
 export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSectionProps) {
   const [subTab, setSubTab] = useState<TeamSubTab>('analytics');
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [protoLinks, setProtoLinks] = useState<PrototypeLink[]>(loadPrototypeLinks);
-  const [newLabel, setNewLabel] = useState('');
-  const [newUrl, setNewUrl] = useState('');
   const [groupAppearanceMap, setGroupAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
   const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
   const [groupLabelDraft, setGroupLabelDraft] = useState('');
@@ -144,24 +122,6 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
       return { projectId };
     }
     return { projectIds: projects.map((project) => project.id) };
-  }
-
-  function addPrototypeLink() {
-    const url = newUrl.trim();
-    const label = newLabel.trim() || url;
-    if (!url) return;
-    const link: PrototypeLink = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, label, url };
-    const next = [...protoLinks, link];
-    setProtoLinks(next);
-    savePrototypeLinks(next);
-    setNewLabel('');
-    setNewUrl('');
-  }
-
-  function removePrototypeLink(id: string) {
-    const next = protoLinks.filter((link) => link.id !== id);
-    setProtoLinks(next);
-    savePrototypeLinks(next);
   }
 
   function beginGroupEdit(group: string) {
@@ -266,26 +226,20 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
             <button type="button" className={`catalogue-team__sub-tab ${subTab === 'groups' ? 'is-active' : ''}`} onClick={() => setSubTab('groups')}>
               Groups
             </button>
-            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'prototypes' ? 'is-active' : ''}`} onClick={() => setSubTab('prototypes')}>
-              Figma Prototypes
-            </button>
           </div>
           {subTab === 'analytics' && <p>Date-wise screenshot uploads grouped in IST with Web and Mobile split.</p>}
           {subTab === 'flows' && <p>All flows from uploaded screenshots. {flowChecklist.length} flow{flowChecklist.length !== 1 ? 's' : ''} tracked.</p>}
           {subTab === 'groups' && <p>All groups used in uploaded screenshots. {groupChecklist.length} group{groupChecklist.length !== 1 ? 's' : ''} found.</p>}
-          {subTab === 'prototypes' && <p>Figma prototype links for quick access. {protoLinks.length} link{protoLinks.length !== 1 ? 's' : ''} saved.</p>}
         </div>
-        {subTab !== 'prototypes' && (
-          <div className="catalogue-team__filters">
-            <Dropdown
-              value={projectId}
-              options={projectOptions}
-              placeholder={selectedProject ? selectedProject.name : 'All projects'}
-              onChange={setProjectId}
-              className="catalogue-team__project-dropdown"
-            />
-          </div>
-        )}
+        <div className="catalogue-team__filters">
+          <Dropdown
+            value={projectId}
+            options={projectOptions}
+            placeholder={selectedProject ? selectedProject.name : 'All projects'}
+            onChange={setProjectId}
+            className="catalogue-team__project-dropdown"
+          />
+        </div>
       </div>
 
       {subTab === 'analytics' && (
@@ -438,65 +392,6 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
         </>
       )}
 
-      {subTab === 'prototypes' && (
-        <>
-          <div className="catalogue-team__proto-form">
-            <input
-              className="catalogue-filter"
-              type="text"
-              placeholder="Label (e.g. Deposit Flow v2)"
-              value={newLabel}
-              onChange={(event) => setNewLabel(event.target.value)}
-            />
-            <input
-              className="catalogue-filter"
-              type="url"
-              placeholder="Figma prototype URL"
-              value={newUrl}
-              onChange={(event) => setNewUrl(event.target.value)}
-              onKeyDown={(event) => { if (event.key === 'Enter') addPrototypeLink(); }}
-            />
-            <button type="button" className="btn-primary" disabled={!newUrl.trim()} onClick={addPrototypeLink}>
-              Add Link
-            </button>
-          </div>
-
-          {protoLinks.length === 0 ? (
-            <div className="catalogue-team__empty">No prototype links yet. Add a Figma URL above.</div>
-          ) : (
-            <div className="catalogue-team__checklist">
-              {protoLinks.map((link) => (
-                <div key={link.id} className="catalogue-team__checklist-item">
-                  <a
-                    className="catalogue-team__proto-link"
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                    {link.label}
-                  </a>
-                  <button
-                    type="button"
-                    className="catalogue-team__proto-remove"
-                    title="Remove link"
-                    onClick={() => removePrototypeLink(link.id)}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
     </section>
   );
 }
