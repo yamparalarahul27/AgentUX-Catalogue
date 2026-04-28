@@ -201,6 +201,7 @@ export function Catalogue({
   });
   const upload = useCatalogueUpload({
     allFamilies,
+    fullScopeScreenshots,
     projects,
     setScreenshots,
     setToast,
@@ -505,9 +506,7 @@ export function Catalogue({
                   isOpen={upload.showQuickUpload}
                   projectId={upload.quickUploadProjectId}
                   projects={projects.map((project) => ({ id: project.id, name: project.name }))}
-                  quickUploadExistingGroup={upload.quickUploadExistingGroup}
-                  quickUploadGroupMode={upload.quickUploadGroupMode}
-                  quickUploadNewGroup={upload.quickUploadNewGroup}
+                  quickUploadGroup={upload.quickUploadGroup}
                   quickUploadProjectGroups={upload.quickUploadProjectGroups}
                   quickUploadQueue={upload.quickUploadQueuePreview}
                   uploading={upload.uploading}
@@ -522,11 +521,9 @@ export function Catalogue({
                   onWebPresetKeyChange={upload.setQuickUploadWebPresetKey}
                   onMobileOsChange={upload.setQuickUploadMobileOs}
                   onQuickUploadClearQueue={upload.handleQuickUploadQueueClear}
-                  onQuickUploadExistingGroupChange={upload.setQuickUploadExistingGroup}
                   onQuickUploadFilesSelected={upload.handleQuickUploadQueueAdd}
                   onQuickUploadFlowLabelChange={upload.setQuickUploadFlowLabel}
-                  onQuickUploadGroupModeChange={upload.handleQuickUploadGroupModeChange}
-                  onQuickUploadNewGroupChange={upload.setQuickUploadNewGroup}
+                  onQuickUploadGroupChange={upload.setQuickUploadGroup}
                   onQuickUploadProjectChange={upload.handleQuickUploadProjectChange}
                   onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
                   onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}

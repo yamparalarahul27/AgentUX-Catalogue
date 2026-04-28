@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildConventionName } from '../lib/naming';
-import { Dropdown } from './Dropdown';
 import { UploadZone } from './UploadZone';
 
 interface QuickUploadQueueItem {
@@ -22,9 +21,7 @@ interface CatalogueQuickUploadPanelProps {
   existingFlows: string[];
   flowLabel: string;
   uploading: boolean;
-  quickUploadGroupMode: 'auto' | 'existing' | 'new';
-  quickUploadExistingGroup: string | null;
-  quickUploadNewGroup: string;
+  quickUploadGroup: string;
   quickUploadProjectGroups: string[];
   quickUploadQueue: QuickUploadQueueItem[];
   platform: 'web' | 'mobile' | null;
@@ -38,9 +35,7 @@ interface CatalogueQuickUploadPanelProps {
   onMobileOsChange: (value: 'ios' | 'android' | null) => void;
   onQuickUploadFlowLabelChange: (value: string) => void;
   onQuickUploadFilesSelected: (files: File[]) => void;
-  onQuickUploadGroupModeChange: (mode: 'auto' | 'existing' | 'new') => void;
-  onQuickUploadExistingGroupChange: (value: string | null) => void;
-  onQuickUploadNewGroupChange: (value: string) => void;
+  onQuickUploadGroupChange: (value: string) => void;
   onQuickUploadRemoveQueuedFile: (id: string) => void;
   onQuickUploadClearQueue: () => void;
   onQuickUploadUploadAll: () => void;
@@ -50,9 +45,7 @@ export function CatalogueQuickUploadPanel({
   existingFlows,
   flowLabel,
   uploading,
-  quickUploadGroupMode,
-  quickUploadExistingGroup,
-  quickUploadNewGroup,
+  quickUploadGroup,
   quickUploadProjectGroups,
   quickUploadQueue,
   platform,
@@ -66,9 +59,7 @@ export function CatalogueQuickUploadPanel({
   onMobileOsChange,
   onQuickUploadFlowLabelChange,
   onQuickUploadFilesSelected,
-  onQuickUploadGroupModeChange,
-  onQuickUploadExistingGroupChange,
-  onQuickUploadNewGroupChange,
+  onQuickUploadGroupChange,
   onQuickUploadRemoveQueuedFile,
   onQuickUploadClearQueue,
   onQuickUploadUploadAll,
@@ -76,6 +67,8 @@ export function CatalogueQuickUploadPanel({
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [flowMenuOpen, setFlowMenuOpen] = useState(false);
   const flowComboboxRef = useRef<HTMLDivElement>(null);
+  const [groupMenuOpen, setGroupMenuOpen] = useState(false);
+  const groupComboboxRef = useRef<HTMLDivElement>(null);
 
   const filteredFlowOptions = useMemo(() => {
     const query = flowLabel.trim().toLowerCase();
@@ -85,6 +78,15 @@ export function CatalogueQuickUploadPanel({
       : existingFlows;
     return { matches: matches.slice(0, 8), exactMatch: Boolean(exactMatch) };
   }, [existingFlows, flowLabel]);
+
+  const filteredGroupOptions = useMemo(() => {
+    const query = quickUploadGroup.trim().toLowerCase();
+    const exactMatch = quickUploadProjectGroups.find((group) => group.toLowerCase() === query);
+    const matches = query
+      ? quickUploadProjectGroups.filter((group) => group.toLowerCase().includes(query))
+      : quickUploadProjectGroups;
+    return { matches: matches.slice(0, 8), exactMatch: Boolean(exactMatch) };
+  }, [quickUploadProjectGroups, quickUploadGroup]);
 
   useEffect(() => {
     if (!flowMenuOpen) return;
@@ -104,18 +106,31 @@ export function CatalogueQuickUploadPanel({
     };
   }, [flowMenuOpen]);
 
-  const quickUploadGroupReady = quickUploadGroupMode === 'auto'
-    || (quickUploadGroupMode === 'existing'
-      ? Boolean(quickUploadExistingGroup)
-      : Boolean(quickUploadNewGroup.trim()));
+  useEffect(() => {
+    if (!groupMenuOpen) return;
+    function handlePointer(event: MouseEvent) {
+      if (groupComboboxRef.current && !groupComboboxRef.current.contains(event.target as Node)) {
+        setGroupMenuOpen(false);
+      }
+    }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setGroupMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [groupMenuOpen]);
+
+  const flowReady = Boolean(flowLabel.trim());
   const canUploadAllQuick = Boolean(
-    quickUploadQueue.length > 0 && quickUploadGroupReady && !uploading,
+    quickUploadQueue.length > 0 && flowReady && !uploading,
   );
 
   function getQueueGroupLabel(item: { parsedGroup: string | null }) {
-    if (quickUploadGroupMode === 'existing') return quickUploadExistingGroup || 'Select group';
-    if (quickUploadGroupMode === 'new') return quickUploadNewGroup.trim() || 'Enter new group';
-    return item.parsedGroup || 'No group';
+    return quickUploadGroup.trim() || item.parsedGroup || 'No group';
   }
 
   useEffect(() => {
@@ -136,7 +151,9 @@ export function CatalogueQuickUploadPanel({
   return (
     <div className="catalogue-quick-upload-layout">
       <div className="catalogue-quick-upload-left">
-        <label className="catalogue-upload-label">Flow</label>
+        <label className="catalogue-upload-label">
+          Flow <span className="catalogue-upload-required" aria-hidden="true">*</span>
+        </label>
         <div className="catalogue-flow-combobox" ref={flowComboboxRef}>
           <input
             className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
@@ -179,29 +196,45 @@ export function CatalogueQuickUploadPanel({
 
         <div className="catalogue-upload-row">
           <div className="catalogue-upload-row__col">
-            <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Group assignment</label>
-            <div className="catalogue-upload-groups">
-              <button
-                type="button"
-                className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'auto' ? 'active' : ''}`}
-                onClick={() => onQuickUploadGroupModeChange('auto')}
-              >
-                Auto from filename
-              </button>
-              <button
-                type="button"
-                className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'existing' ? 'active' : ''}`}
-                onClick={() => onQuickUploadGroupModeChange('existing')}
-              >
-                Existing group
-              </button>
-              <button
-                type="button"
-                className={`catalogue-upload-group-chip ${quickUploadGroupMode === 'new' ? 'active' : ''}`}
-                onClick={() => onQuickUploadGroupModeChange('new')}
-              >
-                New group
-              </button>
+            <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Group</label>
+            <div className="catalogue-flow-combobox" ref={groupComboboxRef}>
+              <input
+                className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
+                type="text"
+                placeholder="Search or add group (blank = use filename)"
+                value={quickUploadGroup}
+                onChange={(event) => {
+                  onQuickUploadGroupChange(event.target.value);
+                  setGroupMenuOpen(true);
+                }}
+                onFocus={() => setGroupMenuOpen(true)}
+                autoComplete="off"
+              />
+              {groupMenuOpen && (filteredGroupOptions.matches.length > 0 || quickUploadGroup.trim()) && (
+                <div className="catalogue-flow-combobox__menu" role="listbox">
+                  {filteredGroupOptions.matches.map((group) => (
+                    <button
+                      key={group}
+                      type="button"
+                      role="option"
+                      aria-selected={group === quickUploadGroup}
+                      className={`catalogue-flow-combobox__item ${group === quickUploadGroup ? 'is-active' : ''}`}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        onQuickUploadGroupChange(group);
+                        setGroupMenuOpen(false);
+                      }}
+                    >
+                      {group}
+                    </button>
+                  ))}
+                  {quickUploadGroup.trim() && !filteredGroupOptions.exactMatch && (
+                    <div className="catalogue-flow-combobox__hint">
+                      Press Enter or click outside to use new group “{quickUploadGroup.trim()}”
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -221,30 +254,6 @@ export function CatalogueQuickUploadPanel({
             </div>
           </div>
         </div>
-
-        {quickUploadGroupMode === 'existing' && (
-          quickUploadProjectGroups.length > 0 ? (
-            <Dropdown
-              className="catalogue-upload-project-dropdown"
-              value={quickUploadExistingGroup}
-              placeholder="Select an existing group..."
-              options={quickUploadProjectGroups.map((group) => ({ value: group, label: group }))}
-              onChange={onQuickUploadExistingGroupChange}
-            />
-          ) : (
-            <p className="catalogue-upload-hint">No groups found for this project yet. Create one instead.</p>
-          )
-        )}
-
-        {quickUploadGroupMode === 'new' && (
-          <input
-            className="catalogue-filter catalogue-upload-project-select"
-            type="text"
-            placeholder="Enter new group name..."
-            value={quickUploadNewGroup}
-            onChange={(event) => onQuickUploadNewGroupChange(event.target.value)}
-          />
-        )}
 
         <label className="catalogue-upload-label">Platform</label>
         <div className="catalogue-upload-groups">
@@ -401,6 +410,11 @@ export function CatalogueQuickUploadPanel({
             </div>
           )}
 
+          {quickUploadQueue.length > 0 && !flowReady && (
+            <p className="catalogue-upload-hint catalogue-upload-hint--required">
+              Flow name is required.
+            </p>
+          )}
           <button
             type="button"
             className="btn-primary catalogue-quick-upload-all"

@@ -24,9 +24,7 @@ interface CatalogueQuickUploadModalProps {
   isOpen: boolean;
   projects: { id: string; name: string }[];
   projectId: string | null;
-  quickUploadGroupMode: 'auto' | 'existing' | 'new';
-  quickUploadExistingGroup: string | null;
-  quickUploadNewGroup: string;
+  quickUploadGroup: string;
   quickUploadProjectGroups: string[];
   quickUploadQueue: QuickUploadQueuePreviewItem[];
   uploading: boolean;
@@ -43,9 +41,7 @@ interface CatalogueQuickUploadModalProps {
   onQuickUploadFlowLabelChange: (value: string) => void;
   onQuickUploadProjectChange: (value: string | null) => void;
   onQuickUploadFilesSelected: (files: File[]) => void;
-  onQuickUploadGroupModeChange: (mode: 'auto' | 'existing' | 'new') => void;
-  onQuickUploadExistingGroupChange: (value: string | null) => void;
-  onQuickUploadNewGroupChange: (value: string) => void;
+  onQuickUploadGroupChange: (value: string) => void;
   onQuickUploadRemoveQueuedFile: (id: string) => void;
   onQuickUploadClearQueue: () => void;
   onQuickUploadUploadAll: () => void;
@@ -69,9 +65,7 @@ function useIsMobile(breakpoint = 860) {
 function QuickUploadContent({
   existingFlows,
   flowLabel,
-  quickUploadGroupMode,
-  quickUploadExistingGroup,
-  quickUploadNewGroup,
+  quickUploadGroup,
   quickUploadProjectGroups,
   quickUploadQueue,
   uploading,
@@ -87,9 +81,7 @@ function QuickUploadContent({
   onMobileOsChange,
   onQuickUploadFlowLabelChange,
   onQuickUploadFilesSelected,
-  onQuickUploadGroupModeChange,
-  onQuickUploadExistingGroupChange,
-  onQuickUploadNewGroupChange,
+  onQuickUploadGroupChange,
   onQuickUploadRemoveQueuedFile,
   onQuickUploadClearQueue,
   onQuickUploadUploadAll,
@@ -117,9 +109,7 @@ function QuickUploadContent({
         existingFlows={existingFlows}
         flowLabel={flowLabel}
         uploading={uploading}
-        quickUploadGroupMode={quickUploadGroupMode}
-        quickUploadExistingGroup={quickUploadExistingGroup}
-        quickUploadNewGroup={quickUploadNewGroup}
+        quickUploadGroup={quickUploadGroup}
         quickUploadProjectGroups={quickUploadProjectGroups}
         quickUploadQueue={quickUploadQueue}
         platform={platform}
@@ -133,9 +123,7 @@ function QuickUploadContent({
         onMobileOsChange={onMobileOsChange}
         onQuickUploadFlowLabelChange={onQuickUploadFlowLabelChange}
         onQuickUploadFilesSelected={onQuickUploadFilesSelected}
-        onQuickUploadGroupModeChange={onQuickUploadGroupModeChange}
-        onQuickUploadExistingGroupChange={onQuickUploadExistingGroupChange}
-        onQuickUploadNewGroupChange={onQuickUploadNewGroupChange}
+        onQuickUploadGroupChange={onQuickUploadGroupChange}
         onQuickUploadRemoveQueuedFile={onQuickUploadRemoveQueuedFile}
         onQuickUploadClearQueue={onQuickUploadClearQueue}
         onQuickUploadUploadAll={onQuickUploadUploadAll}

@@ -14,8 +14,6 @@ interface ToastState {
   type: 'error' | 'success' | 'info';
 }
 
-type QuickUploadGroupMode = 'auto' | 'existing' | 'new';
-
 interface QuickUploadQueueItem {
   id: string;
   file: File;
@@ -25,6 +23,7 @@ interface QuickUploadQueueItem {
 
 interface UseCatalogueUploadArgs {
   allFamilies: CatalogueFamilyView[];
+  fullScopeScreenshots?: ScreenshotNode[];
   projects: Project[];
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
@@ -35,6 +34,7 @@ interface UseCatalogueUploadArgs {
 
 export function useCatalogueUpload({
   allFamilies,
+  fullScopeScreenshots,
   projects,
   setScreenshots,
   setToast,
@@ -60,9 +60,7 @@ export function useCatalogueUpload({
   const [quickUploadProjectId, setQuickUploadProjectId] = useState<string | null>(null);
   const [quickUploadQueue, setQuickUploadQueue] = useState<QuickUploadQueueItem[]>([]);
   const quickUploadQueueRef = useRef<QuickUploadQueueItem[]>([]);
-  const [quickUploadGroupMode, setQuickUploadGroupMode] = useState<QuickUploadGroupMode>('auto');
-  const [quickUploadExistingGroup, setQuickUploadExistingGroup] = useState<string | null>(null);
-  const [quickUploadNewGroup, setQuickUploadNewGroup] = useState('');
+  const [quickUploadGroup, setQuickUploadGroup] = useState('');
   const [quickUploadFlowLabel, setQuickUploadFlowLabel] = useState('');
   const [quickUploadPlatform, setQuickUploadPlatform] = useState<'web' | 'mobile' | null>(null);
   const [quickUploadTheme, setQuickUploadTheme] = useState<'light' | 'dark' | null>(null);
@@ -83,8 +81,11 @@ export function useCatalogueUpload({
   }, [allFamilies, effectiveUploadProjectId]);
 
   const quickUploadProjectGroups = useMemo(() => {
-    return [...new Set(allFamilies.map((family) => family.group).filter(Boolean))] as string[];
-  }, [allFamilies]);
+    const source = fullScopeScreenshots && fullScopeScreenshots.length > 0
+      ? fullScopeScreenshots.map((screenshot) => screenshot.group)
+      : allFamilies.map((family) => family.group);
+    return [...new Set(source.filter(Boolean) as string[])].sort((left, right) => left.localeCompare(right));
+  }, [allFamilies, fullScopeScreenshots]);
 
   const quickUploadQueuePreview = useMemo(
     () => quickUploadQueue.map((item) => ({
@@ -175,9 +176,7 @@ export function useCatalogueUpload({
       previous.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       return [];
     });
-    setQuickUploadGroupMode('auto');
-    setQuickUploadExistingGroup(null);
-    setQuickUploadNewGroup('');
+    setQuickUploadGroup('');
     setQuickUploadFlowLabel('');
     setQuickUploadPlatform(null);
     setQuickUploadTheme(null);
@@ -187,14 +186,6 @@ export function useCatalogueUpload({
 
   function handleQuickUploadProjectChange(projectId: string | null) {
     setQuickUploadProjectId(projectId);
-    setQuickUploadExistingGroup(null);
-  }
-
-  function handleQuickUploadGroupModeChange(mode: QuickUploadGroupMode) {
-    setQuickUploadGroupMode(mode);
-    if (mode === 'existing') {
-      setQuickUploadExistingGroup((previous) => previous || quickUploadProjectGroups[0] || null);
-    }
   }
 
   function handleQuickUploadQueueAdd(files: File[]) {
@@ -364,22 +355,15 @@ export function useCatalogueUpload({
     }
 
     const queue = [...quickUploadQueue];
-    const mode = quickUploadGroupMode;
-    const existingGroup = quickUploadExistingGroup?.trim() || null;
-    const newGroup = quickUploadNewGroup.trim();
+    const batchGroup = quickUploadGroup.trim();
     const batchFlowLabel = quickUploadFlowLabel.trim();
     const batchPlatform = quickUploadPlatform;
     const batchTheme = quickUploadTheme;
     const batchWebPresetKey = quickUploadPlatform === 'web' ? quickUploadWebPresetKey : null;
     const batchMobileOs = quickUploadPlatform === 'mobile' ? quickUploadMobileOs : null;
 
-    if (mode === 'existing' && !existingGroup) {
-      setToast({ message: 'Select an existing group before uploading', type: 'error' });
-      return [] as ScreenshotNode[];
-    }
-
-    if (mode === 'new' && !newGroup) {
-      setToast({ message: 'Enter a group name before uploading', type: 'error' });
+    if (!batchFlowLabel) {
+      setToast({ message: 'Add a flow name before uploading', type: 'error' });
       return [] as ScreenshotNode[];
     }
 
@@ -389,7 +373,7 @@ export function useCatalogueUpload({
     const results = await Promise.allSettled(
       queue.map(async (item) => {
         const { file, parsed } = item;
-        const group = mode === 'existing' ? existingGroup : mode === 'new' ? newGroup : parsed.group;
+        const group = batchGroup || parsed.group;
         const flowLabel = batchFlowLabel || parsed.group || null;
         const flowMetadata = flowLabel ? { [CATALOGUE_FLOW_LABEL_KEY]: flowLabel } : {};
         const compressed = await compressImage(file);
@@ -470,7 +454,6 @@ export function useCatalogueUpload({
 
   return {
     activeVariantKeys,
-    handleQuickUploadGroupModeChange,
     handleQuickUploadProjectChange,
     handleQuickUploadQueueAdd,
     handleQuickUploadQueueClear,
@@ -478,11 +461,9 @@ export function useCatalogueUpload({
     handleQuickUploadUploadAll,
     resetUploadState,
     resetQuickUploadState,
-    quickUploadExistingGroup,
     quickUploadFlowLabel,
-    quickUploadGroupMode,
+    quickUploadGroup,
     quickUploadMobileOs,
-    quickUploadNewGroup,
     quickUploadPlatform,
     quickUploadProjectGroups,
     quickUploadProjectId,
@@ -519,10 +500,9 @@ export function useCatalogueUpload({
     setUploadRefPreview,
     setUploadTheme,
     setUploadWebPresetKey,
-    setQuickUploadExistingGroup,
     setQuickUploadFlowLabel,
+    setQuickUploadGroup,
     setQuickUploadMobileOs,
-    setQuickUploadNewGroup,
     setQuickUploadPlatform,
     setQuickUploadTheme,
     setQuickUploadWebPresetKey,

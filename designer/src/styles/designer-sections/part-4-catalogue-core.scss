@@ -509,6 +509,12 @@
   font-size: 13px;
   text-align: center;
   padding: 20px 0;
+
+  &--required {
+    color: #f87171;
+    padding: 6px 0 8px;
+    text-align: left;
+  }
 }
 
 .catalogue-upload-label {
@@ -519,6 +525,11 @@
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.catalogue-upload-required {
+  color: #f87171;
+  margin-left: 2px;
 }
 
 .catalogue-quick-upload-flow-input {
