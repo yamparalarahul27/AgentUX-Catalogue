@@ -207,6 +207,19 @@
 
     .catalogue-card-select { opacity: 1; }
   }
+
+  &--recently-viewed {
+    animation: catalogue-card-recently-viewed-fade 3s ease-out forwards;
+  }
+}
+
+@keyframes catalogue-card-recently-viewed-fade {
+  0% {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.85), 0 0 24px 6px rgba(99, 102, 241, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0), 0 0 0 0 rgba(99, 102, 241, 0);
+  }
 }
 
 .catalogue-card-select {

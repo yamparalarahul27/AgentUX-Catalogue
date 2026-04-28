@@ -43,6 +43,10 @@
     border-color: rgba(99, 102, 241, 0.55);
     box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.25), 0 6px 20px rgba(0, 0, 0, 0.3);
   }
+
+  &.catalogue-card--recently-viewed {
+    animation: catalogue-card-recently-viewed-fade 3s ease-out forwards;
+  }
 }
 
 // Left — screenshot

@@ -11,6 +11,7 @@ import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { ConfirmModal } from './ConfirmModal';
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
   canEdit?: boolean;
@@ -18,6 +19,7 @@ interface CatalogueFamilyLightboxProps {
   family: CatalogueFamilyView;
   flowName: string | null;
   isOpen: boolean;
+  isLoadingNext?: boolean;
   onRequireAuth?: () => void;
   startInlineEdit?: boolean;
   userEmail: string;
@@ -46,6 +48,7 @@ export function CatalogueFamilyLightbox({
   family,
   flowName,
   isOpen,
+  isLoadingNext = false,
   onRequireAuth,
   startInlineEdit = false,
   userEmail,
@@ -79,6 +82,7 @@ export function CatalogueFamilyLightbox({
   const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]); const [annotationMetadata, setAnnotationMetadata] = useState<Record<string, unknown>>({}); const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [annotationMode, setAnnotationMode] = useState(false); const [annotationDraftText, setAnnotationDraftText] = useState(''); const [annotationDraft, setAnnotationDraft] = useState<{ x: number; y: number } | null>(null); const [annotationError, setAnnotationError] = useState('');
   const [imageSize, setImageSize] = useState<ImageSize | null>(null); const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const sortedComments = useMemo(
     () => [...comments].sort((a, b) => {
       const aResolved = Boolean(a.resolved_at);
@@ -176,6 +180,7 @@ export function CatalogueFamilyLightbox({
         if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
       }
       if (annotationMode || annotationDraft) return;
+      if (confirmDeleteOpen) return;
       if (event.key === 'ArrowLeft' && onPrev) {
         event.preventDefault();
         onPrev();
@@ -186,7 +191,7 @@ export function CatalogueFamilyLightbox({
     }
     window.addEventListener('keydown', handleNavKey);
     return () => window.removeEventListener('keydown', handleNavKey);
-  }, [isOpen, onPrev, onNext, annotationMode, annotationDraft]);
+  }, [isOpen, onPrev, onNext, annotationMode, annotationDraft, confirmDeleteOpen]);
   const saveAnnotations = useCallback(async (nextAnnotations: LightboxAnnotation[]) => {
     if (!ensureCanEdit()) return false;
     if (!screenshot) return false;
@@ -297,12 +302,13 @@ export function CatalogueFamilyLightbox({
     if (!saved) return;
     if (selectedAnnotationId === annotationId) setSelectedAnnotationId(null);
   }
-  async function requestDeleteFamily() {
+  function requestDeleteFamily() {
     if (!ensureCanEdit()) return;
-    const shouldDelete = window.confirm(`Delete "${family.name}" and all of its variants?`);
-    if (!shouldDelete) return;
+    setConfirmDeleteOpen(true);
+  }
+  async function performDeleteFamily() {
+    setConfirmDeleteOpen(false);
     await onDeleteFamily(family.id);
-    onClose();
   }
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -417,6 +423,7 @@ export function CatalogueFamilyLightbox({
     return null;
   }
   return createPortal(
+    <>
     <div className="catalogue-lightbox" onClick={onClose}>
       <div className="catalogue-lightbox-header" onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-name-wrap">
@@ -478,6 +485,12 @@ export function CatalogueFamilyLightbox({
             </div>
           )}
           {annotationMode && <div className="catalogue-lightbox-media-hint">Click the image to place a pin</div>}
+          {isLoadingNext && (
+            <div className="catalogue-lightbox-media-loading" aria-live="polite">
+              <div className="loading-spinner" />
+              <span>Loading next…</span>
+            </div>
+          )}
         </div>
         <div className={`catalogue-lightbox-comments ${sheetMinimized ? 'is-minimized' : ''}`}>
           <button type="button" className="catalogue-lightbox-grabber" onClick={() => setSheetMinimized((v) => !v)} aria-label={sheetMinimized ? 'Expand panel' : 'Minimize panel'} />
@@ -719,7 +732,16 @@ export function CatalogueFamilyLightbox({
           </div>
         </div>
       </div>
-    </div>,
+    </div>
+    {confirmDeleteOpen && (
+      <ConfirmModal
+        title="Delete screenshot"
+        message={`Delete "${family.name}" and all of its variants?`}
+        onConfirm={() => void performDeleteFamily()}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
+    )}
+    </>,
     document.body,
   );
 }

@@ -85,7 +85,7 @@ export function CatalogueStackCard({
   if (!screenshot) return null;
 
   return (
-    <article className={`catalogue-stack__card ${isSelected ? 'is-selected' : ''}`}>
+    <article className={`catalogue-stack__card ${isSelected ? 'is-selected' : ''}`} data-family-id={family.id}>
       <div className="catalogue-stack__media">
         <button
           type="button"

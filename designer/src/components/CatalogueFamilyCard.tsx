@@ -76,7 +76,7 @@ export function CatalogueFamilyCard({
 
   return (
     <>
-      <article className={`catalogue-card catalogue-family-card ${isSelected ? 'catalogue-card--selected is-selected' : ''}`}>
+      <article className={`catalogue-card catalogue-family-card ${isSelected ? 'catalogue-card--selected is-selected' : ''}`} data-family-id={family.id}>
         <div className="catalogue-family-card__media">
           <button
             type="button"

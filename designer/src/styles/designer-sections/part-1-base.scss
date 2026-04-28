@@ -145,7 +145,7 @@ $success: #22c55e;
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  z-index: 600;
+  z-index: 1400;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;

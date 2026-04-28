@@ -132,6 +132,8 @@ export function Catalogue({
   const [showSettings, setShowSettings] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
+  const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
+  const [recentlyViewedFamilyId, setRecentlyViewedFamilyId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'group' | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -173,7 +175,13 @@ export function Catalogue({
     filterProject: projects[0]?.id ?? null,
     flowMap,
     onFamilyDeleted: (familyId) => {
-      setPreviewFamilyId((previous) => (previous === familyId ? null : previous));
+      setPreviewFamilyId((previous) => {
+        if (previous !== familyId) return previous;
+        const idx = filteredFamilies.findIndex((family) => family.id === familyId);
+        if (idx < 0) return null;
+        const neighbor = filteredFamilies[idx + 1] ?? filteredFamilies[idx - 1];
+        return neighbor ? neighbor.id : null;
+      });
       setPreviewStartInlineEdit(false);
       setSelected((previous) => {
         const next = new Set(previous);
@@ -280,10 +288,64 @@ export function Catalogue({
     const currentIndex = filteredFamilies.findIndex((family) => family.id === previewFamilyId);
     if (currentIndex < 0) return;
     const nextIndex = currentIndex + direction;
-    if (nextIndex < 0 || nextIndex >= filteredFamilies.length) return;
-    setPreviewStartInlineEdit(false);
-    setPreviewFamilyId(filteredFamilies[nextIndex].id);
+    if (nextIndex >= 0 && nextIndex < filteredFamilies.length) {
+      setPreviewStartInlineEdit(false);
+      setPreviewFamilyId(filteredFamilies[nextIndex].id);
+      return;
+    }
+    if (direction === -1) return;
+    if (!hasMore) {
+      setToast({ message: 'End of catalogue', type: 'info' });
+      return;
+    }
+    setPendingPreviewNext(true);
   }
+  useEffect(() => {
+    if (!pendingPreviewNext) return;
+    if (!previewFamilyId) {
+      setPendingPreviewNext(false);
+      return;
+    }
+    const idx = filteredFamilies.findIndex((family) => family.id === previewFamilyId);
+    if (idx < 0) {
+      setPendingPreviewNext(false);
+      return;
+    }
+    const nextIdx = idx + 1;
+    if (nextIdx < filteredFamilies.length) {
+      setPreviewStartInlineEdit(false);
+      setPreviewFamilyId(filteredFamilies[nextIdx].id);
+      setPendingPreviewNext(false);
+      return;
+    }
+    if (!hasMore) {
+      setToast({ message: 'End of catalogue', type: 'info' });
+      setPendingPreviewNext(false);
+      return;
+    }
+    if (!loadingMore) {
+      void loadMore();
+    }
+  }, [pendingPreviewNext, previewFamilyId, filteredFamilies, hasMore, loadingMore, loadMore]);
+  useEffect(() => {
+    if (!recentlyViewedFamilyId) return;
+    const id = recentlyViewedFamilyId;
+    const element = document.querySelector<HTMLElement>(`[data-family-id="${CSS.escape(id)}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('catalogue-card--recently-viewed');
+    }
+    const timeout = window.setTimeout(() => {
+      const stillThere = document.querySelector<HTMLElement>(`[data-family-id="${CSS.escape(id)}"]`);
+      stillThere?.classList.remove('catalogue-card--recently-viewed');
+      setRecentlyViewedFamilyId((current) => (current === id ? null : current));
+    }, 3000);
+    return () => {
+      window.clearTimeout(timeout);
+      const stillThere = document.querySelector<HTMLElement>(`[data-family-id="${CSS.escape(id)}"]`);
+      stillThere?.classList.remove('catalogue-card--recently-viewed');
+    };
+  }, [recentlyViewedFamilyId]);
   function toggleSelect(familyId: string) {
     setSelected((prev) => { const next = new Set(prev); if (next.has(familyId)) next.delete(familyId); else next.add(familyId); return next; });
   }
@@ -542,6 +604,7 @@ export function Catalogue({
           family={previewFamily}
           flowName={previewFamily.flow_label}
           isOpen
+          isLoadingNext={pendingPreviewNext}
           onRequireAuth={() => setShowAuthPrompt(true)}
           startInlineEdit={previewStartInlineEdit}
           webPresets={webPresets}
@@ -550,8 +613,11 @@ export function Catalogue({
           onAnnotationStateChange={handleAnnotationStateChange}
           onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
           onClose={() => {
+            const lastViewed = previewFamilyId;
             setPreviewFamilyId(null);
             setPreviewStartInlineEdit(false);
+            setPendingPreviewNext(false);
+            setRecentlyViewedFamilyId(lastViewed);
           }}
           onPrev={() => stepPreview(-1)}
           onNext={() => stepPreview(1)}
