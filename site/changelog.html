@@ -86,6 +86,40 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- Apr 28, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 28, 2026</span>
+            <span class="changelog-title">Lightbox &amp; Quick Upload Polish</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Lightbox keyboard navigation — arrow keys step between screenshots without leaving the preview</li>
+              <li>Lightbox auto-loads the next page when you arrow past the loaded boundary; spinner overlay while it fetches; "End of catalogue" toast at the very last screenshot</li>
+              <li>Lightbox now uses the app's confirm modal for deletion (no more native browser dialog) and jumps to the neighbor screenshot after delete instead of closing</li>
+              <li>Closing the lightbox highlights the last-viewed card with a soft 3-second accent glow and scrolls it into view</li>
+              <li>Quick Upload: Group field is now a search-and-add combobox sourced from every group across your projects (no longer limited to paginated rows)</li>
+              <li>Quick Upload: Flow field is a search-and-add combobox over existing flows, with free-type for new ones</li>
+              <li>Toolbar filters for Group and Flow now support multi-select</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>Quick Upload group UX collapsed: removed the auto / existing / new chip switcher in favor of one combobox; empty input falls back to per-file filename-parsed group</li>
+              <li>Quick Upload header tightened — dropped the subtitle and project picker; Theme paired with Group assignment</li>
+              <li>Flow name is now required to upload — Upload All stays disabled with an inline hint until a flow is set</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>Multi-file drop occasionally lost files when async work ran between the drop event and the read — DataTransfer entries are now snapshotted up front</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- Apr 27, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">
