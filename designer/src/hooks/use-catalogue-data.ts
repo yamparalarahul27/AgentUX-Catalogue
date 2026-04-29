@@ -232,7 +232,7 @@ export function useCatalogueData({
       if (trimmedSearch) {
         // Escape commas and percent signs which have special meaning in Supabase or-clauses
         const safe = trimmedSearch.replace(/[,%]/g, ' ');
-        query = query.or(`name.ilike.%${safe}%,file_name.ilike.%${safe}%`);
+        query = query.or(`name.ilike.%${safe}%,file_name.ilike.%${safe}%,group.ilike.%${safe}%`);
       }
 
       query = query
