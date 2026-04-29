@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
-import { formatDateTime, parseAnnotations, type LightboxAnnotation } from '../lib/catalogue-lightbox';
+import { formatDateTime, type LightboxAnnotation } from '../lib/catalogue-lightbox';
+import { fetchAnnotationsForScreenshot } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 
@@ -39,10 +40,32 @@ export function CatalogueStackCard({
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentsError, setCommentsError] = useState('');
 
-  const annotations = useMemo<LightboxAnnotation[]>(
-    () => (screenshot ? parseAnnotations(screenshot.metadata) : []),
-    [screenshot],
-  );
+  const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]);
+
+  useEffect(() => {
+    if (!screenshot) {
+      setAnnotations([]);
+      return;
+    }
+    let cancelled = false;
+    fetchAnnotationsForScreenshot(screenshot.id).then((rows) => {
+      if (cancelled) return;
+      setAnnotations(rows.map((row) => ({
+        id: row.id,
+        shape: row.shape,
+        x: row.x,
+        y: row.y,
+        width: row.width,
+        height: row.height,
+        text: row.text,
+        user_email: row.user_email || 'Unknown',
+        created_at: row.created_at,
+      })));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [screenshot?.id]);
 
   useEffect(() => {
     if (!screenshot) {

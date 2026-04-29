@@ -2,19 +2,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant, getVariantKey } from '../lib/catalogue-families';
-import { formatDateTime, getAnnotationId, getContainLayout, parseAnnotations, type ImageSize, type LightboxAnnotation } from '../lib/catalogue-lightbox';
+import { formatDateTime, getContainLayout, type ImageSize, type LightboxAnnotation } from '../lib/catalogue-lightbox';
 import { getGroupColor } from '../lib/naming';
-import { ANNOTATION_METADATA_KEY } from '../lib/catalogue-activity';
+import {
+  deleteAnnotation as deleteAnnotationApi,
+  fetchAnnotationsForScreenshot,
+  insertAnnotation,
+  type ScreenshotAnnotation,
+} from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, WebPreset } from '../types';
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib/feature-flags';
 import { ConfirmModal } from './ConfirmModal';
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
   canEdit?: boolean;
+  existingAnnotationLabels?: string[];
   existingGroups: string[];
   family: CatalogueFamilyView;
   flowName: string | null;
@@ -24,7 +31,7 @@ interface CatalogueFamilyLightboxProps {
   startInlineEdit?: boolean;
   userEmail: string;
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
-  onAnnotationStateChange: (screenshotId: string, metadata: Record<string, unknown>) => void;
+  onAnnotationStateChange: (screenshotId: string, activity: { count: number; lastAddedAt: string | null }) => void;
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
@@ -40,10 +47,42 @@ interface CatalogueFamilyLightboxProps {
 }
 type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; resolved_at?: string | null; resolved_by_email?: string | null };
 type LightboxPanel = 'comments' | 'annotations';
+type AnnotationDraft = { shape: 'pin' | 'area'; x: number; y: number; width: number; height: number };
+type DrawingState = { startX: number; startY: number; currentX: number; currentY: number };
+
+const DRAG_THRESHOLD_PERCENT = 0.8; // ~0.8% of image dimension counts as a drag (otherwise: click)
+
 const shouldStartLightboxSheetMinimized = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+const isAnnotationEditAllowedNow = () => typeof window !== 'undefined' && window.innerWidth > ANNOTATION_EDIT_MIN_VIEWPORT_PX;
+
+function toLightboxAnnotation(row: ScreenshotAnnotation): LightboxAnnotation {
+  return {
+    id: row.id,
+    shape: row.shape,
+    x: row.x,
+    y: row.y,
+    width: row.width,
+    height: row.height,
+    text: row.text,
+    user_email: row.user_email || 'Unknown',
+    created_at: row.created_at,
+  };
+}
+
+function summarizeAnnotationActivity(annotations: LightboxAnnotation[]): { count: number; lastAddedAt: string | null } {
+  let lastAddedAt: string | null = null;
+  for (const annotation of annotations) {
+    if (!annotation.created_at) continue;
+    if (!lastAddedAt || new Date(annotation.created_at).getTime() > new Date(lastAddedAt).getTime()) {
+      lastAddedAt = annotation.created_at;
+    }
+  }
+  return { count: annotations.length, lastAddedAt };
+}
 export function CatalogueFamilyLightbox({
   activeVariantKey,
   canEdit = true,
+  existingAnnotationLabels = [],
   existingGroups,
   family,
   flowName,
@@ -79,8 +118,9 @@ export function CatalogueFamilyLightbox({
   const [webPresetDraft, setWebPresetDraft] = useState<string | null>(null); const [mobileOsDraft, setMobileOsDraft] = useState<MobileOs | null>(null);
   const [referenceLabelDraft, setReferenceLabelDraft] = useState(''); const [referenceFileDraft, setReferenceFileDraft] = useState<File | null>(null);
   const [comments, setComments] = useState<ScreenshotComment[]>([]); const [newComment, setNewComment] = useState(''); const [loadingComments, setLoadingComments] = useState(false); const [commentsError, setCommentsError] = useState('');
-  const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]); const [annotationMetadata, setAnnotationMetadata] = useState<Record<string, unknown>>({}); const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
-  const [annotationMode, setAnnotationMode] = useState(false); const [annotationDraftText, setAnnotationDraftText] = useState(''); const [annotationDraft, setAnnotationDraft] = useState<{ x: number; y: number } | null>(null); const [annotationError, setAnnotationError] = useState('');
+  const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]); const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [annotationMode, setAnnotationMode] = useState(false); const [annotationDraftText, setAnnotationDraftText] = useState(''); const [annotationDraft, setAnnotationDraft] = useState<AnnotationDraft | null>(null); const [drawing, setDrawing] = useState<DrawingState | null>(null); const [annotationError, setAnnotationError] = useState('');
+  const [annotationEditAllowed, setAnnotationEditAllowed] = useState<boolean>(() => isAnnotationEditAllowedNow());
   const [imageSize, setImageSize] = useState<ImageSize | null>(null); const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const sortedComments = useMemo(
@@ -106,11 +146,11 @@ export function CatalogueFamilyLightbox({
     setNewComment('');
     setCommentsError('');
     setLoadingComments(true);
-    setAnnotations(parseAnnotations(screenshot.metadata));
-    setAnnotationMetadata(screenshot.metadata || {});
+    setAnnotations([]);
     setSelectedAnnotationId(null);
     setAnnotationMode(false);
     setAnnotationDraft(null);
+    setDrawing(null);
     setAnnotationDraftText('');
     setAnnotationError('');
     setImageSize(null);
@@ -131,6 +171,10 @@ export function CatalogueFamilyLightbox({
         }
         setComments(data as ScreenshotComment[]);
       });
+    fetchAnnotationsForScreenshot(screenshot.id).then((rows) => {
+      if (cancelled) return;
+      setAnnotations(rows.map(toLightboxAnnotation));
+    });
     return () => {
       cancelled = true;
     };
@@ -170,6 +214,21 @@ export function CatalogueFamilyLightbox({
     annotationInputRef.current?.select();
   }, [annotationDraft]);
   useEffect(() => {
+    function handleResize() {
+      setAnnotationEditAllowed(isAnnotationEditAllowedNow());
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  useEffect(() => {
+    if (!annotationEditAllowed && annotationMode) {
+      setAnnotationMode(false);
+      setAnnotationDraft(null);
+      setDrawing(null);
+      setAnnotationDraftText('');
+    }
+  }, [annotationEditAllowed, annotationMode]);
+  useEffect(() => {
     if (!isOpen) return;
     function handleNavKey(event: KeyboardEvent) {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -192,27 +251,10 @@ export function CatalogueFamilyLightbox({
     window.addEventListener('keydown', handleNavKey);
     return () => window.removeEventListener('keydown', handleNavKey);
   }, [isOpen, onPrev, onNext, annotationMode, annotationDraft, confirmDeleteOpen]);
-  const saveAnnotations = useCallback(async (nextAnnotations: LightboxAnnotation[]) => {
-    if (!ensureCanEdit()) return false;
-    if (!screenshot) return false;
-    const nextMetadata = {
-      ...annotationMetadata,
-      [ANNOTATION_METADATA_KEY]: JSON.stringify(nextAnnotations),
-    };
-    const { error } = await supabase
-      .from('screenshots')
-      .update({ metadata: nextMetadata })
-      .eq('id', screenshot.id);
-    if (error) {
-      setAnnotationError('Could not save annotations right now.');
-      return false;
-    }
-    setAnnotations(nextAnnotations);
-    setAnnotationMetadata(nextMetadata);
-    setAnnotationError('');
-    onAnnotationStateChange(screenshot.id, nextMetadata);
-    return true;
-  }, [annotationMetadata, canEdit, onAnnotationStateChange, onRequireAuth, screenshot]);
+  const notifyAnnotationActivity = useCallback((nextAnnotations: LightboxAnnotation[]) => {
+    if (!screenshot) return;
+    onAnnotationStateChange(screenshot.id, summarizeAnnotationActivity(nextAnnotations));
+  }, [onAnnotationStateChange, screenshot]);
   const addComment = useCallback(async () => {
     if (!ensureCanEdit()) return;
     if (!screenshot) return;
@@ -263,43 +305,94 @@ export function CatalogueFamilyLightbox({
     setComments((previous) => previous.map((item) => (item.id === comment.id ? data as ScreenshotComment : item)));
     setCommentsError('');
   }, [canEdit, onRequireAuth, screenshot, userEmail]);
-  function handleMediaClick(event: React.MouseEvent<HTMLDivElement>) {
-    if (!annotationMode || !mediaLayout) return;
+  function getRelativePosition(event: React.MouseEvent<HTMLDivElement>): { x: number; y: number } | null {
+    if (!mediaLayout) return null;
     const rect = event.currentTarget.getBoundingClientRect();
     const relativeX = event.clientX - rect.left - mediaLayout.left;
     const relativeY = event.clientY - rect.top - mediaLayout.top;
-    if (relativeX < 0 || relativeY < 0 || relativeX > mediaLayout.width || relativeY > mediaLayout.height) {
+    const clampedX = Math.max(0, Math.min(mediaLayout.width, relativeX));
+    const clampedY = Math.max(0, Math.min(mediaLayout.height, relativeY));
+    return {
+      x: (clampedX / mediaLayout.width) * 100,
+      y: (clampedY / mediaLayout.height) * 100,
+    };
+  }
+  function handleMediaMouseDown(event: React.MouseEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    if (!annotationMode || !annotationEditAllowed) return;
+    if (annotationDraft) return; // already composing — ignore further drags
+    const position = getRelativePosition(event);
+    if (!position) return;
+    event.preventDefault();
+    setDrawing({ startX: position.x, startY: position.y, currentX: position.x, currentY: position.y });
+  }
+  function handleMediaMouseMove(event: React.MouseEvent<HTMLDivElement>) {
+    if (!drawing) return;
+    const position = getRelativePosition(event);
+    if (!position) return;
+    setDrawing({ ...drawing, currentX: position.x, currentY: position.y });
+  }
+  function handleMediaMouseUp(event: React.MouseEvent<HTMLDivElement>) {
+    if (!drawing) return;
+    const position = getRelativePosition(event) ?? { x: drawing.currentX, y: drawing.currentY };
+    const x = Math.min(drawing.startX, position.x);
+    const y = Math.min(drawing.startY, position.y);
+    const width = Math.abs(position.x - drawing.startX);
+    const height = Math.abs(position.y - drawing.startY);
+    setDrawing(null);
+    if (width < DRAG_THRESHOLD_PERCENT && height < DRAG_THRESHOLD_PERCENT) {
+      // It was a click, not a drag.
+      if (PIN_ANNOTATIONS_ENABLED) {
+        setAnnotationDraft({ shape: 'pin', x: drawing.startX, y: drawing.startY, width: 0, height: 0 });
+        setLightboxPanel('annotations');
+        setAnnotationError('');
+      }
       return;
     }
-    setAnnotationDraft({
-      x: (relativeX / mediaLayout.width) * 100,
-      y: (relativeY / mediaLayout.height) * 100,
-    });
+    setAnnotationDraft({ shape: 'area', x, y, width, height });
     setLightboxPanel('annotations');
     setAnnotationError('');
   }
+  function handleMediaMouseLeave() {
+    if (drawing) setDrawing(null);
+  }
   async function addAnnotation() {
+    if (!ensureCanEdit() || !screenshot) return;
     const trimmed = annotationDraftText.trim();
     if (!annotationDraft || !trimmed) return;
-    const item: LightboxAnnotation = {
-      id: getAnnotationId(),
+    const inserted = await insertAnnotation({
+      screenshot_id: screenshot.id,
+      shape: annotationDraft.shape,
       x: annotationDraft.x,
       y: annotationDraft.y,
+      width: annotationDraft.shape === 'area' ? annotationDraft.width : null,
+      height: annotationDraft.shape === 'area' ? annotationDraft.height : null,
       text: trimmed,
       user_email: userEmail,
-      created_at: new Date().toISOString(),
-    };
-    const nextAnnotations = [...annotations, item];
-    const saved = await saveAnnotations(nextAnnotations);
-    if (!saved) return;
-    setSelectedAnnotationId(item.id);
+    });
+    if (!inserted) {
+      setAnnotationError('Could not save the annotation right now.');
+      return;
+    }
+    const next = [...annotations, toLightboxAnnotation(inserted)];
+    setAnnotations(next);
+    setAnnotationError('');
+    notifyAnnotationActivity(next);
+    setSelectedAnnotationId(inserted.id);
     setAnnotationDraft(null);
     setAnnotationDraftText('');
   }
   async function deleteAnnotation(annotationId: string) {
-    const nextAnnotations = annotations.filter((annotation) => annotation.id !== annotationId);
-    const saved = await saveAnnotations(nextAnnotations);
-    if (!saved) return;
+    if (!ensureCanEdit()) return;
+    const ok = await deleteAnnotationApi(annotationId);
+    if (!ok) {
+      setAnnotationError('Could not delete the annotation right now.');
+      return;
+    }
+    const next = annotations.filter((annotation) => annotation.id !== annotationId);
+    setAnnotations(next);
+    setAnnotationError('');
+    notifyAnnotationActivity(next);
     if (selectedAnnotationId === annotationId) setSelectedAnnotationId(null);
   }
   function requestDeleteFamily() {
@@ -440,7 +533,15 @@ export function CatalogueFamilyLightbox({
         </button>
       </div>
       <div className="catalogue-lightbox-body" onClick={(event) => event.stopPropagation()}>
-        <div className="catalogue-lightbox-media" ref={mediaRef} onClick={handleMediaClick} style={{ cursor: annotationMode ? 'crosshair' : 'default' }}>
+        <div
+          className="catalogue-lightbox-media"
+          ref={mediaRef}
+          onMouseDown={handleMediaMouseDown}
+          onMouseMove={handleMediaMouseMove}
+          onMouseUp={handleMediaMouseUp}
+          onMouseLeave={handleMediaMouseLeave}
+          style={{ cursor: annotationMode && annotationEditAllowed ? 'crosshair' : 'default' }}
+        >
           <img
             src={screenshot.image_url}
             alt={`${family.name} ${activeVariant.label}`}
@@ -451,25 +552,69 @@ export function CatalogueFamilyLightbox({
           {mediaLayout && (
             <div className="catalogue-lightbox-pin-layer" aria-hidden="true">
               {annotations.map((annotation, index) => (
-                <button
-                  key={annotation.id}
-                  type="button"
-                  className={`catalogue-lightbox-pin ${selectedAnnotationId === annotation.id ? 'is-active' : ''}`}
-                  style={{
-                    left: `${mediaLayout.left + (annotation.x / 100) * mediaLayout.width}px`,
-                    top: `${mediaLayout.top + (annotation.y / 100) * mediaLayout.height}px`,
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setSelectedAnnotationId(annotation.id);
-                    setLightboxPanel('annotations');
-                  }}
-                  title={annotation.text}
-                >
-                  <span>{index + 1}</span>
-                </button>
+                annotation.shape === 'area' && annotation.width !== null && annotation.height !== null ? (
+                  <button
+                    key={annotation.id}
+                    type="button"
+                    className={`catalogue-lightbox-area ${selectedAnnotationId === annotation.id ? 'is-active' : ''}`}
+                    style={{
+                      left: `${mediaLayout.left + (annotation.x / 100) * mediaLayout.width}px`,
+                      top: `${mediaLayout.top + (annotation.y / 100) * mediaLayout.height}px`,
+                      width: `${(annotation.width / 100) * mediaLayout.width}px`,
+                      height: `${(annotation.height / 100) * mediaLayout.height}px`,
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedAnnotationId(annotation.id);
+                      setLightboxPanel('annotations');
+                    }}
+                    title={annotation.text}
+                  >
+                    <span className="catalogue-lightbox-area-label">{index + 1} · {annotation.text}</span>
+                  </button>
+                ) : (
+                  <button
+                    key={annotation.id}
+                    type="button"
+                    className={`catalogue-lightbox-pin ${selectedAnnotationId === annotation.id ? 'is-active' : ''}`}
+                    style={{
+                      left: `${mediaLayout.left + (annotation.x / 100) * mediaLayout.width}px`,
+                      top: `${mediaLayout.top + (annotation.y / 100) * mediaLayout.height}px`,
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedAnnotationId(annotation.id);
+                      setLightboxPanel('annotations');
+                    }}
+                    title={annotation.text}
+                  >
+                    <span>{index + 1}</span>
+                  </button>
+                )
               ))}
-              {annotationDraft && (
+              {drawing && (
+                <div
+                  className="catalogue-lightbox-area catalogue-lightbox-area--draft"
+                  style={{
+                    left: `${mediaLayout.left + (Math.min(drawing.startX, drawing.currentX) / 100) * mediaLayout.width}px`,
+                    top: `${mediaLayout.top + (Math.min(drawing.startY, drawing.currentY) / 100) * mediaLayout.height}px`,
+                    width: `${(Math.abs(drawing.currentX - drawing.startX) / 100) * mediaLayout.width}px`,
+                    height: `${(Math.abs(drawing.currentY - drawing.startY) / 100) * mediaLayout.height}px`,
+                  }}
+                />
+              )}
+              {annotationDraft && annotationDraft.shape === 'area' && (
+                <div
+                  className="catalogue-lightbox-area catalogue-lightbox-area--draft is-active"
+                  style={{
+                    left: `${mediaLayout.left + (annotationDraft.x / 100) * mediaLayout.width}px`,
+                    top: `${mediaLayout.top + (annotationDraft.y / 100) * mediaLayout.height}px`,
+                    width: `${(annotationDraft.width / 100) * mediaLayout.width}px`,
+                    height: `${(annotationDraft.height / 100) * mediaLayout.height}px`,
+                  }}
+                />
+              )}
+              {annotationDraft && annotationDraft.shape === 'pin' && (
                 <button
                   type="button"
                   className="catalogue-lightbox-pin catalogue-lightbox-pin-draft is-active"
@@ -484,7 +629,11 @@ export function CatalogueFamilyLightbox({
               )}
             </div>
           )}
-          {annotationMode && <div className="catalogue-lightbox-media-hint">Click the image to place a pin</div>}
+          {annotationMode && annotationEditAllowed && (
+            <div className="catalogue-lightbox-media-hint">
+              {PIN_ANNOTATIONS_ENABLED ? 'Drag a box to mark an area, or click to drop a pin' : 'Drag a box to mark an area'}
+            </div>
+          )}
           {isLoadingNext && (
             <div className="catalogue-lightbox-media-loading" aria-live="polite">
               <div className="loading-spinner" />
@@ -621,23 +770,32 @@ export function CatalogueFamilyLightbox({
                 </>
               ) : (
                 <>
-                  <div className="catalogue-lightbox-annotation-toolbar">
-                    <button
-                      type="button"
-                      className={`catalogue-lightbox-annotation-toggle ${annotationMode ? 'is-active' : ''}`}
-                      onClick={toggleAnnotationMode}
-                    >
-                      {annotationMode ? 'Placement mode on' : 'Add pin'}
-                    </button>
-                    <span className="catalogue-lightbox-annotation-toolbar-copy">
-                      {annotationMode ? 'Click the image, then add a note.' : 'Select a pin to inspect it.'}
-                    </span>
-                  </div>
+                  {annotationEditAllowed && (
+                    <div className="catalogue-lightbox-annotation-toolbar">
+                      <button
+                        type="button"
+                        className={`catalogue-lightbox-annotation-toggle ${annotationMode ? 'is-active' : ''}`}
+                        onClick={toggleAnnotationMode}
+                      >
+                        {annotationMode ? 'Drawing mode on' : 'Add area'}
+                      </button>
+                      <span className="catalogue-lightbox-annotation-toolbar-copy">
+                        {annotationMode ? 'Drag a box on the image, then name it.' : 'Select an area to inspect it.'}
+                      </span>
+                    </div>
+                  )}
+                  {!annotationEditAllowed && (
+                    <p className="catalogue-lightbox-annotation-toolbar-copy" style={{ padding: '8px 0' }}>
+                      Annotations are read-only on small screens. Open on a larger viewport to add or remove.
+                    </p>
+                  )}
                   {annotationError && <p className="catalogue-lightbox-annotation-error">{annotationError}</p>}
                   {annotationDraft && (
                     <div className="catalogue-lightbox-annotation-composer">
                       <div className="catalogue-lightbox-annotation-composer-label">
-                        New pin at {annotationDraft.x.toFixed(1)}%, {annotationDraft.y.toFixed(1)}%
+                        {annotationDraft.shape === 'area'
+                          ? `New area at ${annotationDraft.x.toFixed(1)}%, ${annotationDraft.y.toFixed(1)}% — ${annotationDraft.width.toFixed(1)}% × ${annotationDraft.height.toFixed(1)}%`
+                          : `New pin at ${annotationDraft.x.toFixed(1)}%, ${annotationDraft.y.toFixed(1)}%`}
                       </div>
                       <input
                         ref={annotationInputRef}
@@ -651,8 +809,17 @@ export function CatalogueFamilyLightbox({
                             setAnnotationDraftText('');
                           }
                         }}
-                        placeholder="Write annotation text..."
+                        placeholder={annotationDraft.shape === 'area' ? 'Name this area (e.g. Sign-up modal)' : 'Write annotation text...'}
+                        list="catalogue-annotation-suggestions"
+                        autoComplete="off"
                       />
+                      {existingAnnotationLabels.length > 0 && (
+                        <datalist id="catalogue-annotation-suggestions">
+                          {existingAnnotationLabels.map((label) => (
+                            <option key={label} value={label} />
+                          ))}
+                        </datalist>
+                      )}
                       <div className="catalogue-lightbox-annotation-composer-actions">
                         <button
                           type="button"
@@ -660,7 +827,7 @@ export function CatalogueFamilyLightbox({
                           onClick={() => void addAnnotation()}
                           disabled={!annotationDraftText.trim()}
                         >
-                          Save pin
+                          {annotationDraft.shape === 'area' ? 'Save area' : 'Save pin'}
                         </button>
                         <button
                           type="button"
@@ -718,7 +885,9 @@ export function CatalogueFamilyLightbox({
                           </div>
                           <p className="catalogue-lightbox-annotation-text">{annotation.text}</p>
                           <span className="catalogue-lightbox-annotation-coords">
-                            {annotation.x.toFixed(1)}%, {annotation.y.toFixed(1)}%
+                            {annotation.shape === 'area' && annotation.width !== null && annotation.height !== null
+                              ? `area · ${annotation.x.toFixed(1)}%, ${annotation.y.toFixed(1)}% — ${annotation.width.toFixed(1)}% × ${annotation.height.toFixed(1)}%`
+                              : `pin · ${annotation.x.toFixed(1)}%, ${annotation.y.toFixed(1)}%`}
                           </span>
                         </div>
                       ))

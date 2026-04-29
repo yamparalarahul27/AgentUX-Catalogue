@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { getAnnotationActivity } from '../lib/catalogue-activity';
 import { buildCatalogueFamilies, type CatalogueFamilyView } from '../lib/catalogue-families';
+import { fetchAnnotationActivity } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 import type { Project, ScreenFamily, ScreenshotNode, WebPreset } from '../types';
 
@@ -69,19 +69,21 @@ export function useCatalogueCompareData({
       .select('*')
       .in('project_id', scopedProjectIds)
       .filter('metadata->>catalogue_flow_label', 'eq', compareFlow)
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (cancelled) return;
         if (versionRef.current !== version) return;
-        setLoading(false);
         if (error || !data) {
+          setLoading(false);
           setScreenshots([]);
           return;
         }
+        const ids = data.map((row) => row.id as string);
+        const annotationActivity = await fetchAnnotationActivity(ids);
+        if (cancelled || versionRef.current !== version) return;
         const mapped = data.map((row) => {
           const metadata = row.metadata && typeof row.metadata === 'object'
             ? row.metadata as Record<string, unknown>
             : {};
-          const annotationActivity = getAnnotationActivity(metadata);
           const storagePath = (row.storage_path as string | null) ?? '';
           return {
             ...(row as unknown as ScreenshotNode),
@@ -95,10 +97,11 @@ export function useCatalogueCompareData({
             version_count: 0,
             comment_count: 0,
             comment_last_added_at: null,
-            annotation_count: annotationActivity.count,
-            annotation_last_added_at: annotationActivity.lastAddedAt,
+            annotation_count: annotationActivity.counts[row.id as string] || 0,
+            annotation_last_added_at: annotationActivity.lastAddedAt[row.id as string] || null,
           } satisfies ScreenshotNode;
         });
+        setLoading(false);
         setScreenshots(mapped);
       });
     return () => {

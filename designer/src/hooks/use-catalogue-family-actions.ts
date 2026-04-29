@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId } from '../lib/catalogue-families';
-import { getAnnotationActivity } from '../lib/catalogue-activity';
 import { compressImage } from '../lib/catalogue-image';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, Project, ScreenFamily, ScreenshotNode } from '../types';
@@ -122,14 +121,12 @@ export function useCatalogueFamilyActions({
 
   const handleAnnotationStateChange = useCallback((
     screenshotId: string,
-    metadata: Record<string, unknown>,
+    activity: { count: number; lastAddedAt: string | null },
   ) => {
-    const activity = getAnnotationActivity(metadata);
     setScreenshots((previous) => previous.map((screenshot) => (
       screenshot.id === screenshotId
         ? {
           ...screenshot,
-          metadata,
           annotation_count: activity.count,
           annotation_last_added_at: activity.lastAddedAt,
         }

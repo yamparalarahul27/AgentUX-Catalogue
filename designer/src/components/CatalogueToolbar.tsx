@@ -14,6 +14,8 @@ interface CatalogueToolbarProps {
   allFlows: string[];
   allMobileOs: { id: string; label: string }[];
   allWebPresets: { id: string; label: string }[];
+  annotationLabels: string[];
+  filterAnnotation: string[];
   filterFlow: string[];
   filterGroup: string[];
   filterMobileOs: string | null;
@@ -23,6 +25,7 @@ interface CatalogueToolbarProps {
   gridDensity: GridDensity;
   groups: string[];
   isSortLocked: boolean;
+  onFilterAnnotationChange: (value: string[]) => void;
   onFilterGroupChange: (value: string[]) => void;
   onFilterFlowChange: (value: string[]) => void;
   onGridDensityChange: (value: GridDensity) => void;
@@ -44,6 +47,7 @@ interface CatalogueToolbarProps {
 type ToolbarFilterKey =
   | 'flow'
   | 'group'
+  | 'annotation'
   | 'platform'
   | 'theme'
   | 'webPreset'
@@ -51,11 +55,12 @@ type ToolbarFilterKey =
   | 'view';
 
 const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
-const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['flow', 'group', 'platform', 'theme', 'view'];
+const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['flow', 'group', 'annotation', 'platform', 'theme', 'view'];
 
 const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
   { key: 'flow', label: 'Flows' },
   { key: 'group', label: 'Groups' },
+  { key: 'annotation', label: 'Annotations' },
   { key: 'platform', label: 'Platforms' },
   { key: 'theme', label: 'Themes' },
   { key: 'webPreset', label: 'Web presets' },
@@ -81,8 +86,13 @@ function parseVisibleFilters(value: string | null): Set<ToolbarFilterKey> {
 const VIEW_BY_LABELS: Record<CatalogueViewBy, string> = {
   'all': 'All screen families',
   'comments-added': 'Comments added',
+  // 'annotations-added' is intentionally not surfaced any more — the annotation
+  // multi-select filter replaces it. The value is still parsed for backwards
+  // compatibility (e.g. saved URLs) but no longer offered as a UI option.
   'annotations-added': 'Annotations added',
 };
+
+const VIEW_BY_VISIBLE_OPTIONS: CatalogueViewBy[] = ['all', 'comments-added'];
 
 function CloseIcon() {
   return (
@@ -97,6 +107,8 @@ export function CatalogueToolbar({
   allFlows,
   allMobileOs,
   allWebPresets,
+  annotationLabels,
+  filterAnnotation,
   filterFlow,
   filterGroup,
   filterMobileOs,
@@ -106,6 +118,7 @@ export function CatalogueToolbar({
   gridDensity,
   groups,
   isSortLocked,
+  onFilterAnnotationChange,
   onFilterGroupChange,
   onFilterFlowChange,
   onGridDensityChange,
@@ -199,6 +212,7 @@ export function CatalogueToolbar({
   const activeFilterCount =
     filterGroup.length +
     filterFlow.length +
+    filterAnnotation.length +
     [filterPlatform, filterTheme, filterWebPreset, filterMobileOs].filter(Boolean).length +
     (viewBy !== 'all' ? 1 : 0);
 
@@ -212,6 +226,11 @@ export function CatalogueToolbar({
     key: `flow:${flow}`,
     label: `Flow: ${flow}`,
     onRemove: () => onFilterFlowChange(filterFlow.filter((f) => f !== flow)),
+  }));
+  filterAnnotation.forEach((label) => activePills.push({
+    key: `annotation:${label}`,
+    label: `Annotation: ${label}`,
+    onRemove: () => onFilterAnnotationChange(filterAnnotation.filter((value) => value !== label)),
   }));
   if (filterPlatform) activePills.push({ key: 'platform', label: `Platform: ${filterPlatform}`, onRemove: () => onFilterPlatformChange(null) });
   if (filterTheme) activePills.push({ key: 'theme', label: `Theme: ${filterTheme}`, onRemove: () => onFilterThemeChange(null) });
@@ -310,6 +329,18 @@ export function CatalogueToolbar({
               onMultiChange={onFilterFlowChange}
             />
           )}
+          {isFilterVisible('annotation') && (
+            <Dropdown
+              className="catalogue-toolbar--desktop-only"
+              multiple
+              searchable
+              values={filterAnnotation}
+              placeholder="Annotation"
+              searchPlaceholder="Search annotations…"
+              options={annotationLabels.map((label) => ({ value: label, label }))}
+              onMultiChange={onFilterAnnotationChange}
+            />
+          )}
           {isFilterVisible('platform') && (
             <Dropdown
               className="catalogue-toolbar--desktop-only"
@@ -357,11 +388,7 @@ export function CatalogueToolbar({
               className="catalogue-toolbar--desktop-only"
               value={viewBy}
               placeholder="View by"
-              options={[
-                { value: 'all', label: 'All screen families' },
-                { value: 'comments-added', label: 'Comments added' },
-                { value: 'annotations-added', label: 'Annotations added' },
-              ]}
+              options={VIEW_BY_VISIBLE_OPTIONS.map((option) => ({ value: option, label: VIEW_BY_LABELS[option] }))}
               onChange={(value) => onViewByChange((value || 'all') as CatalogueViewBy)}
             />
           )}

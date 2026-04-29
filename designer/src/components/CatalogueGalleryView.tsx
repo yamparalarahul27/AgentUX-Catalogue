@@ -12,7 +12,7 @@ interface CatalogueGalleryViewProps {
   canEdit?: boolean;
   families: CatalogueFamilyView[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
-  onAnnotationStateChange?: (screenshotId: string, metadata: Record<string, unknown>) => void;
+  onAnnotationStateChange?: (screenshotId: string, activity: { count: number; lastAddedAt: string | null }) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onCommentCountChange?: (screenshotId: string, delta: number) => void;
   onDeleteFamily: (familyId: string) => Promise<void>;

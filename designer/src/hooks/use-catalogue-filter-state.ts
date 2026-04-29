@@ -24,6 +24,7 @@ export function useCatalogueFilterState() {
   const [filterTheme, setFilterTheme] = useState<string | null>(null);
   const [filterWebPreset, setFilterWebPreset] = useState<string | null>(null);
   const [filterMobileOs, setFilterMobileOs] = useState<string | null>(null);
+  const [filterAnnotation, setFilterAnnotation] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<CatalogueSortOption>(DEFAULT_CATALOGUE_SORT);
   const [viewBy, setViewBy] = useState<CatalogueViewBy>(DEFAULT_CATALOGUE_VIEW_BY);
 
@@ -47,10 +48,12 @@ export function useCatalogueFilterState() {
     theme: filterTheme as 'light' | 'dark' | null,
     webPreset: filterWebPreset,
     mobileOs: filterMobileOs as 'ios' | 'android' | null,
-  }), [filterFlow, filterGroup, filterMobileOs, filterPlatform, filterTheme, filterWebPreset]);
+    annotation: filterAnnotation,
+  }), [filterAnnotation, filterFlow, filterGroup, filterMobileOs, filterPlatform, filterTheme, filterWebPreset]);
 
   return {
     filters,
+    filterAnnotation,
     filterFlow,
     filterGroup,
     filterMobileOs,
@@ -59,6 +62,7 @@ export function useCatalogueFilterState() {
     filterWebPreset,
     searchQuery,
     searchQueryDebounced,
+    setFilterAnnotation,
     setFilterFlow,
     setFilterGroup,
     setFilterMobileOs,

@@ -1,9 +1,14 @@
 import { getLightboxAnnotationEntries } from './catalogue-activity';
 
+export type LightboxAnnotationShape = 'pin' | 'area';
+
 export interface LightboxAnnotation {
   id: string;
+  shape: LightboxAnnotationShape;
   x: number;
   y: number;
+  width: number | null;
+  height: number | null;
   text: string;
   user_email: string;
   created_at: string;
@@ -35,14 +40,27 @@ export function formatDateTime(value?: string) {
 export function parseAnnotations(metadata: Record<string, unknown> | undefined): LightboxAnnotation[] {
   const entries = getLightboxAnnotationEntries(metadata);
   return entries
-    .map((entry) => ({
-      id: String(entry.id || getAnnotationId()),
-      x: Number(entry.x),
-      y: Number(entry.y),
-      text: String(entry.text || ''),
-      user_email: String(entry.user_email || 'Unknown'),
-      created_at: String(entry.created_at || entry.createdAt || new Date().toISOString()),
-    }))
+    .map((entry) => {
+      const rawShape = typeof entry.shape === 'string' ? entry.shape : '';
+      const widthRaw = entry.width;
+      const heightRaw = entry.height;
+      const width = typeof widthRaw === 'number' ? widthRaw : (typeof widthRaw === 'string' ? Number(widthRaw) : null);
+      const height = typeof heightRaw === 'number' ? heightRaw : (typeof heightRaw === 'string' ? Number(heightRaw) : null);
+      const inferredShape: LightboxAnnotationShape = rawShape === 'area' || rawShape === 'pin'
+        ? rawShape
+        : (Number.isFinite(width) && Number.isFinite(height) ? 'area' : 'pin');
+      return {
+        id: String(entry.id || getAnnotationId()),
+        shape: inferredShape,
+        x: Number(entry.x),
+        y: Number(entry.y),
+        width: Number.isFinite(width as number) ? (width as number) : null,
+        height: Number.isFinite(height as number) ? (height as number) : null,
+        text: String(entry.text || ''),
+        user_email: String(entry.user_email || 'Unknown'),
+        created_at: String(entry.created_at || entry.createdAt || new Date().toISOString()),
+      };
+    })
     .filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y) && item.text.trim().length > 0);
 }
 

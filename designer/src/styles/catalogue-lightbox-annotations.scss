@@ -68,6 +68,55 @@
   border-style: dashed;
 }
 
+.catalogue-lightbox-area {
+  position: absolute;
+  z-index: 2;
+  border: 2px solid #6366f1;
+  background: rgba(99, 102, 241, 0.12);
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+  display: block;
+  padding: 0;
+  text-align: left;
+  transition: box-shadow 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.22);
+  }
+
+  &.is-active {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.45);
+    background: rgba(99, 102, 241, 0.2);
+  }
+}
+
+.catalogue-lightbox-area-label {
+  position: absolute;
+  top: -22px;
+  left: -2px;
+  padding: 2px 8px;
+  border-radius: 6px 6px 6px 0;
+  background: #6366f1;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalogue-lightbox-area--draft {
+  border-style: dashed;
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  pointer-events: none;
+  cursor: crosshair;
+}
+
 .catalogue-lightbox-media-hint {
   position: absolute;
   left: 16px;

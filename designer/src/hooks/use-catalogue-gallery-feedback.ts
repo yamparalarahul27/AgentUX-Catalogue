@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { ANNOTATION_METADATA_KEY } from '../lib/catalogue-activity';
 import {
-  getAnnotationId,
   getContainLayout,
-  parseAnnotations,
   type ImageSize,
   type LightboxAnnotation,
 } from '../lib/catalogue-lightbox';
+import {
+  deleteAnnotation as deleteAnnotationApi,
+  fetchAnnotationsForScreenshot,
+  insertAnnotation,
+  type ScreenshotAnnotation,
+} from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 import type { ScreenshotNode } from '../types';
 
@@ -24,11 +27,36 @@ type ScreenshotComment = {
 
 interface UseCatalogueGalleryFeedbackArgs {
   canEdit?: boolean;
-  onAnnotationStateChange?: (screenshotId: string, metadata: Record<string, unknown>) => void;
+  onAnnotationStateChange?: (screenshotId: string, activity: { count: number; lastAddedAt: string | null }) => void;
   onCommentCountChange?: (screenshotId: string, delta: number) => void;
   onRequireAuth?: () => void;
   screenshot: ScreenshotNode | null;
   userEmail: string;
+}
+
+function toLightboxAnnotation(row: ScreenshotAnnotation): LightboxAnnotation {
+  return {
+    id: row.id,
+    shape: row.shape,
+    x: row.x,
+    y: row.y,
+    width: row.width,
+    height: row.height,
+    text: row.text,
+    user_email: row.user_email || 'Unknown',
+    created_at: row.created_at,
+  };
+}
+
+function summarizeAnnotationActivity(annotations: LightboxAnnotation[]): { count: number; lastAddedAt: string | null } {
+  let lastAddedAt: string | null = null;
+  for (const annotation of annotations) {
+    if (!annotation.created_at) continue;
+    if (!lastAddedAt || new Date(annotation.created_at).getTime() > new Date(lastAddedAt).getTime()) {
+      lastAddedAt = annotation.created_at;
+    }
+  }
+  return { count: annotations.length, lastAddedAt };
 }
 
 interface PlaceAnnotationArgs {
@@ -81,7 +109,6 @@ export function useCatalogueGalleryFeedback({
   const [savingComment, setSavingComment] = useState(false);
   const [commentsError, setCommentsError] = useState('');
   const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]);
-  const [annotationMetadata, setAnnotationMetadata] = useState<Record<string, unknown>>({});
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [annotationMode, setAnnotationMode] = useState(false);
   const [annotationDraftText, setAnnotationDraftText] = useState('');
@@ -107,7 +134,6 @@ export function useCatalogueGalleryFeedback({
       setSavingComment(false);
       setCommentsError('');
       setAnnotations([]);
-      setAnnotationMetadata({});
       setSelectedAnnotationId(null);
       setAnnotationMode(false);
       setAnnotationDraftText('');
@@ -124,8 +150,7 @@ export function useCatalogueGalleryFeedback({
     setLoadingComments(true);
     setSavingComment(false);
     setCommentsError('');
-    setAnnotations(parseAnnotations(screenshot.metadata));
-    setAnnotationMetadata(screenshot.metadata || {});
+    setAnnotations([]);
     setSelectedAnnotationId(null);
     setAnnotationMode(false);
     setAnnotationDraftText('');
@@ -152,36 +177,20 @@ export function useCatalogueGalleryFeedback({
         setComments(data as ScreenshotComment[]);
       });
 
+    fetchAnnotationsForScreenshot(screenshot.id).then((rows) => {
+      if (cancelled) return;
+      setAnnotations(rows.map(toLightboxAnnotation));
+    });
+
     return () => {
       cancelled = true;
     };
   }, [screenshot?.id]);
 
-  const saveAnnotations = useCallback(async (nextAnnotations: LightboxAnnotation[]) => {
-    if (!ensureCanEdit()) return false;
-    if (!screenshot) return false;
-
-    const nextMetadata = {
-      ...annotationMetadata,
-      [ANNOTATION_METADATA_KEY]: JSON.stringify(nextAnnotations),
-    };
-
-    const { error } = await supabase
-      .from('screenshots')
-      .update({ metadata: nextMetadata })
-      .eq('id', screenshot.id);
-
-    if (error) {
-      setAnnotationError('Could not save annotations right now.');
-      return false;
-    }
-
-    setAnnotations(nextAnnotations);
-    setAnnotationMetadata(nextMetadata);
-    setAnnotationError('');
-    onAnnotationStateChange?.(screenshot.id, nextMetadata);
-    return true;
-  }, [annotationMetadata, ensureCanEdit, onAnnotationStateChange, screenshot]);
+  const notifyAnnotationActivity = useCallback((nextAnnotations: LightboxAnnotation[]) => {
+    if (!screenshot) return;
+    onAnnotationStateChange?.(screenshot.id, summarizeAnnotationActivity(nextAnnotations));
+  }, [onAnnotationStateChange, screenshot]);
 
   const addComment = useCallback(async () => {
     if (!ensureCanEdit()) return;
@@ -252,36 +261,49 @@ export function useCatalogueGalleryFeedback({
   }, [annotationMode, mediaLayout]);
 
   const addAnnotation = useCallback(async () => {
+    if (!ensureCanEdit() || !screenshot) return;
     const trimmed = annotationDraftText.trim();
     if (!annotationDraft || !trimmed) return;
 
-    const item: LightboxAnnotation = {
-      id: getAnnotationId(),
+    const inserted = await insertAnnotation({
+      screenshot_id: screenshot.id,
+      shape: 'pin',
       x: annotationDraft.x,
       y: annotationDraft.y,
+      width: null,
+      height: null,
       text: trimmed,
       user_email: userEmail,
-      created_at: new Date().toISOString(),
-    };
+    });
+    if (!inserted) {
+      setAnnotationError('Could not save the pin right now.');
+      return;
+    }
 
-    const nextAnnotations = [...annotations, item];
-    const saved = await saveAnnotations(nextAnnotations);
-    if (!saved) return;
-
-    setSelectedAnnotationId(item.id);
+    const next = [...annotations, toLightboxAnnotation(inserted)];
+    setAnnotations(next);
+    setAnnotationError('');
+    notifyAnnotationActivity(next);
+    setSelectedAnnotationId(inserted.id);
     setAnnotationDraft(null);
     setAnnotationDraftText('');
-  }, [annotationDraft, annotationDraftText, annotations, saveAnnotations, userEmail]);
+  }, [annotationDraft, annotationDraftText, annotations, ensureCanEdit, notifyAnnotationActivity, screenshot, userEmail]);
 
   const deleteAnnotation = useCallback(async (annotationId: string) => {
-    const nextAnnotations = annotations.filter((annotation) => annotation.id !== annotationId);
-    const saved = await saveAnnotations(nextAnnotations);
-    if (!saved) return;
-
+    if (!ensureCanEdit()) return;
+    const ok = await deleteAnnotationApi(annotationId);
+    if (!ok) {
+      setAnnotationError('Could not delete the annotation right now.');
+      return;
+    }
+    const next = annotations.filter((annotation) => annotation.id !== annotationId);
+    setAnnotations(next);
+    setAnnotationError('');
+    notifyAnnotationActivity(next);
     if (selectedAnnotationId === annotationId) {
       setSelectedAnnotationId(null);
     }
-  }, [annotations, saveAnnotations, selectedAnnotationId]);
+  }, [annotations, ensureCanEdit, notifyAnnotationActivity, selectedAnnotationId]);
 
   const selectAnnotation = useCallback((annotationId: string) => {
     setSelectedAnnotationId(annotationId);

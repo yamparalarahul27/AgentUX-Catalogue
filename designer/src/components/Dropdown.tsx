@@ -12,6 +12,8 @@ interface DropdownPropsBase {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }
 
 interface DropdownPropsSingle extends DropdownPropsBase {
@@ -34,12 +36,30 @@ export function Dropdown(props: DropdownProps) {
     placeholder = 'Select...',
     className,
     disabled = false,
+    searchable = false,
+    searchPlaceholder = 'Search…',
   } = props;
   const isMulti = props.multiple === true;
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!open) setSearchQuery('');
+  }, [open]);
+
+  useEffect(() => {
+    if (open && searchable) {
+      setTimeout(() => searchRef.current?.focus(), 0);
+    }
+  }, [open, searchable]);
+
+  const visibleOptions = searchable && searchQuery.trim()
+    ? options.filter((option) => option.label.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    : options;
 
   const selected = !isMulti ? options.find((o) => o.value === props.value) : null;
   const selectedValues = isMulti ? props.values : [];
@@ -131,6 +151,19 @@ export function Dropdown(props: DropdownProps) {
 
       {open && !disabled && createPortal(
         <div ref={menuRef} className="dropdown__menu" style={menuStyle}>
+          {searchable && (
+            <div className="dropdown__search">
+              <input
+                ref={searchRef}
+                type="text"
+                className="dropdown__search-input"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={searchPlaceholder}
+                autoComplete="off"
+              />
+            </div>
+          )}
           {isMulti ? (
             <button
               type="button"
@@ -150,7 +183,10 @@ export function Dropdown(props: DropdownProps) {
               </button>
             )
           )}
-          {options.map((o) => {
+          {searchable && visibleOptions.length === 0 && searchQuery.trim() && (
+            <div className="dropdown__empty">No matches</div>
+          )}
+          {visibleOptions.map((o) => {
             const isSelected = isMulti
               ? selectedValues.includes(o.value)
               : o.value === (props as DropdownPropsSingle).value;

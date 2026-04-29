@@ -9,12 +9,12 @@ import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
 import { useCatalogueGuestGuards } from '../hooks/use-catalogue-guest-guards';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
-import { getAnnotationActivity } from '../lib/catalogue-activity';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
 import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
+import { CatalogueBulkFlowDialog } from './CatalogueBulkFlowDialog';
 import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
@@ -50,6 +50,7 @@ export function Catalogue({
   const filterState = useCatalogueFilterState();
   const {
     filters,
+    filterAnnotation,
     filterFlow,
     filterGroup,
     filterMobileOs,
@@ -58,6 +59,7 @@ export function Catalogue({
     filterWebPreset,
     searchQuery,
     searchQueryDebounced,
+    setFilterAnnotation,
     setFilterFlow,
     setFilterGroup,
     setFilterMobileOs,
@@ -96,9 +98,10 @@ export function Catalogue({
   // Data is pre-scoped + pre-filtered by useCatalogueData
   const scopedScreenshots = screenshots;
   const scopedScreenFamilies = screenFamilies;
-  const { commentedScreenshotIds, screenshots: fullScopeScreenshots } = useCatalogueFullScope({
+  const { annotatedScreenshotIds, annotationLabels, commentedScreenshotIds, screenshots: fullScopeScreenshots } = useCatalogueFullScope({
     projects,
     includeCommentedScreenshots: viewBy === 'comments-added',
+    includeAnnotatedScreenshots: viewBy === 'annotations-added',
   });
   const facetScreenshots = useMemo(() => {
     if (viewBy === 'all') {
@@ -106,13 +109,11 @@ export function Catalogue({
     }
 
     if (viewBy === 'annotations-added') {
-      return fullScopeScreenshots.filter(
-        (screenshot) => getAnnotationActivity(screenshot.metadata).count > 0,
-      );
+      return fullScopeScreenshots.filter((screenshot) => annotatedScreenshotIds.has(screenshot.id));
     }
 
     return fullScopeScreenshots.filter((screenshot) => commentedScreenshotIds.has(screenshot.id));
-  }, [commentedScreenshotIds, fullScopeScreenshots, viewBy]);
+  }, [annotatedScreenshotIds, commentedScreenshotIds, fullScopeScreenshots, viewBy]);
 
   // Derivations over loaded (and already-filtered) screenshots
   const {
@@ -137,7 +138,8 @@ export function Catalogue({
   const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
   const [recentlyViewedFamilyId, setRecentlyViewedFamilyId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<'group' | null>(null);
+  const [bulkAction, setBulkAction] = useState<'group' | 'flow' | null>(null);
+  const [bulkFlowValue, setBulkFlowValue] = useState('');
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [bulkRenameOpen, setBulkRenameOpen] = useState(false);
   const [bulkGroupValue, setBulkGroupValue] = useState('');
@@ -358,7 +360,7 @@ export function Catalogue({
   function selectAllVisible() {
     setSelected((prev) => { const next = new Set(prev); const all = filteredFamilies.length > 0 && filteredFamilies.every((f) => next.has(f.id)); filteredFamilies.forEach((f) => { if (all) next.delete(f.id); else next.add(f.id); }); return next; });
   }
-  function clearSelection() { setSelected(new Set()); setBulkAction(null); setBulkGroupValue(''); }
+  function clearSelection() { setSelected(new Set()); setBulkAction(null); setBulkGroupValue(''); setBulkFlowValue(''); }
   async function handleBulkDelete() {
     if (!requireEditAccess() || selected.size === 0) return;
     for (const id of selected) await handleDeleteFamily(id);
@@ -369,6 +371,23 @@ export function Catalogue({
     const g = group.trim(); if (selected.size === 0 || !g) return;
     for (const id of selected) await handleChangeFamilyGroup(id, g);
     setToast({ message: `${selected.size} families moved to "${g}"`, type: 'success' });
+    clearSelection();
+  }
+  async function handleBulkChangeFlow(flow: string) {
+    if (!requireEditAccess()) return;
+    const trimmed = flow.trim();
+    if (selected.size === 0 || !trimmed) return;
+    const count = selected.size;
+    for (const id of selected) await handleSetFlowLabel(id, trimmed);
+    setToast({ message: `${count} families assigned to flow "${trimmed}"`, type: 'success' });
+    clearSelection();
+  }
+  async function handleBulkClearFlow() {
+    if (!requireEditAccess()) return;
+    if (selected.size === 0) return;
+    const count = selected.size;
+    for (const id of selected) await handleSetFlowLabel(id, null);
+    setToast({ message: `Flow removed from ${count} famil${count === 1 ? 'y' : 'ies'}`, type: 'success' });
     clearSelection();
   }
 
@@ -434,6 +453,8 @@ export function Catalogue({
                 allFlows={allFlows}
                 allMobileOs={allMobileOs}
                 allWebPresets={allWebPresets}
+                annotationLabels={annotationLabels}
+                filterAnnotation={filterAnnotation}
                 filterFlow={filterFlow}
                 filterGroup={filterGroup}
                 filterMobileOs={filterMobileOs}
@@ -443,6 +464,7 @@ export function Catalogue({
                 gridDensity={gridDensity}
                 groups={allGroups}
                 isSortLocked={isSortLocked}
+                onFilterAnnotationChange={setFilterAnnotation}
                 onFilterFlowChange={setFilterFlow}
                 onFilterGroupChange={setFilterGroup}
                 onFilterMobileOsChange={setFilterMobileOs}
@@ -609,6 +631,7 @@ export function Catalogue({
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
           canEdit={!isGuest}
+          existingAnnotationLabels={annotationLabels}
           existingGroups={allGroups}
           family={previewFamily}
           flowName={previewFamily.flow_label}
@@ -650,6 +673,17 @@ export function Catalogue({
           onConfirm={(value) => void handleBulkChangeGroup(value)}
         />
       )}
+      {bulkAction === 'flow' && (
+        <CatalogueBulkFlowDialog
+          allFlows={allFlows}
+          selectedCount={selected.size}
+          value={bulkFlowValue}
+          onValueChange={setBulkFlowValue}
+          onCancel={() => setBulkAction(null)}
+          onConfirm={(value) => void handleBulkChangeFlow(value)}
+          onRemove={() => void handleBulkClearFlow()}
+        />
+      )}
       {confirmDeleteOpen && (
         <ConfirmModal
           title={`Delete ${selected.size} Screen Famil${selected.size === 1 ? 'y' : 'ies'}`}
@@ -676,6 +710,7 @@ export function Catalogue({
           onClearSelection={clearSelection}
           onOpenDeleteConfirm={() => guardAction(() => setConfirmDeleteOpen(true))}
           onOpenGroupDialog={() => guardAction(() => setBulkAction('group'))}
+          onOpenFlowDialog={() => guardAction(() => setBulkAction('flow'))}
           onOpenBulkRename={() => guardAction(() => setBulkRenameOpen(true))}
           onSelectAllVisible={selectAllVisible}
         />

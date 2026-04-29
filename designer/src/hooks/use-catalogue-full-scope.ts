@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Project, ScreenshotNode } from '../types';
+import { fetchAnnotationLabelsForProjects } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 
 const SCREENSHOT_PAGE_SIZE = 1000;
@@ -22,6 +23,7 @@ interface ScopeScreenshotRow {
 interface UseCatalogueFullScopeArgs {
   projects: Project[];
   includeCommentedScreenshots?: boolean;
+  includeAnnotatedScreenshots?: boolean;
 }
 
 function toScopeScreenshot(row: ScopeScreenshotRow): ScreenshotNode {
@@ -62,9 +64,12 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
 export function useCatalogueFullScope({
   projects,
   includeCommentedScreenshots = false,
+  includeAnnotatedScreenshots = false,
 }: UseCatalogueFullScopeArgs) {
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [commentedScreenshotIds, setCommentedScreenshotIds] = useState<Set<string>>(new Set());
+  const [annotatedScreenshotIds, setAnnotatedScreenshotIds] = useState<Set<string>>(new Set());
+  const [annotationLabels, setAnnotationLabels] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const loadVersionRef = useRef(0);
 
@@ -80,6 +85,8 @@ export function useCatalogueFullScope({
     if (projectIds.length === 0) {
       setScreenshots([]);
       setCommentedScreenshotIds(new Set());
+      setAnnotatedScreenshotIds(new Set());
+      setAnnotationLabels([]);
       setLoading(false);
       return;
     }
@@ -111,32 +118,49 @@ export function useCatalogueFullScope({
       const mapped = loadedRows.map(toScopeScreenshot);
       setScreenshots(mapped);
 
-      if (!includeCommentedScreenshots || mapped.length === 0) {
-        setCommentedScreenshotIds(new Set());
-        setLoading(false);
-        return;
-      }
+      const ids = mapped.map((screenshot) => screenshot.id);
+      const idChunks = chunkArray(ids, COMMENT_SCREENSHOT_CHUNK_SIZE);
 
-      const nextCommentedIds = new Set<string>();
-      const idChunks = chunkArray(mapped.map((screenshot) => screenshot.id), COMMENT_SCREENSHOT_CHUNK_SIZE);
-
-      for (const ids of idChunks) {
-        const { data } = await supabase
-          .from('screenshot_comments')
-          .select('screenshot_id')
-          .in('screenshot_id', ids);
-
-        if (loadVersionRef.current !== loadVersion) return;
-
-        for (const row of data ?? []) {
-          if (row.screenshot_id) {
-            nextCommentedIds.add(row.screenshot_id);
+      if (includeCommentedScreenshots && ids.length > 0) {
+        const nextCommentedIds = new Set<string>();
+        for (const chunk of idChunks) {
+          const { data } = await supabase
+            .from('screenshot_comments')
+            .select('screenshot_id')
+            .in('screenshot_id', chunk);
+          if (loadVersionRef.current !== loadVersion) return;
+          for (const row of data ?? []) {
+            if (row.screenshot_id) nextCommentedIds.add(row.screenshot_id);
           }
         }
+        if (loadVersionRef.current !== loadVersion) return;
+        setCommentedScreenshotIds(nextCommentedIds);
+      } else {
+        setCommentedScreenshotIds(new Set());
       }
 
+      if (includeAnnotatedScreenshots && ids.length > 0) {
+        const nextAnnotatedIds = new Set<string>();
+        for (const chunk of idChunks) {
+          const { data } = await supabase
+            .from('screenshot_annotations')
+            .select('screenshot_id')
+            .in('screenshot_id', chunk);
+          if (loadVersionRef.current !== loadVersion) return;
+          for (const row of data ?? []) {
+            if (row.screenshot_id) nextAnnotatedIds.add(row.screenshot_id);
+          }
+        }
+        if (loadVersionRef.current !== loadVersion) return;
+        setAnnotatedScreenshotIds(nextAnnotatedIds);
+      } else {
+        setAnnotatedScreenshotIds(new Set());
+      }
+
+      const labels = await fetchAnnotationLabelsForProjects(projectIds);
       if (loadVersionRef.current !== loadVersion) return;
-      setCommentedScreenshotIds(nextCommentedIds);
+      setAnnotationLabels(labels);
+
       setLoading(false);
     }
 
@@ -144,12 +168,16 @@ export function useCatalogueFullScope({
       if (loadVersionRef.current === loadVersion) {
         setScreenshots([]);
         setCommentedScreenshotIds(new Set());
+        setAnnotatedScreenshotIds(new Set());
+        setAnnotationLabels([]);
         setLoading(false);
       }
     });
-  }, [includeCommentedScreenshots, projectIds]);
+  }, [includeAnnotatedScreenshots, includeCommentedScreenshots, projectIds]);
 
   return {
+    annotatedScreenshotIds,
+    annotationLabels,
     commentedScreenshotIds,
     loading,
     screenshots,

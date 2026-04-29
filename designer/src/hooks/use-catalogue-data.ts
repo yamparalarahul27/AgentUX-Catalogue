@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Flow, Project, ScreenFamily, ScreenshotNode } from '../types';
-import { getAnnotationActivity } from '../lib/catalogue-activity';
+import { fetchAnnotationActivity, fetchScreenshotIdsWithAnnotationLabels } from '../lib/screenshot-annotations';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import { supabase } from '../lib/supabase';
 
@@ -21,6 +21,7 @@ export interface CatalogueQueryFilters {
   theme: 'light' | 'dark' | null;
   webPreset: string | null;
   mobileOs: 'ios' | 'android' | null;
+  annotation: string[];
 }
 
 export const EMPTY_CATALOGUE_FILTERS: CatalogueQueryFilters = {
@@ -30,6 +31,7 @@ export const EMPTY_CATALOGUE_FILTERS: CatalogueQueryFilters = {
   theme: null,
   webPreset: null,
   mobileOs: null,
+  annotation: [],
 };
 
 type CursorColumn = 'created_at' | 'name';
@@ -105,7 +107,6 @@ export function useCatalogueData({
     const metadata = row.metadata && typeof row.metadata === 'object'
       ? row.metadata as Record<string, unknown>
       : {};
-    const annotationActivity = getAnnotationActivity(metadata);
     const storagePath = (row.storage_path as string | null) ?? '';
 
     return {
@@ -121,16 +122,17 @@ export function useCatalogueData({
       version_count: 0,
       comment_count: 0,
       comment_last_added_at: null,
-      annotation_count: annotationActivity.count,
-      annotation_last_added_at: annotationActivity.lastAddedAt,
+      annotation_count: 0,
+      annotation_last_added_at: null,
     };
   }, []);
 
   const hydrateActivity = useCallback(async (loadVersion: number, screenshotIds: string[]) => {
     if (screenshotIds.length === 0) return;
-    const [versionRes, commentRes] = await Promise.all([
+    const [versionRes, commentRes, annotationActivity] = await Promise.all([
       supabase.from('screenshot_versions').select('screenshot_id').in('screenshot_id', screenshotIds),
       supabase.from('screenshot_comments').select('screenshot_id,created_at').in('screenshot_id', screenshotIds),
+      fetchAnnotationActivity(screenshotIds),
     ]);
 
     if (loadVersionRef.current !== loadVersion) return;
@@ -165,6 +167,8 @@ export function useCatalogueData({
         version_count: versionCounts[screenshot.id] || 0,
         comment_count: commentCounts[screenshot.id] || 0,
         comment_last_added_at: commentLastAddedAt[screenshot.id] || null,
+        annotation_count: annotationActivity.counts[screenshot.id] || 0,
+        annotation_last_added_at: annotationActivity.lastAddedAt[screenshot.id] || null,
       };
     }));
   }, []);
@@ -180,10 +184,22 @@ export function useCatalogueData({
     ): Promise<ScreenshotNode[]> => {
       if (projectIds.length === 0) return [];
 
+      // Annotation label filter resolves to a set of screenshot ids via RPC
+      // (the labels live in screenshot_annotations, not screenshots).
+      let annotationMatchedIds: string[] | null = null;
+      if (filters.annotation.length > 0) {
+        annotationMatchedIds = await fetchScreenshotIdsWithAnnotationLabels(projectIds, filters.annotation);
+        if (annotationMatchedIds.length === 0) return [];
+      }
+
       let query = supabase
         .from('screenshots')
         .select('*')
         .in('project_id', projectIds);
+
+      if (annotationMatchedIds) {
+        query = query.in('id', annotationMatchedIds);
+      }
 
       // Group filter is sourced from screenshots.group so the dropdown reflects
       // what users expect to see in the catalogue results.
