@@ -1,15 +1,30 @@
-# Telegram Bot — Screenshot Upload
+# Telegram Bot — Catalogue Capture
 
 ## What it does
 
-A Supabase Edge Function that receives images via a Telegram bot and uploads
-them to the catalogue as screenshots in the **"Social"** group.
+A Supabase Edge Function that receives input via a Telegram bot and routes it
+to the catalogue:
 
-- Sends image on Telegram → bot uploads to Supabase Storage + inserts into
-  `screenshots` table → visible in `/designer/catalogue` under "Social" group.
-- Auto-names screenshots as `social-YYYY-MM-DD-NNN`.
-- Always uploads to the default (first) project.
-- Restricted to allowed Telegram user IDs.
+- **Image** → uploads to Supabase Storage + inserts into `screenshots` table
+  in the **"Social"** group, visible at `/designer/catalogue`.
+  Auto-named `social-YYYY-MM-DD-NNN`. Always uses the default (first) project.
+- **X / Twitter post URL** → inserts into `catalogue_video_references`,
+  visible at `/designer/catalogue` under the **Videos** tab.
+- **Any other URL** → inserts into `catalogue_link_references`, visible at
+  `/designer/catalogue` under the **Links** tab.
+
+Restricted to allowed Telegram user IDs.
+
+A single text message containing both an X URL and another URL is split:
+the X URL goes to Videos, the rest go to Links. Duplicates are detected via
+unique constraints and reported back without re-inserting.
+
+## Required SQL migrations
+
+Run these in the Supabase SQL editor before deploying the function:
+
+- `designer/sql/catalogue-videos.sql` — `catalogue_video_references` table
+- `designer/sql/catalogue-links.sql` — `catalogue_link_references` table
 
 ## Bot info
 
@@ -46,8 +61,13 @@ project reference ID.
 
 ### 4. Verify
 
-Send `/start` to the bot on Telegram. It should reply with a welcome message.
-Then send an image — it should reply with the uploaded screenshot name.
+Send `/start` to the bot on Telegram. It should reply with a welcome message
+listing the three capture flows. Then try each:
+
+- Send an image → bot replies with the uploaded screenshot name.
+- Send an X / Twitter post URL → bot replies with `Added 1 video: ...`.
+- Send any other URL (e.g. a Figma file or article) → bot replies with
+  `Added 1 link: ...`.
 
 ## Redeploying after changes
 
