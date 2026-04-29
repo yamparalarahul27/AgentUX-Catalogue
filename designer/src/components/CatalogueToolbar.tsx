@@ -7,6 +7,7 @@ import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { CatalogueGridDensity } from './CatalogueGridDensity';
 import { CatalogueFilterSheet } from './CatalogueFilterSheet';
+import { CataloguePlatformDropdown } from './CataloguePlatformDropdown';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
 
@@ -50,8 +51,6 @@ type ToolbarFilterKey =
   | 'annotation'
   | 'platform'
   | 'theme'
-  | 'webPreset'
-  | 'mobileOs'
   | 'view';
 
 const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
@@ -63,8 +62,6 @@ const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
   { key: 'annotation', label: 'Annotations' },
   { key: 'platform', label: 'Platforms' },
   { key: 'theme', label: 'Themes' },
-  { key: 'webPreset', label: 'Web presets' },
-  { key: 'mobileOs', label: 'Mobile OS' },
   { key: 'view', label: 'View' },
 ];
 
@@ -213,7 +210,8 @@ export function CatalogueToolbar({
     filterGroup.length +
     filterFlow.length +
     filterAnnotation.length +
-    [filterPlatform, filterTheme, filterWebPreset, filterMobileOs].filter(Boolean).length +
+    (filterPlatform ? 1 : 0) +
+    (filterTheme ? 1 : 0) +
     (viewBy !== 'all' ? 1 : 0);
 
   const activePills: Array<{ key: string; label: string; onRemove: () => void }> = [];
@@ -232,10 +230,23 @@ export function CatalogueToolbar({
     label: `Annotation: ${label}`,
     onRemove: () => onFilterAnnotationChange(filterAnnotation.filter((value) => value !== label)),
   }));
-  if (filterPlatform) activePills.push({ key: 'platform', label: `Platform: ${filterPlatform}`, onRemove: () => onFilterPlatformChange(null) });
+  if (filterPlatform) {
+    const presetLabel = allWebPresets.find((preset) => preset.id === filterWebPreset)?.label;
+    const osLabel = allMobileOs.find((item) => item.id === filterMobileOs)?.label;
+    const platformPillLabel = filterPlatform === 'web'
+      ? presetLabel ? `Platform: Web · ${presetLabel}` : 'Platform: Web'
+      : osLabel ? `Platform: Mobile · ${osLabel}` : 'Platform: Mobile';
+    activePills.push({
+      key: 'platform',
+      label: platformPillLabel,
+      onRemove: () => {
+        onFilterPlatformChange(null);
+        onFilterWebPresetChange(null);
+        onFilterMobileOsChange(null);
+      },
+    });
+  }
   if (filterTheme) activePills.push({ key: 'theme', label: `Theme: ${filterTheme}`, onRemove: () => onFilterThemeChange(null) });
-  if (filterWebPreset) activePills.push({ key: 'webPreset', label: `Preset: ${filterWebPreset}`, onRemove: () => onFilterWebPresetChange(null) });
-  if (filterMobileOs) activePills.push({ key: 'mobileOs', label: `OS: ${filterMobileOs}`, onRemove: () => onFilterMobileOsChange(null) });
   if (viewBy !== 'all') activePills.push({ key: 'viewBy', label: `View: ${VIEW_BY_LABELS[viewBy]}`, onRemove: () => onViewByChange('all') });
 
   function handleApplyFilters(filters: {
@@ -262,10 +273,13 @@ export function CatalogueToolbar({
     if (isVisible) {
       if (key === 'flow') onFilterFlowChange([]);
       if (key === 'group') onFilterGroupChange([]);
-      if (key === 'platform') onFilterPlatformChange(null);
+      if (key === 'annotation') onFilterAnnotationChange([]);
+      if (key === 'platform') {
+        onFilterPlatformChange(null);
+        onFilterWebPresetChange(null);
+        onFilterMobileOsChange(null);
+      }
       if (key === 'theme') onFilterThemeChange(null);
-      if (key === 'webPreset') onFilterWebPresetChange(null);
-      if (key === 'mobileOs') onFilterMobileOsChange(null);
       if (key === 'view') onViewByChange('all');
     }
 
@@ -313,8 +327,10 @@ export function CatalogueToolbar({
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               multiple
+              searchable
               values={filterGroup}
               placeholder="Group"
+              searchPlaceholder="Search groups…"
               options={groups.map((group) => ({ value: group, label: group }))}
               onMultiChange={onFilterGroupChange}
             />
@@ -323,8 +339,10 @@ export function CatalogueToolbar({
             <Dropdown
               className="catalogue-toolbar--desktop-only"
               multiple
+              searchable
               values={filterFlow}
               placeholder="Flow"
+              searchPlaceholder="Search flows…"
               options={allFlows.map((flow) => ({ value: flow, label: flow }))}
               onMultiChange={onFilterFlowChange}
             />
@@ -342,15 +360,18 @@ export function CatalogueToolbar({
             />
           )}
           {isFilterVisible('platform') && (
-            <Dropdown
+            <CataloguePlatformDropdown
               className="catalogue-toolbar--desktop-only"
-              value={filterPlatform}
-              placeholder="Platform"
-              options={[
-                { value: 'mobile', label: 'Mobile' },
-                { value: 'web', label: 'Web' },
-              ]}
-              onChange={onFilterPlatformChange}
+              platform={filterPlatform as 'web' | 'mobile' | null}
+              webPreset={filterWebPreset}
+              mobileOs={filterMobileOs}
+              webPresets={allWebPresets}
+              mobileOsList={allMobileOs}
+              onChange={(next) => {
+                onFilterPlatformChange(next.platform);
+                onFilterWebPresetChange(next.webPreset);
+                onFilterMobileOsChange(next.mobileOs);
+              }}
             />
           )}
           {isFilterVisible('theme') && (
@@ -363,24 +384,6 @@ export function CatalogueToolbar({
                 { value: 'dark', label: 'Dark' },
               ]}
               onChange={onFilterThemeChange}
-            />
-          )}
-          {isFilterVisible('webPreset') && filterPlatform === 'web' && (
-            <Dropdown
-              className="catalogue-toolbar--desktop-only"
-              value={filterWebPreset}
-              placeholder="Web preset"
-              options={allWebPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
-              onChange={onFilterWebPresetChange}
-            />
-          )}
-          {isFilterVisible('mobileOs') && filterPlatform === 'mobile' && (
-            <Dropdown
-              className="catalogue-toolbar--desktop-only"
-              value={filterMobileOs}
-              placeholder="Mobile OS"
-              options={allMobileOs.map((item) => ({ value: item.id, label: item.label }))}
-              onChange={onFilterMobileOsChange}
             />
           )}
           {isFilterVisible('view') && (

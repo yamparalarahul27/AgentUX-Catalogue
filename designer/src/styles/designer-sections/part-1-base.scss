@@ -107,6 +107,34 @@ $success: #22c55e;
   text-align: center;
 }
 
+.platform-dropdown__group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.platform-dropdown__group-caret {
+  display: inline-flex;
+  width: 12px;
+  font-size: 10px;
+  color: $text-dim;
+}
+
+.platform-dropdown__group-label {
+  font-weight: 600;
+}
+
+.platform-dropdown__children {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 4px 4px;
+  border-left: 1px solid $border;
+}
+
+.platform-dropdown__child {
+  padding-left: 22px !important;
+}
+
 .dropdown__item {
   display: flex;
   align-items: center;
