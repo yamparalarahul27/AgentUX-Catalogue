@@ -27,8 +27,8 @@
   width: 400px;
   flex-shrink: 0;
   position: sticky;
-  top: 0;
-  max-height: 100dvh;
+  top: var(--catalogue-toolbar-h, 72px);
+  max-height: calc(100dvh - var(--catalogue-toolbar-h, 72px));
   overflow-y: auto;
   border-left: 1px solid #27272a;
   background: #111113;
