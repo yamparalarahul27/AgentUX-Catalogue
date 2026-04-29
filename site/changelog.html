@@ -86,6 +86,40 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- Apr 29, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 29, 2026</span>
+            <span class="changelog-title">Area Annotations, Annotation Filter &amp; Bulk Flow</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Area annotations — drag a box on any screenshot in the lightbox to mark a region (e.g. "Sign-up modal"), name it, and save. Old point pins still render as legacy data; new annotations are areas by default (a feature flag toggles pin creation if needed).</li>
+              <li>Toolbar Annotation filter — multi-select with built-in search; pick one or more annotation labels and the catalogue narrows to every screenshot tagged with them, scoped across the full DB regardless of pagination.</li>
+              <li>Composer autocomplete — when naming an annotation, suggestions appear from your full set of existing labels so naming stays consistent.</li>
+              <li>Bulk Change Flow — select multiple families and assign or remove a flow with one click, mirroring Change Group; combobox search includes a "Remove flow from N" action for unassigning in batch.</li>
+              <li>Annotations live in their own <code>screenshot_annotations</code> table with a one-time backfill from the legacy metadata blob, plus a <code>screenshots_with_annotation_labels</code> RPC for case-insensitive label lookup.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>Annotation editing is desktop-only (≤720px viewports show existing annotations read-only); the Add control hides and a small notice appears in the panel.</li>
+              <li>Concurrent annotation edits no longer race — each pin/area is its own row instead of being part of a single overwritten JSON array.</li>
+              <li>Annotation count and "last added" timestamps are now hydrated from the table for grid badges, family counts, and view-by sorting; changes propagate without a refetch.</li>
+              <li>The "Annotations added" view-by option was removed from the dropdown — the new multi-select replaces it. "Comments added" view-by is unchanged.</li>
+              <li>Shared Dropdown component supports an opt-in <code>searchable</code> prop with a search input + filter, used by the Annotation filter today.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>Quick Upload side panel no longer hides under the sticky toolbar when scrolling — the panel is now offset by the toolbar height so the close button and Flow input stay reachable.</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- Apr 28, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">
