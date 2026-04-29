@@ -27,6 +27,7 @@ import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
+import { CatalogueLinksSection } from './CatalogueLinksSection';
 import { ConfirmModal } from './ConfirmModal';
 import { Toast } from './Toast';
 interface CatalogueProps {
@@ -38,6 +39,7 @@ interface CatalogueProps {
 type CatalogueSection =
   | 'catalogue'
   | 'videos'
+  | 'links'
   | 'team';
 export function Catalogue({
   user,
@@ -396,6 +398,16 @@ export function Catalogue({
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueVideosSection
+              canEdit={!isGuest}
+              userEmail={user.email || 'Designer'}
+              onRequireAuth={() => setShowAuthPrompt(true)}
+            />
+          </div>
+        </main>
+      ) : activeSection === 'links' ? (
+        <main className="catalogue-main">
+          <div className="catalogue-shell catalogue-shell--team">
+            <CatalogueLinksSection
               canEdit={!isGuest}
               userEmail={user.email || 'Designer'}
               onRequireAuth={() => setShowAuthPrompt(true)}

@@ -5,6 +5,7 @@ import agentuxLogo from '../assets/agentux-logo.svg';
 type CatalogueSection =
   | 'catalogue'
   | 'videos'
+  | 'links'
   | 'team';
 
 interface CatalogueHeaderProps {
@@ -89,12 +90,22 @@ export function CatalogueHeader({
         >
           Videos
         </button>
+        <button
+          type="button"
+          role="tab"
+          className={`catalogue-header__tab ${activeSection === 'links' ? 'is-active' : ''}`}
+          aria-selected={activeSection === 'links'}
+          onClick={() => onSectionChange('links')}
+          data-short="L"
+        >
+          Links
+        </button>
       </div>
 
       <button
         ref={menuButtonRef}
         type="button"
-        className={`catalogue-header__settings catalogue-header__menu-trigger ${activeSection !== 'catalogue' && activeSection !== 'videos' ? 'is-active' : ''}`}
+        className={`catalogue-header__settings catalogue-header__menu-trigger ${activeSection !== 'catalogue' && activeSection !== 'videos' && activeSection !== 'links' ? 'is-active' : ''}`}
         aria-label="Open catalogue menu"
         aria-haspopup="menu"
         aria-expanded={menuOpen}

@@ -94,6 +94,52 @@ function parseAllXPostsInText(raw: string): XPostMatch[] {
   return results;
 }
 
+// --- Generic link parsing ---
+// Captures any http(s) URL that is NOT an X/Twitter post (those go to videos).
+
+interface LinkMatch {
+  url: string;
+  normalizedUrl: string;
+  host: string;
+}
+
+function parseLinkInput(raw: string): LinkMatch | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    const host = url.hostname.toLowerCase();
+    const isXHost =
+      host === "x.com" ||
+      host.endsWith(".x.com") ||
+      host === "twitter.com" ||
+      host.endsWith(".twitter.com");
+    if (isXHost) return null;
+    const normalized =
+      `${url.protocol}//${host}${url.pathname}${url.search}`.replace(/\/$/, "") ||
+      url.toString();
+    return { url: url.toString(), normalizedUrl: normalized, host };
+  } catch {
+    return null;
+  }
+}
+
+function parseAllLinksInText(raw: string): LinkMatch[] {
+  const matches = raw.match(/https?:\/\/[^\s"'<>]+/gi);
+  if (!matches) return [];
+  const seen = new Set<string>();
+  const results: LinkMatch[] = [];
+  for (const candidate of matches) {
+    const parsed = parseLinkInput(candidate.replace(/&amp;/g, "&"));
+    if (!parsed) continue;
+    if (seen.has(parsed.normalizedUrl)) continue;
+    seen.add(parsed.normalizedUrl);
+    results.push(parsed);
+  }
+  return results;
+}
+
 async function downloadTelegramFile(
   fileId: string,
 ): Promise<{ buffer: ArrayBuffer; fileName: string }> {
@@ -271,6 +317,55 @@ async function handleXPostLinks(chatId: number, matches: XPostMatch[]) {
   await sendReply(chatId, lines.join("\n"));
 }
 
+async function handleLinkCaptures(chatId: number, matches: LinkMatch[]) {
+  const supabase = getSupabase();
+  const added: string[] = [];
+  const duplicates: string[] = [];
+  const failed: string[] = [];
+
+  for (const match of matches) {
+    const { error } = await supabase
+      .from("catalogue_link_references")
+      .insert({
+        url: match.url,
+        normalized_url: match.normalizedUrl,
+        host: match.host,
+        title: null,
+        added_by_email: "telegram-bot",
+      });
+
+    if (!error) {
+      added.push(match.url);
+    } else if (error.code === "23505") {
+      duplicates.push(match.url);
+    } else {
+      console.error("Link insert failed:", error);
+      failed.push(match.url);
+    }
+  }
+
+  const lines: string[] = [];
+  if (added.length > 0) {
+    lines.push(`Added ${added.length} link${added.length === 1 ? "" : "s"}:`);
+    lines.push(...added);
+  }
+  if (duplicates.length > 0) {
+    if (lines.length > 0) lines.push("");
+    lines.push(
+      `Already in catalogue (${duplicates.length}):`,
+      ...duplicates,
+    );
+  }
+  if (failed.length > 0) {
+    if (lines.length > 0) lines.push("");
+    lines.push(`Failed (${failed.length}):`, ...failed);
+  }
+  if (lines.length === 0) {
+    lines.push("No links recognized.");
+  }
+  await sendReply(chatId, lines.join("\n"));
+}
+
 // --- Main handler ---
 
 Deno.serve(async (req) => {
@@ -297,7 +392,10 @@ Deno.serve(async (req) => {
     if (message.text?.startsWith("/start")) {
       await sendReply(
         chatId,
-        'Welcome to Catalogue Bot! Send me a screenshot image to upload it to the "Social" group, or paste an X (Twitter) post URL to add it to the videos section.',
+        'Welcome to Catalogue Bot!\n' +
+          '• Send a screenshot image → uploads to the "Social" group.\n' +
+          '• Paste an X (Twitter) post URL → adds it to the Videos tab.\n' +
+          '• Paste any other URL → saves it to the Links tab.',
       );
       return new Response("OK", { status: 200 });
     }
@@ -322,11 +420,17 @@ Deno.serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
-    // Text message with X/Twitter links
+    // Text message: route X posts to videos, all other URLs to links
     if (message.text && !message.text.startsWith("/")) {
       const xMatches = parseAllXPostsInText(message.text);
+      const linkMatches = parseAllLinksInText(message.text);
       if (xMatches.length > 0) {
         await handleXPostLinks(chatId, xMatches);
+      }
+      if (linkMatches.length > 0) {
+        await handleLinkCaptures(chatId, linkMatches);
+      }
+      if (xMatches.length > 0 || linkMatches.length > 0) {
         return new Response("OK", { status: 200 });
       }
     }
@@ -334,7 +438,7 @@ Deno.serve(async (req) => {
     // Anything else
     await sendReply(
       chatId,
-      "Send me a screenshot image to upload it to the catalogue, or paste an X (Twitter) post URL to add it to the videos section.",
+      "Send a screenshot image to add it to the catalogue, an X post URL for the Videos tab, or any other URL for the Links tab.",
     );
     return new Response("OK", { status: 200 });
   } catch (err) {
