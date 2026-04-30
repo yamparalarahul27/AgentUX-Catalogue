@@ -63,20 +63,35 @@
   justify-content: space-between;
   padding: 20px 0;
   gap: 12px;
-  flex-wrap: wrap;
+  // nowrap so Quick Upload (right child) stays on the same line as the
+  // filter row. Overflow is absorbed by .catalogue-filter-row's horizontal
+  // scroll container instead of wrapping to a new line.
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .catalogue-toolbar-left {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+
+  // All direct children hold their natural width except .catalogue-filter-row,
+  // which absorbs shrinkage and scrolls horizontally when its content
+  // overflows. Without this, the search input or sort dropdown would shrink
+  // before the filter row's scroll engaged.
+  > *:not(.catalogue-filter-row) {
+    flex-shrink: 0;
+  }
 }
 
 .catalogue-toolbar-right {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .catalogue-search {

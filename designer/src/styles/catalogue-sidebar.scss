@@ -49,6 +49,38 @@
   gap: 8px;
 }
 
+// Horizontal-scroll wrapper for the inline filter dropdowns. Keeps Quick
+// Upload and the right-side controls visible when the user has many filters
+// enabled. Scrollbar is hidden.
+.catalogue-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  // Each filter dropdown holds its natural width and overflows the wrapper
+  // instead of compressing.
+  > * {
+    flex-shrink: 0;
+  }
+
+  // Empty state (no filters enabled): collapse so the surrounding gap
+  // doesn't add visible whitespace.
+  &:empty {
+    flex: 0 0 auto;
+  }
+}
+
 .catalogue-floating-search {
   display: none;
 }
