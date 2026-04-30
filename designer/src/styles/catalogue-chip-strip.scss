@@ -1,0 +1,238 @@
+.catalogue-chip-strip {
+  position: relative;
+  margin: 0 0 12px;
+  padding: 10px 0 12px;
+  border-bottom: 1px solid #1f1f24;
+  overflow: hidden;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.catalogue-chip-strip__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  width: 100%;
+}
+
+.catalogue-chip-strip__ticker {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  // Edge fade so chips appear/disappear softly instead of being clipped hard.
+  mask-image: linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+}
+
+// Manual-paused mode: stop the animation, drop the duplicate copy, and let
+// the user scroll horizontally with native scroll (mouse wheel / trackpad /
+// drag). Scrollbar is hidden so the strip stays visually clean.
+.catalogue-chip-strip__ticker--scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .catalogue-chip-strip__track {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .catalogue-chip-strip__copy[aria-hidden="true"] {
+    display: none;
+  }
+}
+
+.catalogue-chip-strip__track {
+  display: flex;
+  width: max-content;
+  animation-name: catalogue-chip-ticker;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  // Animation duration set inline from JS based on track width.
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.catalogue-chip-strip__copy {
+  display: flex;
+  gap: 6px;
+  padding-right: 6px; // gap between the two copies for seamless loop
+  flex-shrink: 0;
+}
+
+@keyframes catalogue-chip-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.catalogue-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #2a2a31;
+  background: #15151a;
+  color: #d4d4d8;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: #3a3a44;
+    color: #f4f4f5;
+  }
+
+  &--active {
+    border-color: rgba(99, 102, 241, 0.7);
+    background: rgba(99, 102, 241, 0.16);
+    color: #f4f4f5;
+  }
+
+  &--all {
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+}
+
+.catalogue-chip__icon-img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.catalogue-chip__icon-emoji {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.catalogue-chip__label {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogue-chip__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  padding: 0 5px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #a1a1aa;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+
+  .catalogue-chip--active & {
+    background: rgba(99, 102, 241, 0.28);
+    color: #e0e7ff;
+  }
+}
+
+// Recency dot — disabled per product call; styles kept for re-enable.
+// .catalogue-chip__recency-dot {
+//   width: 6px;
+//   height: 6px;
+//   border-radius: 999px;
+//   background: #f59e0b;
+//   box-shadow: 0 0 0 2px #15151a;
+//   flex-shrink: 0;
+// }
+
+.catalogue-chip-strip__sort {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #2a2a31;
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: #3a3a44;
+    color: #f4f4f5;
+  }
+}
+
+.catalogue-chip-sort-menu {
+  z-index: 200;
+  background: #16161b;
+  border: 1px solid #2a2a31;
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.catalogue-chip-sort-menu__title {
+  padding: 6px 10px 4px;
+  color: #71717a;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.catalogue-chip-sort-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #d4d4d8;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.is-active {
+    color: #f4f4f5;
+  }
+}
+
+.catalogue-chip-sort-menu__check {
+  color: #6366f1;
+}
+
+.catalogue-chip-sort-menu__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 4px 6px;
+}
+
+@media (max-width: 640px) {
+  .catalogue-chip-strip {
+    padding: 8px 0 10px;
+  }
+
+  .catalogue-chip__label {
+    max-width: 120px;
+  }
+}

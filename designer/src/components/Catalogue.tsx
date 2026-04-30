@@ -10,6 +10,23 @@ import { useCatalogueGuestGuards } from '../hooks/use-catalogue-guest-guards';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
+import {
+  ensureCatalogueGroupAppearanceLoaded,
+  readCatalogueGroupAppearanceMap,
+  resolveCatalogueGroupAppearance,
+  subscribeCatalogueGroupAppearance,
+} from '../lib/catalogue-group-appearance';
+import {
+  deriveGroupStats,
+  loadGroupSortMode,
+  persistGroupSortMode,
+  sortGroups,
+  type CatalogueGroupSortMode,
+} from '../lib/catalogue-group-stats';
+import {
+  CATALOGUE_CHIP_RECENCY_HOURS,
+  CATALOGUE_CHIP_STRIP_ENABLED,
+} from '../lib/feature-flags';
 import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
@@ -24,6 +41,7 @@ import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
+import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
@@ -115,6 +133,73 @@ export function Catalogue({
     return fullScopeScreenshots.filter((screenshot) => commentedScreenshotIds.has(screenshot.id));
   }, [annotatedScreenshotIds, commentedScreenshotIds, fullScopeScreenshots, viewBy]);
 
+  // Chip strip state — group sort + URL ?group= param. Active group key is
+  // derived from filterGroup (single value) so chip strip and toolbar dropdown
+  // stay in sync. URL is the source of truth for shareable links.
+  const [groupSortMode, setGroupSortMode] = useState<CatalogueGroupSortMode>(loadGroupSortMode);
+  const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
+  const appearanceProjectId = projects[0]?.id ?? null;
+
+  useEffect(() => {
+    if (!CATALOGUE_CHIP_STRIP_ENABLED) return;
+    const params = new URLSearchParams(window.location.search);
+    const initialGroup = params.get('group');
+    if (initialGroup) {
+      setFilterGroup([initialGroup]);
+    }
+    function handlePop() {
+      const next = new URLSearchParams(window.location.search).get('group');
+      setFilterGroup(next ? [next] : []);
+    }
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!CATALOGUE_CHIP_STRIP_ENABLED) return;
+    const unsubscribe = subscribeCatalogueGroupAppearance(() => {
+      setAppearanceMap(readCatalogueGroupAppearanceMap());
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (!CATALOGUE_CHIP_STRIP_ENABLED) return;
+    void ensureCatalogueGroupAppearanceLoaded(appearanceProjectId);
+  }, [appearanceProjectId]);
+
+  useEffect(() => {
+    persistGroupSortMode(groupSortMode);
+  }, [groupSortMode]);
+
+  const groupStats = useMemo(
+    () => (CATALOGUE_CHIP_STRIP_ENABLED ? deriveGroupStats(fullScopeScreenshots) : []),
+    [fullScopeScreenshots],
+  );
+
+  const groupOrder = useMemo(() => {
+    if (!CATALOGUE_CHIP_STRIP_ENABLED) return undefined;
+    const ordered = sortGroups(
+      groupStats,
+      groupSortMode,
+      (key) => resolveCatalogueGroupAppearance(appearanceMap, key, appearanceProjectId).label || key,
+    );
+    return ordered.map((item) => item.groupKey);
+  }, [appearanceMap, appearanceProjectId, groupSortMode, groupStats]);
+
+  function handleSelectChipGroup(groupKey: string | null) {
+    setFilterGroup(groupKey ? [groupKey] : []);
+    const params = new URLSearchParams(window.location.search);
+    if (groupKey) params.set('group', groupKey);
+    else params.delete('group');
+    const next = params.toString();
+    const url = next ? `${window.location.pathname}?${next}` : window.location.pathname;
+    window.history.pushState({}, '', url);
+  }
+
+  const activeChipGroupKey = filterGroup.length === 1 ? filterGroup[0] : null;
+
   // Derivations over loaded (and already-filtered) screenshots
   const {
     allFlows,
@@ -131,6 +216,7 @@ export function Catalogue({
     webPresets,
     sortBy,
     viewBy,
+    groupOrder,
   });
   const [showSettings, setShowSettings] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
@@ -448,6 +534,18 @@ export function Catalogue({
                     Enter Email
                   </button>
                 </div>
+              )}
+              {CATALOGUE_CHIP_STRIP_ENABLED && (
+                <CatalogueGroupChipStrip
+                  stats={groupStats}
+                  appearanceMap={appearanceMap}
+                  projectId={appearanceProjectId}
+                  activeGroupKey={activeChipGroupKey}
+                  sortMode={groupSortMode}
+                  recencyHours={CATALOGUE_CHIP_RECENCY_HOURS}
+                  onSelectGroup={handleSelectChipGroup}
+                  onChangeSort={setGroupSortMode}
+                />
               )}
               <CatalogueToolbar
                 allFlows={allFlows}

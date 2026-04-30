@@ -12,6 +12,10 @@ interface UseCatalogueFiltersArgs {
   webPresets: WebPreset[];
   sortBy: CatalogueSortOption;
   viewBy: CatalogueViewBy;
+  // When provided, controls the order of `groupedFamilies` keys. Keys not in
+  // the list fall back to localeCompare. Used by the chip strip so between-
+  // section ordering matches the chip order.
+  groupOrder?: string[];
 }
 
 /**
@@ -35,6 +39,7 @@ export function useCatalogueFilters({
   webPresets,
   sortBy,
   viewBy,
+  groupOrder,
 }: UseCatalogueFiltersArgs) {
   const presetMap = useMemo(
     () => Object.fromEntries(webPresets.map((preset) => [preset.key, preset])),
@@ -133,8 +138,20 @@ export function useCatalogueFilters({
       return accumulator;
     }, {});
 
+    if (groupOrder && groupOrder.length > 0) {
+      const indexOf = new Map(groupOrder.map((key, index) => [key, index] as const));
+      return Object.fromEntries(
+        Object.entries(grouped).sort(([left], [right]) => {
+          const leftIdx = indexOf.has(left) ? indexOf.get(left)! : Number.MAX_SAFE_INTEGER;
+          const rightIdx = indexOf.has(right) ? indexOf.get(right)! : Number.MAX_SAFE_INTEGER;
+          if (leftIdx !== rightIdx) return leftIdx - rightIdx;
+          return left.localeCompare(right);
+        }),
+      );
+    }
+
     return Object.fromEntries(Object.entries(grouped).sort(([left], [right]) => left.localeCompare(right)));
-  }, [isGlobalLatestSort, sortedFamilies]);
+  }, [groupOrder, isGlobalLatestSort, sortedFamilies]);
 
   const isSortLocked = viewBy !== 'all';
 
