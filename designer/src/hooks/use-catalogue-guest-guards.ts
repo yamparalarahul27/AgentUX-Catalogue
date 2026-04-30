@@ -2,6 +2,11 @@ import type { MobileOs } from '../types';
 
 interface RawActions {
   handleChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
+  handleCropFamilyImage: (
+    screenshotId: string,
+    topTrim: number,
+    bottomTrim: number,
+  ) => Promise<{ ok: boolean }>;
   handleDeleteFamily: (familyId: string) => Promise<void>;
   handleRemoveReference: (screenshotId: string) => Promise<boolean>;
   handleRenameFamily: (familyId: string, name: string) => Promise<void>;
@@ -38,6 +43,7 @@ export function useCatalogueGuestGuards({
   isGuest,
   onRequireAuth,
   handleChangeFamilyGroup,
+  handleCropFamilyImage,
   handleDeleteFamily,
   handleRemoveReference,
   handleRenameFamily,
@@ -76,6 +82,8 @@ export function useCatalogueGuestGuards({
       guardMutation(() => handleRenameFamily(id, name), undefined),
     handleGuestAwareReplaceImage: (id: string, file: File) =>
       guardMutation(() => handleReplaceImage(id, file), undefined),
+    handleGuestAwareCropFamilyImage: (id: string, topTrim: number, bottomTrim: number) =>
+      guardMutation(() => handleCropFamilyImage(id, topTrim, bottomTrim), { ok: false }),
     handleGuestAwareSetFlowLabel: (id: string, label: string | null) =>
       guardMutation(() => handleSetFlowLabel(id, label), false),
     handleGuestAwareSetReference: (

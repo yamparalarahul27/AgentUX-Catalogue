@@ -3,7 +3,14 @@ import { useCallback } from 'react';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId } from '../lib/catalogue-families';
 import { compressImage } from '../lib/catalogue-image';
+import {
+  deleteAnnotation,
+  fetchAnnotationsForScreenshot,
+  updateAnnotationGeometry,
+} from '../lib/screenshot-annotations';
+import { cropImageVertical } from '../lib/screenshot-crop';
 import { supabase } from '../lib/supabase';
+import { generateThumbHash } from '../lib/thumbhash';
 import type { MobileOs, Project, ScreenFamily, ScreenshotNode } from '../types';
 
 interface ToastState {
@@ -367,6 +374,143 @@ export function useCatalogueFamilyActions({
     setToast({ message: 'Variant image replaced', type: 'success' });
   }, [screenshots, setScreenshots, setToast, userId]);
 
+  // Crop replaces the existing storage object — no version row is added
+  // (saves space). Annotations are shifted/clipped relative to the new
+  // dimensions; ones outside the kept area are deleted. Old storage object
+  // is removed best-effort after the DB swap.
+  const handleCropFamilyImage = useCallback(async (
+    screenshotId: string,
+    topTrim: number,
+    bottomTrim: number,
+  ): Promise<{ ok: boolean }> => {
+    const screenshot = screenshots.find((item) => item.id === screenshotId);
+    if (!screenshot) return { ok: false };
+    if (topTrim === 0 && bottomTrim === 0) return { ok: false };
+
+    if (!screenshot.image_url) return { ok: false };
+
+    try {
+      const cropResult = await cropImageVertical({
+        imageUrl: screenshot.image_url,
+        topTrim,
+        bottomTrim,
+        fileName: screenshot.file_name || 'cropped.png',
+      });
+
+      const oldHeight = cropResult.originalHeight;
+      const newHeight = cropResult.height;
+
+      const thumbHash = await generateThumbHash(cropResult.file);
+
+      const safeName = `cropped-${Date.now()}-${(screenshot.file_name || 'screenshot').replace(/\s+/g, '-')}`;
+      const newStoragePath = `${userId}/${screenshot.project_id}/${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from('screenshots')
+        .upload(newStoragePath, cropResult.file);
+
+      if (uploadError) {
+        setToast({ message: `Crop failed: ${uploadError.message}`, type: 'error' });
+        return { ok: false };
+      }
+
+      const oldStoragePath = screenshot.storage_path;
+      let dbError = (await supabase
+        .from('screenshots')
+        .update({ storage_path: newStoragePath, thumb_hash: thumbHash })
+        .eq('id', screenshotId)).error;
+
+      // Fall back without thumb_hash when PostgREST's schema cache hasn't
+      // picked up the column yet (resolved by `NOTIFY pgrst, 'reload schema'`).
+      if (dbError && /thumb_hash/i.test(dbError.message || '')) {
+        dbError = (await supabase
+          .from('screenshots')
+          .update({ storage_path: newStoragePath })
+          .eq('id', screenshotId)).error;
+      }
+
+      if (dbError) {
+        // Roll back the just-uploaded file so we don't leave an orphan.
+        await supabase.storage.from('screenshots').remove([newStoragePath]);
+        setToast({ message: `Crop failed: ${dbError.message}`, type: 'error' });
+        return { ok: false };
+      }
+
+      // Shift / clip annotations to the new image bounds. Coordinates are
+      // stored as percentages of the image, so a re-percent over the new
+      // height is required.
+      const annotations = await fetchAnnotationsForScreenshot(screenshotId);
+      for (const annotation of annotations) {
+        const yPx = (annotation.y / 100) * oldHeight;
+        const heightPx = annotation.height !== null
+          ? (annotation.height / 100) * oldHeight
+          : 0;
+        const newYPx = yPx - topTrim;
+        const isPin = annotation.shape === 'pin' || annotation.height === null;
+
+        if (isPin) {
+          if (newYPx < 0 || newYPx >= newHeight) {
+            await deleteAnnotation(annotation.id);
+          } else {
+            await updateAnnotationGeometry(annotation.id, {
+              x: annotation.x,
+              y: (newYPx / newHeight) * 100,
+              width: null,
+              height: null,
+            });
+          }
+          continue;
+        }
+
+        // area
+        const annotationBottomPx = yPx + heightPx;
+        if (annotationBottomPx <= topTrim) {
+          await deleteAnnotation(annotation.id);
+          continue;
+        }
+        if (yPx >= oldHeight - bottomTrim) {
+          await deleteAnnotation(annotation.id);
+          continue;
+        }
+
+        const clippedTopPx = Math.max(0, newYPx);
+        const clippedBottomPx = Math.min(newHeight, newYPx + heightPx);
+        const clippedHeightPx = Math.max(0, clippedBottomPx - clippedTopPx);
+
+        await updateAnnotationGeometry(annotation.id, {
+          x: annotation.x,
+          y: (clippedTopPx / newHeight) * 100,
+          width: annotation.width,
+          height: (clippedHeightPx / newHeight) * 100,
+        });
+      }
+
+      // Cache-bust the public URL so the new bytes load even if a CDN
+      // briefly serves the old object before deletion propagates.
+      const baseUrl = supabase.storage.from('screenshots').getPublicUrl(newStoragePath).data.publicUrl;
+      const newImageUrl = `${baseUrl}?v=${Date.now()}`;
+
+      setScreenshots((previous) => previous.map((item) => (
+        item.id === screenshotId
+          ? { ...item, storage_path: newStoragePath, thumb_hash: thumbHash, image_url: newImageUrl }
+          : item
+      )));
+
+      // Best-effort cleanup of the old object. Failure here is non-fatal.
+      if (oldStoragePath) {
+        void supabase.storage.from('screenshots').remove([oldStoragePath]);
+      }
+
+      setToast({ message: 'Image cropped', type: 'success' });
+      return { ok: true };
+    } catch (error) {
+      setToast({
+        message: `Crop failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+        type: 'error',
+      });
+      return { ok: false };
+    }
+  }, [screenshots, setScreenshots, setToast, userId]);
+
   const handleSetReference = useCallback(async (
     screenshotId: string,
     input: { file: File | null; label: string | null },
@@ -481,6 +625,7 @@ export function useCatalogueFamilyActions({
     handleAssignFlow,
     handleChangeFamilyGroup,
     handleCommentCountChange,
+    handleCropFamilyImage,
     handleDeleteFamily,
     handlePrimaryGroupChange,
     handleRenameFamily,

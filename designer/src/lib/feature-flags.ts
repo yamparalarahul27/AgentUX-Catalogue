@@ -14,3 +14,8 @@ export const CATALOGUE_CHIP_STRIP_ENABLED = true;
 
 // Recency dot threshold for chip strip. Placeholder until Phase 0 data review.
 export const CATALOGUE_CHIP_RECENCY_HOURS = 24;
+
+// Lightbox Reupload icon — hidden once Crop covers the common "fix this
+// screenshot" use case. Flip on if reupload (replace with a fresh file)
+// becomes useful again.
+export const LIGHTBOX_REUPLOAD_ENABLED = false;
