@@ -1,3 +1,4 @@
+import { LIGHTBOX_REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
 
@@ -18,6 +19,7 @@ interface CatalogueFamilyLightboxActionsProps {
   themeDraft: 'light' | 'dark' | null;
   webPresetDraft: string | null;
   webPresets: WebPreset[];
+  canCrop: boolean;
   onDelete: () => void;
   onFlowChange: (value: string) => void;
   onGroupChange: (value: string) => void;
@@ -25,6 +27,7 @@ interface CatalogueFamilyLightboxActionsProps {
   onNameChange: (value: string) => void;
   onOpenAnnotations: () => void;
   onOpenComments: () => void;
+  onOpenCrop: () => void;
   onPlatformChange: (value: 'mobile' | 'web' | null) => void;
   onReferenceFileSelect: (file: File | null) => void;
   onReferenceLabelChange: (value: string) => void;
@@ -52,6 +55,7 @@ export function CatalogueFamilyLightboxActions({
   themeDraft,
   webPresetDraft,
   webPresets,
+  canCrop,
   onDelete,
   onFlowChange,
   onGroupChange,
@@ -59,6 +63,7 @@ export function CatalogueFamilyLightboxActions({
   onNameChange,
   onOpenAnnotations,
   onOpenComments,
+  onOpenCrop,
   onPlatformChange,
   onReferenceFileSelect,
   onReferenceLabelChange,
@@ -74,8 +79,13 @@ export function CatalogueFamilyLightboxActions({
         <button type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
         </button>
-        <button type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} title="Reupload">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 16h5v5" /></svg>
+        {LIGHTBOX_REUPLOAD_ENABLED && (
+          <button type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} title="Reupload">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 16h5v5" /></svg>
+          </button>
+        )}
+        <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenCrop} disabled={!canCrop} title="Crop">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
         </button>
         <span className="catalogue-lightbox-icon-bar__spacer" />
         <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenComments} title={`Comments (${commentsCount})`}>

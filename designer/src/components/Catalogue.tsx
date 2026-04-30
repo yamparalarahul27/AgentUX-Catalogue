@@ -254,6 +254,7 @@ export function Catalogue({
     handleAnnotationStateChange,
     handleChangeFamilyGroup,
     handleCommentCountChange,
+    handleCropFamilyImage,
     handleDeleteFamily,
     handleRenameFamily,
     handleRemoveReference,
@@ -312,6 +313,7 @@ export function Catalogue({
     guardAction,
     requireEditAccess,
     handleGuestAwareChangeFamilyGroup,
+    handleGuestAwareCropFamilyImage,
     handleGuestAwareDeleteFamily,
     handleGuestAwareRemoveReference,
     handleGuestAwareRenameFamily,
@@ -323,6 +325,7 @@ export function Catalogue({
     isGuest,
     onRequireAuth: () => setShowAuthPrompt(true),
     handleChangeFamilyGroup,
+    handleCropFamilyImage,
     handleDeleteFamily,
     handleRemoveReference,
     handleRenameFamily,
@@ -753,6 +756,7 @@ export function Catalogue({
           onPrev={() => stepPreview(-1)}
           onNext={() => stepPreview(1)}
           onCommentCountChange={handleCommentCountChange}
+          onCropVariantImage={handleGuestAwareCropFamilyImage}
           onDeleteFamily={handleGuestAwareDeleteFamily}
           onRenameFamily={handleGuestAwareRenameFamily}
           onReplaceVariantImage={handleGuestAwareReplaceImage}

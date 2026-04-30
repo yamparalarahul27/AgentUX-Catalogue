@@ -86,6 +86,40 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- Apr 30, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">Apr 30, 2026</span>
+            <span class="changelog-title">Group Chip Strip, Folder Upload &amp; Toolbar Polish</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Group chip strip above the toolbar — one chip per group, click to scope into that group with a shareable <code>?group=</code> URL. Paused by default; resume the ticker from the sort menu. While paused, scroll the strip horizontally with no visible scrollbar. Honors <code>prefers-reduced-motion</code>.</li>
+              <li>Sort menu next to the strip (Recent · A–Z · Count) is the single source of truth for between-group ordering, and now also drives Grid view section ordering. Preference persists in localStorage.</li>
+              <li>Folder drag-and-drop in Quick Upload — drop a folder onto the Quick Upload zone and its name auto-fills the Flow input (only when empty; typed values are preserved). Images inside, plus any loose images dropped alongside, all queue together. Multi-folder drops are rejected with a toast; non-image files are skipped with a count.</li>
+              <li>Floating scroll-to-top button on the catalogue — appears after 600px of scroll, smooth-scrolls to the top, hides itself when at the top.</li>
+              <li>Lightbox crop — trim the top and/or bottom of a screenshot from the lightbox. Two horizontal drag handles, live size readout, a Preview toggle that shows the cropped result before committing, and Apply replaces the original (no version row to keep storage tight). Existing annotations on the screenshot are auto-shifted and clipped to the new bounds; ones fully outside the kept area are removed.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>Toolbar default is now a clean slate — first-time users see only Search and Filters ▾ (renamed from + Filter for label consistency). Filters opt in one at a time via the dropdown. Existing users keep their saved visibility selections.</li>
+              <li>Toolbar layout: Quick Upload stays pinned to the right at all times. When many filters are visible, the filter row absorbs the overflow with a hidden-scrollbar horizontal scroll instead of wrapping to a new line.</li>
+              <li>Header reflowed — AgentUX logo pinned to the left, Catalogue / Videos / Links tabs centered, ☰ menu remains on the right.</li>
+              <li>Bulk Change Group dialog now uses a searchable combobox (matches the sibling Bulk Change Flow dialog) — type to find a group, press Enter to create a new one. Replaces the wall of chips that stretched the modal vertically with many groups. Primary group badge preserved.</li>
+              <li>Reupload icon hidden in the lightbox (feature-flagged off) now that Crop covers the common "fix this screenshot" case.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>Card thumbnails now fit the whole screenshot inside the card (<code>object-fit: contain</code>) instead of cropping the edges. The blurred thumbhash placeholder fills the letterbox so there's no transparent gap.</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- Apr 29, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">

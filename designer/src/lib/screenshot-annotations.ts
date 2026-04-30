@@ -91,6 +91,22 @@ export async function deleteAnnotation(id: string): Promise<boolean> {
   return !error;
 }
 
+export async function updateAnnotationGeometry(
+  id: string,
+  geometry: { x: number; y: number; width: number | null; height: number | null },
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('screenshot_annotations')
+    .update({
+      x: geometry.x,
+      y: geometry.y,
+      width: geometry.width,
+      height: geometry.height,
+    })
+    .eq('id', id);
+  return !error;
+}
+
 export async function fetchAnnotationActivity(screenshotIds: string[]): Promise<AnnotationActivity> {
   if (screenshotIds.length === 0) return { counts: {}, lastAddedAt: {} };
   const { data, error } = await supabase

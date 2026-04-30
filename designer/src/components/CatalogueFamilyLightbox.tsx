@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 import type { MobileOs, WebPreset } from '../types';
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
+import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib/feature-flags';
@@ -41,6 +42,7 @@ interface CatalogueFamilyLightboxProps {
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onSetReference: (screenshotId: string, input: { file: File | null; label: string | null }) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
+  onCropVariantImage: (screenshotId: string, topTrim: number, bottomTrim: number) => Promise<{ ok: boolean }>;
   onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onUpdateVariantDetails: (screenshotId: string, patch: { mobile_os?: MobileOs | null; platform?: 'mobile' | 'web' | null; theme?: 'light' | 'dark' | null; web_preset_key?: string | null }) => Promise<boolean>;
   webPresets: WebPreset[];
@@ -102,6 +104,7 @@ export function CatalogueFamilyLightbox({
   onRenameFamily,
   onSetReference,
   onReplaceVariantImage,
+  onCropVariantImage,
   onSetFlowLabel,
   onUpdateVariantDetails,
   webPresets,
@@ -123,6 +126,8 @@ export function CatalogueFamilyLightbox({
   const [annotationEditAllowed, setAnnotationEditAllowed] = useState<boolean>(() => isAnnotationEditAllowedNow());
   const [imageSize, setImageSize] = useState<ImageSize | null>(null); const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [cropMode, setCropMode] = useState(false);
+  const [isCropping, setIsCropping] = useState(false);
   const sortedComments = useMemo(
     () => [...comments].sort((a, b) => {
       const aResolved = Boolean(a.resolved_at);
@@ -155,6 +160,7 @@ export function CatalogueFamilyLightbox({
     setAnnotationError('');
     setImageSize(null);
     setMediaSize(null);
+    setCropMode(false);
     let cancelled = false;
     supabase
       .from('screenshot_comments')
@@ -414,6 +420,28 @@ export function CatalogueFamilyLightbox({
     }
     event.target.value = '';
   }
+  function openCropMode() {
+    if (!ensureCanEdit()) return;
+    if (!screenshot || !imageSize) return;
+    setAnnotationMode(false);
+    setAnnotationDraft(null);
+    setDrawing(null);
+    setCropMode(true);
+  }
+  async function handleApplyCrop({ topTrim, bottomTrim }: { topTrim: number; bottomTrim: number }) {
+    if (!screenshot) return;
+    setIsCropping(true);
+    const result = await onCropVariantImage(screenshot.id, topTrim, bottomTrim);
+    setIsCropping(false);
+    if (result.ok) {
+      setCropMode(false);
+      setImageSize(null);
+      const refreshed = await fetchAnnotationsForScreenshot(screenshot.id);
+      const next = refreshed.map(toLightboxAnnotation);
+      setAnnotations(next);
+      onAnnotationStateChange(screenshot.id, summarizeAnnotationActivity(next));
+    }
+  }
   function toggleAnnotationMode() {
     if (!annotationMode && !ensureCanEdit()) return;
     setAnnotationError('');
@@ -536,12 +564,25 @@ export function CatalogueFamilyLightbox({
         <div
           className="catalogue-lightbox-media"
           ref={mediaRef}
-          onMouseDown={handleMediaMouseDown}
-          onMouseMove={handleMediaMouseMove}
-          onMouseUp={handleMediaMouseUp}
-          onMouseLeave={handleMediaMouseLeave}
-          style={{ cursor: annotationMode && annotationEditAllowed ? 'crosshair' : 'default' }}
+          onMouseDown={cropMode ? undefined : handleMediaMouseDown}
+          onMouseMove={cropMode ? undefined : handleMediaMouseMove}
+          onMouseUp={cropMode ? undefined : handleMediaMouseUp}
+          onMouseLeave={cropMode ? undefined : handleMediaMouseLeave}
+          style={{ cursor: !cropMode && annotationMode && annotationEditAllowed ? 'crosshair' : 'default' }}
         >
+          {cropMode && imageSize && screenshot.image_url ? (
+            <CatalogueLightboxCrop
+              imageUrl={screenshot.image_url}
+              imageAlt={`${family.name} ${activeVariant?.label ?? ''}`}
+              naturalWidth={imageSize.width}
+              naturalHeight={imageSize.height}
+              isApplying={isCropping}
+              annotationCount={annotations.length}
+              onCancel={() => setCropMode(false)}
+              onApply={(args) => void handleApplyCrop(args)}
+            />
+          ) : (
+          <>
           <img
             src={screenshot.image_url}
             alt={`${family.name} ${activeVariant.label}`}
@@ -640,6 +681,8 @@ export function CatalogueFamilyLightbox({
               <span>Loading next…</span>
             </div>
           )}
+          </>
+          )}
         </div>
         <div className={`catalogue-lightbox-comments ${sheetMinimized ? 'is-minimized' : ''}`}>
           <button type="button" className="catalogue-lightbox-grabber" onClick={() => setSheetMinimized((v) => !v)} aria-label={sheetMinimized ? 'Expand panel' : 'Minimize panel'} />
@@ -668,6 +711,7 @@ export function CatalogueFamilyLightbox({
               <div className="catalogue-lightbox-collapsible__inner">
               <CatalogueFamilyLightboxActions
                 annotationsCount={annotations.length}
+                canCrop={Boolean(canEdit && imageSize && !cropMode)}
                 commentsCount={comments.length}
                 existingGroups={existingGroups}
                 flowDraft={flowDraft}
@@ -690,6 +734,7 @@ export function CatalogueFamilyLightbox({
                 onNameChange={setNameDraft}
                 onOpenAnnotations={() => { setSheetMinimized(false); setLightboxPanel('annotations'); toggleAnnotationMode(); }}
                 onOpenComments={() => { setSheetMinimized(false); setLightboxPanel('comments'); }}
+                onOpenCrop={openCropMode}
                 onPlatformChange={handleInlinePlatformChange}
                 onReferenceFileSelect={handleInlineReferenceFileSelect}
                 onReferenceLabelChange={setReferenceLabelDraft}
