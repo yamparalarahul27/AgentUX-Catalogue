@@ -1,16 +1,26 @@
 .catalogue-header--centered {
   position: relative;
+  justify-content: flex-start;
 }
 
 .catalogue-header__title {
   display: inline-flex;
   align-items: center;
   gap: 12px;
+  flex: 0 0 auto;
 
   h1 {
     font-size: 18px;
     font-weight: 600;
   }
+}
+
+.catalogue-header--centered .catalogue-header__tabs {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin-left: 0;
 }
 
 .catalogue-header-logo {
