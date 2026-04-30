@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildConventionName } from '../lib/naming';
-import { UploadZone } from './UploadZone';
+import { UploadZone, type FolderDropContext } from './UploadZone';
 
 interface QuickUploadQueueItem {
   id: string;
@@ -34,7 +34,7 @@ interface CatalogueQuickUploadPanelProps {
   onWebPresetKeyChange: (value: string | null) => void;
   onMobileOsChange: (value: 'ios' | 'android' | null) => void;
   onQuickUploadFlowLabelChange: (value: string) => void;
-  onQuickUploadFilesSelected: (files: File[]) => void;
+  onQuickUploadFilesSelected: (files: File[], context?: FolderDropContext) => void;
   onQuickUploadGroupChange: (value: string) => void;
   onQuickUploadRemoveQueuedFile: (id: string) => void;
   onQuickUploadClearQueue: () => void;

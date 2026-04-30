@@ -1,7 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+export interface FolderDropContext {
+  // Single folder name when exactly one directory was dropped; null otherwise.
+  folderName: string | null;
+  // True when 2+ directories were dropped together. The drop should be
+  // rejected by the caller.
+  multipleFolders: boolean;
+  // Count of non-image files that were filtered out of the drop.
+  skippedNonImageCount: number;
+}
+
 interface UploadZoneProps {
-  onFilesSelected: (files: File[]) => void;
+  onFilesSelected: (files: File[], context?: FolderDropContext) => void;
   disabled?: boolean;
 }
 
@@ -103,13 +113,32 @@ async function readDirectoryEntry(entry: FileSystemDirectoryEntry): Promise<File
   return files;
 }
 
-async function extractDroppedFiles(dataTransfer: DataTransfer): Promise<File[]> {
+interface ExtractedDrop {
+  files: File[];
+  folderName: string | null;
+  multipleFolders: boolean;
+  skippedNonImageCount: number;
+}
+
+function summarizeDrop(allFiles: File[], folderName: string | null, multipleFolders: boolean): ExtractedDrop {
+  const imageFiles = allFiles.filter(isImageFile);
+  return {
+    files: imageFiles,
+    folderName,
+    multipleFolders,
+    skippedNonImageCount: allFiles.length - imageFiles.length,
+  };
+}
+
+async function extractDroppedFiles(dataTransfer: DataTransfer): Promise<ExtractedDrop> {
   const items = Array.from(dataTransfer.items || []);
   // DataTransfer references become invalid after the first `await`, so snapshot
   // entries and any direct files synchronously before any async work.
   const directFiles = Array.from(dataTransfer.files || []);
 
-  if (items.length === 0) return directFiles;
+  if (items.length === 0) {
+    return summarizeDrop(directFiles, null, false);
+  }
 
   const entries: FileSystemEntry[] = [];
   const syncFiles: File[] = [];
@@ -123,20 +152,26 @@ async function extractDroppedFiles(dataTransfer: DataTransfer): Promise<File[]> 
     if (file) syncFiles.push(file);
   }
 
-  if (entries.length === 0) return syncFiles.length > 0 ? syncFiles : directFiles;
+  if (entries.length === 0) {
+    return summarizeDrop(syncFiles.length > 0 ? syncFiles : directFiles, null, false);
+  }
 
-  const files: File[] = [...syncFiles];
+  const directoryEntries = entries.filter(isDirectoryEntry);
+  const folderName = directoryEntries.length === 1 ? directoryEntries[0].name : null;
+  const multipleFolders = directoryEntries.length > 1;
+
+  const allFiles: File[] = [...syncFiles];
   for (const entry of entries) {
     if (isFileEntry(entry)) {
       const file = await readFileEntry(entry);
-      if (file) files.push(file);
+      if (file) allFiles.push(file);
       continue;
     }
     if (isDirectoryEntry(entry)) {
-      files.push(...await readDirectoryEntry(entry));
+      allFiles.push(...await readDirectoryEntry(entry));
     }
   }
-  return files;
+  return summarizeDrop(allFiles, folderName, multipleFolders);
 }
 
 export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
@@ -176,9 +211,18 @@ export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
     setIsDragOver(false);
     if (disabled) return;
 
-    const droppedFiles = await extractDroppedFiles(e.dataTransfer);
-    emitImageFiles(droppedFiles);
-  }, [disabled, emitImageFiles]);
+    const result = await extractDroppedFiles(e.dataTransfer);
+    const context: FolderDropContext = {
+      folderName: result.folderName,
+      multipleFolders: result.multipleFolders,
+      skippedNonImageCount: result.skippedNonImageCount,
+    };
+    // Always emit so the caller can react to context (multiple folders,
+    // skipped non-images) even when no usable files were extracted.
+    if (result.files.length > 0 || result.multipleFolders || result.skippedNonImageCount > 0) {
+      onFilesSelected(result.files, context);
+    }
+  }, [disabled, onFilesSelected]);
 
   const handleClick = () => {
     if (disabled) return;

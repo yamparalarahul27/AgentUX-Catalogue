@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { CatalogueQuickUploadPanel } from './CatalogueQuickUploadPanel';
+import type { FolderDropContext } from './UploadZone';
 
 interface QuickUploadQueuePreviewItem {
   id: string;
@@ -40,7 +41,7 @@ interface CatalogueQuickUploadModalProps {
   onMobileOsChange: (value: 'ios' | 'android' | null) => void;
   onQuickUploadFlowLabelChange: (value: string) => void;
   onQuickUploadProjectChange: (value: string | null) => void;
-  onQuickUploadFilesSelected: (files: File[]) => void;
+  onQuickUploadFilesSelected: (files: File[], context?: FolderDropContext) => void;
   onQuickUploadGroupChange: (value: string) => void;
   onQuickUploadRemoveQueuedFile: (id: string) => void;
   onQuickUploadClearQueue: () => void;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import type { FolderDropContext } from '../components/UploadZone';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId, getVariantKey } from '../lib/catalogue-families';
 import { compressImage } from '../lib/catalogue-image';
@@ -188,7 +189,12 @@ export function useCatalogueUpload({
     setQuickUploadProjectId(projectId);
   }
 
-  function handleQuickUploadQueueAdd(files: File[]) {
+  function handleQuickUploadQueueAdd(files: File[], context?: FolderDropContext) {
+    if (context?.multipleFolders) {
+      setToast({ message: 'Drop one folder at a time', type: 'info' });
+      return;
+    }
+
     setQuickUploadQueue((previous) => {
       const seen = new Set(previous.map((item) => `${item.file.name}:${item.file.size}:${item.file.lastModified}`));
       const additions: QuickUploadQueueItem[] = [];
@@ -207,6 +213,20 @@ export function useCatalogueUpload({
 
       return additions.length ? [...previous, ...additions] : previous;
     });
+
+    // Auto-fill flow from folder name only when the user hasn't typed one.
+    // Typed value is the source of truth.
+    if (context?.folderName && quickUploadFlowLabel.trim().length === 0) {
+      setQuickUploadFlowLabel(context.folderName);
+    }
+
+    if (context && context.skippedNonImageCount > 0) {
+      const n = context.skippedNonImageCount;
+      setToast({
+        message: `Skipped ${n} non-image file${n === 1 ? '' : 's'}`,
+        type: 'info',
+      });
+    }
   }
 
   function handleQuickUploadQueueRemove(id: string) {
