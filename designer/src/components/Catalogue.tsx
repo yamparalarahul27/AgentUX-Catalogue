@@ -39,6 +39,7 @@ import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
+import { CatalogueScrollToTop } from './CatalogueScrollToTop';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
@@ -800,6 +801,7 @@ export function Catalogue({
           onClose={() => setToast(null)}
         />
       )}
+      {activeSection === 'catalogue' && <CatalogueScrollToTop />}
       {activeSection === 'catalogue' && (
         <CatalogueBulkBar
           filteredFamiliesCount={filteredFamilies.length}
