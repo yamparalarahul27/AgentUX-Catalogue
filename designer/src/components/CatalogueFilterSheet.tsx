@@ -7,6 +7,8 @@ interface CatalogueFilterSheetProps {
   allFlows: string[];
   allMobileOs: { id: string; label: string }[];
   allWebPresets: { id: string; label: string }[];
+  annotationLabels?: string[];
+  filterAnnotation?: string[];
   filterFlow: string[];
   filterGroup: string[];
   filterMobileOs: string | null;
@@ -16,6 +18,7 @@ interface CatalogueFilterSheetProps {
   groups: string[];
   isOpen: boolean;
   onApply: (filters: {
+    annotation: string[];
     flow: string[];
     group: string[];
     mobileOs: string | null;
@@ -32,6 +35,8 @@ export function CatalogueFilterSheet({
   allFlows,
   allMobileOs,
   allWebPresets,
+  annotationLabels = [],
+  filterAnnotation = [],
   filterFlow,
   filterGroup,
   filterMobileOs,
@@ -46,6 +51,7 @@ export function CatalogueFilterSheet({
 }: CatalogueFilterSheetProps) {
   const [draftGroup, setDraftGroup] = useState<string[]>(filterGroup);
   const [draftFlow, setDraftFlow] = useState<string[]>(filterFlow);
+  const [draftAnnotation, setDraftAnnotation] = useState<string[]>(filterAnnotation);
   const [draftPlatform, setDraftPlatform] = useState<string | null>(filterPlatform);
   const [draftTheme, setDraftTheme] = useState<string | null>(filterTheme);
   const [draftWebPreset, setDraftWebPreset] = useState<string | null>(filterWebPreset);
@@ -56,12 +62,13 @@ export function CatalogueFilterSheet({
     if (!isOpen) return;
     setDraftGroup(filterGroup);
     setDraftFlow(filterFlow);
+    setDraftAnnotation(filterAnnotation);
     setDraftPlatform(filterPlatform);
     setDraftTheme(filterTheme);
     setDraftWebPreset(filterWebPreset);
     setDraftMobileOs(filterMobileOs);
     setDraftViewBy(viewBy);
-  }, [isOpen, filterGroup, filterFlow, filterPlatform, filterTheme, filterWebPreset, filterMobileOs, viewBy]);
+  }, [isOpen, filterGroup, filterFlow, filterAnnotation, filterPlatform, filterTheme, filterWebPreset, filterMobileOs, viewBy]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -84,6 +91,7 @@ export function CatalogueFilterSheet({
   function handleClearAll() {
     setDraftGroup([]);
     setDraftFlow([]);
+    setDraftAnnotation([]);
     setDraftPlatform(null);
     setDraftTheme(null);
     setDraftWebPreset(null);
@@ -97,6 +105,7 @@ export function CatalogueFilterSheet({
 
   function handleApply() {
     onApply({
+      annotation: draftAnnotation,
       group: draftGroup,
       flow: draftFlow,
       platform: draftPlatform,
@@ -285,6 +294,24 @@ export function CatalogueFilterSheet({
               </button>
             </div>
           </div>
+
+          {annotationLabels.length > 0 && (
+            <div className="catalogue-filter-sheet__section">
+              <span className="catalogue-filter-sheet__section-label">Annotation</span>
+              <div className="catalogue-filter-sheet__chips">
+                {annotationLabels.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`catalogue-filter-chip ${draftAnnotation.includes(label) ? 'is-active' : ''}`}
+                    onClick={() => toggleListValue(draftAnnotation, label, setDraftAnnotation)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="catalogue-filter-sheet__footer">

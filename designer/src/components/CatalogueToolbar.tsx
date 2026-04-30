@@ -54,7 +54,9 @@ type ToolbarFilterKey =
   | 'view';
 
 const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
-const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['flow', 'group', 'annotation', 'platform', 'theme', 'view'];
+// First-time users see a clean toolbar — they opt filters in via Filters ▾.
+// Existing users keep their localStorage selections.
+const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = [];
 
 const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
   { key: 'flow', label: 'Flows' },
@@ -250,6 +252,7 @@ export function CatalogueToolbar({
   if (viewBy !== 'all') activePills.push({ key: 'viewBy', label: `View: ${VIEW_BY_LABELS[viewBy]}`, onRemove: () => onViewByChange('all') });
 
   function handleApplyFilters(filters: {
+    annotation: string[];
     flow: string[];
     group: string[];
     mobileOs: string | null;
@@ -260,6 +263,7 @@ export function CatalogueToolbar({
   }) {
     onFilterGroupChange(filters.group);
     onFilterFlowChange(filters.flow);
+    onFilterAnnotationChange(filters.annotation);
     onFilterPlatformChange(filters.platform);
     onFilterThemeChange(filters.theme);
     onFilterWebPresetChange(filters.webPreset);
@@ -320,81 +324,77 @@ export function CatalogueToolbar({
             aria-controls="catalogue-filter-menu"
             onClick={() => setFilterMenuOpen((previous) => !previous)}
           >
-            + Filter
+            Filters ▾
           </button>
 
-          {isFilterVisible('group') && (
-            <Dropdown
-              className="catalogue-toolbar--desktop-only"
-              multiple
-              searchable
-              values={filterGroup}
-              placeholder="Group"
-              searchPlaceholder="Search groups…"
-              options={groups.map((group) => ({ value: group, label: group }))}
-              onMultiChange={onFilterGroupChange}
-            />
-          )}
-          {isFilterVisible('flow') && (
-            <Dropdown
-              className="catalogue-toolbar--desktop-only"
-              multiple
-              searchable
-              values={filterFlow}
-              placeholder="Flow"
-              searchPlaceholder="Search flows…"
-              options={allFlows.map((flow) => ({ value: flow, label: flow }))}
-              onMultiChange={onFilterFlowChange}
-            />
-          )}
-          {isFilterVisible('annotation') && (
-            <Dropdown
-              className="catalogue-toolbar--desktop-only"
-              multiple
-              searchable
-              values={filterAnnotation}
-              placeholder="Annotation"
-              searchPlaceholder="Search annotations…"
-              options={annotationLabels.map((label) => ({ value: label, label }))}
-              onMultiChange={onFilterAnnotationChange}
-            />
-          )}
-          {isFilterVisible('platform') && (
-            <CataloguePlatformDropdown
-              className="catalogue-toolbar--desktop-only"
-              platform={filterPlatform as 'web' | 'mobile' | null}
-              webPreset={filterWebPreset}
-              mobileOs={filterMobileOs}
-              webPresets={allWebPresets}
-              mobileOsList={allMobileOs}
-              onChange={(next) => {
-                onFilterPlatformChange(next.platform);
-                onFilterWebPresetChange(next.webPreset);
-                onFilterMobileOsChange(next.mobileOs);
-              }}
-            />
-          )}
-          {isFilterVisible('theme') && (
-            <Dropdown
-              className="catalogue-toolbar--desktop-only"
-              value={filterTheme}
-              placeholder="Theme"
-              options={[
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-              ]}
-              onChange={onFilterThemeChange}
-            />
-          )}
-          {isFilterVisible('view') && (
-            <Dropdown
-              className="catalogue-toolbar--desktop-only"
-              value={viewBy}
-              placeholder="View by"
-              options={VIEW_BY_VISIBLE_OPTIONS.map((option) => ({ value: option, label: VIEW_BY_LABELS[option] }))}
-              onChange={(value) => onViewByChange((value || 'all') as CatalogueViewBy)}
-            />
-          )}
+          <div className="catalogue-filter-row catalogue-toolbar--desktop-only">
+            {isFilterVisible('group') && (
+              <Dropdown
+                multiple
+                searchable
+                values={filterGroup}
+                placeholder="Group"
+                searchPlaceholder="Search groups…"
+                options={groups.map((group) => ({ value: group, label: group }))}
+                onMultiChange={onFilterGroupChange}
+              />
+            )}
+            {isFilterVisible('flow') && (
+              <Dropdown
+                multiple
+                searchable
+                values={filterFlow}
+                placeholder="Flow"
+                searchPlaceholder="Search flows…"
+                options={allFlows.map((flow) => ({ value: flow, label: flow }))}
+                onMultiChange={onFilterFlowChange}
+              />
+            )}
+            {isFilterVisible('annotation') && (
+              <Dropdown
+                multiple
+                searchable
+                values={filterAnnotation}
+                placeholder="Annotation"
+                searchPlaceholder="Search annotations…"
+                options={annotationLabels.map((label) => ({ value: label, label }))}
+                onMultiChange={onFilterAnnotationChange}
+              />
+            )}
+            {isFilterVisible('platform') && (
+              <CataloguePlatformDropdown
+                platform={filterPlatform as 'web' | 'mobile' | null}
+                webPreset={filterWebPreset}
+                mobileOs={filterMobileOs}
+                webPresets={allWebPresets}
+                mobileOsList={allMobileOs}
+                onChange={(next) => {
+                  onFilterPlatformChange(next.platform);
+                  onFilterWebPresetChange(next.webPreset);
+                  onFilterMobileOsChange(next.mobileOs);
+                }}
+              />
+            )}
+            {isFilterVisible('theme') && (
+              <Dropdown
+                value={filterTheme}
+                placeholder="Theme"
+                options={[
+                  { value: 'light', label: 'Light' },
+                  { value: 'dark', label: 'Dark' },
+                ]}
+                onChange={onFilterThemeChange}
+              />
+            )}
+            {isFilterVisible('view') && (
+              <Dropdown
+                value={viewBy}
+                placeholder="View by"
+                options={VIEW_BY_VISIBLE_OPTIONS.map((option) => ({ value: option, label: VIEW_BY_LABELS[option] }))}
+                onChange={(value) => onViewByChange((value || 'all') as CatalogueViewBy)}
+              />
+            )}
+          </div>
 
           <>
             {/* Mobile: filter icon pill — hidden on desktop */}
@@ -528,6 +528,7 @@ export function CatalogueToolbar({
         onClose={() => setFilterSheetOpen(false)}
         filterGroup={filterGroup}
         filterFlow={filterFlow}
+        filterAnnotation={filterAnnotation}
         filterPlatform={filterPlatform}
         filterTheme={filterTheme}
         filterWebPreset={filterWebPreset}
@@ -537,6 +538,7 @@ export function CatalogueToolbar({
         allFlows={allFlows}
         allWebPresets={allWebPresets}
         allMobileOs={allMobileOs}
+        annotationLabels={annotationLabels}
         onApply={handleApplyFilters}
       />
 
