@@ -178,7 +178,7 @@ export function CataloguePlatformDropdown({
             aria-expanded={expanded === 'mobile'}
           >
             <span className="platform-dropdown__group-caret" aria-hidden="true">
-              {expanded === 'mobile' ? '▾' : '▸'}
+              {expanded === 'mobile' ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             </span>
             <span className="platform-dropdown__group-label">Mobile</span>
           </button>

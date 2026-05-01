@@ -12,6 +12,8 @@ import {
 } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, WebPreset } from '../types';
+import { Send, X } from 'lucide-react';
+
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
 import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
@@ -554,10 +556,7 @@ export function CatalogueFamilyLightbox({
         {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
         {screenshot.theme && <span className="catalogue-lightbox-tag">{screenshot.theme}</span>}
         <button type="button" className="catalogue-lightbox-close" onClick={onClose}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <X size={20} aria-hidden="true" />
         </button>
       </div>
       <div className="catalogue-lightbox-body" onClick={(event) => event.stopPropagation()}>
@@ -806,10 +805,7 @@ export function CatalogueFamilyLightbox({
                       placeholder="Add a comment..."
                     />
                     <button type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13" />
-                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                      </svg>
+                      <Send size={16} />
                     </button>
                   </div>
                 </>
@@ -921,10 +917,7 @@ export function CatalogueFamilyLightbox({
                                   void deleteAnnotation(annotation.id);
                                 }}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <line x1="18" y1="6" x2="6" y2="18" />
-                                  <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
+                                <X size={12} />
                               </button>
                             )}
                           </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronUp, PanelLeftClose, PanelRightClose } from 'lucide-react';
 
 const FLOW_FILTER_ALL = '__all__';
 type CatalogueFlowFilter = string;
@@ -39,23 +40,11 @@ export function CatalogueFlowSidebar({
   }
 
   function PanelLeftCloseIcon() {
-    return (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d="M9 4v16" />
-        <path d="m14 9-3 3 3 3" />
-      </svg>
-    );
+    return <PanelLeftClose size={18} aria-hidden="true" />;
   }
 
   function PanelRightCloseIcon() {
-    return (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d="M15 4v16" />
-        <path d="m10 9 3 3-3 3" />
-      </svg>
-    );
+    return <PanelRightClose size={18} aria-hidden="true" />;
   }
 
   function renderItem(item: FlowSidebarItem) {
@@ -142,9 +131,7 @@ export function CatalogueFlowSidebar({
               <span className="catalogue-mobile-flow-sheet__summary-value">{activeFlowLabel}</span>
             </span>
             <span className="catalogue-mobile-flow-sheet__summary-count">{activeFlowCount}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points={mobileExpanded ? '18 15 12 9 6 15' : '6 9 12 15 18 9'} />
-            </svg>
+            {mobileExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
 
           <div className="catalogue-mobile-flow-sheet__body">

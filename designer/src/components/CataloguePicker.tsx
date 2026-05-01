@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Check, ImageIcon, Search, X } from 'lucide-react';
+
 import type { ScreenshotNode } from '../types';
 import { supabase } from '../lib/supabase';
 import { getGroupColor } from '../lib/naming';
@@ -114,19 +116,13 @@ export function CataloguePicker({ projectId, flowId, userId: _userId, onAdd, onC
         <div className="catalogue-picker-header">
           <h3>Add from Catalogue</h3>
           <button className="catalogue-picker-close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X size={18} />
           </button>
         </div>
 
         <div className="catalogue-picker-filters">
           <div className="catalogue-picker-search">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Search size={14} color="#71717a" />
             <input
               type="text"
               placeholder="Search screenshots..."
@@ -192,17 +188,11 @@ export function CataloguePicker({ projectId, flowId, userId: _userId, onAdd, onC
                       <img src={s.image_url} alt={s.name} draggable={false} />
                     ) : (
                       <div className="catalogue-picker-card-placeholder">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="1.5">
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <polyline points="21 15 16 10 5 21" />
-                        </svg>
+                        <ImageIcon size={20} color="#71717a" strokeWidth={1.5} />
                       </div>
                     )}
                     <div className={`catalogue-picker-check ${selected.has(s.id) ? 'checked' : ''}`}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                      <Check size={12} strokeWidth={3} />
                     </div>
                   </div>
                   <div className="catalogue-picker-card-info">
