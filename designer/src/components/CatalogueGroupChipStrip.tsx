@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import { Check, ChevronDown } from 'lucide-react';
 
 import {
   resolveCatalogueGroupAppearance,
@@ -161,7 +162,8 @@ export function CatalogueGroupChipStrip({
           onClick={toggleSort}
           title="Sort groups"
         >
-          ↕ {SORT_LABEL[sortMode]} ▾
+          <span style={{ marginRight: 4 }}>{SORT_LABEL[sortMode]}</span>
+          <ChevronDown size={12} aria-hidden="true" />
         </button>
       </div>
 
@@ -181,7 +183,7 @@ export function CatalogueGroupChipStrip({
               {mode === 'recent' && 'Recently added'}
               {mode === 'alpha' && 'Alphabetical'}
               {mode === 'count' && 'Most screenshots'}
-              {mode === sortMode && <span className="catalogue-chip-sort-menu__check">✓</span>}
+              {mode === sortMode && <span className="catalogue-chip-sort-menu__check"><Check size={12} /></span>}
             </button>
           ))}
           <div className="catalogue-chip-sort-menu__divider" role="separator" />
@@ -194,7 +196,7 @@ export function CatalogueGroupChipStrip({
             }}
           >
             {manualPaused ? 'Resume ticker' : 'Pause ticker'}
-            {manualPaused && <span className="catalogue-chip-sort-menu__check">✓</span>}
+            {manualPaused && <span className="catalogue-chip-sort-menu__check"><Check size={12} /></span>}
           </button>
         </div>,
         document.body,

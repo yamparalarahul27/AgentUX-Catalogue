@@ -19,3 +19,7 @@ export const CATALOGUE_CHIP_RECENCY_HOURS = 24;
 // screenshot" use case. Flip on if reupload (replace with a fresh file)
 // becomes useful again.
 export const LIGHTBOX_REUPLOAD_ENABLED = false;
+
+// Upload Analytics tab in Team Settings. Hidden by default — flip on if
+// the date-wise upload-volume table becomes useful again.
+export const TEAM_UPLOAD_ANALYTICS_ENABLED = false;

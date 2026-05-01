@@ -12,10 +12,10 @@ import {
   uploadCatalogueGroupIconToSupabase,
 } from '../lib/catalogue-group-appearance';
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
+import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
 import type { Project, ScreenshotNode } from '../types';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { ConfirmModal } from './ConfirmModal';
-import { Dropdown } from './Dropdown';
 
 type TeamSubTab = 'analytics' | 'flows' | 'groups';
 
@@ -73,8 +73,11 @@ function buildGroupChecklist(screenshots: ScreenshotNode[]): GroupChecklistItem[
 }
 
 export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }: CatalogueTeamSectionProps) {
-  const [subTab, setSubTab] = useState<TeamSubTab>('analytics');
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const [subTab, setSubTab] = useState<TeamSubTab>(TEAM_UPLOAD_ANALYTICS_ENABLED ? 'analytics' : 'flows');
+  // The project picker has been removed — single-project workflow. Default
+  // to the first project's id (or null if none) so per-project appearance
+  // logic still works. Multi-project filtering is no longer surfaced.
+  const projectId = projects[0]?.id ?? null;
   const [groupAppearanceMap, setGroupAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
   const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
   const [groupLabelDraft, setGroupLabelDraft] = useState('');
@@ -86,18 +89,6 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
   const [isUploadingGroupIcon, setIsUploadingGroupIcon] = useState(false);
   const [renameConfirm, setRenameConfirm] = useState<{ group: string; newName: string; count: number; sourceCasings: string[] } | null>(null);
   const iconFileInputRef = useRef<HTMLInputElement>(null);
-
-  const selectedProject = useMemo(
-    () => projects.find((project) => project.id === projectId) ?? null,
-    [projectId, projects],
-  );
-
-  const projectOptions = useMemo(
-    () => projects
-      .map((project) => ({ label: project.name, value: project.id }))
-      .sort((left, right) => left.label.localeCompare(right.label)),
-    [projects],
-  );
 
   const scopedScreenshots = useMemo(
     () => (projectId ? screenshots.filter((screenshot) => screenshot.project_id === projectId) : screenshots),
@@ -293,9 +284,11 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
       <div className="catalogue-team__head">
         <div className="catalogue-team__copy">
           <div className="catalogue-team__sub-tabs">
-            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'analytics' ? 'is-active' : ''}`} onClick={() => setSubTab('analytics')}>
-              Upload Analytics
-            </button>
+            {TEAM_UPLOAD_ANALYTICS_ENABLED && (
+              <button type="button" className={`catalogue-team__sub-tab ${subTab === 'analytics' ? 'is-active' : ''}`} onClick={() => setSubTab('analytics')}>
+                Upload Analytics
+              </button>
+            )}
             <button type="button" className={`catalogue-team__sub-tab ${subTab === 'flows' ? 'is-active' : ''}`} onClick={() => setSubTab('flows')}>
               Flows
             </button>
@@ -303,22 +296,13 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
               Groups
             </button>
           </div>
-          {subTab === 'analytics' && <p>Date-wise screenshot uploads grouped in IST with Web and Mobile split.</p>}
+          {TEAM_UPLOAD_ANALYTICS_ENABLED && subTab === 'analytics' && <p>Date-wise screenshot uploads grouped in IST with Web and Mobile split.</p>}
           {subTab === 'flows' && <p>All flows from uploaded screenshots. {flowChecklist.length} flow{flowChecklist.length !== 1 ? 's' : ''} tracked.</p>}
           {subTab === 'groups' && <p>All groups used in uploaded screenshots. {groupChecklist.length} group{groupChecklist.length !== 1 ? 's' : ''} found.</p>}
         </div>
-        <div className="catalogue-team__filters">
-          <Dropdown
-            value={projectId}
-            options={projectOptions}
-            placeholder={selectedProject ? selectedProject.name : 'All projects'}
-            onChange={setProjectId}
-            className="catalogue-team__project-dropdown"
-          />
-        </div>
       </div>
 
-      {subTab === 'analytics' && (
+      {TEAM_UPLOAD_ANALYTICS_ENABLED && subTab === 'analytics' && (
         <>
           {rows.length === 0 ? (
             <div className="catalogue-team__empty">No upload data available for the selected scope.</div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Menu } from 'lucide-react';
 
 import agentuxLogo from '../assets/agentux-logo.svg';
 
@@ -111,7 +112,7 @@ export function CatalogueHeader({
         aria-expanded={menuOpen}
         onClick={() => setMenuOpen((previous) => !previous)}
       >
-        <span aria-hidden="true">☰</span>
+        <Menu size={18} aria-hidden="true" />
       </button>
 
       {menuOpen && (

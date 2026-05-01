@@ -617,6 +617,14 @@ export function Catalogue({
                     upload.setShowQuickUpload(true);
                   });
                 }}
+                quickUploadOpen={upload.showQuickUpload}
+                quickUploadQueueCount={upload.quickUploadQueuePreview.length}
+                quickUploadIsUploading={upload.uploading}
+                onQuickUploadAll={() => {
+                  void upload.handleQuickUploadUploadAll().then((inserted) => {
+                    if (inserted.length > 0) setSelected(new Set(inserted.map((item) => item.id)));
+                  });
+                }}
                 onSearchChange={setSearchQuery}
                 onSortByChange={setSortBy}
                 onViewByChange={setViewBy}

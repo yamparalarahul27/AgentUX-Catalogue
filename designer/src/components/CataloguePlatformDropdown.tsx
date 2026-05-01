@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 interface PresetOption {
   id: string;
@@ -121,9 +122,7 @@ export function CataloguePlatformDropdown({
         <span className={`dropdown__label ${triggerIsPlaceholder ? 'dropdown__label--placeholder' : ''}`}>
           {triggerLabel}
         </span>
-        <svg className="dropdown__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        <ChevronDown className="dropdown__chevron" size={14} />
       </button>
 
       {open && createPortal(
@@ -143,7 +142,7 @@ export function CataloguePlatformDropdown({
             aria-expanded={expanded === 'web'}
           >
             <span className="platform-dropdown__group-caret" aria-hidden="true">
-              {expanded === 'web' ? '▾' : '▸'}
+              {expanded === 'web' ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             </span>
             <span className="platform-dropdown__group-label">Web</span>
           </button>
