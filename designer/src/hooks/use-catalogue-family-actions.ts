@@ -26,6 +26,7 @@ interface UseCatalogueFamilyActionsArgs {
   projects: Project[];
   screenFamilies: ScreenFamily[];
   screenshots: ScreenshotNode[];
+  setFullScopeScreenshots?: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   setScreenFamilies: React.Dispatch<React.SetStateAction<ScreenFamily[]>>;
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
@@ -61,6 +62,7 @@ export function useCatalogueFamilyActions({
   projects,
   screenFamilies,
   screenshots,
+  setFullScopeScreenshots,
   setProjects,
   setScreenFamilies,
   setScreenshots,
@@ -72,7 +74,14 @@ export function useCatalogueFamilyActions({
     setScreenshots((previous) => previous.map((screenshot) => (
       getScreenshotFamilyId(screenshot) === familyId ? { ...screenshot, ...patch } : screenshot
     )));
-  }, [setScreenshots]);
+    // Mirror into fullScopeScreenshots so derived UIs (chip strip, group
+    // facets) reflect the change immediately.
+    if (setFullScopeScreenshots) {
+      setFullScopeScreenshots((previous) => previous.map((screenshot) => (
+        getScreenshotFamilyId(screenshot) === familyId ? { ...screenshot, ...patch } : screenshot
+      )));
+    }
+  }, [setFullScopeScreenshots, setScreenshots]);
 
   const syncFamilyPatch = useCallback(async (
     familyId: string,
@@ -113,6 +122,50 @@ export function useCatalogueFamilyActions({
       project.id === filterProject ? { ...project, vs_groups: groups } : project
     )));
   }, [filterProject, setProjects]);
+
+  // Rename every screenshot's `group` value across all the supplied raw
+  // casings (e.g. ["Coinbase", "coinbase"]) to `newName` within the
+  // project. Caller passes the full list of casings so a single UPDATE
+  // sweeps every variant. Returns the count of rows updated.
+  const handleRenameGroupKey = useCallback(async (
+    projectId: string,
+    oldNames: string[],
+    newName: string,
+  ): Promise<{ ok: boolean; updatedCount: number; error?: string }> => {
+    const trimmedNew = newName.trim();
+    const sources = [...new Set(oldNames.map((name) => name.trim()).filter(Boolean))];
+    if (sources.length === 0 || !trimmedNew) {
+      return { ok: false, updatedCount: 0, error: 'Group name cannot be empty' };
+    }
+    // Skip if every source is already exactly the new name.
+    if (sources.length === 1 && sources[0] === trimmedNew) {
+      return { ok: true, updatedCount: 0 };
+    }
+
+    const { data, error } = await supabase
+      .from('screenshots')
+      .update({ group: trimmedNew })
+      .eq('project_id', projectId)
+      .in('group', sources)
+      .select('id');
+
+    if (error) {
+      return { ok: false, updatedCount: 0, error: error.message };
+    }
+
+    const updatedIds = new Set((data || []).map((row) => (row as { id: string }).id));
+
+    setScreenshots((previous) => previous.map((screenshot) => (
+      updatedIds.has(screenshot.id) ? { ...screenshot, group: trimmedNew } : screenshot
+    )));
+    if (setFullScopeScreenshots) {
+      setFullScopeScreenshots((previous) => previous.map((screenshot) => (
+        updatedIds.has(screenshot.id) ? { ...screenshot, group: trimmedNew } : screenshot
+      )));
+    }
+
+    return { ok: true, updatedCount: updatedIds.size };
+  }, [setFullScopeScreenshots, setScreenshots]);
 
   const handleCommentCountChange = useCallback((screenshotId: string, delta: number) => {
     setScreenshots((previous) => previous.map((screenshot) => {
@@ -629,6 +682,7 @@ export function useCatalogueFamilyActions({
     handleDeleteFamily,
     handlePrimaryGroupChange,
     handleRenameFamily,
+    handleRenameGroupKey,
     handleRemoveReference,
     handleSetReference,
     handleReplaceImage,

@@ -181,5 +181,6 @@ export function useCatalogueFullScope({
     commentedScreenshotIds,
     loading,
     screenshots,
+    setScreenshots,
   };
 }

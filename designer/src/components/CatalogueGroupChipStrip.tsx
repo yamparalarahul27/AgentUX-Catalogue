@@ -142,7 +142,7 @@ export function CatalogueGroupChipStrip({
                     groupKey={item.groupKey}
                     count={item.count}
                     lastAddedAt={item.lastAddedAt}
-                    appearance={resolveCatalogueGroupAppearance(appearanceMap, item.groupKey, projectId)}
+                    appearance={resolveCatalogueGroupAppearance(appearanceMap, item.displayKey, projectId)}
                     active={item.groupKey === activeGroupKey}
                     recencyHours={recencyHours}
                     onSelect={() => onSelectGroup(item.groupKey)}
