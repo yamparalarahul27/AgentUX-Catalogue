@@ -90,7 +90,14 @@
         <article class="changelog-release">
           <div class="changelog-release-header">
             <span class="changelog-date">May 1, 2026</span>
-            <span class="changelog-title">Group Rename From Settings &amp; Live Chip Strip</span>
+            <span class="changelog-title">Group Rename, Live Chip Strip, Lucide Icons &amp; Toolbar Polish</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li>Lucide icon library across primary surfaces — header, toolbar, chip strip, lightbox actions, bulk bar, dropdowns, modals, scroll-to-top, view toggle, and confirm dialogs all use Lucide icons in place of the older inline SVGs / Unicode glyphs.</li>
+              <li>Toolbar's <strong>Quick Upload</strong> button doubles as <strong>Upload All (N)</strong> while the Quick Upload modal is open — kick off the upload from the toolbar without scrolling to the modal's footer.</li>
+            </ul>
           </div>
           <div class="changelog-section">
             <span class="changelog-section-label changelog-section-label--changed">Changed</span>
@@ -98,6 +105,9 @@
               <li>Group chip strip now refreshes instantly when a screenshot's group changes (bulk move, single change, or admin rename) — no reload required.</li>
               <li>Chip strip aggregates groups case-insensitively. <code>Coinbase</code> and <code>coinbase</code> now show as one chip with the combined count; clicking it filters across every casing.</li>
               <li>Renaming a group from Team Settings is now a true rename. Saving a new name opens a confirm dialog ("Rename X → Y, affects N screenshots"), then runs a single project-wide UPDATE that catches every DB casing under that canonical, and refreshes the appearance label to the new key.</li>
+              <li>Team Settings project picker dropped (single-project workflow). Per-project appearance logic still works internally.</li>
+              <li>Upload Analytics tab in Team Settings is now hidden by default. Default sub-tab is <strong>Flows</strong>.</li>
+              <li>Sort button on the chip strip simplified to label + chevron; the redundant up/down arrow icon was removed.</li>
             </ul>
           </div>
           <div class="changelog-section">

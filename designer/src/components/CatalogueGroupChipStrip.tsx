@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowUpDown, Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 
 import {
   resolveCatalogueGroupAppearance,
@@ -162,8 +162,7 @@ export function CatalogueGroupChipStrip({
           onClick={toggleSort}
           title="Sort groups"
         >
-          <ArrowUpDown size={12} aria-hidden="true" />
-          <span style={{ margin: '0 4px' }}>{SORT_LABEL[sortMode]}</span>
+          <span style={{ marginRight: 4 }}>{SORT_LABEL[sortMode]}</span>
           <ChevronDown size={12} aria-hidden="true" />
         </button>
       </div>

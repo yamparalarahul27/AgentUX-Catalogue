@@ -27,6 +27,12 @@ interface CatalogueToolbarProps {
   gridDensity: GridDensity;
   groups: string[];
   isSortLocked: boolean;
+  // When the Quick Upload modal is open, the toolbar's primary button
+  // doubles as "Upload All". Lets the user kick off the upload without
+  // scrolling to the bottom of the modal.
+  quickUploadOpen?: boolean;
+  quickUploadQueueCount?: number;
+  quickUploadIsUploading?: boolean;
   onFilterAnnotationChange: (value: string[]) => void;
   onFilterGroupChange: (value: string[]) => void;
   onFilterFlowChange: (value: string[]) => void;
@@ -35,6 +41,7 @@ interface CatalogueToolbarProps {
   onFilterPlatformChange: (value: string | null) => void;
   onFilterThemeChange: (value: string | null) => void;
   onFilterWebPresetChange: (value: string | null) => void;
+  onQuickUploadAll?: () => void;
   onQuickUploadClick: () => void;
   onSearchChange: (value: string) => void;
   onSortByChange: (value: CatalogueSortOption) => void;
@@ -126,6 +133,10 @@ export function CatalogueToolbar({
   onSortByChange,
   onViewByChange,
   onViewModeChange,
+  quickUploadOpen = false,
+  quickUploadQueueCount = 0,
+  quickUploadIsUploading = false,
+  onQuickUploadAll,
   searchQuery,
   sortBy,
   viewBy,
@@ -426,10 +437,24 @@ export function CatalogueToolbar({
         </div>
 
         <div className="catalogue-toolbar-right">
-          {/* Desktop buttons - hidden on mobile */}
-          <button className="btn-primary catalogue-toolbar--desktop-only" onClick={onQuickUploadClick}>
-            Quick Upload
-          </button>
+          {/* Desktop button — flips to "Upload All (N)" while the Quick
+              Upload modal is open so the user can trigger the upload from
+              the same spot. Disabled while uploading or when queue empty. */}
+          {quickUploadOpen ? (
+            <button
+              className="btn-primary catalogue-toolbar--desktop-only"
+              onClick={onQuickUploadAll}
+              disabled={quickUploadIsUploading || quickUploadQueueCount === 0}
+            >
+              {quickUploadIsUploading
+                ? 'Uploading…'
+                : `Upload All${quickUploadQueueCount > 0 ? ` (${quickUploadQueueCount})` : ''}`}
+            </button>
+          ) : (
+            <button className="btn-primary catalogue-toolbar--desktop-only" onClick={onQuickUploadClick}>
+              Quick Upload
+            </button>
+          )}
 
           {/* Mobile pills - hidden on desktop */}
           <button type="button" className="catalogue-toolbar-pill catalogue-toolbar--mobile-only" onClick={openMobileSearch}>
