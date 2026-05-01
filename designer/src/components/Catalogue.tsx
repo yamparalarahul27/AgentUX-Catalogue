@@ -117,7 +117,13 @@ export function Catalogue({
   // Data is pre-scoped + pre-filtered by useCatalogueData
   const scopedScreenshots = screenshots;
   const scopedScreenFamilies = screenFamilies;
-  const { annotatedScreenshotIds, annotationLabels, commentedScreenshotIds, screenshots: fullScopeScreenshots } = useCatalogueFullScope({
+  const {
+    annotatedScreenshotIds,
+    annotationLabels,
+    commentedScreenshotIds,
+    screenshots: fullScopeScreenshots,
+    setScreenshots: setFullScopeScreenshots,
+  } = useCatalogueFullScope({
     projects,
     includeCommentedScreenshots: viewBy === 'comments-added',
     includeAnnotatedScreenshots: viewBy === 'annotations-added',
@@ -189,17 +195,43 @@ export function Catalogue({
     return ordered.map((item) => item.groupKey);
   }, [appearanceMap, appearanceProjectId, groupSortMode, groupStats]);
 
-  function handleSelectChipGroup(groupKey: string | null) {
-    setFilterGroup(groupKey ? [groupKey] : []);
+  function handleSelectChipGroup(canonicalKey: string | null) {
+    if (!canonicalKey) {
+      setFilterGroup([]);
+    } else {
+      // Expand the canonical key to every raw casing in the project so the
+      // filter resolves "Coinbase" + "coinbase" under one chip click.
+      const stat = groupStats.find((item) => item.groupKey === canonicalKey);
+      setFilterGroup(stat ? stat.rawKeys : [canonicalKey]);
+    }
     const params = new URLSearchParams(window.location.search);
-    if (groupKey) params.set('group', groupKey);
+    if (canonicalKey) params.set('group', canonicalKey);
     else params.delete('group');
     const next = params.toString();
     const url = next ? `${window.location.pathname}?${next}` : window.location.pathname;
     window.history.pushState({}, '', url);
   }
 
-  const activeChipGroupKey = filterGroup.length === 1 ? filterGroup[0] : null;
+  // The active chip is determined by case-insensitive match against any
+  // currently-filtered raw casing.
+  const activeChipGroupKey = filterGroup.length > 0 ? filterGroup[0].toLowerCase() : null;
+
+  // When the URL provides a single ?group=X but the project actually has
+  // multiple casings under that canonical key, expand filterGroup to all
+  // rawKeys once stats arrive. Avoids only fetching one casing when the
+  // user shared a link or reloaded.
+  useEffect(() => {
+    if (!CATALOGUE_CHIP_STRIP_ENABLED) return;
+    if (filterGroup.length !== 1) return;
+    const canonical = filterGroup[0].toLowerCase();
+    const stat = groupStats.find((item) => item.groupKey === canonical);
+    if (!stat || stat.rawKeys.length <= 1) return;
+    const sameSet = stat.rawKeys.length === filterGroup.length
+      && stat.rawKeys.every((key) => filterGroup.includes(key));
+    if (!sameSet) {
+      setFilterGroup(stat.rawKeys);
+    }
+  }, [filterGroup, groupStats, setFilterGroup]);
 
   // Derivations over loaded (and already-filtered) screenshots
   const {
@@ -257,6 +289,7 @@ export function Catalogue({
     handleCropFamilyImage,
     handleDeleteFamily,
     handleRenameFamily,
+    handleRenameGroupKey,
     handleRemoveReference,
     handleSetReference,
     handleReplaceImage,
@@ -284,6 +317,7 @@ export function Catalogue({
     projects,
     screenFamilies: scopedScreenFamilies,
     screenshots: scopedScreenshots,
+    setFullScopeScreenshots,
     setProjects,
     setScreenFamilies,
     setScreenshots,
@@ -500,7 +534,11 @@ export function Catalogue({
       {activeSection === 'team' && canViewTeamSection ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
-            <CatalogueTeamSection projects={projects} screenshots={fullScopeScreenshots} />
+            <CatalogueTeamSection
+              projects={projects}
+              screenshots={fullScopeScreenshots}
+              onRenameGroupKey={handleRenameGroupKey}
+            />
           </div>
         </main>
       ) : activeSection === 'videos' ? (

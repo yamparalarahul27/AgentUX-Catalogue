@@ -14,6 +14,7 @@ import {
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
 import type { Project, ScreenshotNode } from '../types';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { ConfirmModal } from './ConfirmModal';
 import { Dropdown } from './Dropdown';
 
 type TeamSubTab = 'analytics' | 'flows' | 'groups';
@@ -21,6 +22,15 @@ type TeamSubTab = 'analytics' | 'flows' | 'groups';
 interface CatalogueTeamSectionProps {
   projects: Project[];
   screenshots: ScreenshotNode[];
+  // When provided, saving a group editor with a changed name will also
+  // rename every underlying `screenshots.group` row whose casing matches
+  // any of `oldNames`. The Team checklist groups by lowercase canonical,
+  // so the source list catches all DB variants under one click.
+  onRenameGroupKey?: (
+    projectId: string,
+    oldNames: string[],
+    newName: string,
+  ) => Promise<{ ok: boolean; updatedCount: number; error?: string }>;
 }
 
 interface FlowChecklistItem {
@@ -62,7 +72,7 @@ function buildGroupChecklist(screenshots: ScreenshotNode[]): GroupChecklistItem[
   return [...counts.values()].sort((left, right) => left.group.localeCompare(right.group));
 }
 
-export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSectionProps) {
+export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }: CatalogueTeamSectionProps) {
   const [subTab, setSubTab] = useState<TeamSubTab>('analytics');
   const [projectId, setProjectId] = useState<string | null>(null);
   const [groupAppearanceMap, setGroupAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
@@ -74,6 +84,7 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
   const [groupSaveMessage, setGroupSaveMessage] = useState<string | null>(null);
   const [isSavingGroupAppearance, setIsSavingGroupAppearance] = useState(false);
   const [isUploadingGroupIcon, setIsUploadingGroupIcon] = useState(false);
+  const [renameConfirm, setRenameConfirm] = useState<{ group: string; newName: string; count: number; sourceCasings: string[] } | null>(null);
   const iconFileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedProject = useMemo(
@@ -142,25 +153,90 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
     setGroupIconUrlDraft('');
   }
 
-  async function saveGroupAppearance(group: string) {
-    setIsSavingGroupAppearance(true);
-    setGroupSaveMessage(null);
-    try {
-      const result = await saveCatalogueGroupAppearanceToSupabase({
-        group,
-        iconEmoji: groupIconEmojiDraft,
-        iconStoragePath: groupIconStoragePathDraft || null,
-        iconUrl: groupIconUrlDraft || null,
-        label: groupLabelDraft,
-        ...getAppearanceScope(),
-      });
+  // Saves the group appearance row (display label + icon). Pure cosmetic.
+  // Called after the rename DB write succeeds (or directly when no rename
+  // is needed).
+  async function saveAppearanceForGroup(group: string) {
+    const result = await saveCatalogueGroupAppearanceToSupabase({
+      group,
+      iconEmoji: groupIconEmojiDraft,
+      iconStoragePath: groupIconStoragePathDraft || null,
+      iconUrl: groupIconUrlDraft || null,
+      label: groupLabelDraft,
+      ...getAppearanceScope(),
+    });
+    return result;
+  }
 
+  // Save handler. If the editor's name draft differs from the original
+  // canonical key (case-insensitive), surface a confirm dialog before
+  // doing the project-wide rename + appearance save. The rename catches
+  // every DB casing under that canonical (e.g. "Coinbase" + "coinbase").
+  async function saveGroupAppearance(group: string) {
+    setGroupSaveMessage(null);
+    const trimmedDraft = groupLabelDraft.trim();
+    const canonical = group.toLowerCase();
+    const isRename = Boolean(onRenameGroupKey)
+      && projectId !== null
+      && trimmedDraft.length > 0
+      && trimmedDraft.toLowerCase() !== canonical;
+
+    if (isRename) {
+      const sourceCasings = [...new Set(
+        screenshots
+          .filter((screenshot) => (
+            screenshot.project_id === projectId
+            && (screenshot.group ?? '').toLowerCase() === canonical
+          ))
+          .map((screenshot) => screenshot.group ?? '')
+          .filter(Boolean),
+      )];
+      const sourceCount = screenshots.filter((screenshot) => (
+        screenshot.project_id === projectId
+        && (screenshot.group ?? '').toLowerCase() === canonical
+      )).length;
+      setRenameConfirm({ group, newName: trimmedDraft, count: sourceCount, sourceCasings });
+      return;
+    }
+
+    setIsSavingGroupAppearance(true);
+    try {
+      const result = await saveAppearanceForGroup(group);
       if (!result.ok) {
         setGroupSaveMessage(result.error);
         return;
       }
-
       setGroupSaveMessage('Group appearance saved.');
+      cancelGroupEdit();
+    } finally {
+      setIsSavingGroupAppearance(false);
+    }
+  }
+
+  async function performRenameAndSave() {
+    if (!renameConfirm || !onRenameGroupKey || !projectId) return;
+    const { group, newName, sourceCasings } = renameConfirm;
+    setIsSavingGroupAppearance(true);
+    try {
+      const renameResult = await onRenameGroupKey(projectId, sourceCasings, newName);
+      if (!renameResult.ok) {
+        setGroupSaveMessage(renameResult.error || 'Rename failed');
+        return;
+      }
+      // After rename, the appearance row should target the NEW key so the
+      // label sticks to the new identity.
+      const appearanceResult = await saveAppearanceForGroup(newName);
+      if (!appearanceResult.ok) {
+        setGroupSaveMessage(appearanceResult.error);
+        return;
+      }
+      const variantNote = sourceCasings.length > 1
+        ? ` (merged ${sourceCasings.length} casings: ${sourceCasings.join(', ')})`
+        : '';
+      setGroupSaveMessage(
+        `Renamed "${group}" → "${newName}". ${renameResult.updatedCount} screenshot${renameResult.updatedCount === 1 ? '' : 's'} updated${variantNote}.`,
+      );
+      setRenameConfirm(null);
       cancelGroupEdit();
     } finally {
       setIsSavingGroupAppearance(false);
@@ -392,6 +468,21 @@ export function CatalogueTeamSection({ projects, screenshots }: CatalogueTeamSec
         </>
       )}
 
+      {renameConfirm && (
+        <ConfirmModal
+          title="Rename group?"
+          message={
+            renameConfirm.sourceCasings.length > 1
+              ? `Rename "${renameConfirm.group}" → "${renameConfirm.newName}" across the project. This updates the group field on ${renameConfirm.count} screenshot${renameConfirm.count === 1 ? '' : 's'} (across casings: ${renameConfirm.sourceCasings.join(', ')}) and the display label.`
+              : `Rename "${renameConfirm.group}" → "${renameConfirm.newName}" across the project. This updates the group field on ${renameConfirm.count} screenshot${renameConfirm.count === 1 ? '' : 's'} and the display label.`
+          }
+          confirmLabel={`Rename "${renameConfirm.group}"`}
+          cancelLabel="Cancel"
+          danger={false}
+          onConfirm={() => { void performRenameAndSave(); }}
+          onCancel={() => setRenameConfirm(null)}
+        />
+      )}
     </section>
   );
 }

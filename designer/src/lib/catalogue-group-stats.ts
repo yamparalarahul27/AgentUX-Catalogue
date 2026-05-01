@@ -1,5 +1,14 @@
 export interface CatalogueGroupStats {
+  // Canonical (lowercase, trimmed) — used as stable identity for chips,
+  // URL state, and active-state comparisons.
   groupKey: string;
+  // Most-recently-added raw casing for display fallback when the appearance
+  // map has no label set.
+  displayKey: string;
+  // Every raw casing that mapped to this canonical key. The catalogue
+  // filter sets `filterGroup` to this list so all DB casings resolve under
+  // one chip click.
+  rawKeys: string[];
   count: number;
   lastAddedAt: string | null;
 }
@@ -10,23 +19,33 @@ interface ScreenshotLike {
 }
 
 export function deriveGroupStats(screenshots: ScreenshotLike[]): CatalogueGroupStats[] {
-  const map = new Map<string, { count: number; lastAddedAt: string | null }>();
+  const map = new Map<string, { displayKey: string; rawKeys: Set<string>; count: number; lastAddedAt: string | null }>();
   for (const screenshot of screenshots) {
     const raw = screenshot.group?.trim();
     if (!raw) continue;
+    const canonical = raw.toLowerCase();
     const created = screenshot.created_at ?? null;
-    const existing = map.get(raw);
+    const existing = map.get(canonical);
     if (!existing) {
-      map.set(raw, { count: 1, lastAddedAt: created });
+      map.set(canonical, {
+        displayKey: raw,
+        rawKeys: new Set([raw]),
+        count: 1,
+        lastAddedAt: created,
+      });
       continue;
     }
     existing.count += 1;
+    existing.rawKeys.add(raw);
     if (created && (!existing.lastAddedAt || created > existing.lastAddedAt)) {
       existing.lastAddedAt = created;
+      existing.displayKey = raw;
     }
   }
   return [...map.entries()].map(([groupKey, value]) => ({
     groupKey,
+    displayKey: value.displayKey,
+    rawKeys: [...value.rawKeys],
     count: value.count,
     lastAddedAt: value.lastAddedAt,
   }));
