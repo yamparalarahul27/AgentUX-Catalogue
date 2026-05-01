@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, X } from 'lucide-react';
+
 import { buildConventionName } from '../lib/naming';
 import { UploadZone, type FolderDropContext } from './UploadZone';
 
@@ -348,10 +350,7 @@ export function CatalogueQuickUploadPanel({
                       background: selectedPreviewId === item.id ? 'rgba(99,102,241,0.12)' : undefined,
                     }}
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
+                    <Eye size={12} />
                   </button>
                   <button
                     type="button"
@@ -359,10 +358,7 @@ export function CatalogueQuickUploadPanel({
                     title="Remove from queue"
                     onClick={() => onQuickUploadRemoveQueuedFile(item.id)}
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
+                    <X size={12} />
                   </button>
                 </li>
               ))}

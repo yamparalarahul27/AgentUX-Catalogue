@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import { Check, ChevronDown, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -94,12 +95,7 @@ const VIEW_BY_LABELS: Record<CatalogueViewBy, string> = {
 const VIEW_BY_VISIBLE_OPTIONS: CatalogueViewBy[] = ['all', 'comments-added'];
 
 function CloseIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
+  return <X size={10} strokeWidth={3} />;
 }
 
 export function CatalogueToolbar({
@@ -304,10 +300,7 @@ export function CatalogueToolbar({
       <div className="catalogue-toolbar">
         <div className="catalogue-toolbar-left">
           <div className="catalogue-search catalogue-search--desktop">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Search size={16} />
             <input
               type="text"
               placeholder="Search screen families..."
@@ -324,7 +317,7 @@ export function CatalogueToolbar({
             aria-controls="catalogue-filter-menu"
             onClick={() => setFilterMenuOpen((previous) => !previous)}
           >
-            Filters ▾
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>Filters <ChevronDown size={14} /></span>
           </button>
 
           <div className="catalogue-filter-row catalogue-toolbar--desktop-only">
@@ -404,14 +397,7 @@ export function CatalogueToolbar({
               onClick={() => setFilterSheetOpen(true)}
               title="Filter"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="4" y1="12" x2="20" y2="12" />
-                <line x1="4" y1="18" x2="20" y2="18" />
-                <circle cx="8" cy="6" r="2" fill="currentColor" />
-                <circle cx="16" cy="12" r="2" fill="currentColor" />
-                <circle cx="10" cy="18" r="2" fill="currentColor" />
-              </svg>
+              <SlidersHorizontal size={16} />
               {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
             </button>
 
@@ -447,10 +433,7 @@ export function CatalogueToolbar({
 
           {/* Mobile pills - hidden on desktop */}
           <button type="button" className="catalogue-toolbar-pill catalogue-toolbar--mobile-only" onClick={openMobileSearch}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Search size={16} strokeWidth={2.5} />
             {searchQuery && <span className="catalogue-toolbar-pill__dot" />}
           </button>
           <button
@@ -459,10 +442,7 @@ export function CatalogueToolbar({
             onClick={onQuickUploadClick}
             title="Quick upload"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <Plus size={18} strokeWidth={2.5} />
           </button>
         </div>
       </div>
@@ -471,10 +451,7 @@ export function CatalogueToolbar({
       {mobileSearchOpen && (
         <div className="catalogue-mobile-search-row">
           <div className="catalogue-mobile-search-input">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Search size={16} />
             <input
               ref={mobileSearchRef}
               type="text"
@@ -503,7 +480,7 @@ export function CatalogueToolbar({
                   onClick={() => toggleVisibleFilter(option.key)}
                 >
                   <span>{option.label}</span>
-                  <span className="catalogue-filter-menu__check">{selected ? '✓' : ''}</span>
+                  <span className="catalogue-filter-menu__check">{selected ? <Check size={12} /> : null}</span>
                 </button>
               );
             })}
