@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Check, MapPin, MessageCircle, Monitor, Pencil, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
@@ -85,9 +86,7 @@ export function CatalogueFamilyCard({
             title="Select family"
           >
             {isSelected && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+              <Check size={12} strokeWidth={3} />
             )}
           </button>
 
@@ -134,18 +133,13 @@ export function CatalogueFamilyCard({
               {screenshot.reference_url && <span className="catalogue-card-ref-btn">Ref</span>}
               {(screenshot.comment_count ?? 0) > 0 && (
                 <span className="catalogue-card-comment-btn">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
+                  <MessageCircle size={11} strokeWidth={2.5} />
                   {screenshot.comment_count}
                 </span>
               )}
               {(screenshot.annotation_count ?? 0) > 0 && (
                 <span className="catalogue-card-comment-btn">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                  </svg>
+                  <MapPin size={11} strokeWidth={2.25} />
                   {screenshot.annotation_count}
                 </span>
               )}
@@ -163,10 +157,7 @@ export function CatalogueFamilyCard({
               aria-label="Open preview"
               onClick={() => onOpenPreviewAndEdit(family.id)}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-              </svg>
+              <Pencil size={14} />
             </button>
             <button
               type="button"
@@ -176,12 +167,7 @@ export function CatalogueFamilyCard({
               onClick={() => fileRef.current?.click()}
               disabled={!screenshot}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                <path d="M16 16h5v5" />
-              </svg>
+              <RefreshCw size={14} />
             </button>
             <button
               type="button"
@@ -190,10 +176,7 @@ export function CatalogueFamilyCard({
               aria-label="Delete screenshot"
               onClick={() => setShowDeleteConfirm(true)}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
+              <Trash2 size={14} />
             </button>
           </div>
 
@@ -257,19 +240,12 @@ export function CatalogueFamilyCard({
             <div className="catalogue-card-meta-right">
               {platform === 'mobile' && (
                 <span className="catalogue-card-platform-pill" title="Mobile" aria-label="Mobile">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="7" y="2" width="10" height="20" rx="2" ry="2" />
-                    <line x1="12" y1="18" x2="12.01" y2="18" />
-                  </svg>
+                  <Smartphone size={12} aria-hidden="true" />
                 </span>
               )}
               {platform === 'web' && (
                 <span className="catalogue-card-platform-pill" title="Web" aria-label="Web">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                    <line x1="8" y1="21" x2="16" y2="21" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                  </svg>
+                  <Monitor size={12} aria-hidden="true" />
                 </span>
               )}
               <span className="catalogue-card-flow-pill">

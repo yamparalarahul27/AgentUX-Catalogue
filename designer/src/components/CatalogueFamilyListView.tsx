@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Check, Pin } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
@@ -359,10 +360,7 @@ export function CatalogueFamilyListView({
                     title={isColumnPinned(column.key) ? 'Unpin column' : 'Pin column'}
                     onClick={() => togglePinnedColumn(column.key)}
                   >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14 3v6l4 4v1H6v-1l4-4V3" />
-                      <path d="M12 14v7" />
-                    </svg>
+                    <Pin size={11} />
                   </button>
                 ) : null}
               </div>
@@ -395,9 +393,7 @@ export function CatalogueFamilyListView({
                     title="Select family"
                   >
                     {selected.has(family.id) && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                      <Check size={12} strokeWidth={3} />
                     )}
                   </button>
 
