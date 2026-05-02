@@ -1,7 +1,6 @@
 import { formatRelative /* , isWithinHours */ } from '../lib/catalogue-relative-time';
 
 interface ResolvedAppearance {
-  iconEmoji: string | null;
   iconUrl: string | null;
   label: string | null;
 }
@@ -41,8 +40,6 @@ export function CatalogueGroupChip({
     >
       {appearance.iconUrl ? (
         <img src={appearance.iconUrl} alt="" aria-hidden="true" className="catalogue-chip__icon-img" />
-      ) : appearance.iconEmoji ? (
-        <span aria-hidden="true" className="catalogue-chip__icon-emoji">{appearance.iconEmoji}</span>
       ) : null}
       <span className="catalogue-chip__label">{label}</span>
       <span className="catalogue-chip__count">{count}</span>
