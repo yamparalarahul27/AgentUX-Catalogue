@@ -44,7 +44,13 @@ interface CatalogueFamilyLightboxProps {
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onSetReference: (screenshotId: string, input: { file: File | null; label: string | null }) => Promise<boolean>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
-  onCropVariantImage: (screenshotId: string, topTrim: number, bottomTrim: number) => Promise<{ ok: boolean }>;
+  onCropVariantImage: (
+    screenshotId: string,
+    topTrim: number,
+    bottomTrim: number,
+    leftTrim: number,
+    rightTrim: number,
+  ) => Promise<{ ok: boolean }>;
   onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onUpdateVariantDetails: (screenshotId: string, patch: { mobile_os?: MobileOs | null; platform?: 'mobile' | 'web' | null; theme?: 'light' | 'dark' | null; web_preset_key?: string | null }) => Promise<boolean>;
   webPresets: WebPreset[];
@@ -430,10 +436,10 @@ export function CatalogueFamilyLightbox({
     setDrawing(null);
     setCropMode(true);
   }
-  async function handleApplyCrop({ topTrim, bottomTrim }: { topTrim: number; bottomTrim: number }) {
+  async function handleApplyCrop({ topTrim, bottomTrim, leftTrim, rightTrim }: { topTrim: number; bottomTrim: number; leftTrim: number; rightTrim: number }) {
     if (!screenshot) return;
     setIsCropping(true);
-    const result = await onCropVariantImage(screenshot.id, topTrim, bottomTrim);
+    const result = await onCropVariantImage(screenshot.id, topTrim, bottomTrim, leftTrim, rightTrim);
     setIsCropping(false);
     if (result.ok) {
       setCropMode(false);
