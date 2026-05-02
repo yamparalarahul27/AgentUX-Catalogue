@@ -6,6 +6,8 @@ interface RawActions {
     screenshotId: string,
     topTrim: number,
     bottomTrim: number,
+    leftTrim: number,
+    rightTrim: number,
   ) => Promise<{ ok: boolean }>;
   handleDeleteFamily: (familyId: string) => Promise<void>;
   handleRemoveReference: (screenshotId: string) => Promise<boolean>;
@@ -82,8 +84,14 @@ export function useCatalogueGuestGuards({
       guardMutation(() => handleRenameFamily(id, name), undefined),
     handleGuestAwareReplaceImage: (id: string, file: File) =>
       guardMutation(() => handleReplaceImage(id, file), undefined),
-    handleGuestAwareCropFamilyImage: (id: string, topTrim: number, bottomTrim: number) =>
-      guardMutation(() => handleCropFamilyImage(id, topTrim, bottomTrim), { ok: false }),
+    handleGuestAwareCropFamilyImage: (
+      id: string,
+      topTrim: number,
+      bottomTrim: number,
+      leftTrim: number,
+      rightTrim: number,
+    ) =>
+      guardMutation(() => handleCropFamilyImage(id, topTrim, bottomTrim, leftTrim, rightTrim), { ok: false }),
     handleGuestAwareSetFlowLabel: (id: string, label: string | null) =>
       guardMutation(() => handleSetFlowLabel(id, label), false),
     handleGuestAwareSetReference: (

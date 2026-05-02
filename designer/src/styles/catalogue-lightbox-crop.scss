@@ -39,13 +39,16 @@
 
 .catalogue-lightbox-crop__handle {
   position: absolute;
-  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: ns-resize;
   z-index: 2;
   touch-action: none;
+}
+
+.catalogue-lightbox-crop__handle--horizontal {
+  height: 18px;
+  cursor: ns-resize;
 
   &::before {
     content: '';
@@ -56,6 +59,22 @@
     height: 2px;
     background: #6366f1;
     transform: translateY(-50%);
+  }
+}
+
+.catalogue-lightbox-crop__handle--vertical {
+  width: 18px;
+  cursor: ew-resize;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: #6366f1;
+    transform: translateX(-50%);
   }
 }
 
@@ -74,6 +93,11 @@
   border-radius: 999px;
   background: #6366f1;
   border: 2px solid #0a0a0c;
+}
+
+.catalogue-lightbox-crop__handle-grip--vertical {
+  width: 12px;
+  height: 32px;
 }
 
 .catalogue-lightbox-crop__footer {

@@ -8,7 +8,7 @@ interface CatalogueLightboxCropProps {
   isApplying: boolean;
   annotationCount: number;
   onCancel: () => void;
-  onApply: (args: { topTrim: number; bottomTrim: number }) => void;
+  onApply: (args: { topTrim: number; bottomTrim: number; leftTrim: number; rightTrim: number }) => void;
 }
 
 interface ImgBox {
@@ -17,6 +17,8 @@ interface ImgBox {
   width: number;
   height: number;
 }
+
+type DragSide = 'top' | 'bottom' | 'left' | 'right';
 
 const MIN_KEEP_FRACTION = 0.05;
 
@@ -35,8 +37,10 @@ export function CatalogueLightboxCrop({
   const [imgBox, setImgBox] = useState<ImgBox | null>(null);
   const [topPct, setTopPct] = useState(0);
   const [bottomPct, setBottomPct] = useState(0);
+  const [leftPct, setLeftPct] = useState(0);
+  const [rightPct, setRightPct] = useState(0);
   const [previewMode, setPreviewMode] = useState(false);
-  const dragRef = useRef<{ which: 'top' | 'bottom' } | null>(null);
+  const dragRef = useRef<{ which: DragSide } | null>(null);
 
   // Image with object-fit: contain doesn't always fill the container, so the
   // handles must operate on the image's actual rendered box, not the
@@ -66,15 +70,30 @@ export function CatalogueLightboxCrop({
       const drag = dragRef.current;
       if (!drag || !imgBox || !containerRef.current) return;
       const containerRect = containerRef.current.getBoundingClientRect();
-      const localY = event.clientY - containerRect.top - imgBox.top;
-      const fraction = Math.min(1, Math.max(0, localY / imgBox.height));
-      if (drag.which === 'top') {
-        const max = 1 - bottomPct - MIN_KEEP_FRACTION;
-        setTopPct(Math.min(max, Math.max(0, fraction)));
+
+      if (drag.which === 'top' || drag.which === 'bottom') {
+        const localY = event.clientY - containerRect.top - imgBox.top;
+        const fraction = Math.min(1, Math.max(0, localY / imgBox.height));
+        if (drag.which === 'top') {
+          const max = 1 - bottomPct - MIN_KEEP_FRACTION;
+          setTopPct(Math.min(max, Math.max(0, fraction)));
+        } else {
+          const newBottomPct = Math.min(1, Math.max(0, 1 - fraction));
+          const max = 1 - topPct - MIN_KEEP_FRACTION;
+          setBottomPct(Math.min(max, Math.max(0, newBottomPct)));
+        }
+        return;
+      }
+
+      const localX = event.clientX - containerRect.left - imgBox.left;
+      const fraction = Math.min(1, Math.max(0, localX / imgBox.width));
+      if (drag.which === 'left') {
+        const max = 1 - rightPct - MIN_KEEP_FRACTION;
+        setLeftPct(Math.min(max, Math.max(0, fraction)));
       } else {
-        const newBottomPct = Math.min(1, Math.max(0, 1 - fraction));
-        const max = 1 - topPct - MIN_KEEP_FRACTION;
-        setBottomPct(Math.min(max, Math.max(0, newBottomPct)));
+        const newRightPct = Math.min(1, Math.max(0, 1 - fraction));
+        const max = 1 - leftPct - MIN_KEEP_FRACTION;
+        setRightPct(Math.min(max, Math.max(0, newRightPct)));
       }
     }
     function onUp() {
@@ -88,9 +107,9 @@ export function CatalogueLightboxCrop({
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointercancel', onUp);
     };
-  }, [topPct, bottomPct, imgBox]);
+  }, [topPct, bottomPct, leftPct, rightPct, imgBox]);
 
-  function startDrag(which: 'top' | 'bottom', event: React.PointerEvent) {
+  function startDrag(which: DragSide, event: React.PointerEvent) {
     event.preventDefault();
     dragRef.current = { which };
   }
@@ -98,20 +117,27 @@ export function CatalogueLightboxCrop({
   function reset() {
     setTopPct(0);
     setBottomPct(0);
+    setLeftPct(0);
+    setRightPct(0);
     setPreviewMode(false);
   }
 
+  const hasTrim = topPct > 0 || bottomPct > 0 || leftPct > 0 || rightPct > 0;
+
   // No point previewing when there's nothing to trim. Auto-fall back to edit.
   useEffect(() => {
-    if (previewMode && topPct === 0 && bottomPct === 0) {
+    if (previewMode && !hasTrim) {
       setPreviewMode(false);
     }
-  }, [previewMode, topPct, bottomPct]);
+  }, [previewMode, hasTrim]);
 
   const topPx = Math.round(topPct * naturalHeight);
   const bottomPx = Math.round(bottomPct * naturalHeight);
+  const leftPx = Math.round(leftPct * naturalWidth);
+  const rightPx = Math.round(rightPct * naturalWidth);
+  const finalWidth = Math.max(1, naturalWidth - leftPx - rightPx);
   const finalHeight = Math.max(1, naturalHeight - topPx - bottomPx);
-  const canApply = (topPct > 0 || bottomPct > 0) && !isApplying;
+  const canApply = hasTrim && !isApplying;
 
   return (
     <div className="catalogue-lightbox-crop">
@@ -139,15 +165,15 @@ export function CatalogueLightboxCrop({
           }}
         />
         {imgBox && previewMode && (
-          // Preview clips the original image to the kept region by wrapping
-          // it in an overflow:hidden box sized to the kept area, with the
-          // image translated up so the kept region fills the box.
+          // Preview clips the original image to the kept rect by wrapping it
+          // in an overflow:hidden box sized to the kept area, with the inner
+          // image translated up/left so the kept region fills the box.
           <div
             className="catalogue-lightbox-crop__preview"
             style={{
-              top: imgBox.top,
-              left: imgBox.left,
-              width: imgBox.width,
+              top: imgBox.top + topPct * imgBox.height,
+              left: imgBox.left + leftPct * imgBox.width,
+              width: (1 - leftPct - rightPct) * imgBox.width,
               height: (1 - topPct - bottomPct) * imgBox.height,
             }}
           >
@@ -160,6 +186,7 @@ export function CatalogueLightboxCrop({
                 width: imgBox.width,
                 height: imgBox.height,
                 marginTop: -topPct * imgBox.height,
+                marginLeft: -leftPct * imgBox.width,
                 pointerEvents: 'none',
               }}
             />
@@ -167,6 +194,9 @@ export function CatalogueLightboxCrop({
         )}
         {imgBox && !previewMode && (
           <>
+            {/* Dim bands: top / bottom span full image width;
+                left / right span only the kept-vertical strip so they
+                don't overlap the top/bottom bands. */}
             <div
               className="catalogue-lightbox-crop__dim"
               style={{
@@ -186,7 +216,26 @@ export function CatalogueLightboxCrop({
               }}
             />
             <div
-              className="catalogue-lightbox-crop__handle"
+              className="catalogue-lightbox-crop__dim"
+              style={{
+                top: imgBox.top + topPct * imgBox.height,
+                left: imgBox.left,
+                width: leftPct * imgBox.width,
+                height: (1 - topPct - bottomPct) * imgBox.height,
+              }}
+            />
+            <div
+              className="catalogue-lightbox-crop__dim"
+              style={{
+                top: imgBox.top + topPct * imgBox.height,
+                left: imgBox.left + (1 - rightPct) * imgBox.width,
+                width: rightPct * imgBox.width,
+                height: (1 - topPct - bottomPct) * imgBox.height,
+              }}
+            />
+
+            <div
+              className="catalogue-lightbox-crop__handle catalogue-lightbox-crop__handle--horizontal"
               style={{
                 top: imgBox.top + topPct * imgBox.height - 9,
                 left: imgBox.left,
@@ -202,7 +251,7 @@ export function CatalogueLightboxCrop({
               <span className="catalogue-lightbox-crop__handle-grip" />
             </div>
             <div
-              className="catalogue-lightbox-crop__handle"
+              className="catalogue-lightbox-crop__handle catalogue-lightbox-crop__handle--horizontal"
               style={{
                 top: imgBox.top + (1 - bottomPct) * imgBox.height - 9,
                 left: imgBox.left,
@@ -217,15 +266,47 @@ export function CatalogueLightboxCrop({
             >
               <span className="catalogue-lightbox-crop__handle-grip" />
             </div>
+            <div
+              className="catalogue-lightbox-crop__handle catalogue-lightbox-crop__handle--vertical"
+              style={{
+                top: imgBox.top,
+                left: imgBox.left + leftPct * imgBox.width - 9,
+                height: imgBox.height,
+              }}
+              onPointerDown={(event) => startDrag('left', event)}
+              role="slider"
+              aria-label="Trim left"
+              aria-valuenow={leftPx}
+              aria-valuemin={0}
+              aria-valuemax={naturalWidth}
+            >
+              <span className="catalogue-lightbox-crop__handle-grip catalogue-lightbox-crop__handle-grip--vertical" />
+            </div>
+            <div
+              className="catalogue-lightbox-crop__handle catalogue-lightbox-crop__handle--vertical"
+              style={{
+                top: imgBox.top,
+                left: imgBox.left + (1 - rightPct) * imgBox.width - 9,
+                height: imgBox.height,
+              }}
+              onPointerDown={(event) => startDrag('right', event)}
+              role="slider"
+              aria-label="Trim right"
+              aria-valuenow={rightPx}
+              aria-valuemin={0}
+              aria-valuemax={naturalWidth}
+            >
+              <span className="catalogue-lightbox-crop__handle-grip catalogue-lightbox-crop__handle-grip--vertical" />
+            </div>
           </>
         )}
       </div>
 
       <div className="catalogue-lightbox-crop__footer">
         <div className="catalogue-lightbox-crop__meta">
-          <span>Trim: top {topPx}px · bottom {bottomPx}px</span>
+          <span>Trim: T {topPx}px · B {bottomPx}px · L {leftPx}px · R {rightPx}px</span>
           <span className="catalogue-lightbox-crop__meta-divider">·</span>
-          <span>Final: {naturalWidth}×{finalHeight}</span>
+          <span>Final: {finalWidth}×{finalHeight}</span>
           {annotationCount > 0 && (
             <>
               <span className="catalogue-lightbox-crop__meta-divider">·</span>
@@ -240,7 +321,7 @@ export function CatalogueLightboxCrop({
             type="button"
             className="btn-secondary"
             onClick={reset}
-            disabled={isApplying || (topPct === 0 && bottomPct === 0)}
+            disabled={isApplying || !hasTrim}
           >
             Reset
           </button>
@@ -248,7 +329,7 @@ export function CatalogueLightboxCrop({
             type="button"
             className="btn-secondary"
             onClick={() => setPreviewMode((value) => !value)}
-            disabled={isApplying || (topPct === 0 && bottomPct === 0)}
+            disabled={isApplying || !hasTrim}
           >
             {previewMode ? 'Edit' : 'Preview'}
           </button>
@@ -263,7 +344,7 @@ export function CatalogueLightboxCrop({
           <button
             type="button"
             className="btn-primary catalogue-lightbox-crop__apply"
-            onClick={() => onApply({ topTrim: topPx, bottomTrim: bottomPx })}
+            onClick={() => onApply({ topTrim: topPx, bottomTrim: bottomPx, leftTrim: leftPx, rightTrim: rightPx })}
             disabled={!canApply}
           >
             {isApplying ? (

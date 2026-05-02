@@ -8,7 +8,7 @@ import {
   fetchAnnotationsForScreenshot,
   updateAnnotationGeometry,
 } from '../lib/screenshot-annotations';
-import { cropImageVertical } from '../lib/screenshot-crop';
+import { cropImageBox } from '../lib/screenshot-crop';
 import { supabase } from '../lib/supabase';
 import { generateThumbHash } from '../lib/thumbhash';
 import type { MobileOs, Project, ScreenFamily, ScreenshotNode } from '../types';
@@ -435,22 +435,28 @@ export function useCatalogueFamilyActions({
     screenshotId: string,
     topTrim: number,
     bottomTrim: number,
+    leftTrim: number,
+    rightTrim: number,
   ): Promise<{ ok: boolean }> => {
     const screenshot = screenshots.find((item) => item.id === screenshotId);
     if (!screenshot) return { ok: false };
-    if (topTrim === 0 && bottomTrim === 0) return { ok: false };
+    if (topTrim === 0 && bottomTrim === 0 && leftTrim === 0 && rightTrim === 0) return { ok: false };
 
     if (!screenshot.image_url) return { ok: false };
 
     try {
-      const cropResult = await cropImageVertical({
+      const cropResult = await cropImageBox({
         imageUrl: screenshot.image_url,
         topTrim,
         bottomTrim,
+        leftTrim,
+        rightTrim,
         fileName: screenshot.file_name || 'cropped.png',
       });
 
+      const oldWidth = cropResult.originalWidth;
       const oldHeight = cropResult.originalHeight;
+      const newWidth = cropResult.width;
       const newHeight = cropResult.height;
 
       const thumbHash = await generateThumbHash(cropResult.file);
@@ -490,22 +496,27 @@ export function useCatalogueFamilyActions({
 
       // Shift / clip annotations to the new image bounds. Coordinates are
       // stored as percentages of the image, so a re-percent over the new
-      // height is required.
+      // width / height is required.
       const annotations = await fetchAnnotationsForScreenshot(screenshotId);
       for (const annotation of annotations) {
+        const xPx = (annotation.x / 100) * oldWidth;
         const yPx = (annotation.y / 100) * oldHeight;
+        const widthPx = annotation.width !== null
+          ? (annotation.width / 100) * oldWidth
+          : 0;
         const heightPx = annotation.height !== null
           ? (annotation.height / 100) * oldHeight
           : 0;
+        const newXPx = xPx - leftTrim;
         const newYPx = yPx - topTrim;
         const isPin = annotation.shape === 'pin' || annotation.height === null;
 
         if (isPin) {
-          if (newYPx < 0 || newYPx >= newHeight) {
+          if (newXPx < 0 || newXPx >= newWidth || newYPx < 0 || newYPx >= newHeight) {
             await deleteAnnotation(annotation.id);
           } else {
             await updateAnnotationGeometry(annotation.id, {
-              x: annotation.x,
+              x: (newXPx / newWidth) * 100,
               y: (newYPx / newHeight) * 100,
               width: null,
               height: null,
@@ -515,6 +526,7 @@ export function useCatalogueFamilyActions({
         }
 
         // area
+        const annotationRightPx = xPx + widthPx;
         const annotationBottomPx = yPx + heightPx;
         if (annotationBottomPx <= topTrim) {
           await deleteAnnotation(annotation.id);
@@ -524,15 +536,26 @@ export function useCatalogueFamilyActions({
           await deleteAnnotation(annotation.id);
           continue;
         }
+        if (annotationRightPx <= leftTrim) {
+          await deleteAnnotation(annotation.id);
+          continue;
+        }
+        if (xPx >= oldWidth - rightTrim) {
+          await deleteAnnotation(annotation.id);
+          continue;
+        }
 
+        const clippedLeftPx = Math.max(0, newXPx);
+        const clippedRightPx = Math.min(newWidth, newXPx + widthPx);
+        const clippedWidthPx = Math.max(0, clippedRightPx - clippedLeftPx);
         const clippedTopPx = Math.max(0, newYPx);
         const clippedBottomPx = Math.min(newHeight, newYPx + heightPx);
         const clippedHeightPx = Math.max(0, clippedBottomPx - clippedTopPx);
 
         await updateAnnotationGeometry(annotation.id, {
-          x: annotation.x,
+          x: (clippedLeftPx / newWidth) * 100,
           y: (clippedTopPx / newHeight) * 100,
-          width: annotation.width,
+          width: (clippedWidthPx / newWidth) * 100,
           height: (clippedHeightPx / newHeight) * 100,
         });
       }
