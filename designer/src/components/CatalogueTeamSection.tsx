@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Pencil } from 'lucide-react';
 
 import { getScreenshotFlowLabel } from '../lib/catalogue-families';
 import {
@@ -16,6 +17,7 @@ import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
 import type { Project, ScreenshotNode } from '../types';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { ConfirmModal } from './ConfirmModal';
+import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 
 type TeamSubTab = 'analytics' | 'flows' | 'groups';
 
@@ -80,15 +82,14 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
   const projectId = projects[0]?.id ?? null;
   const [groupAppearanceMap, setGroupAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
   const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
+  const [editingGroupOriginal, setEditingGroupOriginal] = useState<string>('');
   const [groupLabelDraft, setGroupLabelDraft] = useState('');
-  const [groupIconEmojiDraft, setGroupIconEmojiDraft] = useState('');
   const [groupIconStoragePathDraft, setGroupIconStoragePathDraft] = useState('');
   const [groupIconUrlDraft, setGroupIconUrlDraft] = useState('');
   const [groupSaveMessage, setGroupSaveMessage] = useState<string | null>(null);
   const [isSavingGroupAppearance, setIsSavingGroupAppearance] = useState(false);
   const [isUploadingGroupIcon, setIsUploadingGroupIcon] = useState(false);
   const [renameConfirm, setRenameConfirm] = useState<{ group: string; newName: string; count: number; sourceCasings: string[] } | null>(null);
-  const iconFileInputRef = useRef<HTMLInputElement>(null);
 
   const scopedScreenshots = useMemo(
     () => (projectId ? screenshots.filter((screenshot) => screenshot.project_id === projectId) : screenshots),
@@ -129,8 +130,8 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
   function beginGroupEdit(group: string) {
     const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, group, projectId);
     setEditingGroupKey(group.toLowerCase());
+    setEditingGroupOriginal(group);
     setGroupLabelDraft(appearance.label || group);
-    setGroupIconEmojiDraft(appearance.iconEmoji || '');
     setGroupIconStoragePathDraft(appearance.iconStoragePath || '');
     setGroupIconUrlDraft(appearance.iconUrl || '');
     setGroupSaveMessage(null);
@@ -138,8 +139,8 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
 
   function cancelGroupEdit() {
     setEditingGroupKey(null);
+    setEditingGroupOriginal('');
     setGroupLabelDraft('');
-    setGroupIconEmojiDraft('');
     setGroupIconStoragePathDraft('');
     setGroupIconUrlDraft('');
   }
@@ -150,7 +151,6 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
   async function saveAppearanceForGroup(group: string) {
     const result = await saveCatalogueGroupAppearanceToSupabase({
       group,
-      iconEmoji: groupIconEmojiDraft,
       iconStoragePath: groupIconStoragePathDraft || null,
       iconUrl: groupIconUrlDraft || null,
       label: groupLabelDraft,
@@ -242,7 +242,6 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
       const result = await uploadCatalogueGroupIconToSupabase({
         file,
         group,
-        iconEmoji: groupIconEmojiDraft,
         label: groupLabelDraft,
         ...getAppearanceScope(),
       });
@@ -264,7 +263,6 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
     setGroupSaveMessage(null);
     const result = await removeCatalogueGroupUploadedIconFromSupabase({
       group,
-      iconEmoji: groupIconEmojiDraft,
       label: groupLabelDraft,
       ...getAppearanceScope(),
     });
@@ -358,98 +356,47 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
             <div className="catalogue-team__empty">No groups found yet. Add or rename screenshot groups to populate this list.</div>
           ) : (
             <div className="catalogue-team__checklist">
-              {groupChecklist.map((item) => {
-                const isEditing = editingGroupKey === item.group.toLowerCase();
-
-                return (
-                  <div key={item.group.toLowerCase()} className="catalogue-team__checklist-item catalogue-team__checklist-item--group">
-                    <div className="catalogue-team__group-meta">
-                      <CatalogueGroupLabel
-                        className="catalogue-team__checklist-flow"
-                        group={item.group}
-                        projectId={projectId}
-                      />
-                      <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
-                    </div>
-                    {isEditing ? (
-                      <div className="catalogue-team__group-editor">
-                        <input
-                          ref={iconFileInputRef}
-                          className="catalogue-team__group-icon-file"
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
-                          onChange={(event) => {
-                            void handleGroupIconUpload(item.group, event.target.files?.[0] || null);
-                            event.target.value = '';
-                          }}
-                        />
-                        <input
-                          className="catalogue-filter"
-                          type="text"
-                          placeholder="Group display name"
-                          value={groupLabelDraft}
-                          onChange={(event) => setGroupLabelDraft(event.target.value)}
-                        />
-                        <input
-                          className="catalogue-filter catalogue-team__group-icon-input"
-                          type="text"
-                          placeholder="Emoji (optional)"
-                          value={groupIconEmojiDraft}
-                          onChange={(event) => setGroupIconEmojiDraft(event.target.value)}
-                        />
-                        {groupIconUrlDraft && (
-                          <div className="catalogue-team__group-icon-preview">
-                            <img src={groupIconUrlDraft} alt="" aria-hidden="true" />
-                            <span>Uploaded icon</span>
-                          </div>
-                        )}
-                        <div className="catalogue-team__group-editor-actions">
-                          <button
-                            type="button"
-                            className="btn-secondary"
-                            disabled={isUploadingGroupIcon}
-                            onClick={() => iconFileInputRef.current?.click()}
-                          >
-                            {isUploadingGroupIcon ? 'Uploading...' : 'Upload Icon'}
-                          </button>
-                          {groupIconStoragePathDraft && (
-                            <button
-                              type="button"
-                              className="btn-secondary"
-                              disabled={isUploadingGroupIcon || isSavingGroupAppearance}
-                              onClick={() => { void handleRemoveUploadedIcon(item.group); }}
-                            >
-                              Remove Uploaded Icon
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            disabled={isSavingGroupAppearance || isUploadingGroupIcon}
-                            onClick={() => { void saveGroupAppearance(item.group); }}
-                          >
-                            {isSavingGroupAppearance ? 'Saving...' : 'Save'}
-                          </button>
-                          <button type="button" className="btn-secondary" onClick={cancelGroupEdit}>
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="catalogue-team__group-edit-btn"
-                        onClick={() => beginGroupEdit(item.group)}
-                      >
-                        Edit Name & Icon
-                      </button>
-                    )}
+              {groupChecklist.map((item) => (
+                <div key={item.group.toLowerCase()} className="catalogue-team__checklist-item catalogue-team__checklist-item--group">
+                  <div className="catalogue-team__group-meta">
+                    <CatalogueGroupLabel
+                      className="catalogue-team__checklist-flow"
+                      group={item.group}
+                      projectId={projectId}
+                    />
+                    <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
                   </div>
-                );
-              })}
+                  <button
+                    type="button"
+                    className="catalogue-team__group-edit-btn"
+                    onClick={() => beginGroupEdit(item.group)}
+                    title="Edit icon"
+                    aria-label="Edit icon"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </>
+      )}
+
+      {editingGroupKey && (
+        <GroupAppearanceEditModal
+          group={editingGroupOriginal}
+          labelDraft={groupLabelDraft}
+          iconUrlDraft={groupIconUrlDraft}
+          hasUploadedIcon={Boolean(groupIconStoragePathDraft)}
+          isUploading={isUploadingGroupIcon}
+          isSaving={isSavingGroupAppearance}
+          message={groupSaveMessage}
+          onChangeLabel={setGroupLabelDraft}
+          onPickFile={(file) => { void handleGroupIconUpload(editingGroupOriginal, file); }}
+          onRemoveUploadedIcon={() => { void handleRemoveUploadedIcon(editingGroupOriginal); }}
+          onSave={() => { void saveGroupAppearance(editingGroupOriginal); }}
+          onCancel={cancelGroupEdit}
+        />
       )}
 
       {renameConfirm && (

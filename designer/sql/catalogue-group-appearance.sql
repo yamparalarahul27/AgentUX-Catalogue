@@ -2,7 +2,6 @@ create table if not exists public.catalogue_group_appearance (
   project_id uuid not null references public.projects (id) on delete cascade,
   group_key text not null,
   display_label text,
-  icon_emoji text,
   icon_url text,
   icon_storage_path text,
   created_at timestamptz not null default now(),
@@ -12,33 +11,14 @@ create table if not exists public.catalogue_group_appearance (
 
 alter table public.catalogue_group_appearance
   add column if not exists display_label text,
-  add column if not exists icon_emoji text,
   add column if not exists icon_url text,
   add column if not exists icon_storage_path text,
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
 
-do $$
-begin
-  if exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'catalogue_group_appearance'
-      and column_name = 'icon'
-  ) then
-    execute '
-      update public.catalogue_group_appearance
-      set icon_emoji = coalesce(icon_emoji, icon)
-      where icon is not null
-    ';
-  end if;
-exception
-  when others then null;
-end $$;
-
 alter table public.catalogue_group_appearance
-  drop column if exists icon;
+  drop column if exists icon,
+  drop column if exists icon_emoji;
 
 create index if not exists catalogue_group_appearance_project_idx
   on public.catalogue_group_appearance (project_id);

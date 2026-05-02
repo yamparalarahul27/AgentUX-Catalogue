@@ -1,7 +1,6 @@
 import { supabase } from './supabase';
 
 export interface CatalogueGroupAppearance {
-  iconEmoji?: string;
   iconStoragePath?: string;
   iconUrl?: string;
   label?: string;
@@ -12,7 +11,6 @@ export type CatalogueGroupAppearanceMap = Record<string, Record<string, Catalogu
 interface CatalogueGroupAppearanceRow {
   display_label: string | null;
   group_key: string;
-  icon_emoji: string | null;
   icon_storage_path: string | null;
   icon_url: string | null;
   project_id: string;
@@ -80,19 +78,16 @@ function buildGroupIconStoragePath(projectId: string, groupKey: string, fileName
 function buildAppearanceEntry(
   group: string,
   input: {
-    iconEmoji?: string | null;
     iconStoragePath?: string | null;
     iconUrl?: string | null;
     label?: string | null;
   },
 ): CatalogueGroupAppearance | null {
-  const cleanedIconEmoji = cleanText(input.iconEmoji);
   const cleanedIconUrl = cleanText(input.iconUrl);
   const cleanedIconStoragePath = cleanText(input.iconStoragePath);
   const cleanedLabel = cleanText(input.label);
   const entry: CatalogueGroupAppearance = {};
 
-  if (cleanedIconEmoji) entry.iconEmoji = cleanedIconEmoji;
   if (cleanedIconUrl) entry.iconUrl = cleanedIconUrl;
   if (cleanedIconStoragePath) entry.iconStoragePath = cleanedIconStoragePath;
 
@@ -100,7 +95,7 @@ function buildAppearanceEntry(
     entry.label = cleanedLabel;
   }
 
-  return entry.iconEmoji || entry.iconUrl || entry.label ? entry : null;
+  return entry.iconUrl || entry.label ? entry : null;
 }
 
 function notifyGroupAppearanceSubscribers() {
@@ -125,7 +120,6 @@ function setProjectEntries(
 
 function normalizeRowToEntry(row: CatalogueGroupAppearanceRow): CatalogueGroupAppearance | null {
   return buildAppearanceEntry(row.group_key, {
-    iconEmoji: row.icon_emoji,
     iconStoragePath: row.icon_storage_path,
     iconUrl: row.icon_url,
     label: row.display_label,
@@ -209,7 +203,6 @@ export function upsertCatalogueGroupAppearance(
   map: CatalogueGroupAppearanceMap,
   input: {
     group: string;
-    iconEmoji?: string | null;
     iconStoragePath?: string | null;
     iconUrl?: string | null;
     label?: string | null;
@@ -224,7 +217,6 @@ export function upsertCatalogueGroupAppearance(
   const projectEntries = { ...(map[projectKey] || {}) };
   const nextMap: CatalogueGroupAppearanceMap = { ...map };
   const entry = buildAppearanceEntry(cleanedGroup, {
-    iconEmoji: input.iconEmoji,
     iconStoragePath: input.iconStoragePath,
     iconUrl: input.iconUrl,
     label: input.label,
@@ -259,7 +251,7 @@ export async function ensureCatalogueGroupAppearanceLoaded(projectId?: string | 
   const nextLoad = (async () => {
     const { data, error } = await supabase
       .from('catalogue_group_appearance')
-      .select('project_id, group_key, display_label, icon_emoji, icon_url, icon_storage_path')
+      .select('project_id, group_key, display_label, icon_url, icon_storage_path')
       .eq('project_id', projectKey);
 
     if (error || !data) return;
@@ -300,7 +292,6 @@ export function subscribeCatalogueGroupAppearance(listener: () => void) {
 
 export async function saveCatalogueGroupAppearanceToSupabase(input: {
   group: string;
-  iconEmoji?: string | null;
   iconStoragePath?: string | null;
   iconUrl?: string | null;
   label?: string | null;
@@ -324,7 +315,6 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
   for (const projectKey of scopedProjects) {
     nextMap = upsertCatalogueGroupAppearance(nextMap, {
       group: input.group,
-      iconEmoji: input.iconEmoji,
       iconStoragePath: input.iconStoragePath,
       iconUrl: input.iconUrl,
       label: input.label,
@@ -335,7 +325,6 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
   if (!input.projectId) {
     nextMap = upsertCatalogueGroupAppearance(nextMap, {
       group: input.group,
-      iconEmoji: input.iconEmoji,
       iconStoragePath: input.iconStoragePath,
       iconUrl: input.iconUrl,
       label: input.label,
@@ -353,7 +342,6 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
         .upsert({
           display_label: entry.label || null,
           group_key: groupKey,
-          icon_emoji: entry.iconEmoji || null,
           icon_storage_path: entry.iconStoragePath || null,
           icon_url: entry.iconUrl || null,
           project_id: projectKey,
@@ -387,7 +375,6 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
 export async function uploadCatalogueGroupIconToSupabase(input: {
   file: File;
   group: string;
-  iconEmoji?: string | null;
   label?: string | null;
   projectId?: string | null;
   projectIds?: string[] | null;
@@ -454,7 +441,6 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
 
   const saveResult = await saveCatalogueGroupAppearanceToSupabase({
     group: input.group,
-    iconEmoji: input.iconEmoji,
     iconStoragePath: storagePath,
     iconUrl: publicUrl,
     label: input.label,
@@ -481,7 +467,6 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
 
 export async function removeCatalogueGroupUploadedIconFromSupabase(input: {
   group: string;
-  iconEmoji?: string | null;
   label?: string | null;
   projectId?: string | null;
   projectIds?: string[] | null;
@@ -508,7 +493,6 @@ export async function removeCatalogueGroupUploadedIconFromSupabase(input: {
 
   const saveResult = await saveCatalogueGroupAppearanceToSupabase({
     group: input.group,
-    iconEmoji: input.iconEmoji,
     iconStoragePath: null,
     iconUrl: null,
     label: input.label,
@@ -533,7 +517,6 @@ export function resolveCatalogueGroupAppearance(
   const cleanedGroup = group?.trim();
   if (!cleanedGroup) {
     return {
-      iconEmoji: null as string | null,
       iconStoragePath: null as string | null,
       iconUrl: null as string | null,
       label: null as string | null,
@@ -543,7 +526,6 @@ export function resolveCatalogueGroupAppearance(
   const entry = getScopedGroupAppearance(map, cleanedGroup, projectId);
 
   return {
-    iconEmoji: cleanText(entry?.iconEmoji) || null,
     iconStoragePath: cleanText(entry?.iconStoragePath) || null,
     iconUrl: cleanText(entry?.iconUrl) || null,
     label: cleanText(entry?.label) || cleanedGroup,

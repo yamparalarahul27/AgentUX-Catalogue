@@ -46,7 +46,6 @@ export function CatalogueGroupLabel({
 
   const label = appearance.label || fallback;
   const shouldShowImage = Boolean(appearance.iconUrl && !iconLoadFailed);
-  const shouldShowEmoji = Boolean(!shouldShowImage && appearance.iconEmoji);
 
   return (
     <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -64,7 +63,6 @@ export function CatalogueGroupLabel({
           }}
         />
       ) : null}
-      {shouldShowEmoji ? <span aria-hidden="true" style={{ fontSize: iconSize, lineHeight: 1 }}>{appearance.iconEmoji}</span> : null}
       <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {label}
       </span>
