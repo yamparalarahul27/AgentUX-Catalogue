@@ -614,6 +614,14 @@ export function Catalogue({
                 onGridDensityChange={setGridDensity}
                 onQuickUploadClick={() => {
                   guardAction(() => {
+                    upload.seedQuickUploadFromFiltersIfFirstOpen({
+                      filterFlow,
+                      filterGroup,
+                      filterPlatform,
+                      filterTheme,
+                      filterWebPreset,
+                      filterMobileOs,
+                    });
                     upload.setShowQuickUpload(true);
                   });
                 }}

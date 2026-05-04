@@ -9,3 +9,4 @@ site/designer/
 .playwright-cli/
 output/
 .tmp-screenshots/
+supabase/.temp/
