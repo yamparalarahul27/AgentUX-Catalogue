@@ -63,10 +63,11 @@ export function useCatalogueUpload({
   const quickUploadQueueRef = useRef<QuickUploadQueueItem[]>([]);
   const [quickUploadGroup, setQuickUploadGroup] = useState('');
   const [quickUploadFlowLabel, setQuickUploadFlowLabel] = useState('');
-  const [quickUploadPlatform, setQuickUploadPlatform] = useState<'web' | 'mobile' | null>(null);
-  const [quickUploadTheme, setQuickUploadTheme] = useState<'light' | 'dark' | null>(null);
+  const [quickUploadPlatform, setQuickUploadPlatform] = useState<'web' | 'mobile' | null>('web');
+  const [quickUploadTheme, setQuickUploadTheme] = useState<'light' | 'dark' | null>('dark');
   const [quickUploadWebPresetKey, setQuickUploadWebPresetKey] = useState<string | null>(null);
   const [quickUploadMobileOs, setQuickUploadMobileOs] = useState<MobileOs | null>(null);
+  const hasSeededQuickUploadFromFiltersRef = useRef(false);
   function buildFlowMetadata(value: string) {
     const label = value.trim();
     if (!label) return {};
@@ -125,7 +126,11 @@ export function useCatalogueUpload({
 
   useEffect(() => {
     if (quickUploadPlatform === 'web' && !quickUploadWebPresetKey) {
-      setQuickUploadWebPresetKey(webPresets[0]?.key ?? null);
+      const preferredWebPresetKey =
+        webPresets.find((preset) => preset.width === 1512)?.key
+        ?? webPresets[0]?.key
+        ?? null;
+      setQuickUploadWebPresetKey(preferredWebPresetKey);
       setQuickUploadMobileOs(null);
     }
     if (quickUploadPlatform === 'mobile' && !quickUploadMobileOs) {
@@ -170,6 +175,10 @@ export function useCatalogueUpload({
     }
   }
 
+  // Field values (Flow / Group / Platform / Theme / WebPresetKey / MobileOs)
+  // intentionally NOT cleared here — they stick within the same browser
+  // session so a designer doing a long upload run doesn't re-pick the same
+  // chips on every batch. A page reload resets them via the hook re-mounting.
   function resetQuickUploadState() {
     setShowQuickUpload(false);
     setQuickUploadProjectId(null);
@@ -177,12 +186,34 @@ export function useCatalogueUpload({
       previous.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       return [];
     });
-    setQuickUploadGroup('');
-    setQuickUploadFlowLabel('');
-    setQuickUploadPlatform(null);
-    setQuickUploadTheme(null);
-    setQuickUploadWebPresetKey(null);
-    setQuickUploadMobileOs(null);
+  }
+
+  // Run only once per page load (first time the user opens Quick Upload).
+  // If the catalogue toolbar has filters set, prefill the matching modal
+  // fields so the user doesn't re-pick what they already filtered to.
+  function seedQuickUploadFromFiltersIfFirstOpen(filters: {
+    filterFlow: string[];
+    filterGroup: string[];
+    filterPlatform: string | null;
+    filterTheme: string | null;
+    filterWebPreset: string | null;
+    filterMobileOs: string | null;
+  }) {
+    if (hasSeededQuickUploadFromFiltersRef.current) return;
+    hasSeededQuickUploadFromFiltersRef.current = true;
+
+    if (filters.filterFlow.length === 1) setQuickUploadFlowLabel(filters.filterFlow[0]);
+    if (filters.filterGroup.length === 1) setQuickUploadGroup(filters.filterGroup[0]);
+    if (filters.filterPlatform === 'web' || filters.filterPlatform === 'mobile') {
+      setQuickUploadPlatform(filters.filterPlatform);
+    }
+    if (filters.filterTheme === 'light' || filters.filterTheme === 'dark') {
+      setQuickUploadTheme(filters.filterTheme);
+    }
+    if (filters.filterWebPreset) setQuickUploadWebPresetKey(filters.filterWebPreset);
+    if (filters.filterMobileOs === 'ios' || filters.filterMobileOs === 'android') {
+      setQuickUploadMobileOs(filters.filterMobileOs);
+    }
   }
 
   function handleQuickUploadProjectChange(projectId: string | null) {
@@ -481,6 +512,7 @@ export function useCatalogueUpload({
     handleQuickUploadUploadAll,
     resetUploadState,
     resetQuickUploadState,
+    seedQuickUploadFromFiltersIfFirstOpen,
     quickUploadFlowLabel,
     quickUploadGroup,
     quickUploadMobileOs,
