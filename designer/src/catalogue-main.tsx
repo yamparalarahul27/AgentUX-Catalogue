@@ -21,6 +21,7 @@ import './styles/catalogue-lightbox-crop.scss';
 import './styles/catalogue-quick-panel.scss';
 import './styles/catalogue-stack.scss';
 import './styles/catalogue-skeleton.scss';
+import './styles/bookmarks.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

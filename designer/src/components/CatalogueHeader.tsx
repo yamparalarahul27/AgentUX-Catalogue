@@ -14,6 +14,8 @@ interface CatalogueHeaderProps {
   canViewTeam: boolean;
   onOpenSettings: () => void;
   onSectionChange: (section: CatalogueSection) => void;
+  bookmarkEmail?: string | null;
+  onResetBookmarkEmail?: () => void;
 }
 
 export function CatalogueHeader({
@@ -21,6 +23,8 @@ export function CatalogueHeader({
   canViewTeam,
   onOpenSettings,
   onSectionChange,
+  bookmarkEmail,
+  onResetBookmarkEmail,
 }: CatalogueHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -130,6 +134,24 @@ export function CatalogueHeader({
             >
               Team
             </button>
+          )}
+
+          {bookmarkEmail && onResetBookmarkEmail && (
+            <>
+              <div className="catalogue-header-menu__divider" role="presentation" />
+              <div className="catalogue-header-menu__meta" role="presentation">
+                Bookmark email
+                <span className="catalogue-header-menu__meta-value">{bookmarkEmail}</span>
+              </div>
+              <button
+                type="button"
+                className="catalogue-header-menu__item"
+                role="menuitem"
+                onClick={() => { onResetBookmarkEmail(); setMenuOpen(false); }}
+              >
+                Reset bookmark email
+              </button>
+            </>
           )}
         </div>
       )}

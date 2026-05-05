@@ -69,6 +69,27 @@
   text-transform: uppercase;
 }
 
+.catalogue-header-menu__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 8px 4px;
+  font-size: 10px;
+  color: #8a8a94;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.catalogue-header-menu__meta-value {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 12px;
+  color: #d4d4d8;
+  word-break: break-all;
+}
+
 .catalogue-archive {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ChevronDown, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Bookmark, Check, ChevronDown, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -33,6 +33,9 @@ interface CatalogueToolbarProps {
   quickUploadOpen?: boolean;
   quickUploadQueueCount?: number;
   quickUploadIsUploading?: boolean;
+  bookmarkFilterOn?: boolean;
+  bookmarkCount?: number;
+  onBookmarkFilterToggle?: () => void;
   onFilterAnnotationChange: (value: string[]) => void;
   onFilterGroupChange: (value: string[]) => void;
   onFilterFlowChange: (value: string[]) => void;
@@ -137,6 +140,9 @@ export function CatalogueToolbar({
   quickUploadQueueCount = 0,
   quickUploadIsUploading = false,
   onQuickUploadAll,
+  bookmarkFilterOn = false,
+  bookmarkCount = 0,
+  onBookmarkFilterToggle,
   searchQuery,
   sortBy,
   viewBy,
@@ -437,6 +443,18 @@ export function CatalogueToolbar({
         </div>
 
         <div className="catalogue-toolbar-right">
+          {onBookmarkFilterToggle && (
+            <button
+              type="button"
+              className={`catalogue-toolbar-bookmark catalogue-toolbar--desktop-only ${bookmarkFilterOn ? 'is-active' : ''}`}
+              onClick={onBookmarkFilterToggle}
+              title={bookmarkFilterOn ? 'Show all screenshots' : 'Show only your bookmarks'}
+              aria-pressed={bookmarkFilterOn}
+            >
+              <Bookmark size={14} fill={bookmarkFilterOn ? 'currentColor' : 'none'} />
+              <span>Bookmarked{bookmarkFilterOn && bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}</span>
+            </button>
+          )}
           {/* Desktop button — flips to "Upload All (N)" while the Quick
               Upload modal is open so the user can trigger the upload from
               the same spot. Disabled while uploading or when queue empty. */}

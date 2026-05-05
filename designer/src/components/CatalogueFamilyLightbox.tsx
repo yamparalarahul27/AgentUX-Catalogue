@@ -54,6 +54,8 @@ interface CatalogueFamilyLightboxProps {
   onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onUpdateVariantDetails: (screenshotId: string, patch: { mobile_os?: MobileOs | null; platform?: 'mobile' | 'web' | null; theme?: 'light' | 'dark' | null; web_preset_key?: string | null }) => Promise<boolean>;
   webPresets: WebPreset[];
+  bookmarkedIds?: Set<string>;
+  onToggleBookmark?: (screenshotId: string) => void;
 }
 type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; resolved_at?: string | null; resolved_by_email?: string | null };
 type LightboxPanel = 'comments' | 'annotations';
@@ -116,6 +118,8 @@ export function CatalogueFamilyLightbox({
   onSetFlowLabel,
   onUpdateVariantDetails,
   webPresets,
+  bookmarkedIds,
+  onToggleBookmark,
 }: CatalogueFamilyLightboxProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
@@ -718,6 +722,8 @@ export function CatalogueFamilyLightbox({
                 annotationsCount={annotations.length}
                 canCrop={Boolean(canEdit && imageSize && !cropMode)}
                 commentsCount={comments.length}
+                isBookmarked={Boolean(screenshot && bookmarkedIds?.has(screenshot.id))}
+                onToggleBookmark={onToggleBookmark && screenshot ? () => onToggleBookmark(screenshot.id) : undefined}
                 existingGroups={existingGroups}
                 flowDraft={flowDraft}
                 groupDraft={groupDraft}
