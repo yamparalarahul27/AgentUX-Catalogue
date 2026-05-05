@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ideation | AgentUX</title>
+    <meta name="description" content="Ideas explored on the AgentUX Catalogue, signed off but not yet shipped." />
+    <link rel="icon" type="image/svg+xml" href="./logo.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .ideation { padding: 12px 0 34px; }
+      .ideation-intro { color: var(--muted); font-size: 1.05rem; margin: 0 0 28px; max-width: 56ch; }
+      .ideation-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 20px 22px;
+        margin-bottom: 14px;
+        background: var(--card, #fff);
+        transition: border-color 0.15s;
+      }
+      .ideation-card:hover { border-color: var(--accent); }
+      .ideation-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+      }
+      .ideation-card-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0;
+      }
+      .ideation-card-date {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.78rem;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .ideation-status {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .ideation-status--exploratory { background: #eef2ff; color: #4f46e5; }
+      .ideation-status--roadmap { background: #ecfeff; color: #0891b2; }
+      .ideation-status--building { background: #ecfdf5; color: #059669; }
+      .ideation-status--relocated { background: #f5f5f4; color: #57534e; }
+      .ideation-card-body {
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin: 0 0 12px;
+      }
+      .ideation-card-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--accent);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .ideation-card-link:hover { text-decoration: underline; }
+      .ideation-status-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="AgentUX home">
+          <img src="./logo.svg" alt="" width="28" height="28" />
+          <span>AgentUX</span>
+        </a>
+        <nav class="nav">
+          <a href="./#features">Features</a>
+          <a href="./#how-it-works">How It Works</a>
+          <a href="./#faq">FAQ</a>
+          <a href="./changelog.html">Changelog</a>
+          <a href="./ideation.html" class="nav-product-link">Ideation</a>
+          <span class="nav-divider"></span>
+          <a href="/designer/" class="nav-product-link">Open Catalogue</a>
+        </nav>
+      </header>
+
+      <main class="ideation">
+        <p class="eyebrow">Ideation</p>
+        <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What we're thinking about</h1>
+        <p class="ideation-intro">Ideas explored on the Catalogue — signed off, awaiting answers, or queued behind something else. Once an idea ships, it moves to the <a href="./changelog.html" style="color: var(--accent);">Changelog</a>.</p>
+
+        <article class="ideation-card">
+          <div class="ideation-card-head">
+            <div class="ideation-status-row">
+              <span class="ideation-status ideation-status--building">Building Next</span>
+              <h2 class="ideation-card-title">Bookmarks</h2>
+            </div>
+            <span class="ideation-card-date">May 4, 2026</span>
+          </div>
+          <p class="ideation-card-body">
+            Per-email bookmarking from the family card and lightbox; toolbar filter to narrow to your bookmarked screenshots. No Supabase auth — bookmarks are linked to whatever email you supply, cached client-side so subsequent clicks are instant. Cross-device by re-entering the same email.
+          </p>
+        </article>
+
+        <article class="ideation-card">
+          <div class="ideation-card-head">
+            <div class="ideation-status-row">
+              <span class="ideation-status ideation-status--exploratory">Exploratory</span>
+              <h2 class="ideation-card-title">UI Element Annotations</h2>
+            </div>
+            <span class="ideation-card-date">May 4, 2026</span>
+          </div>
+          <p class="ideation-card-body">
+            Promote free-text annotation labels (Toast, Modal, Tooltip, Sheet…) to a curated <strong>UI element type</strong> with first-class filters and visuals. Today they're opaque strings; tomorrow they could power per-element filters, a UI element library page, and design-system audits. Awaiting answers on element vocabulary and migration of existing labels.
+          </p>
+          <a class="ideation-card-link" href="https://github.com/yamparalarahul27/AgentUX-Catalogue/blob/main/docs/catalogue-ideation-2026-05-04-ui-element-annotations.md" target="_blank" rel="noopener">Read full doc →</a>
+        </article>
+
+        <article class="ideation-card">
+          <div class="ideation-card-head">
+            <div class="ideation-status-row">
+              <span class="ideation-status ideation-status--exploratory">Exploratory</span>
+              <h2 class="ideation-card-title">Group Chip Hover Metrics</h2>
+            </div>
+            <span class="ideation-card-date">May 2, 2026</span>
+          </div>
+          <p class="ideation-card-body">
+            Replace the simple title-attribute tooltip on group chips with a portal-rendered popover card showing per-group splits — platform (Web / Mobile), theme (Dark / Light), flow count, family count, and last-added timestamp. Designed with an optional bottom slot so external metrics (volume, users) can drop in later.
+          </p>
+          <a class="ideation-card-link" href="https://github.com/yamparalarahul27/AgentUX-Catalogue/blob/main/docs/catalogue-ideation-2026-05-02.md" target="_blank" rel="noopener">Read full doc →</a>
+        </article>
+
+        <article class="ideation-card">
+          <div class="ideation-card-head">
+            <div class="ideation-status-row">
+              <span class="ideation-status ideation-status--roadmap">Roadmap</span>
+              <h2 class="ideation-card-title">Unified Catalogue Compare Mode</h2>
+            </div>
+            <span class="ideation-card-date">Apr 2026</span>
+          </div>
+          <p class="ideation-card-body">
+            Stack flow strips by group as a sub-mode of the Screens tab — one toggle, no separate Flow Builder, mobile-friendly. The catalogue becomes the single home for both screenshot work and side-by-side flow comparison.
+          </p>
+          <a class="ideation-card-link" href="https://github.com/yamparalarahul27/AgentUX-Catalogue/blob/main/docs/catalogue-enhancement-plan.md" target="_blank" rel="noopener">Read full doc →</a>
+        </article>
+
+        <article class="ideation-card">
+          <div class="ideation-card-head">
+            <div class="ideation-status-row">
+              <span class="ideation-status ideation-status--relocated">Relocated</span>
+              <h2 class="ideation-card-title">Folder View</h2>
+            </div>
+            <span class="ideation-card-date">May 2, 2026</span>
+          </div>
+          <p class="ideation-card-body">
+            Brand-card folder layout with swipeable carousel previews — was prototyped on the legacy CD page. During the Apr 27 Catalogue-only repo split, the prototype moved to <a href="https://github.com/yamparalarahul27/AgentUX-other" target="_blank" rel="noopener" style="color: var(--accent);">AgentUX-other</a>. No tracked code in this repo today; future work would land here as a new view tab.
+          </p>
+          <a class="ideation-card-link" href="https://github.com/yamparalarahul27/AgentUX-Catalogue/blob/main/docs/catalogue-ideation-2026-05-02.md" target="_blank" rel="noopener">Read full doc →</a>
+        </article>
+      </main>
+
+      <footer class="footer">
+        <div>
+          <strong>AgentUX</strong>
+          <p>The UX flow workspace for AI-built apps.</p>
+          <p>Engineered by Yamparala Rahul.</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/yamparalarahul27/AgentUX-Catalogue">GitHub</a>
+          <a href="./changelog.html">Changelog</a>
+          <a href="./ideation.html">Ideation</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

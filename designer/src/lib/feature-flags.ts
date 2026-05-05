@@ -15,10 +15,10 @@ export const CATALOGUE_CHIP_STRIP_ENABLED = true;
 // Recency dot threshold for chip strip. Placeholder until Phase 0 data review.
 export const CATALOGUE_CHIP_RECENCY_HOURS = 24;
 
-// Lightbox Reupload icon — hidden once Crop covers the common "fix this
-// screenshot" use case. Flip on if reupload (replace with a fresh file)
-// becomes useful again.
-export const LIGHTBOX_REUPLOAD_ENABLED = false;
+// Reupload (replace-with-fresh-file) — hidden once Crop covers the common
+// "fix this screenshot" use case. Gates both the lightbox action and the
+// card's reupload button. Flip on if reupload becomes useful again.
+export const REUPLOAD_ENABLED = false;
 
 // Upload Analytics tab in Team Settings. Hidden by default — flip on if
 // the date-wise upload-volume table becomes useful again.

@@ -1,6 +1,6 @@
 import { Crop, MapPin, MessageCircle, Pencil, RefreshCw, Trash2 } from 'lucide-react';
 
-import { LIGHTBOX_REUPLOAD_ENABLED } from '../lib/feature-flags';
+import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
 
@@ -81,7 +81,7 @@ export function CatalogueFamilyLightboxActions({
         <button type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
           <Pencil size={15} />
         </button>
-        {LIGHTBOX_REUPLOAD_ENABLED && (
+        {REUPLOAD_ENABLED && (
           <button type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} title="Reupload">
             <RefreshCw size={15} />
           </button>

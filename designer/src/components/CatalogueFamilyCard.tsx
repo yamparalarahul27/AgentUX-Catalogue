@@ -4,6 +4,7 @@ import { Check, MapPin, MessageCircle, Monitor, Pencil, RefreshCw, Smartphone, T
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
+import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import { getGroupColor } from '../lib/naming';
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
@@ -159,16 +160,18 @@ export function CatalogueFamilyCard({
             >
               <Pencil size={14} />
             </button>
-            <button
-              type="button"
-              className="catalogue-card-action"
-              title="Reupload variant"
-              aria-label="Reupload variant"
-              onClick={() => fileRef.current?.click()}
-              disabled={!screenshot}
-            >
-              <RefreshCw size={14} />
-            </button>
+            {REUPLOAD_ENABLED && (
+              <button
+                type="button"
+                className="catalogue-card-action"
+                title="Reupload variant"
+                aria-label="Reupload variant"
+                onClick={() => fileRef.current?.click()}
+                disabled={!screenshot}
+              >
+                <RefreshCw size={14} />
+              </button>
+            )}
             <button
               type="button"
               className="catalogue-card-action catalogue-card-action-danger"

@@ -314,7 +314,7 @@ export function CatalogueToolbar({
             <Search size={16} />
             <input
               type="text"
-              placeholder="Search screen families..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(event) => onSearchChange(event.target.value)}
             />
@@ -480,7 +480,7 @@ export function CatalogueToolbar({
             <input
               ref={mobileSearchRef}
               type="text"
-              placeholder="Search screen families..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(event) => onSearchChange(event.target.value)}
             />
