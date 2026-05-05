@@ -448,11 +448,15 @@ export function CatalogueToolbar({
               type="button"
               className={`catalogue-toolbar-bookmark catalogue-toolbar--desktop-only ${bookmarkFilterOn ? 'is-active' : ''}`}
               onClick={onBookmarkFilterToggle}
-              title={bookmarkFilterOn ? 'Show all screenshots' : 'Show only your bookmarks'}
+              title={
+                bookmarkFilterOn
+                  ? 'Show all screenshots'
+                  : `Show only your bookmarks${bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}`
+              }
+              aria-label={bookmarkFilterOn ? 'Show all screenshots' : 'Show only your bookmarks'}
               aria-pressed={bookmarkFilterOn}
             >
-              <Bookmark size={14} fill={bookmarkFilterOn ? 'currentColor' : 'none'} />
-              <span>Bookmarked{bookmarkFilterOn && bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}</span>
+              <Bookmark size={16} fill={bookmarkFilterOn ? 'currentColor' : 'none'} />
             </button>
           )}
           {/* Desktop button — flips to "Upload All (N)" while the Quick
