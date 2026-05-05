@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
+import { useBookmarks } from '../hooks/use-bookmarks';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
@@ -30,6 +31,7 @@ import {
 import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import { BookmarkEmailModal } from './BookmarkEmailModal';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueBulkFlowDialog } from './CatalogueBulkFlowDialog';
 import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
@@ -239,8 +241,8 @@ export function Catalogue({
     allGroups,
     allMobileOs,
     allWebPresets,
-    filteredFamilies,
-    groupedFamilies,
+    filteredFamilies: rawFilteredFamilies,
+    groupedFamilies: rawGroupedFamilies,
     isSortLocked,
   } = useCatalogueFilters({
     screenshots: scopedScreenshots,
@@ -251,6 +253,31 @@ export function Catalogue({
     viewBy,
     groupOrder,
   });
+
+  // Per-email bookmarks (no Supabase auth — email cached client-side).
+  const bookmarks = useBookmarks();
+  const [bookmarkFilterOn, setBookmarkFilterOn] = useState(false);
+
+  // Apply bookmark filter on top of the standard filter pass. A family
+  // is shown if any of its variants is bookmarked.
+  const filteredFamilies = useMemo(() => {
+    if (!bookmarkFilterOn) return rawFilteredFamilies;
+    return rawFilteredFamilies.filter((family) => (
+      family.variants.some((variant) => bookmarks.bookmarkedIds.has(variant.id))
+    ));
+  }, [bookmarkFilterOn, rawFilteredFamilies, bookmarks.bookmarkedIds]);
+
+  const groupedFamilies = useMemo(() => {
+    if (!bookmarkFilterOn) return rawGroupedFamilies;
+    const next: typeof rawGroupedFamilies = {};
+    for (const [groupKey, families] of Object.entries(rawGroupedFamilies)) {
+      const kept = families.filter((family) => (
+        family.variants.some((variant) => bookmarks.bookmarkedIds.has(variant.id))
+      ));
+      if (kept.length > 0) next[groupKey] = kept;
+    }
+    return next;
+  }, [bookmarkFilterOn, rawGroupedFamilies, bookmarks.bookmarkedIds]);
   const [showSettings, setShowSettings] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
@@ -530,6 +557,11 @@ export function Catalogue({
         canViewTeam={canViewTeamSection}
         onOpenSettings={() => setShowSettings(true)}
         onSectionChange={setActiveSection}
+        bookmarkEmail={bookmarks.email}
+        onResetBookmarkEmail={() => {
+          bookmarks.clearEmail();
+          setBookmarkFilterOn(false);
+        }}
       />
       {activeSection === 'team' && canViewTeamSection ? (
         <main className="catalogue-main">
@@ -641,6 +673,19 @@ export function Catalogue({
                 sortBy={sortBy}
                 viewBy={viewBy}
                 viewMode={viewMode}
+                bookmarkFilterOn={bookmarkFilterOn}
+                bookmarkCount={bookmarks.bookmarkedIds.size}
+                onBookmarkFilterToggle={() => {
+                  if (bookmarkFilterOn) {
+                    setBookmarkFilterOn(false);
+                    return;
+                  }
+                  if (!bookmarks.email) {
+                    bookmarks.requestFilterEmail();
+                    return;
+                  }
+                  setBookmarkFilterOn(true);
+                }}
               />
 
               <div className="catalogue-body-layout">
@@ -688,6 +733,18 @@ export function Catalogue({
                     onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
                     userEmail={user.email || 'Designer'}
                     webPresets={webPresets}
+                    bookmarkedIds={bookmarks.bookmarkedIds}
+                    onToggleBookmark={(screenshotId) => {
+                      if (!bookmarks.email) {
+                        bookmarks.requestBookmarkEmail(screenshotId);
+                        return;
+                      }
+                      void bookmarks.toggleBookmark(screenshotId).then((result) => {
+                        if (!result.ok) {
+                          setToast({ message: 'Could not update bookmark. Try again.', type: 'error' });
+                        }
+                      });
+                    }}
                   />
                 </div>
                 <CatalogueQuickUploadModal
@@ -817,6 +874,18 @@ export function Catalogue({
           onSetReference={handleGuestAwareSetReference}
           onSetFlowLabel={handleGuestAwareSetFlowLabel}
           onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
+          bookmarkedIds={bookmarks.bookmarkedIds}
+          onToggleBookmark={(screenshotId) => {
+            if (!bookmarks.email) {
+              bookmarks.requestBookmarkEmail(screenshotId);
+              return;
+            }
+            void bookmarks.toggleBookmark(screenshotId).then((result) => {
+              if (!result.ok) {
+                setToast({ message: 'Could not update bookmark. Try again.', type: 'error' });
+              }
+            });
+          }}
         />
       )}
       {bulkAction === 'group' && (
@@ -888,6 +957,27 @@ export function Catalogue({
           setToast({ message: 'Editing enabled for this session.', type: 'success' });
         }}
       />
+      {bookmarks.emailModalContext && (
+        <BookmarkEmailModal
+          context={bookmarks.emailModalContext.kind}
+          initialEmail={bookmarks.email}
+          onCancel={bookmarks.closeEmailModal}
+          onSubmit={async (email) => {
+            const context = bookmarks.emailModalContext;
+            const result = await bookmarks.saveEmailAndContinue(email);
+            if (!result.ok) {
+              setToast({ message: 'Could not save bookmark. Try again.', type: 'error' });
+              return;
+            }
+            if (context?.kind === 'filter') {
+              setBookmarkFilterOn(true);
+            }
+            if (context?.kind === 'bookmark') {
+              setToast({ message: 'Bookmarked.', type: 'success' });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

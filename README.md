@@ -4,6 +4,17 @@
 
 Your team's single source of truth for product screenshots, competitive video references, and saved links — organized by brand, searchable, and accessible from anywhere including Telegram.
 
+## Features
+
+- **Browse** — Grid, List, and Gallery views with a group chip strip above the toolbar (paused-by-default ticker, shareable `?group=` URLs) and ThumbHash placeholders for instant blurry previews.
+- **Annotate, comment & crop** — drag area annotations on screenshots in the lightbox, leave comments, navigate with arrow keys, and crop any side (top, bottom, left, right) — annotations re-project to the new bounds.
+- **Upload** — Quick Upload with search-and-add comboboxes for Flow and Group, folder drag-and-drop (folder name auto-fills the flow), smart session-sticky defaults, and first-open prefill from active toolbar filters.
+- **Organize** — bulk re-group, re-assign flow, rename, or delete multiple families at once; multi-select toolbar filters; cross-field toolbar search across names, filenames, and group names.
+- **Group appearance** — paste, drag-drop, or click to upload custom group icons; first-letter avatar fallback.
+- **Mobile via Telegram** — share screenshot images from your phone and they land in the catalogue's Social group; X (Twitter) post URLs route to the Videos section.
+
+> Full feature list and release history: [agentux.hirahul.xyz/changelog.html](https://agentux.hirahul.xyz/changelog.html)
+
 ## What's in this repo
 
 | Path | Purpose |

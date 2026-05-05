@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, MapPin, MessageCircle, Monitor, Pencil, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
+import { Bookmark, Check, MapPin, MessageCircle, Monitor, Pencil, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
+import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import { getGroupColor } from '../lib/naming';
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
@@ -22,6 +23,8 @@ interface CatalogueFamilyCardProps {
   onRenameFamily: (familyId: string, newName: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onToggleSelect: (familyId: string) => void;
+  bookmarkedIds?: Set<string>;
+  onToggleBookmark?: (screenshotId: string) => void;
 }
 
 export function CatalogueFamilyCard({
@@ -37,6 +40,8 @@ export function CatalogueFamilyCard({
   onRenameFamily,
   onReplaceVariantImage,
   onToggleSelect,
+  bookmarkedIds,
+  onToggleBookmark,
 }: CatalogueFamilyCardProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -159,16 +164,33 @@ export function CatalogueFamilyCard({
             >
               <Pencil size={14} />
             </button>
-            <button
-              type="button"
-              className="catalogue-card-action"
-              title="Reupload variant"
-              aria-label="Reupload variant"
-              onClick={() => fileRef.current?.click()}
-              disabled={!screenshot}
-            >
-              <RefreshCw size={14} />
-            </button>
+            {REUPLOAD_ENABLED && (
+              <button
+                type="button"
+                className="catalogue-card-action"
+                title="Reupload variant"
+                aria-label="Reupload variant"
+                onClick={() => fileRef.current?.click()}
+                disabled={!screenshot}
+              >
+                <RefreshCw size={14} />
+              </button>
+            )}
+            {onToggleBookmark && screenshot && (
+              <button
+                type="button"
+                className={`catalogue-card-action ${bookmarkedIds?.has(screenshot.id) ? 'is-bookmarked' : ''}`}
+                title={bookmarkedIds?.has(screenshot.id) ? 'Remove bookmark' : 'Bookmark this screenshot'}
+                aria-label={bookmarkedIds?.has(screenshot.id) ? 'Remove bookmark' : 'Bookmark this screenshot'}
+                aria-pressed={bookmarkedIds?.has(screenshot.id) ?? false}
+                onClick={() => onToggleBookmark(screenshot.id)}
+              >
+                <Bookmark
+                  size={14}
+                  fill={bookmarkedIds?.has(screenshot.id) ? 'currentColor' : 'none'}
+                />
+              </button>
+            )}
             <button
               type="button"
               className="catalogue-card-action catalogue-card-action-danger"

@@ -1,6 +1,6 @@
-import { Crop, MapPin, MessageCircle, Pencil, RefreshCw, Trash2 } from 'lucide-react';
+import { Bookmark, Crop, MapPin, MessageCircle, Pencil, RefreshCw, Trash2 } from 'lucide-react';
 
-import { LIGHTBOX_REUPLOAD_ENABLED } from '../lib/feature-flags';
+import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
 
@@ -22,6 +22,8 @@ interface CatalogueFamilyLightboxActionsProps {
   webPresetDraft: string | null;
   webPresets: WebPreset[];
   canCrop: boolean;
+  isBookmarked?: boolean;
+  onToggleBookmark?: () => void;
   onDelete: () => void;
   onFlowChange: (value: string) => void;
   onGroupChange: (value: string) => void;
@@ -58,6 +60,8 @@ export function CatalogueFamilyLightboxActions({
   webPresetDraft,
   webPresets,
   canCrop,
+  isBookmarked,
+  onToggleBookmark,
   onDelete,
   onFlowChange,
   onGroupChange,
@@ -81,7 +85,7 @@ export function CatalogueFamilyLightboxActions({
         <button type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
           <Pencil size={15} />
         </button>
-        {LIGHTBOX_REUPLOAD_ENABLED && (
+        {REUPLOAD_ENABLED && (
           <button type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} title="Reupload">
             <RefreshCw size={15} />
           </button>
@@ -89,6 +93,17 @@ export function CatalogueFamilyLightboxActions({
         <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenCrop} disabled={!canCrop} title="Crop">
           <Crop size={15} />
         </button>
+        {onToggleBookmark && (
+          <button
+            type="button"
+            className={`catalogue-lightbox-icon-btn ${isBookmarked ? 'is-bookmarked' : ''}`}
+            onClick={onToggleBookmark}
+            title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+            aria-pressed={Boolean(isBookmarked)}
+          >
+            <Bookmark size={15} fill={isBookmarked ? 'currentColor' : 'none'} />
+          </button>
+        )}
         <span className="catalogue-lightbox-icon-bar__spacer" />
         <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenComments} title={`Comments (${commentsCount})`}>
           <MessageCircle size={15} />

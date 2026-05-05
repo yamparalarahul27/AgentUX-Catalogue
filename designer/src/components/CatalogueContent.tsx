@@ -54,6 +54,8 @@ interface CatalogueContentProps {
   ) => Promise<boolean>;
   userEmail: string;
   webPresets: { key: string; label: string; width: number }[];
+  bookmarkedIds: Set<string>;
+  onToggleBookmark: (screenshotId: string) => void;
 }
 
 export function CatalogueContent({
@@ -92,6 +94,8 @@ export function CatalogueContent({
   onUpdateVariantDetails,
   userEmail,
   webPresets,
+  bookmarkedIds,
+  onToggleBookmark,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
     searchQuery ||
@@ -203,6 +207,8 @@ export function CatalogueContent({
                   onRenameFamily={onRenameFamily}
                   onReplaceVariantImage={onReplaceVariantImage}
                   onToggleSelect={onToggleSelect}
+                  bookmarkedIds={bookmarkedIds}
+                  onToggleBookmark={onToggleBookmark}
                 />
               ))}
             </div>
