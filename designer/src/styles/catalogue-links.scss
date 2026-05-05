@@ -88,46 +88,143 @@
   font-size: 12px;
 }
 
-.catalogue-links__list {
+.catalogue-links__search-row {
+  display: flex;
+}
+
+.catalogue-links__search {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  background: #101015;
+  color: #f4f4f5;
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+
+  &::placeholder {
+    color: #71717a;
+  }
+
+  &:focus {
+    border-color: rgba(99, 102, 241, 0.55);
+  }
+}
+
+.catalogue-links__groups {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+}
+
+.catalogue-links__group {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(17, 17, 19, 0.6);
+  overflow: hidden;
+}
+
+.catalogue-links__group-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #f4f4f5;
+  text-align: left;
+  padding: 10px 14px;
+  cursor: pointer;
+  font: inherit;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: -2px;
+  }
+}
+
+.catalogue-links__favicon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: #09090b;
+  object-fit: contain;
+}
+
+.catalogue-links__group-host {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e4e4e7;
+}
+
+.catalogue-links__group-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a1a1aa;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.catalogue-links__group-caret {
+  margin-left: auto;
+  color: #71717a;
+  font-size: 10px;
+  transition: transform 120ms ease;
+
+  &.is-open {
+    transform: rotate(90deg);
+  }
+}
+
+.catalogue-links__items {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 6px;
+  display: flex;
+  flex-direction: column;
 }
 
 .catalogue-links__item {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 12px;
-  background: rgba(17, 17, 19, 0.92);
-  padding: 12px 14px;
-}
+  padding: 7px 14px 7px 44px;
+  position: relative;
 
-.catalogue-links__favicon {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: #09090b;
-  object-fit: contain;
-}
+  &:hover {
+    background: rgba(255, 255, 255, 0.025);
 
-.catalogue-links__body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+    .catalogue-links__remove {
+      opacity: 1;
+    }
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 26px;
+    top: 50%;
+    width: 6px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+  }
 }
 
 .catalogue-links__url {
-  color: #f4f4f5;
+  flex: 1;
+  min-width: 0;
+  color: #e4e4e7;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
@@ -143,33 +240,49 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
-  color: #a1a1aa;
+  flex-shrink: 0;
+  color: #71717a;
   font-size: 11px;
 }
 
-.catalogue-links__host {
-  color: #d4d4d8;
-  font-weight: 600;
+.catalogue-links__author {
+  color: #a1a1aa;
 }
 
 .catalogue-links__dot {
-  color: #52525b;
+  color: #3f3f46;
+}
+
+.catalogue-links__time {
+  color: #71717a;
 }
 
 .catalogue-links__remove {
   flex-shrink: 0;
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  border-radius: 999px;
-  background: rgba(136, 19, 55, 0.45);
-  color: #fecdd3;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 4px 10px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #71717a;
+  font-size: 12px;
+  line-height: 1;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
 
   &:hover {
-    background: rgba(190, 24, 93, 0.55);
+    background: rgba(244, 63, 94, 0.12);
+    color: #fda4af;
+  }
+
+  &:focus-visible {
+    opacity: 1;
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: 1px;
   }
 }
 
@@ -186,9 +299,20 @@
 
   .catalogue-links__item {
     flex-wrap: wrap;
+    padding-left: 38px;
+
+    &::before {
+      left: 22px;
+    }
   }
 
   .catalogue-links__remove {
+    opacity: 1;
     margin-left: auto;
+  }
+
+  .catalogue-links__meta {
+    flex-basis: 100%;
+    padding-left: 0;
   }
 }

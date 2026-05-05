@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { formatRelative } from '../lib/catalogue-relative-time';
 
 interface LinkReference {
   id: string;
@@ -31,6 +32,12 @@ interface ParsedLink {
   url: string;
   normalizedUrl: string;
   host: string;
+}
+
+interface HostGroup {
+  host: string;
+  items: LinkReference[];
+  latestAddedAt: string;
 }
 
 function normalizeLink(raw: string): ParsedLink | null {
@@ -69,14 +76,30 @@ function toLinkReference(row: CatalogueLinkReferenceRow): LinkReference {
   };
 }
 
-function formatTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-}
-
 function faviconUrl(host: string) {
   return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(host)}`;
+}
+
+function displayLabel(link: LinkReference): string {
+  if (link.title && link.title.trim()) return link.title.trim();
+  try {
+    const u = new URL(link.url);
+    const path = `${u.pathname}${u.search}`;
+    if (!path || path === '/') return u.hostname;
+    try {
+      return decodeURIComponent(path);
+    } catch {
+      return path;
+    }
+  } catch {
+    return link.url;
+  }
+}
+
+function shortAuthor(email: string | null): string | null {
+  if (!email) return null;
+  const at = email.indexOf('@');
+  return at > 0 ? email.slice(0, at) : email;
 }
 
 export function CatalogueLinksSection({
@@ -90,16 +113,51 @@ export function CatalogueLinksSection({
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [savingLink, setSavingLink] = useState(false);
+  const [search, setSearch] = useState('');
+  const [collapsedHosts, setCollapsedHosts] = useState<Record<string, boolean>>({});
 
-  const sortedLinks = useMemo(
-    () => [...links].sort((a, b) => b.addedAt.localeCompare(a.addedAt)),
-    [links],
-  );
+  const trimmedSearch = search.trim().toLowerCase();
+  const isSearching = trimmedSearch.length > 0;
+
+  const groups = useMemo<HostGroup[]>(() => {
+    const filtered = !isSearching
+      ? links
+      : links.filter((link) => {
+          const haystack = [
+            link.title || '',
+            link.host,
+            link.url,
+            link.addedByEmail || '',
+          ]
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(trimmedSearch);
+        });
+
+    const byHost = new Map<string, LinkReference[]>();
+    for (const link of filtered) {
+      const existing = byHost.get(link.host);
+      if (existing) existing.push(link);
+      else byHost.set(link.host, [link]);
+    }
+
+    const result: HostGroup[] = [];
+    for (const [host, items] of byHost) {
+      items.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+      result.push({ host, items, latestAddedAt: items[0]?.addedAt ?? '' });
+    }
+    result.sort((a, b) => b.latestAddedAt.localeCompare(a.latestAddedAt));
+    return result;
+  }, [links, isSearching, trimmedSearch]);
 
   function ensureCanEdit() {
     if (canEdit) return true;
     onRequireAuth?.();
     return false;
+  }
+
+  function toggleHost(host: string) {
+    setCollapsedHosts((prev) => ({ ...prev, [host]: !prev[host] }));
   }
 
   useEffect(() => {
@@ -195,6 +253,9 @@ export function CatalogueLinksSection({
     setLinks((previous) => previous.filter((link) => link.id !== linkId));
   }
 
+  const totalLinks = links.length;
+  const hasLinks = totalLinks > 0;
+
   return (
     <section className="catalogue-links" aria-label="Saved links">
       <header className="catalogue-links__head">
@@ -232,56 +293,99 @@ export function CatalogueLinksSection({
       </div>
       {linkError && <p className="catalogue-links__error">{linkError}</p>}
 
+      {hasLinks && (
+        <div className="catalogue-links__search-row">
+          <input
+            type="search"
+            className="catalogue-links__search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={`Search ${totalLinks} link${totalLinks === 1 ? '' : 's'}...`}
+            aria-label="Search saved links"
+          />
+        </div>
+      )}
+
       {loadingData ? (
         <p className="catalogue-links__loading">Loading saved links...</p>
-      ) : sortedLinks.length === 0 ? (
+      ) : !hasLinks ? (
         <p className="catalogue-links__empty">
           No links yet. Paste a URL above or send one to the Telegram bot.
         </p>
+      ) : groups.length === 0 ? (
+        <p className="catalogue-links__empty">No links match "{search.trim()}".</p>
       ) : (
-        <ul className="catalogue-links__list">
-          {sortedLinks.map((link) => (
-            <li key={link.id} className="catalogue-links__item">
-              <img
-                className="catalogue-links__favicon"
-                src={faviconUrl(link.host)}
-                alt=""
-                width={24}
-                height={24}
-                loading="lazy"
-              />
-              <div className="catalogue-links__body">
-                <a
-                  className="catalogue-links__url"
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={link.url}
+        <ul className="catalogue-links__groups">
+          {groups.map((group) => {
+            const userCollapsed = collapsedHosts[group.host];
+            const expanded = isSearching ? true : !userCollapsed;
+            return (
+              <li key={group.host} className="catalogue-links__group">
+                <button
+                  type="button"
+                  className="catalogue-links__group-head"
+                  onClick={() => toggleHost(group.host)}
+                  aria-expanded={expanded}
                 >
-                  {link.title || link.url}
-                </a>
-                <div className="catalogue-links__meta">
-                  <span className="catalogue-links__host">{link.host}</span>
-                  <span className="catalogue-links__dot" aria-hidden="true">·</span>
-                  <span className="catalogue-links__time">{formatTime(link.addedAt)}</span>
-                  {link.addedByEmail && (
-                    <>
-                      <span className="catalogue-links__dot" aria-hidden="true">·</span>
-                      <span className="catalogue-links__author">{link.addedByEmail}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="catalogue-links__remove"
-                onClick={() => void removeLink(link.id)}
-                title="Remove link"
-              >
-                Remove
-              </button>
-            </li>
-          ))}
+                  <img
+                    className="catalogue-links__favicon"
+                    src={faviconUrl(group.host)}
+                    alt=""
+                    width={20}
+                    height={20}
+                    loading="lazy"
+                  />
+                  <span className="catalogue-links__group-host">{group.host}</span>
+                  <span className="catalogue-links__group-count">{group.items.length}</span>
+                  <span
+                    className={`catalogue-links__group-caret${expanded ? ' is-open' : ''}`}
+                    aria-hidden="true"
+                  >
+                    ▸
+                  </span>
+                </button>
+
+                {expanded && (
+                  <ul className="catalogue-links__items">
+                    {group.items.map((link) => {
+                      const label = displayLabel(link);
+                      const author = shortAuthor(link.addedByEmail);
+                      const relative = formatRelative(link.addedAt);
+                      return (
+                        <li key={link.id} className="catalogue-links__item">
+                          <a
+                            className="catalogue-links__url"
+                            href={link.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={link.url}
+                          >
+                            {label}
+                          </a>
+                          <span className="catalogue-links__meta">
+                            {author && <span className="catalogue-links__author">{author}</span>}
+                            {author && relative && (
+                              <span className="catalogue-links__dot" aria-hidden="true">·</span>
+                            )}
+                            {relative && <span className="catalogue-links__time">{relative}</span>}
+                          </span>
+                          <button
+                            type="button"
+                            className="catalogue-links__remove"
+                            onClick={() => void removeLink(link.id)}
+                            title="Remove link"
+                            aria-label={`Remove ${label}`}
+                          >
+                            ✕
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
