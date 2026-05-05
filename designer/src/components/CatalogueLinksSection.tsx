@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ChevronRight, Plus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatRelative } from '../lib/catalogue-relative-time';
+import { useLinkMetadata, type LinkMetadata } from '../hooks/use-link-metadata';
 
 interface LinkReference {
   id: string;
@@ -80,7 +82,8 @@ function faviconUrl(host: string) {
   return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(host)}`;
 }
 
-function displayLabel(link: LinkReference): string {
+function displayLabel(link: LinkReference, meta: LinkMetadata | null | undefined): string {
+  if (meta?.title) return meta.title;
   if (link.title && link.title.trim()) return link.title.trim();
   try {
     const u = new URL(link.url);
@@ -116,6 +119,9 @@ export function CatalogueLinksSection({
   const [search, setSearch] = useState('');
   const [collapsedHosts, setCollapsedHosts] = useState<Record<string, boolean>>({});
 
+  const allUrls = useMemo(() => links.map((link) => link.url), [links]);
+  const { metadata } = useLinkMetadata(allUrls);
+
   const trimmedSearch = search.trim().toLowerCase();
   const isSearching = trimmedSearch.length > 0;
 
@@ -123,8 +129,11 @@ export function CatalogueLinksSection({
     const filtered = !isSearching
       ? links
       : links.filter((link) => {
+          const meta = metadata[link.url];
           const haystack = [
             link.title || '',
+            meta?.title || '',
+            meta?.description || '',
             link.host,
             link.url,
             link.addedByEmail || '',
@@ -148,7 +157,7 @@ export function CatalogueLinksSection({
     }
     result.sort((a, b) => b.latestAddedAt.localeCompare(a.latestAddedAt));
     return result;
-  }, [links, isSearching, trimmedSearch]);
+  }, [links, metadata, isSearching, trimmedSearch]);
 
   function ensureCanEdit() {
     if (canEdit) return true;
@@ -288,13 +297,19 @@ export function CatalogueLinksSection({
           onClick={() => void addLink()}
           disabled={savingLink}
         >
-          {savingLink ? 'Saving...' : 'Add Link'}
+          <Plus size={14} aria-hidden="true" />
+          {savingLink ? 'Saving...' : 'Add link'}
         </button>
       </div>
       {linkError && <p className="catalogue-links__error">{linkError}</p>}
 
       {hasLinks && (
         <div className="catalogue-links__search-row">
+          <Search
+            className="catalogue-links__search-icon"
+            size={14}
+            aria-hidden="true"
+          />
           <input
             type="search"
             className="catalogue-links__search"
@@ -337,38 +352,79 @@ export function CatalogueLinksSection({
                   />
                   <span className="catalogue-links__group-host">{group.host}</span>
                   <span className="catalogue-links__group-count">{group.items.length}</span>
-                  <span
+                  <ChevronRight
                     className={`catalogue-links__group-caret${expanded ? ' is-open' : ''}`}
+                    size={14}
                     aria-hidden="true"
-                  >
-                    ▸
-                  </span>
+                  />
                 </button>
 
                 {expanded && (
                   <ul className="catalogue-links__items">
                     {group.items.map((link) => {
-                      const label = displayLabel(link);
+                      const meta = metadata[link.url];
+                      const label = displayLabel(link, meta);
+                      const description = meta?.description?.trim() || null;
+                      const thumb = meta?.image || null;
                       const author = shortAuthor(link.addedByEmail);
                       const relative = formatRelative(link.addedAt);
                       return (
                         <li key={link.id} className="catalogue-links__item">
                           <a
-                            className="catalogue-links__url"
+                            className="catalogue-links__thumb"
                             href={link.url}
                             target="_blank"
                             rel="noreferrer"
-                            title={link.url}
+                            aria-hidden="true"
+                            tabIndex={-1}
                           >
-                            {label}
-                          </a>
-                          <span className="catalogue-links__meta">
-                            {author && <span className="catalogue-links__author">{author}</span>}
-                            {author && relative && (
-                              <span className="catalogue-links__dot" aria-hidden="true">·</span>
+                            {thumb ? (
+                              <img
+                                src={thumb}
+                                alt=""
+                                loading="lazy"
+                                onError={(event) => {
+                                  const img = event.currentTarget;
+                                  if (img.src !== faviconUrl(link.host)) {
+                                    img.src = faviconUrl(link.host);
+                                    img.classList.add('is-fallback');
+                                  } else {
+                                    img.style.visibility = 'hidden';
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <img
+                                className="is-fallback"
+                                src={faviconUrl(link.host)}
+                                alt=""
+                                loading="lazy"
+                              />
                             )}
-                            {relative && <span className="catalogue-links__time">{relative}</span>}
-                          </span>
+                          </a>
+                          <div className="catalogue-links__body">
+                            <a
+                              className="catalogue-links__url"
+                              href={link.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              title={link.url}
+                            >
+                              {label}
+                            </a>
+                            {description && (
+                              <p className="catalogue-links__desc" title={description}>
+                                {description}
+                              </p>
+                            )}
+                            <div className="catalogue-links__meta">
+                              {author && <span className="catalogue-links__author">{author}</span>}
+                              {author && relative && (
+                                <span className="catalogue-links__dot" aria-hidden="true">·</span>
+                              )}
+                              {relative && <span className="catalogue-links__time">{relative}</span>}
+                            </div>
+                          </div>
                           <button
                             type="button"
                             className="catalogue-links__remove"
@@ -376,7 +432,7 @@ export function CatalogueLinksSection({
                             title="Remove link"
                             aria-label={`Remove ${label}`}
                           >
-                            ✕
+                            <X size={14} aria-hidden="true" />
                           </button>
                         </li>
                       );
