@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, Check, MapPin, MessageCircle, Monitor, Pencil, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
+import { Bookmark, Check, MapPin, Monitor, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
@@ -19,7 +19,6 @@ interface CatalogueFamilyCardProps {
   isVs: boolean;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenPreview: (familyId: string) => void;
-  onOpenPreviewAndEdit: (familyId: string) => void;
   onRenameFamily: (familyId: string, newName: string) => Promise<void>;
   onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onToggleSelect: (familyId: string) => void;
@@ -36,7 +35,6 @@ export function CatalogueFamilyCard({
   isVs,
   onDeleteFamily,
   onOpenPreview,
-  onOpenPreviewAndEdit,
   onRenameFamily,
   onReplaceVariantImage,
   onToggleSelect,
@@ -136,12 +134,6 @@ export function CatalogueFamilyCard({
           {screenshot && (
             <div className="catalogue-card-indicators">
               {screenshot.reference_url && <span className="catalogue-card-ref-btn">Ref</span>}
-              {(screenshot.comment_count ?? 0) > 0 && (
-                <span className="catalogue-card-comment-btn">
-                  <MessageCircle size={11} strokeWidth={2.5} />
-                  {screenshot.comment_count}
-                </span>
-              )}
               {(screenshot.annotation_count ?? 0) > 0 && (
                 <span className="catalogue-card-comment-btn">
                   <MapPin size={11} strokeWidth={2.25} />
@@ -155,15 +147,6 @@ export function CatalogueFamilyCard({
           )}
 
           <div className="catalogue-card-actions catalogue-family-card__media-actions">
-            <button
-              type="button"
-              className="catalogue-card-action"
-              title="Open preview"
-              aria-label="Open preview"
-              onClick={() => onOpenPreviewAndEdit(family.id)}
-            >
-              <Pencil size={14} />
-            </button>
             {REUPLOAD_ENABLED && (
               <button
                 type="button"

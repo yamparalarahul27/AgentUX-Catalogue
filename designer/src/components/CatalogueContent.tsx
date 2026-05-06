@@ -35,7 +35,6 @@ interface CatalogueContentProps {
   onCommentCountChange: (screenshotId: string, delta: number) => void;
   onDeleteFamily: (familyId: string) => Promise<void>;
   onOpenPreview: (familyId: string) => void;
-  onOpenPreviewAndEdit: (familyId: string) => void;
   onRequireAuth?: () => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onRemoveReference: (screenshotId: string) => Promise<boolean>;
@@ -83,7 +82,6 @@ export function CatalogueContent({
   onCommentCountChange,
   onDeleteFamily,
   onOpenPreview,
-  onOpenPreviewAndEdit,
   onRequireAuth,
   onRenameFamily,
   onRemoveReference,
@@ -203,7 +201,6 @@ export function CatalogueContent({
                   isVs={false}
                   onDeleteFamily={onDeleteFamily}
                   onOpenPreview={onOpenPreview}
-                  onOpenPreviewAndEdit={onOpenPreviewAndEdit}
                   onRenameFamily={onRenameFamily}
                   onReplaceVariantImage={onReplaceVariantImage}
                   onToggleSelect={onToggleSelect}
