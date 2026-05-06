@@ -42,3 +42,10 @@ These bias toward caution over speed. For trivial tasks, use judgment.
 - Never log secret values, tokens, or wallet private material.
 - Never include secret values in error responses, client payloads, or toast messages — return generic `{ error: "…" }`.
 - No default credentials, example keys, or placeholder tokens. Use env-var reads that fail loudly on missing values in production.
+
+## Pre-public-release checklist
+
+Items that must be resolved before the catalogue is linked from the public portfolio (`hirahul.xyz`). Until then the URL is unlisted and these are deferred — but they block public release.
+
+- **RLS + auth gate** — public schema currently ships with RLS disabled on 11 tables; the browser holds the anon key, so anyone with the URL can read/write/delete. Decision doc: [`docs/security-rls-public-release.md`](docs/security-rls-public-release.md). Recommended path is a magic-link auth gate with permissive RLS for authed users; confirm before implementing.
+- **Claude Code permissions hardening** — tighten `.claude/settings.json` deny rules (Read/Write/Edit mirrored, additional secret paths) and split universal vs project-specific denies into global vs project settings. Decision doc: [`docs/security-claude-permissions-public-release.md`](docs/security-claude-permissions-public-release.md). Lean on `.claude/hooks/scan-secrets.js` to cover the Bash bypass that deny rules can't.
