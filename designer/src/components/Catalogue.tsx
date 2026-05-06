@@ -434,11 +434,6 @@ export function Catalogue({
     setPreviewFamilyId(familyId);
   }
 
-  function openPreviewAndEdit(familyId: string) {
-    setPreviewStartInlineEdit(true);
-    setPreviewFamilyId(familyId);
-  }
-
   function stepPreview(direction: -1 | 1) {
     if (!previewFamilyId || filteredFamilies.length === 0) return;
     const currentIndex = filteredFamilies.findIndex((family) => family.id === previewFamilyId);
@@ -715,14 +710,6 @@ export function Catalogue({
                     onCommentCountChange={handleCommentCountChange}
                     onDeleteFamily={handleGuestAwareDeleteFamily}
                     onOpenPreview={openPreview}
-                    onOpenPreviewAndEdit={(familyId) => {
-                      if (isGuest) {
-                        openPreview(familyId);
-                        setShowAuthPrompt(true);
-                        return;
-                      }
-                      openPreviewAndEdit(familyId);
-                    }}
                     onRequireAuth={() => setShowAuthPrompt(true)}
                     onRenameFamily={handleGuestAwareRenameFamily}
                     onRemoveReference={handleGuestAwareRemoveReference}
@@ -848,6 +835,7 @@ export function Catalogue({
           existingGroups={allGroups}
           family={previewFamily}
           flowName={previewFamily.flow_label}
+          isAdmin={canViewTeamSection}
           isOpen
           isLoadingNext={pendingPreviewNext}
           onRequireAuth={() => setShowAuthPrompt(true)}

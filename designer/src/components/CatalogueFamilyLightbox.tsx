@@ -28,6 +28,7 @@ interface CatalogueFamilyLightboxProps {
   existingGroups: string[];
   family: CatalogueFamilyView;
   flowName: string | null;
+  isAdmin?: boolean;
   isOpen: boolean;
   isLoadingNext?: boolean;
   onRequireAuth?: () => void;
@@ -57,7 +58,7 @@ interface CatalogueFamilyLightboxProps {
   bookmarkedIds?: Set<string>;
   onToggleBookmark?: (screenshotId: string) => void;
 }
-type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; resolved_at?: string | null; resolved_by_email?: string | null };
+type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string };
 type LightboxPanel = 'comments' | 'annotations';
 type AnnotationDraft = { shape: 'pin' | 'area'; x: number; y: number; width: number; height: number };
 type DrawingState = { startX: number; startY: number; currentX: number; currentY: number };
@@ -98,6 +99,7 @@ export function CatalogueFamilyLightbox({
   existingGroups,
   family,
   flowName,
+  isAdmin = false,
   isOpen,
   isLoadingNext = false,
   onRequireAuth,
@@ -141,12 +143,7 @@ export function CatalogueFamilyLightbox({
   const [cropMode, setCropMode] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
   const sortedComments = useMemo(
-    () => [...comments].sort((a, b) => {
-      const aResolved = Boolean(a.resolved_at);
-      const bResolved = Boolean(b.resolved_at);
-      if (aResolved !== bResolved) return aResolved ? 1 : -1;
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    }),
+    () => [...comments].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
     [comments],
   );
   const activeVariant = useMemo(() => getActiveFamilyVariant(family, activeVariantKey), [activeVariantKey, family]); const screenshot = activeVariant?.screenshot ?? null;
@@ -269,6 +266,20 @@ export function CatalogueFamilyLightbox({
     window.addEventListener('keydown', handleNavKey);
     return () => window.removeEventListener('keydown', handleNavKey);
   }, [isOpen, onPrev, onNext, annotationMode, annotationDraft, confirmDeleteOpen]);
+  useEffect(() => {
+    if (!isOpen || !selectedAnnotationId) return;
+    function handleEscapeKey(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
+      setSelectedAnnotationId(null);
+    }
+    window.addEventListener('keydown', handleEscapeKey);
+    return () => window.removeEventListener('keydown', handleEscapeKey);
+  }, [isOpen, selectedAnnotationId]);
   const notifyAnnotationActivity = useCallback((nextAnnotations: LightboxAnnotation[]) => {
     if (!screenshot) return;
     onAnnotationStateChange(screenshot.id, summarizeAnnotationActivity(nextAnnotations));
@@ -303,26 +314,6 @@ export function CatalogueFamilyLightbox({
     setComments((previous) => previous.filter((comment) => comment.id !== commentId));
     onCommentCountChange?.(screenshot.id, -1);
   }, [canEdit, onCommentCountChange, onRequireAuth, screenshot]);
-  const toggleResolveComment = useCallback(async (comment: ScreenshotComment) => {
-    if (!ensureCanEdit()) return;
-    if (!screenshot) return;
-    const nextResolved = !comment.resolved_at;
-    const patch = nextResolved
-      ? { resolved_at: new Date().toISOString(), resolved_by_email: userEmail }
-      : { resolved_at: null, resolved_by_email: null };
-    const { data, error } = await supabase
-      .from('screenshot_comments')
-      .update(patch)
-      .eq('id', comment.id)
-      .select('*')
-      .single();
-    if (error || !data) {
-      setCommentsError('Unable to update comment status right now.');
-      return;
-    }
-    setComments((previous) => previous.map((item) => (item.id === comment.id ? data as ScreenshotComment : item)));
-    setCommentsError('');
-  }, [canEdit, onRequireAuth, screenshot, userEmail]);
   function getRelativePosition(event: React.MouseEvent<HTMLDivElement>): { x: number; y: number } | null {
     if (!mediaLayout) return null;
     const rect = event.currentTarget.getBoundingClientRect();
@@ -373,6 +364,11 @@ export function CatalogueFamilyLightbox({
   }
   function handleMediaMouseLeave() {
     if (drawing) setDrawing(null);
+  }
+  function handleMediaClick() {
+    if (annotationMode || drawing || annotationDraft) return;
+    if (!selectedAnnotationId) return;
+    setSelectedAnnotationId(null);
   }
   async function addAnnotation() {
     if (!ensureCanEdit() || !screenshot) return;
@@ -577,6 +573,7 @@ export function CatalogueFamilyLightbox({
           onMouseMove={cropMode ? undefined : handleMediaMouseMove}
           onMouseUp={cropMode ? undefined : handleMediaMouseUp}
           onMouseLeave={cropMode ? undefined : handleMediaMouseLeave}
+          onClick={cropMode ? undefined : handleMediaClick}
           style={{ cursor: !cropMode && annotationMode && annotationEditAllowed ? 'crosshair' : 'default' }}
         >
           {cropMode && imageSize && screenshot.image_url ? (
@@ -799,8 +796,8 @@ export function CatalogueFamilyLightbox({
                           key={comment.id}
                           comment={comment}
                           userEmail={userEmail}
+                          isAdmin={isAdmin}
                           onDelete={(commentId) => void deleteComment(commentId)}
-                          onToggleResolve={(item) => void toggleResolveComment(item)}
                           formatDateTime={formatDateTime}
                         />
                       ))
@@ -919,11 +916,12 @@ export function CatalogueFamilyLightbox({
                           <div className="catalogue-lightbox-annotation-item-top">
                             <span className="catalogue-lightbox-annotation-badge">{index + 1}</span>
                             <span className="catalogue-lightbox-annotation-time">{formatDateTime(annotation.created_at)}</span>
-                            {annotation.user_email === userEmail && (
+                            {(isAdmin || annotation.user_email === userEmail) && (
                               <button
                                 type="button"
                                 className="catalogue-lightbox-annotation-delete"
                                 title="Delete annotation"
+                                aria-label="Delete annotation"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void deleteAnnotation(annotation.id);
