@@ -675,3 +675,203 @@ Start with manual editing only. Do not include AI calls in the app. Make the
 first implementation good at reviewing and saving canonical structured labels.
 AI, MCP, API, and richer retrieval can all layer on top once the data model is
 stable.
+
+---
+
+## 18. Locked Decisions (Phase 0 — 2026-05-06)
+
+These supersede the open questions in §16 and add details not covered in the
+original ideation. Sections §1–§17 capture the *thinking*; this section is the
+*implementation contract* for Phase 1+.
+
+### 18.1 Where labels live (refines §14)
+
+**Phase 1:** `screenshots.metadata.label` — a single JSON object stored in the
+existing JSONB column.
+
+**Phase 5+ (only when needed):** mirror commonly-queried fields into a
+dedicated `screenshot_labels` table.
+
+Why: zero migration in Phase 1, follows the live `metadata.catalogue_flow_label`
+precedent (see `designer/src/hooks/use-catalogue-data.ts:214` and
+`designer/src/lib/catalogue-families.ts:2`). Defers the table cost until there
+is a real query the JSONB filter cannot answer fast at scale.
+
+### 18.2 Vocabulary storage (answers §16 Q4)
+
+**Database lookup table** `label_vocab`:
+
+```sql
+create table public.label_vocab (
+  id          uuid primary key default gen_random_uuid(),
+  kind        text not null,           -- 'platform' | 'device_type' | 'screen_state'
+                                       -- | 'page_type' | 'ui_element' | 'ux_pattern' | ...
+  value       text not null,           -- canonical value, e.g. 'Toast'
+  category    text,                    -- 'Container' | 'Feedback' | ...  (optional grouping)
+  description text,                    -- 1-line definition (stops drift)
+  synonyms    text[] not null default '{}',
+  is_active   boolean not null default true,
+  created_at  timestamptz not null default now(),
+  unique (kind, value)
+);
+```
+
+Seeded via a one-time SQL migration:
+`supabase/migrations/<date>_seed_label_vocab.sql`. After seeding, the table is
+the source of truth; v1 edits happen via SQL until a vocab admin UI lands
+(deferred, Phase 5+).
+
+Why: vocab will evolve as labelling reveals gaps. Admin-editable at runtime
+beats a deploy-per-change cycle. Matches the `synonyms[]` shape that solves the
+Toast/Snackbar/Alert drift problem structurally.
+
+### 18.3 Provenance fields on every label (additions to §4 schema)
+
+The `review` block gains five fields, all defaulted for the human-only flow so
+nothing is required of the labelling user today:
+
+```jsonc
+{
+  "review": {
+    "label_status": "draft",
+    "confidence": null,
+    "missing_fields": [],
+    "admin_notes": "",
+
+    "source": "user",                  // 'user' | 'ai' | 'import' | 'script'
+    "source_email": "rahul@…",         // who created/last-edited this label
+    "model": null,                     // AI model id when source='ai'
+    "prompt_version": null,            // for selective AI re-scan
+    "vocab_version": "2026-05-06"      // which label_vocab seed/migration this label was made against
+  }
+}
+```
+
+Why: provenance is irreversible if not captured at write time. `vocab_version`
+is the structural fix to "what if vocab changes later" — a label always knows
+which generation of the vocab it was valid against. Cost today: zero
+(human-only flow ignores `model`/`prompt_version`); cost the day AI is
+re-introduced: zero migration.
+
+### 18.4 Required fields for `verified` (answers §16 Q6, Q7)
+
+**Strict required, 10 fields. No admin override.** The `Verify` button is
+enabled only when all 10 pass. `Save Draft` always works. Labels that cannot
+meet the floor live in `needs_review` with `admin_notes`.
+
+| Field | Constraint |
+|---|---|
+| `identity.title` | non-empty string |
+| `identity.one_line_summary` | non-empty string |
+| `identity.platform` | not null |
+| `identity.device_type` | not null |
+| `identity.page_types` | length ≥ 1 |
+| `identity.screen_state` | not null |
+| `screen_analysis.ui_elements` | length ≥ 1 |
+| `screen_analysis.ux_patterns` | length ≥ 1 |
+| `design_reference.good_for` | length ≥ 1 |
+| `design_reference.similar_reference_queries` | length ≥ 3 |
+
+`journey.*`, `visual_design.*`, `screen_analysis.colors / visible_text`, and
+the rest of `design_reference.*` stay optional.
+
+Why: this floor maps 1-to-1 to the user-visible filter chips (page type, UI
+element, UX pattern, screen state) and the design-reference search seeds
+(`similar_reference_queries`). Every required field directly enables
+something a designer browsing the catalogue will actually do. Journey fields
+are excluded because they are often unknowable from a single screenshot.
+
+### 18.5 Annotations relationship (not in original doc)
+
+The existing `screenshot_annotations` table (region pin/area + free-text
+`text`, currently area-only since `PIN_ANNOTATIONS_ENABLED = false`) is
+**untouched** by the Studio. The two systems answer different questions:
+
+- **Annotations** — *"Where on this screen is X, and what is notable about
+  it?"* Region-pinned, slow to fill (drag a box, type a note), commentary in
+  spirit.
+- **Studio labels** — *"What kind of screen is this and what does it
+  contain?"* Whole-screen structured metadata, fast to fill (pick from
+  controlled vocab), classification in spirit.
+
+`screen_analysis.ui_elements[]` is filled by selecting from controlled vocab
+in the Studio editor — **not** by drawing boxes. If region-tagging emerges as
+a real need, that is a separate feature on `screenshot_annotations` (e.g.
+adding a `ui_element` column, à la the May 4 ideation), not a merge with the
+Studio.
+
+### 18.6 Studio mount point (answers §16 Q5)
+
+A new `CatalogueSection = 'studio'` branch in
+`designer/src/components/Catalogue.tsx` (alongside the existing
+`'catalogue' | 'videos' | 'links' | 'team'`), gated by `canAdmin` (renamed
+from `canViewTeamSection` at `Catalogue.tsx:296`). Header tab is rendered by
+`CatalogueHeader` only when `canAdmin && viewport >= 1024`.
+
+Studio code lives under a new folder `designer/src/components/labeling/`
+with a top-level `CatalogueLabelingStudio.tsx` and one file per editor
+section. Neither `Catalogue.tsx` nor `CatalogueFamilyLightbox.tsx` grows
+(both already at ~970 LOC and exempt by precedent — the Studio respects the
+700 LOC cap from the start).
+
+Studio replaces the catalogue grid in the main pane (same pattern as the
+Team section at `Catalogue.tsx:561`); not a modal.
+
+### 18.7 Desktop-only viewport gate (refines §7, §16 Q1)
+
+New flag in `designer/src/lib/feature-flags.ts`:
+
+```ts
+export const LABELING_STUDIO_MIN_VIEWPORT_PX = 1024;
+```
+
+Behaviour:
+
+- Below 1024 px: Studio nav entry is **hidden** in `CatalogueHeader`. No
+  dead-end tab on mobile.
+- If a user is in the Studio and resizes below 1024 px: the editor pane
+  swaps for a placeholder ("Open on a screen at least 1024 px wide").
+
+Reuses the viewport-listener pattern already used for
+`ANNOTATION_EDIT_MIN_VIEWPORT_PX = 720` in
+`designer/src/components/CatalogueFamilyLightbox.tsx:140` /
+`:838`.
+
+### 18.8 Security posture (deferred, documented)
+
+Studio writes go through the anon Supabase key, same as every other write
+today. RLS is disabled on `screenshots`, `screenshot_annotations`, and the
+new `label_vocab` table. Acceptable while the catalogue URL is unlisted and
+team-only.
+
+The Studio inherits whatever auth gate lands as part of the public-release
+work tracked in `docs/security-rls-public-release.md` — no Studio-specific
+auth work in Phases 1–4 beyond the existing email-based admin check.
+
+### 18.9 Phasing
+
+| Phase | Scope | Branch | Effort |
+|---|---|---|---|
+| 0 | This doc update (locked decisions) | `claude/review-research-doc-labels-xdGXh` | done |
+| 1 | `label_vocab` table + seed migration; `ScreenshotLabel` types; `LABELING_STUDIO_ENABLED = false` flag | one PR | ~1 day |
+| 2 | Studio shell — new `CatalogueSection`, grid view, status filter chips, `canAdmin` rename, header entry | one PR | ~2 days |
+| 3 | Editor shell — six-section editor, combobox-typeahead vocab inputs (with synonym resolution), required-fields validator, keyboard shortcuts | one PR | ~3–4 days |
+| 4 | Public-catalogue filter chips driven by label data (Page Type, UI Element, UX Pattern, Screen State); search extended to `metadata->>title.ilike` and `one_line_summary.ilike` | one PR | ~1 day |
+| 5+ | Deferred: mirror columns + indexes, vocab admin UI, batch-import script (mirroring `scripts/catalogue-rename.mjs`), MCP/API surface, AI assist | — | — |
+
+Phase 1 is types-only and safe to land with the feature flag off.
+
+### 18.10 What is still open (must be answered before its phase starts)
+
+- **Final vocab seed list** (blocks Phase 1). The May 4 ideation review
+  proposed a de-duped starter set (Modal / Bottom Sheet / Toast with
+  synonyms `["Snackbar", "Notification"]` / Banner / Button / Input / List
+  Row / Tab Bar / App Bar / Menu / Card; plus a separate `screen_state`
+  kind: Default / Empty / Error / Loading / Success / Onboarding). Confirm
+  and extend before writing the seed migration.
+- **Keyboard shortcut bindings** (blocks Phase 3). Proposed defaults: `J` /
+  `K` next/prev, `S` save draft, `V` verify, `R` mark needs-review, `Esc`
+  close.
+- **Mirror-columns trigger** (blocks Phase 5). Defined operationally as
+  "when JSONB filter perf becomes user-visible." No speculative
+  pre-optimisation.
