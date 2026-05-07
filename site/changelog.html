@@ -89,6 +89,45 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- May 6 – 7, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">May 6 – 7, 2026</span>
+            <span class="changelog-title">Labelling Studio, Comments Polish &amp; Lightbox Focus</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li><strong>Labelling Studio (admin)</strong> — paste-or-type structured metadata per screenshot. Six sections: Identity, Journey, Screen analysis, Visual design, Design reference, Review. Auto-fills <strong>platform</strong>, <strong>device type</strong>, <strong>theme</strong>, and <strong>flow name</strong> from existing metadata on first open. New <strong>Paste JSON</strong> modal with live preview so an AI-generated JSON blob can populate the editor in one click; pasted <code>verified</code> status is silently downgraded to <code>draft</code> so paste cannot bypass human verification.</li>
+              <li>Database-aggregated status totals at the top of the Studio so admins see how many screenshots are still <strong>unlabelled</strong>, <strong>drafted</strong>, in <strong>review</strong>, or <strong>verified</strong> — across the whole catalogue, not just the loaded grid. Refreshes after every save.</li>
+              <li>Public catalogue filter chips driven by label data — <strong>Page type</strong>, <strong>UI element</strong>, <strong>UX pattern</strong>, and <strong>Screen state</strong>. Search also matches labelled <code>title</code> and <code>one_line_summary</code>.</li>
+              <li>Lightbox area focus — clicking an area annotation dims the rest of the screenshot via a stacked box-shadow. Click outside or press <kbd>Esc</kbd> to clear.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li>Comments simplified to <strong>delete-only</strong> — Resolve concept removed (no green pills, no "Resolved by …" copy). Admin can delete any comment; authors keep delete on their own.</li>
+              <li>Annotations: admin can delete any annotation (mirrors comments). Existing pin annotations from before pin-creation was disabled are now deletable by the admin.</li>
+              <li>Card surface (grid): the comment-count chip and the misleading pencil button (labelled "Open preview" but opened the editor) are removed. Card click is the only entry; edit is reachable from inside the lightbox.</li>
+              <li>Studio context in the lightbox: only the <strong>Label</strong> tab renders; Comments and Annotations are hidden. Action toolbar reduced to Edit (pencil) only — Crop, Bookmark, Comments, Annotations, and Delete are hidden in admin-labelling mode.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Removed</span>
+            <ul class="changelog-items">
+              <li><strong>Reference Image attachments</strong> are now behind a feature flag (<code>REFERENCE_IMAGES_ENABLED</code>, off by default). Existing data preserved; flip the flag to re-surface the "Ref" chips, the upload UI in the inline editor, and the gallery side panel.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>TypeScript error that silently hid the Studio and Team menu entries — the <code>canViewTeam → canAdmin</code> rename was missed at the call site between <code>Catalogue.tsx</code> and <code>CatalogueHeader.tsx</code>. Both menu entries now appear for admins.</li>
+              <li>Studio grid was capped at 50 screenshots because it used the paginated source without scroll-load. Now loads progressively as you scroll, matching the catalogue grid behaviour.</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- May 2 – 4, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">
