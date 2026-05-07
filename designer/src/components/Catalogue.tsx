@@ -27,6 +27,7 @@ import {
 import {
   CATALOGUE_CHIP_RECENCY_HOURS,
   CATALOGUE_CHIP_STRIP_ENABLED,
+  LABELING_STUDIO_ENABLED,
 } from '../lib/feature-flags';
 import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
 import type { GridDensity } from '../lib/catalogue-helpers';
@@ -44,6 +45,7 @@ import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueScrollToTop } from './CatalogueScrollToTop';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
+import { CatalogueLabelingStudio } from './labeling/CatalogueLabelingStudio';
 import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
@@ -61,7 +63,8 @@ type CatalogueSection =
   | 'catalogue'
   | 'videos'
   | 'links'
-  | 'team';
+  | 'team'
+  | 'studio';
 export function Catalogue({
   user,
   isGuest = false,
@@ -293,7 +296,7 @@ export function Catalogue({
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
   const [gridDensity, setGridDensity] = useState<GridDensity>(defaultGridDensity);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const canViewTeamSection = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
+  const canAdmin = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
@@ -409,10 +412,10 @@ export function Catalogue({
     }
   }, [familyById, previewFamilyId]);
   useEffect(() => {
-    if (!canViewTeamSection && activeSection === 'team') {
+    if (!canAdmin && (activeSection === 'team' || activeSection === 'studio')) {
       setActiveSection('catalogue');
     }
-  }, [activeSection, canViewTeamSection]);
+  }, [activeSection, canAdmin]);
 
   useEffect(() => {
     if (!isAnyModalOpen) return;
@@ -546,10 +549,10 @@ export function Catalogue({
     });
   }
   return (
-    <div className={`catalogue-page ${canViewTeamSection ? 'catalogue-page--team-enabled' : ''}`}>
+    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
-        canViewTeam={canViewTeamSection}
+        canViewTeam={canAdmin}
         onOpenSettings={() => setShowSettings(true)}
         onSectionChange={setActiveSection}
         bookmarkEmail={bookmarks.email}
@@ -558,7 +561,7 @@ export function Catalogue({
           setBookmarkFilterOn(false);
         }}
       />
-      {activeSection === 'team' && canViewTeamSection ? (
+      {activeSection === 'team' && canAdmin ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueTeamSection
@@ -566,6 +569,12 @@ export function Catalogue({
               screenshots={fullScopeScreenshots}
               onRenameGroupKey={handleRenameGroupKey}
             />
+          </div>
+        </main>
+      ) : activeSection === 'studio' && canAdmin && LABELING_STUDIO_ENABLED ? (
+        <main className="catalogue-main">
+          <div className="catalogue-shell catalogue-shell--team">
+            <CatalogueLabelingStudio screenshots={screenshots} />
           </div>
         </main>
       ) : activeSection === 'videos' ? (
@@ -835,7 +844,7 @@ export function Catalogue({
           existingGroups={allGroups}
           family={previewFamily}
           flowName={previewFamily.flow_label}
-          isAdmin={canViewTeamSection}
+          isAdmin={canAdmin}
           isOpen
           isLoadingNext={pendingPreviewNext}
           onRequireAuth={() => setShowAuthPrompt(true)}
