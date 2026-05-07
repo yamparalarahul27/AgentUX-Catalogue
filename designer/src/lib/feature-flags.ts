@@ -23,3 +23,11 @@ export const REUPLOAD_ENABLED = false;
 // Upload Analytics tab in Team Settings. Hidden by default — flip on if
 // the date-wise upload-volume table becomes useful again.
 export const TEAM_UPLOAD_ANALYTICS_ENABLED = false;
+
+// Labeling Studio: admin-only manual labelling surface backing
+// metadata.label.*. Off until the editor lands (Phase 3).
+export const LABELING_STUDIO_ENABLED = false;
+
+// Studio is desktop-only. Below this width: nav entry hidden;
+// in-Studio resize-down swaps content for a placeholder.
+export const LABELING_STUDIO_MIN_VIEWPORT_PX = 1024;
