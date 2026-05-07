@@ -4,8 +4,20 @@
   margin: 0 auto;
   padding: 24px 32px;
   display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.labeling-studio__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.labeling-studio.is-editor-open .labeling-studio__grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
 .labeling-studio__header {
@@ -73,6 +85,19 @@
   overflow: hidden;
   background: #fff;
   border: 1px solid #e4e4e7;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.labeling-studio-card:hover {
+  border-color: #a1a1aa;
+}
+
+.labeling-studio-card.is-selected {
+  border-color: #18181b;
+  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.18);
 }
 
 .labeling-studio-card__image {
@@ -179,4 +204,452 @@
 .labeling-studio-placeholder p {
   margin: 0;
   font-size: 13px;
+}
+
+// ---------------------------------------------------------------------------
+// Editor pane
+// ---------------------------------------------------------------------------
+
+.label-editor {
+  flex: 0 0 480px;
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(24, 24, 27, 0.06);
+}
+
+.label-editor__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f4f4f5;
+}
+
+.label-editor__heading {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.label-editor__close,
+.label-editor__nav-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px;
+  color: #52525b;
+  cursor: pointer;
+}
+
+.label-editor__close:hover,
+.label-editor__nav-btn:hover {
+  background: #f4f4f5;
+}
+
+.label-editor__nav-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.label-editor__heading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.label-editor__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #18181b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.label-editor__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #71717a;
+  flex-wrap: wrap;
+}
+
+.label-editor__progress {
+  font-variant-numeric: tabular-nums;
+}
+
+.label-editor__save-status {
+  font-style: italic;
+  color: #71717a;
+}
+
+.label-editor__save-status--saving {
+  color: #a1a1aa;
+}
+
+.label-editor__save-status--saved {
+  color: #166534;
+}
+
+.label-editor__save-status--error {
+  color: #b91c1c;
+}
+
+.label-editor__nav {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.label-editor__sections {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 4px 0 8px;
+}
+
+.label-editor-section {
+  border-bottom: 1px solid #f4f4f5;
+}
+
+.label-editor-section__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #18181b;
+  text-align: left;
+  cursor: pointer;
+}
+
+.label-editor-section__header:hover {
+  background: #fafafa;
+}
+
+.label-editor-section__chevron {
+  transition: transform 100ms ease;
+  color: #a1a1aa;
+}
+
+.label-editor-section.is-open .label-editor-section__chevron {
+  transform: rotate(90deg);
+}
+
+.label-editor-section__content {
+  padding: 4px 16px 16px;
+}
+
+.label-editor-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.label-editor-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.label-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.label-editor-field__label {
+  color: #52525b;
+  font-weight: 500;
+}
+
+.label-editor-field__required {
+  color: #b91c1c;
+}
+
+.label-editor-field__hint {
+  color: #a1a1aa;
+  font-size: 11px;
+}
+
+.label-editor-input,
+.label-editor-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d4d4d8;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #fff;
+  color: #18181b;
+}
+
+.label-editor-input:focus,
+.label-editor-textarea:focus {
+  outline: none;
+  border-color: #18181b;
+  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.1);
+}
+
+.label-editor-textarea {
+  resize: vertical;
+  min-height: 36px;
+}
+
+.label-editor__footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #f4f4f5;
+  background: #fafafa;
+}
+
+.label-editor__action {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.label-editor__action--secondary {
+  background: #fff;
+  border-color: #d4d4d8;
+  color: #18181b;
+}
+
+.label-editor__action--secondary:hover {
+  background: #f4f4f5;
+}
+
+.label-editor__action--primary {
+  background: #18181b;
+  color: #fff;
+}
+
+.label-editor__action--primary:disabled {
+  background: #d4d4d8;
+  color: #fff;
+  cursor: not-allowed;
+}
+
+.label-editor__shortcuts {
+  padding: 6px 16px 10px;
+  font-size: 10px;
+  color: #a1a1aa;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+// Status pills (used inside the editor + Review section)
+.label-editor-status-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #f4f4f5;
+  color: #52525b;
+}
+
+.label-editor-status-pill--draft {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.label-editor-status-pill--needs_review {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.label-editor-status-pill--verified {
+  background: #dcfce7;
+  color: #166534;
+}
+
+// Review section
+.label-editor-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label-editor-progress__count {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #18181b;
+}
+
+.label-editor-progress__missing {
+  margin: 0;
+  padding-left: 18px;
+  color: #b45309;
+  font-size: 11px;
+}
+
+.label-editor-provenance {
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #52525b;
+}
+
+.label-editor-provenance h4 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #71717a;
+}
+
+.label-editor-provenance dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.label-editor-provenance dt {
+  color: #71717a;
+}
+
+.label-editor-provenance dd {
+  margin: 0;
+  color: #18181b;
+}
+
+// ---------------------------------------------------------------------------
+// Combobox + free chip input (shared)
+// ---------------------------------------------------------------------------
+
+.label-combobox {
+  position: relative;
+  width: 100%;
+  border: 1px solid #d4d4d8;
+  border-radius: 6px;
+  background: #fff;
+  padding: 4px;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.label-combobox__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+  align-items: center;
+}
+
+.label-combobox__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 999px;
+  background: #18181b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.label-combobox__chip-remove {
+  background: transparent;
+  border: 0;
+  padding: 1px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.label-combobox__chip-remove:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.label-combobox__input {
+  flex: 1 1 80px;
+  min-width: 80px;
+  border: 0;
+  outline: none;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 2px 4px;
+  background: transparent;
+  color: #18181b;
+}
+
+.label-combobox__list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  list-style: none;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #d4d4d8;
+  border-radius: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(24, 24, 27, 0.08);
+}
+
+.label-combobox__option {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.label-combobox__option:hover {
+  background: #f4f4f5;
+}
+
+.label-combobox__option-value {
+  color: #18181b;
+  font-weight: 500;
+}
+
+.label-combobox__option-syns {
+  font-size: 10px;
+  color: #a1a1aa;
+}
+
+.label-combobox__empty {
+  padding: 8px;
+  font-size: 11px;
+  color: #a1a1aa;
+  text-align: center;
 }

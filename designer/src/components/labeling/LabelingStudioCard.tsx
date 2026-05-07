@@ -9,6 +9,8 @@ import type { LabelStatus } from '../../lib/labeling/types';
 interface Props {
   screenshot: ScreenshotNode;
   status: LabelStatus;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
 const STATUS_LABEL: Record<LabelStatus, string> = {
@@ -18,13 +20,18 @@ const STATUS_LABEL: Record<LabelStatus, string> = {
   verified: 'Verified',
 };
 
-export function LabelingStudioCard({ screenshot, status }: Props) {
+export function LabelingStudioCard({ screenshot, status, isSelected, onClick }: Props) {
   const title = readLabelTitle(screenshot);
   const pageType = readLabelPageType(screenshot);
   const groupColor = screenshot.group ? getGroupColor(screenshot.group) : null;
 
   return (
-    <div className={`labeling-studio-card labeling-studio-card--${status}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`labeling-studio-card labeling-studio-card--${status} ${isSelected ? 'is-selected' : ''}`}
+      aria-pressed={isSelected ?? false}
+    >
       <div className="labeling-studio-card__image">
         {screenshot.image_url ? (
           <ThumbHashImage
@@ -58,6 +65,6 @@ export function LabelingStudioCard({ screenshot, status }: Props) {
           {screenshot.platform ?? '—'}
         </span>
       </div>
-    </div>
+    </button>
   );
 }

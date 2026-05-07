@@ -574,7 +574,10 @@ export function Catalogue({
       ) : activeSection === 'studio' && canAdmin && LABELING_STUDIO_ENABLED ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
-            <CatalogueLabelingStudio screenshots={screenshots} />
+            <CatalogueLabelingStudio
+              screenshots={screenshots}
+              userEmail={user.email || null}
+            />
           </div>
         </main>
       ) : activeSection === 'videos' ? (
