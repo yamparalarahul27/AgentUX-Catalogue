@@ -4,7 +4,7 @@ import { Bookmark, Check, MapPin, Monitor, RefreshCw, Smartphone, Trash2 } from 
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
-import { REUPLOAD_ENABLED } from '../lib/feature-flags';
+import { REFERENCE_IMAGES_ENABLED, REUPLOAD_ENABLED } from '../lib/feature-flags';
 import { getGroupColor } from '../lib/naming';
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
@@ -133,7 +133,7 @@ export function CatalogueFamilyCard({
 
           {screenshot && (
             <div className="catalogue-card-indicators">
-              {screenshot.reference_url && <span className="catalogue-card-ref-btn">Ref</span>}
+              {REFERENCE_IMAGES_ENABLED && screenshot.reference_url && <span className="catalogue-card-ref-btn">Ref</span>}
               {(screenshot.annotation_count ?? 0) > 0 && (
                 <span className="catalogue-card-comment-btn">
                   <MapPin size={11} strokeWidth={2.25} />

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 
+import { REFERENCE_IMAGES_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 
 interface CatalogueFamilyLightboxInlineEditorProps {
@@ -168,45 +169,47 @@ export function CatalogueFamilyLightboxInlineEditor({
             </select>
           </label>
         )}
-        <label className="catalogue-list-inline-editor__field catalogue-list-inline-editor__field--full">
-          <span>Reference image</span>
-          <div className="catalogue-list-inline-editor__chips">
-            <button
-              type="button"
-              className="catalogue-list-action"
-              onClick={() => referenceInputRef.current?.click()}
-            >
-              {hasReference || referenceFileName ? 'Replace reference image' : 'Add reference image'}
-            </button>
-            {referenceFileName
-              ? <span>{referenceFileName}</span>
-              : <span>{hasReference ? 'Current reference attached' : 'No reference image'}</span>}
-            {referenceFileName && (
+        {REFERENCE_IMAGES_ENABLED && (
+          <label className="catalogue-list-inline-editor__field catalogue-list-inline-editor__field--full">
+            <span>Reference image</span>
+            <div className="catalogue-list-inline-editor__chips">
               <button
                 type="button"
                 className="catalogue-list-action"
-                onClick={() => onReferenceFileSelect(null)}
+                onClick={() => referenceInputRef.current?.click()}
               >
-                Clear
+                {hasReference || referenceFileName ? 'Replace reference image' : 'Add reference image'}
               </button>
-            )}
-          </div>
-          <input
-            ref={referenceInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(event) => {
-              onReferenceFileSelect(event.target.files?.[0] ?? null);
-              event.target.value = '';
-            }}
-          />
-          <input
-            value={referenceLabelDraft}
-            placeholder="Reference label (optional)"
-            onChange={(event) => onReferenceLabelChange(event.target.value)}
-          />
-        </label>
+              {referenceFileName
+                ? <span>{referenceFileName}</span>
+                : <span>{hasReference ? 'Current reference attached' : 'No reference image'}</span>}
+              {referenceFileName && (
+                <button
+                  type="button"
+                  className="catalogue-list-action"
+                  onClick={() => onReferenceFileSelect(null)}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <input
+              ref={referenceInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(event) => {
+                onReferenceFileSelect(event.target.files?.[0] ?? null);
+                event.target.value = '';
+              }}
+            />
+            <input
+              value={referenceLabelDraft}
+              placeholder="Reference label (optional)"
+              onChange={(event) => onReferenceLabelChange(event.target.value)}
+            />
+          </label>
+        )}
       </div>
       <div className="catalogue-lightbox-inline-editor__actions">
         <button type="button" className="catalogue-family-lightbox__action" onClick={onSave} disabled={isSaving}>
