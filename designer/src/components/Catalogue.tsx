@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
 import { useBookmarks } from '../hooks/use-bookmarks';
@@ -46,6 +46,7 @@ import { CatalogueScrollToTop } from './CatalogueScrollToTop';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueLabelingStudio } from './labeling/CatalogueLabelingStudio';
+import type { ScreenshotLabel } from '../lib/labeling/types';
 import { deriveLabelFilterValues } from '../lib/labeling/derive-filter-values';
 import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
 import { CatalogueToolbar } from './CatalogueToolbar';
@@ -322,6 +323,29 @@ export function Catalogue({
     () => Object.fromEntries(allFamilies.map((family) => [family.id, family])),
     [allFamilies],
   );
+  const screenshotIdToFamilyId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const family of allFamilies) {
+      for (const variant of family.variants) {
+        map.set(variant.id, family.id);
+      }
+    }
+    return map;
+  }, [allFamilies]);
+  const [studioLabelOverrides, setStudioLabelOverrides] = useState<Map<string, ScreenshotLabel>>(new Map());
+  const handleStudioLabelPersisted = useCallback((screenshotId: string, label: ScreenshotLabel) => {
+    setStudioLabelOverrides((previous) => {
+      const next = new Map(previous);
+      next.set(screenshotId, label);
+      return next;
+    });
+  }, []);
+  const handleStudioCardClick = useCallback((screenshotId: string) => {
+    const familyId = screenshotIdToFamilyId.get(screenshotId);
+    if (familyId) {
+      setPreviewFamilyId(familyId);
+    }
+  }, [screenshotIdToFamilyId]);
   const presetUsage = useMemo(() => buildPresetUsage(scopedScreenshots), [scopedScreenshots]);
   const selectedVisibleCount = useMemo(
     () => filteredFamilies.filter((family) => selected.has(family.id)).length,
@@ -568,7 +592,7 @@ export function Catalogue({
     <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
-        canViewTeam={canAdmin}
+        canAdmin={canAdmin}
         onOpenSettings={() => setShowSettings(true)}
         onSectionChange={setActiveSection}
         bookmarkEmail={bookmarks.email}
@@ -592,7 +616,12 @@ export function Catalogue({
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueLabelingStudio
               screenshots={screenshots}
-              userEmail={user.email || null}
+              hasMore={hasMore}
+              loadMore={loadMore}
+              loadingMore={loadingMore}
+              overrides={studioLabelOverrides}
+              selectedScreenshotId={previewFamilyId}
+              onCardClick={handleStudioCardClick}
             />
           </div>
         </main>
@@ -879,6 +908,8 @@ export function Catalogue({
           isOpen
           isLoadingNext={pendingPreviewNext}
           onRequireAuth={() => setShowAuthPrompt(true)}
+          showLabelTab={activeSection === 'studio'}
+          onLabelPersisted={activeSection === 'studio' ? handleStudioLabelPersisted : undefined}
           startInlineEdit={previewStartInlineEdit}
           webPresets={webPresets}
           userEmail={user.email || ''}

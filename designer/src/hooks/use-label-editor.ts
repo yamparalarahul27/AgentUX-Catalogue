@@ -50,7 +50,7 @@ export function useLabelEditor({ screenshot, userEmail, onLabelPersisted }: Args
     }
     screenshotIdRef.current = screenshot.id;
     const stored = readStoredLabel(screenshot.metadata);
-    setDraft(stored ?? createDefaultLabel({ userEmail }));
+    setDraft(stored ?? createDefaultLabel({ userEmail, screenshot }));
     setSaveStatus('idle');
     setSaveError(null);
   }, [screenshot, userEmail]);

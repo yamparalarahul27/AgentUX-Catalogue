@@ -1,23 +1,24 @@
+// Module-local design tokens (mirrors part-1-base.scss + flow-compare.scss).
+$bg: #0f0f10;
+$surface: #18181b;
+$border: #27272a;
+$text: #e4e4e7;
+$text-muted: #a1a1aa;
+$text-dim: #71717a;
+$accent: #6366f1;
+$accent-hover: #818cf8;
+$accent-soft: rgba(99, 102, 241, 0.14);
+$danger: #ef4444;
+$success: #22c55e;
+
 .labeling-studio {
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
   padding: 24px 32px;
   display: flex;
-  gap: 24px;
-  align-items: flex-start;
-}
-
-.labeling-studio__main {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.labeling-studio.is-editor-open .labeling-studio__grid {
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
 .labeling-studio__header {
@@ -30,12 +31,12 @@
   margin: 0;
   font-size: 22px;
   font-weight: 600;
-  color: #18181b;
+  color: $text;
 }
 
 .labeling-studio__subtitle {
   margin: 0;
-  color: #71717a;
+  color: $text-dim;
   font-size: 13px;
 }
 
@@ -57,7 +58,7 @@
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .labeling-studio-status-chip.is-active .labeling-studio-status-chip__count {
@@ -73,7 +74,7 @@
 .labeling-studio__empty,
 .labeling-studio__footnote {
   margin: 16px 0;
-  color: #71717a;
+  color: $text-dim;
   font-size: 13px;
   text-align: center;
 }
@@ -83,8 +84,8 @@
   flex-direction: column;
   border-radius: 10px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #e4e4e7;
+  background: $surface;
+  border: 1px solid $border;
   text-align: left;
   padding: 0;
   cursor: pointer;
@@ -92,18 +93,18 @@
 }
 
 .labeling-studio-card:hover {
-  border-color: #a1a1aa;
+  border-color: $text-dim;
 }
 
 .labeling-studio-card.is-selected {
-  border-color: #18181b;
-  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.18);
+  border-color: $accent;
+  box-shadow: 0 0 0 2px $accent-soft;
 }
 
 .labeling-studio-card__image {
   position: relative;
   aspect-ratio: 4 / 3;
-  background: #f4f4f5;
+  background: $bg;
   overflow: hidden;
 
   img {
@@ -120,7 +121,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a1a1aa;
+  color: $text-muted;
 }
 
 .labeling-studio-card__meta {
@@ -139,29 +140,29 @@
   text-transform: uppercase;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #f4f4f5;
-  color: #52525b;
+  background: $bg;
+  color: $text-muted;
 }
 
 .labeling-studio-card__status--draft {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
 }
 
 .labeling-studio-card__status--needs_review {
-  background: #ffedd5;
-  color: #9a3412;
+  background: rgba(249, 115, 22, 0.14);
+  color: #fb923c;
 }
 
 .labeling-studio-card__status--verified {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.14);
+  color: #4ade80;
 }
 
 .labeling-studio-card__title {
   font-weight: 600;
   font-size: 13px;
-  color: #18181b;
+  color: $text;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -171,7 +172,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #71717a;
+  color: $text-dim;
 }
 
 .labeling-studio-card__group-dot {
@@ -190,7 +191,7 @@
   margin: 80px auto;
   max-width: 420px;
   text-align: center;
-  color: #52525b;
+  color: $text-muted;
   padding: 24px;
 }
 
@@ -198,7 +199,7 @@
   margin: 0 0 8px;
   font-size: 18px;
   font-weight: 600;
-  color: #18181b;
+  color: $text;
 }
 
 .labeling-studio-placeholder p {
@@ -210,18 +211,19 @@
 // Editor pane
 // ---------------------------------------------------------------------------
 
+// Editor renders inside the lightbox right-panel — fills its parent.
 .label-editor {
-  flex: 0 0 480px;
-  position: sticky;
-  top: 24px;
-  max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border: 1px solid #e4e4e7;
-  border-radius: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: $surface;
   overflow: hidden;
-  box-shadow: 0 4px 14px rgba(24, 24, 27, 0.06);
+}
+
+// In the narrow lightbox panel, every 2-col row stacks vertically.
+.label-editor .label-editor-row {
+  grid-template-columns: 1fr;
 }
 
 .label-editor__header {
@@ -230,7 +232,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid #f4f4f5;
+  border-bottom: 1px solid $border;
 }
 
 .label-editor__heading {
@@ -246,13 +248,14 @@
   border: 1px solid transparent;
   border-radius: 6px;
   padding: 4px;
-  color: #52525b;
+  color: $text-muted;
   cursor: pointer;
 }
 
 .label-editor__close:hover,
 .label-editor__nav-btn:hover {
-  background: #f4f4f5;
+  background: rgba(255, 255, 255, 0.04);
+  color: $text;
 }
 
 .label-editor__nav-btn:disabled {
@@ -271,7 +274,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #18181b;
+  color: $text;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -282,7 +285,7 @@
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: #71717a;
+  color: $text-dim;
   flex-wrap: wrap;
 }
 
@@ -292,19 +295,19 @@
 
 .label-editor__save-status {
   font-style: italic;
-  color: #71717a;
+  color: $text-dim;
 }
 
 .label-editor__save-status--saving {
-  color: #a1a1aa;
+  color: $text-muted;
 }
 
 .label-editor__save-status--saved {
-  color: #166534;
+  color: #4ade80;
 }
 
 .label-editor__save-status--error {
-  color: #b91c1c;
+  color: $danger;
 }
 
 .label-editor__nav {
@@ -319,7 +322,7 @@
 }
 
 .label-editor-section {
-  border-bottom: 1px solid #f4f4f5;
+  border-bottom: 1px solid $border;
 }
 
 .label-editor-section__header {
@@ -332,18 +335,18 @@
   border: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #18181b;
+  color: $text;
   text-align: left;
   cursor: pointer;
 }
 
 .label-editor-section__header:hover {
-  background: #fafafa;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .label-editor-section__chevron {
   transition: transform 100ms ease;
-  color: #a1a1aa;
+  color: $text-dim;
 }
 
 .label-editor-section.is-open .label-editor-section__chevron {
@@ -374,16 +377,16 @@
 }
 
 .label-editor-field__label {
-  color: #52525b;
+  color: $text-muted;
   font-weight: 500;
 }
 
 .label-editor-field__required {
-  color: #b91c1c;
+  color: $danger;
 }
 
 .label-editor-field__hint {
-  color: #a1a1aa;
+  color: $text-dim;
   font-size: 11px;
 }
 
@@ -391,19 +394,19 @@
 .label-editor-textarea {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid #d4d4d8;
+  border: 1px solid $border;
   border-radius: 6px;
   font-size: 12px;
   font-family: inherit;
-  background: #fff;
-  color: #18181b;
+  background: $bg;
+  color: $text;
 }
 
 .label-editor-input:focus,
 .label-editor-textarea:focus {
   outline: none;
-  border-color: #18181b;
-  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.1);
+  border-color: $accent;
+  box-shadow: 0 0 0 2px $accent-soft;
 }
 
 .label-editor-textarea {
@@ -415,8 +418,8 @@
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid #f4f4f5;
-  background: #fafafa;
+  border-top: 1px solid $border;
+  background: $bg;
 }
 
 .label-editor__action {
@@ -430,30 +433,35 @@
 }
 
 .label-editor__action--secondary {
-  background: #fff;
-  border-color: #d4d4d8;
-  color: #18181b;
+  background: $surface;
+  border-color: $border;
+  color: $text;
 }
 
 .label-editor__action--secondary:hover {
-  background: #f4f4f5;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: $text-dim;
 }
 
 .label-editor__action--primary {
-  background: #18181b;
+  background: $accent;
   color: #fff;
 }
 
+.label-editor__action--primary:hover {
+  background: $accent-hover;
+}
+
 .label-editor__action--primary:disabled {
-  background: #d4d4d8;
-  color: #fff;
+  background: $border;
+  color: $text-dim;
   cursor: not-allowed;
 }
 
 .label-editor__shortcuts {
   padding: 6px 16px 10px;
   font-size: 10px;
-  color: #a1a1aa;
+  color: $text-dim;
   text-align: center;
   letter-spacing: 0.02em;
 }
@@ -467,23 +475,23 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: #f4f4f5;
-  color: #52525b;
+  background: $bg;
+  color: $text-muted;
 }
 
 .label-editor-status-pill--draft {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
 }
 
 .label-editor-status-pill--needs_review {
-  background: #ffedd5;
-  color: #9a3412;
+  background: rgba(249, 115, 22, 0.14);
+  color: #fb923c;
 }
 
 .label-editor-status-pill--verified {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(34, 197, 94, 0.14);
+  color: #4ade80;
 }
 
 // Review section
@@ -497,23 +505,23 @@
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #18181b;
+  color: $text;
 }
 
 .label-editor-progress__missing {
   margin: 0;
   padding-left: 18px;
-  color: #b45309;
+  color: #fbbf24;
   font-size: 11px;
 }
 
 .label-editor-provenance {
   margin-top: 4px;
   padding: 10px 12px;
-  background: #fafafa;
+  background: $bg;
   border-radius: 6px;
   font-size: 11px;
-  color: #52525b;
+  color: $text-muted;
 }
 
 .label-editor-provenance h4 {
@@ -521,7 +529,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #71717a;
+  color: $text-dim;
 }
 
 .label-editor-provenance dl {
@@ -532,12 +540,12 @@
 }
 
 .label-editor-provenance dt {
-  color: #71717a;
+  color: $text-dim;
 }
 
 .label-editor-provenance dd {
   margin: 0;
-  color: #18181b;
+  color: $text;
 }
 
 // ---------------------------------------------------------------------------
@@ -547,9 +555,9 @@
 .label-combobox {
   position: relative;
   width: 100%;
-  border: 1px solid #d4d4d8;
+  border: 1px solid $border;
   border-radius: 6px;
-  background: #fff;
+  background: $bg;
   padding: 4px;
   min-height: 30px;
   display: flex;
@@ -572,7 +580,7 @@
   gap: 4px;
   padding: 2px 4px 2px 8px;
   border-radius: 999px;
-  background: #18181b;
+  background: $accent;
   color: #fff;
   font-size: 11px;
   font-weight: 500;
@@ -604,7 +612,7 @@
   font-family: inherit;
   padding: 2px 4px;
   background: transparent;
-  color: #18181b;
+  color: $text;
 }
 
 .label-combobox__list {
@@ -615,13 +623,13 @@
   margin: 4px 0 0;
   list-style: none;
   padding: 4px;
-  background: #fff;
-  border: 1px solid #d4d4d8;
+  background: $surface;
+  border: 1px solid $border;
   border-radius: 6px;
   max-height: 220px;
   overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 4px 14px rgba(24, 24, 27, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .label-combobox__option {
@@ -634,22 +642,247 @@
 }
 
 .label-combobox__option:hover {
-  background: #f4f4f5;
+  background: $accent-soft;
 }
 
 .label-combobox__option-value {
-  color: #18181b;
+  color: $text;
   font-weight: 500;
 }
 
 .label-combobox__option-syns {
   font-size: 10px;
-  color: #a1a1aa;
+  color: $text-dim;
 }
 
 .label-combobox__empty {
   padding: 8px;
   font-size: 11px;
-  color: #a1a1aa;
+  color: $text-dim;
   text-align: center;
+}
+
+// ---------------------------------------------------------------------------
+// Editor header — Paste JSON button
+// ---------------------------------------------------------------------------
+
+.label-editor__header {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.label-editor__paste-btn {
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid $border;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: $accent-soft;
+    color: $accent-hover;
+    border-color: rgba(99, 102, 241, 0.45);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($accent, 0.6);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Paste JSON modal
+// ---------------------------------------------------------------------------
+
+.label-paste-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+}
+
+.label-paste-modal {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 48px);
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.label-paste-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid $border;
+}
+
+.label-paste-modal__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: $text;
+}
+
+.label-paste-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: $text;
+  }
+}
+
+.label-paste-modal__hint {
+  margin: 0;
+  padding: 12px 16px 0;
+  font-size: 11px;
+  color: $text-dim;
+  line-height: 1.5;
+}
+
+.label-paste-modal__textarea {
+  margin: 12px 16px 0;
+  padding: 10px 12px;
+  min-height: 180px;
+  resize: vertical;
+  background: $bg;
+  color: $text;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+
+  &:focus {
+    outline: none;
+    border-color: $accent;
+    box-shadow: 0 0 0 2px $accent-soft;
+  }
+}
+
+.label-paste-modal__preview {
+  margin: 12px 16px 0;
+  padding: 12px;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.label-paste-modal__preview-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $text-dim;
+  margin-bottom: 8px;
+}
+
+.label-paste-modal__preview-empty {
+  margin: 0;
+  font-size: 12px;
+  color: $text-dim;
+}
+
+.label-paste-modal__preview-error {
+  margin: 0;
+  font-size: 12px;
+  color: $danger;
+}
+
+.label-paste-modal__preview-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  li {
+    font-size: 12px;
+    color: $text;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.label-paste-modal__warning {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #fbbf24;
+  line-height: 1.5;
+}
+
+.label-paste-modal__footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 14px 16px;
+  margin-top: 16px;
+  border-top: 1px solid $border;
+}
+
+.label-paste-modal__action {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.label-paste-modal__action--secondary {
+  background: $surface;
+  border-color: $border;
+  color: $text;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: $text-dim;
+  }
+}
+
+.label-paste-modal__action--primary {
+  background: $accent;
+  color: #fff;
+
+  &:hover {
+    background: $accent-hover;
+  }
+
+  &:disabled {
+    background: $border;
+    color: $text-dim;
+    cursor: not-allowed;
+  }
 }
