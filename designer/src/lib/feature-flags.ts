@@ -23,3 +23,9 @@ export const REUPLOAD_ENABLED = false;
 // Upload Analytics tab in Team Settings. Hidden by default — flip on if
 // the date-wise upload-volume table becomes useful again.
 export const TEAM_UPLOAD_ANALYTICS_ENABLED = false;
+
+// Reference image attachments per screenshot (the "Ref" chip on cards,
+// reference upload UI in the lightbox inline editor, and reference image
+// rendering in gallery view). Off by default. Database fields and stored
+// data are untouched — flipping back to true reveals the existing rows.
+export const REFERENCE_IMAGES_ENABLED = false;

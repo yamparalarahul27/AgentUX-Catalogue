@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Check, ImageIcon, Link2, MessageCircle, Pencil, RefreshCw, Send, Trash2, X } from 'lucide-react';
 import type { ScreenshotNode, ScreenshotVersion, ScreenshotComment } from '../types';
 import { ANNOTATION_METADATA_KEY, getLightboxAnnotationEntries } from '../lib/catalogue-activity';
+import { REFERENCE_IMAGES_ENABLED } from '../lib/feature-flags';
 import { supabase } from '../lib/supabase';
 import { getGroupColor } from '../lib/naming';
 import { Dropdown } from './Dropdown';
@@ -375,7 +376,7 @@ export function CatalogueCard({
         <button className={`catalogue-card-select ${isSelected ? 'catalogue-card-select--checked' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleSelect(screenshot.id); }} title="Select">{isSelected && <Check size={12} strokeWidth={3} />}</button>
         {(isPrimary || isVs) && <span className={`catalogue-card-badge ${isPrimary ? 'catalogue-card-badge-primary' : 'catalogue-card-badge-vs'}`}>{isPrimary ? 'Primary' : 'Vs'}</span>}
         <div className="catalogue-card-indicators">
-          {screenshot.reference_url && <button className="catalogue-card-ref-btn" title={screenshot.reference_label ? `Ref: ${screenshot.reference_label}` : 'View reference'} onClick={(e) => { e.stopPropagation(); setShowRef(!showRef); }}><Link2 size={11} strokeWidth={2.5} />Ref</button>}
+          {REFERENCE_IMAGES_ENABLED && screenshot.reference_url && <button className="catalogue-card-ref-btn" title={screenshot.reference_label ? `Ref: ${screenshot.reference_label}` : 'View reference'} onClick={(e) => { e.stopPropagation(); setShowRef(!showRef); }}><Link2 size={11} strokeWidth={2.5} />Ref</button>}
           {(screenshot.version_count ?? 0) > 0 && <button className="catalogue-card-version-btn" title="View version history" onClick={(e) => { e.stopPropagation(); setShowVersions(!showVersions); }}>v{(screenshot.version_count ?? 0) + 1}</button>}
           {(screenshot.comment_count ?? 0) > 0 && <span className="catalogue-card-comment-btn"><MessageCircle size={11} strokeWidth={2.5} />{screenshot.comment_count}</span>}
         </div>
@@ -403,7 +404,7 @@ export function CatalogueCard({
         </div>
       </div>
 
-      {showRef && screenshot.reference_url && <div className="catalogue-card-ref-popover"><div className="catalogue-card-ref-popover-header"><span>{screenshot.reference_label || 'Reference'}</span><button onClick={() => setShowRef(false)}><X size={14} /></button></div><img src={screenshot.reference_url} alt={screenshot.reference_label || 'Reference'} /></div>}
+      {REFERENCE_IMAGES_ENABLED && showRef && screenshot.reference_url && <div className="catalogue-card-ref-popover"><div className="catalogue-card-ref-popover-header"><span>{screenshot.reference_label || 'Reference'}</span><button onClick={() => setShowRef(false)}><X size={14} /></button></div><img src={screenshot.reference_url} alt={screenshot.reference_label || 'Reference'} /></div>}
 
       {showVersions && <div className="catalogue-card-versions"><div className="catalogue-card-versions-header"><span>Version History</span><button onClick={() => setShowVersions(false)}><X size={14} /></button></div><div className="catalogue-card-versions-current"><img src={screenshot.image_url} alt="Current" /><span>Current</span></div>{versions.map((v) => <div key={v.id} className="catalogue-card-versions-item"><img src={v.image_url} alt={`v${v.version_number}`} /><span>v{v.version_number} · {new Date(v.created_at || '').toLocaleDateString()}</span></div>)}{versions.length === 0 && <p className="catalogue-card-versions-empty">Loading...</p>}</div>}
 
