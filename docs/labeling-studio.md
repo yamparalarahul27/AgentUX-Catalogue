@@ -5,9 +5,13 @@
 > `catalogue-ideation-2026-05-06-ai-vision-search.md`, and
 > `catalogue-ideation-2026-05-06-labeling-studio.md`.
 
-**Status:** Phase 1 + 2 + 3 + 4 implemented behind feature flag
-`LABELING_STUDIO_ENABLED` (off by default). PR
-[#47](https://github.com/yamparalarahul27/AgentUX-Catalogue/pull/47).
+**Status:** Phase 1 + 2 + 3 + 4 + 5 implemented behind feature flag
+`LABELING_STUDIO_ENABLED`. The Phase-5 refactor (PR
+[#48](https://github.com/yamparalarahul27/AgentUX-Catalogue/pull/48))
+restructures the studio to mirror the catalogue grid pattern, moves the
+editor into the lightbox right panel as a `Label` tab (replacing the
+side-pane), adds auto-fill from screenshot metadata, a Paste-JSON modal,
+and database-aggregated totals.
 
 ---
 
@@ -141,8 +145,15 @@ style_keywords), and the rest of `design_reference.*` stay optional.
 - Below 1024 px: nav entry hidden in `CatalogueHeader`.
 - Inside the studio when resizing < 1024: content swaps for a
   placeholder.
-- Editor opens as a 480 px **side pane** to keep the queue grid visible
-  for J/K nav.
+- **Studio grid** mirrors the catalogue grid: paginated `screenshots`
+  (50/page) with IntersectionObserver scroll-load. Cards keep the studio
+  status badge.
+- **Editor** lives inside the **catalogue lightbox** as a `Label` tab,
+  replacing Comments + Annotations in studio context. The action toolbar
+  is reduced to Edit (pencil) only; Crop / Bookmark / Comments /
+  Annotations / Delete are hidden via `hideCatalogueActions`. Click
+  outside the lightbox or press Esc to close. Prev/next family is via
+  the lightbox's existing arrow keys.
 
 ### 3.7 Annotations relationship — separate
 
@@ -181,13 +192,25 @@ Phase-3 specific decisions (editor):
 
 | # | Decision | Choice |
 |---|---|---|
-| 1 | Editor mount | Side pane in Studio (grid stays visible) |
+| 1 | Editor mount | ~~Side pane in Studio~~ → **Phase 5: Label tab inside the catalogue lightbox** |
 | 2 | Combobox | New `LabelVocabCombobox` (single + multi) |
 | 3 | Section nav | Collapsible accordion, Identity open by default |
 | 4 | Save | Autosave on activity, 800 ms debounce. Verify is explicit. |
 | 5 | Vocab fetch | Per-kind on demand with module cache |
 | 6 | Write path | `saveLabel` helper does read-merge-write of `metadata.label` |
-| 7 | Keyboard | All six shortcuts (J/K/S/V/R/Esc), suppressed in inputs |
+| 7 | Keyboard | ~~All six shortcuts (J/K/S/V/R/Esc)~~ → **Phase 5: dropped. Lightbox arrow keys handle prev/next; explicit footer buttons handle Save / Verify / Needs review.** |
+
+Phase-5 specific decisions:
+
+| # | Decision | Choice | Why |
+|---|---|---|---|
+| 1 | Studio grid source | Paginated `screenshots` + scroll-load | Match catalogue's UX; large catalogues don't load all at once. |
+| 2 | Studio cards | Keep `LabelingStudioCard` (status badge) | Admin scan needs at-a-glance status; catalogue card lacks this. |
+| 3 | Lightbox tabs in studio context | Label only (Comments + Annotations hidden) | Admin focus during labelling; explicit user request. |
+| 4 | Lightbox toolbar in studio | Edit (pencil) only | Same focus reasoning; Crop / Bookmark / Delete are catalogue actions, not labelling. |
+| 5 | Auto-fill on first label open | Silent pre-fill from screenshot metadata; never overwrite stored values | Reduce typing for known fields; keep human in control. |
+| 6 | Paste JSON | Lenient parser; unknown keys ignored; pasted `verified` silently downgraded to `draft` | Paste is a fast path, not a verification bypass. |
+| 7 | Status totals | Database-aggregated counts (4 parallel HEAD queries) shown in chip strip; refetched on save | Loaded grid is paginated, but admin needs accurate "how many left" across whole catalogue. |
 
 ---
 
@@ -283,6 +306,28 @@ LOC in 19 new files; 4 edits.
 | `components/labeling/LabelingStudioCard.tsx` | Card becomes a `<button>` with `onClick` and `aria-pressed`. Adds `.is-selected` highlight when the editor is open on it. |
 | `components/Catalogue.tsx` | Passes `userEmail` into the studio (used by `default-label` for `source_email`). |
 | `styles/catalogue-labeling-studio.scss` | Adds editor pane layout, section accordion, combobox + free-chip styles, status pills, provenance block. |
+
+### Phase 5 — catalogue-grid pattern + Label tab + paste JSON + totals
+
+Restructures the studio to mirror the catalogue grid (paginated load-more,
+click → lightbox), moves the editor into the lightbox right panel as a
+single `Label` tab, and adds two adjacent features: auto-fill from
+screenshot metadata, and a Paste-JSON modal. Plus database-aggregated
+status totals across the whole catalogue.
+
+| File | Why | Linked with |
+|---|---|---|
+| `components/labeling/CatalogueLabelingStudio.tsx` | Rewritten as presentational. Receives `screenshots`/`hasMore`/`loadMore`/`overrides`/`onCardClick`/`totals` from parent. IntersectionObserver scroll-load on a bottom sentinel. Subtitle now renders DB totals: "N screenshots · M verified · K unlabelled". | Renders `LabelingStudioStatusChips` with overridden counts from DB totals, `LabelingStudioCard` per row, and the bottom sentinel. |
+| `components/labeling/LabelEditor.tsx` | Refactored to embed inside the lightbox panel. Drops the `<aside>` wrapper, the close button, prev/next nav buttons, the `useEditorKeyboard` hook (J/K/S/V/R/Esc), and the shortcuts hint at the bottom. Header gains a "Paste JSON" button. | Uses `useLabelEditor` (unchanged). Renders `LabelPasteJsonModal` when the button is clicked. |
+| **`components/labeling/LabelPasteJsonModal.tsx`** | New modal: textarea + live preview as user pastes. Per-section change counts; warnings for status downgrade, type-mismatched fields, unknown top-level keys. Apply triggers `update()` once which merges into the draft and autosaves. | Calls `parseAndDiff` from `lib/labeling/merge-pasted-label.ts`. |
+| **`lib/labeling/merge-pasted-label.ts`** | Pure logic. `parseAndDiff(text, current)` returns either `{ ok: false, error }` or `{ ok: true, result }`. Lenient: unknown sub-keys ignored, type-mismatched fields skipped (counted), `label_status: 'verified'` silently downgraded to `'draft'`. | Used by the paste modal. |
+| `lib/labeling/default-label.ts` | Optional `screenshot` parameter. When provided, derives `identity.platform` (web/ios/android), `identity.device_type` (mobile/desktop), `visual_design.theme`, and `journey.flow_name` (from `metadata.catalogue_flow_label`). | Called by `useLabelEditor` when initializing a fresh label for a screenshot with no stored label. |
+| `lib/labeling/save-label.ts` | Adds `.update().select().single()` so zero-row writes (RLS / permission blocks) surface a clear error instead of silent success. | Called by `useLabelEditor.flush`. |
+| **`hooks/use-labeling-studio-totals.ts`** | New. Four parallel HEAD-count queries against `screenshots` aggregating by `metadata->label->review->>label_status`. Unlabelled is derived: `total − (draft + needs_review + verified)`. Exposes `refetch()` for after-save updates. | Called from `Catalogue.tsx`; result passed into the studio. |
+| `components/CatalogueFamilyLightbox.tsx` | New props `showLabelTab`, `onLabelPersisted`. New `'label'` panel type. When `showLabelTab` is on: only the Label tab renders; Comments + Annotations tabs hidden; the `LabelEditor` is rendered as panel content; `hideCatalogueActions` is forwarded to the actions toolbar. | Imports `LabelEditor`. |
+| `components/CatalogueFamilyLightboxActions.tsx` | New `hideCatalogueActions?: boolean` prop. When true, Comments / Annotations / Delete / Crop / Bookmark are hidden — only Edit (pencil) remains. | Used from the lightbox in studio context. |
+| `components/Catalogue.tsx` | Lifts `studioLabelOverrides` Map + `handleStudioLabelPersisted` callback (the latter now also calls `studioTotals.refetch()`). Builds `screenshotIdToFamilyId` from `allFamilies` (paginated scope). Studio receives `screenshots`/`hasMore`/`loadMore`/`loadingMore` from `useCatalogueData`. Lightbox passes `showLabelTab={activeSection === 'studio'}` and `onLabelPersisted` (when in studio). Bug fix: `canViewTeam → canAdmin` rename was missed at the header call site, hiding both Studio and Team menu entries. | Wires everything. |
+| `styles/catalogue-labeling-studio.scss` | Studio container becomes a single column (no side pane). `.label-editor` overridden to fill its lightbox-panel parent; `.label-editor-row` 2-col grid forced to 1-col. New `.label-paste-modal__*` styles. All hardcoded light hex values replaced with the catalogue's dark theme tokens (`$bg`, `$surface`, `$text`, `$accent`, `$border`, `$danger`, `$success`). Status badges retain semantic colours tuned for dark contrast. | — |
 
 ### Phase 4 — public catalogue filters from label data
 
@@ -438,9 +483,13 @@ Restart the dev server (`npm run dev` in `designer/`).
 2. Open the hamburger menu (top right) — *Labelling Studio* should
    appear under *Team*. (If not: confirm viewport ≥1024 px and the flag
    is on; reload.)
-3. Click *Labelling Studio* — the grid renders with all screenshots
-   shown as **Unlabelled** (no `metadata.label` exists yet anywhere).
-4. Click any card — editor pane slides in from the right (~480 px).
+3. Click *Labelling Studio* — grid renders the first 50 screenshots; scroll
+   triggers load-more. Subtitle shows DB totals
+   (`N screenshots · M verified · K unlabelled`). Status chip strip shows
+   the same totals broken down by status.
+4. Click any card — the catalogue lightbox opens with the **Label** tab
+   active (Comments + Annotations are hidden in studio context). Action
+   toolbar shows only the Edit (pencil) icon.
 5. **Identity** is open by default. Fill the 6 required fields there:
    - *Title* — e.g. "Hedge Mode vs One-Way Mode Selection"
    - *One-line summary* — one sentence
@@ -472,35 +521,69 @@ Restart the dev server (`npm run dev` in `designer/`).
 
 ### 10.6 Keyboard nav (admin path)
 
-In the editor pane, **with no input focused**:
+Inside the lightbox, with no input focused:
 
-- `J` / `K` — next / previous screenshot in the filtered list.
-- `S` — explicit save draft (autosave already runs on activity, this
-  flushes immediately and shows *Saving… → Saved*).
-- `V` — verify (only writes if all 10 required pass; otherwise no-op).
-- `R` — mark *Needs review*.
-- `Esc` — close editor pane.
+- `←` / `→` — previous / next family in the filtered list (catalogue
+  lightbox's existing arrow-key nav).
+- `Esc` — close the lightbox.
 
-In an input/textarea, the keys behave normally (typing a `j` types `j`).
+The Phase-3 J / K / S / V / R shortcuts are removed in Phase 5 — the
+lightbox owns navigation; explicit footer buttons handle Save / Verify /
+Needs review.
 
-### 10.7 Status filter chips
+### 10.7 Status filter chips + DB totals
 
-Top of the studio: `All / Unlabelled / Draft / Needs review / Verified`
-with counts. Clicking filters the grid client-side. Counts update
-optimistically when you save in the editor pane (no refetch needed).
+Top of the studio: `All / Unlabelled / Draft / Needs review / Verified`.
+Counts come from a Supabase aggregation query (4 parallel HEAD count
+queries against `screenshots` filtering on
+`metadata->label->review->>label_status`). Counts reflect the **whole
+catalogue**, not just the loaded grid. They refetch automatically after
+every label save.
 
-### 10.8 Known edge cases worth checking
+Clicking a chip filters the loaded grid client-side (existing behaviour).
 
-These are the items I flagged but didn't fix retroactively. If they
-bite during testing they're cheap to fix:
+### 10.8 Paste JSON
+
+In the Label tab header, click **Paste JSON** to open the modal. Paste a
+JSON blob (Cmd+V into the textarea). Live preview shows per-section
+change counts and warnings:
+
+- Unknown top-level keys are listed.
+- Type-mismatched fields are counted (skipped on apply).
+- `review.label_status: 'verified'` is silently downgraded to `'draft'`
+  with a warning — paste cannot bypass human verification.
+
+Clicking **Apply N** writes the merged label via the existing autosave
+path. The 800 ms debounce + Save status indicator behaves the same as
+typing into a field manually.
+
+### 10.9 Auto-fill on first open
+
+For a screenshot that has never been labelled (no stored
+`metadata.label`), opening the editor pre-fills:
+
+- `identity.platform` from `screenshot.platform` + `mobile_os`
+  (web / ios / android / null).
+- `identity.device_type` from `screenshot.platform` (mobile / desktop).
+- `visual_design.theme` from `screenshot.theme`.
+- `journey.flow_name` from `metadata.catalogue_flow_label`.
+
+Once a label is saved, auto-fill never runs again on that screenshot —
+the stored label is the source of truth.
+
+### 10.10 Known edge cases worth checking
+
+These are the items flagged but not fixed retroactively. If any bite
+during testing they're cheap to fix:
 
 - **Combobox dropdown overflow** — when the typeahead opens for a
-  field near the bottom of the editor pane, the suggestion list can
-  clip. Workaround: scroll the editor pane up.
+  field near the bottom of the lightbox panel, the suggestion list can
+  clip. Workaround: scroll the panel up.
 - **Sub-800 ms debounce loss** — if you type a few characters then
-  immediately hit `J` to nav next, those last keystrokes can be lost
-  (debounce cleared on screenshot change without flushing). Workaround:
-  hit `S` before nav, or pause briefly.
+  immediately switch screenshot via the lightbox arrow keys, those last
+  keystrokes can be lost (debounce cleared on screenshot change without
+  flushing). Workaround: click **Save draft** before switching, or pause
+  briefly.
 - **Vocab cache staleness** — `useLabelVocabKind` caches per-kind in
   module scope. If you edit `label_vocab` in SQL while the app is
   running, reload to see new values.
@@ -508,8 +591,12 @@ bite during testing they're cheap to fix:
   `screenshots` (per `docs/security-rls-public-release.md`). When the
   auth gate lands, studio writes will need to be re-tested under the
   authenticated session.
+- **Totals refetch latency** — the totals strip refetches on every save
+  via `studioTotals.refetch()`. With 4 parallel queries this is fast,
+  but if Supabase is slow you'll see the totals lag the chip filter by
+  a moment.
 
-### 10.9 Rolling back
+### 10.11 Rolling back
 
 If anything goes sideways:
 
@@ -521,23 +608,35 @@ If anything goes sideways:
 - **Drop vocab and redo**: `TRUNCATE label_vocab` then re-run the seed
   migration. The studio will re-populate vocab on next editor open.
 
-### 10.10 What "done" looks like for this PR
+### 10.12 What "done" looks like
 
-- Migration applied; `select count(*) from label_vocab` returns ~140.
-- One screenshot reaches `verified` status.
+- Migration applied; `select count(distinct kind) from public.label_vocab` returns 8.
+- Studio menu entry visible for admin (and only for admin).
+- Studio totals strip shows accurate counts across the whole catalogue,
+  refreshing after every save.
+- One screenshot reaches `verified` status via the editor.
+- Paste JSON modal applies a pasted blob; pasted `verified` shows the
+  downgrade warning and saves as `draft`.
+- Auto-fill populates platform / device_type / theme / flow_name on a
+  fresh screenshot.
 - Filter chip appears in the public catalogue's filter sheet for the
-  values you used.
+  label values you used.
 - Search match works for the labelled `title` / `one_line_summary`.
 - Reload preserves everything.
-- Flipping the flag off cleanly hides the studio with no console
-  errors.
-
-If all six are true, ship it.
+- Flipping the flag off cleanly hides the studio with no console errors.
 
 ---
 
 ## 11. Changelog
 
+- **2026-05-07** — PR #48: Phase 5. Studio adopts the catalogue grid
+  pattern (paginated load-more); editor moves into the catalogue lightbox
+  as a `Label` tab (replaces the side-pane); Comments + Annotations +
+  Crop + Bookmark + Delete hidden in studio context. Auto-fill on first
+  open. Paste JSON modal with lenient parser and silent verified→draft
+  downgrade. DB-aggregated status totals (chip strip + subtitle).
+  TS error fix: `canViewTeam → canAdmin` rename was missed at the
+  Catalogue→Header call site, hiding both Studio + Team menu entries.
 - **2026-05-06** — PR #47 lands. This doc consolidates and replaces:
   `catalogue-ideation-2026-05-04-ui-element-annotations.md`,
   `catalogue-ideation-2026-05-06-ai-vision-search.md`,

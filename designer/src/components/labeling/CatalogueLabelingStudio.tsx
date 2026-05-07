@@ -4,6 +4,7 @@ import type { ScreenshotNode } from '../../types';
 import { LABELING_STUDIO_MIN_VIEWPORT_PX } from '../../lib/feature-flags';
 import { useViewportWidth } from '../../hooks/use-viewport-width';
 import { useLabelingStudioStatus } from '../../hooks/use-labeling-studio-status';
+import type { StudioTotals } from '../../hooks/use-labeling-studio-totals';
 import type { ScreenshotLabel } from '../../lib/labeling/types';
 import { LabelingStudioCard } from './LabelingStudioCard';
 import { LabelingStudioStatusChips } from './LabelingStudioStatusChips';
@@ -17,6 +18,8 @@ interface Props {
   overrides: Map<string, ScreenshotLabel>;
   selectedScreenshotId: string | null;
   onCardClick: (screenshotId: string) => void;
+  totals: StudioTotals;
+  totalsLoading: boolean;
 }
 
 export function CatalogueLabelingStudio({
@@ -27,6 +30,8 @@ export function CatalogueLabelingStudio({
   overrides,
   selectedScreenshotId,
   onCardClick,
+  totals,
+  totalsLoading,
 }: Props) {
   const viewportWidth = useViewportWidth();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -41,8 +46,15 @@ export function CatalogueLabelingStudio({
     });
   }, [overrides, screenshots]);
 
-  const { filter, setFilter, buckets, filtered, statusByScreenshotId } =
+  const { filter, setFilter, buckets: loadedBuckets, filtered, statusByScreenshotId } =
     useLabelingStudioStatus(overlaidScreenshots);
+
+  // Replace each chip's count with the database total. Filtering remains based
+  // on the loaded set (filtered grid) — totals are display-only.
+  const buckets = useMemo(
+    () => loadedBuckets.map((bucket) => ({ ...bucket, count: totals[bucket.key] })),
+    [loadedBuckets, totals],
+  );
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -68,7 +80,9 @@ export function CatalogueLabelingStudio({
       <header className="labeling-studio__header">
         <h1 className="labeling-studio__title">Labelling Studio</h1>
         <p className="labeling-studio__subtitle">
-          Structured metadata for retrieval and future agent context.
+          {totalsLoading
+            ? 'Loading totals…'
+            : `${totals.all} screenshot${totals.all === 1 ? '' : 's'} · ${totals.verified} verified · ${totals.unlabeled} unlabelled`}
         </p>
       </header>
 

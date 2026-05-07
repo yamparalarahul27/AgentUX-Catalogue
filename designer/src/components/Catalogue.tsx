@@ -46,6 +46,7 @@ import { CatalogueScrollToTop } from './CatalogueScrollToTop';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueLabelingStudio } from './labeling/CatalogueLabelingStudio';
+import { useLabelingStudioTotals } from '../hooks/use-labeling-studio-totals';
 import type { ScreenshotLabel } from '../lib/labeling/types';
 import { deriveLabelFilterValues } from '../lib/labeling/derive-filter-values';
 import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
@@ -333,13 +334,16 @@ export function Catalogue({
     return map;
   }, [allFamilies]);
   const [studioLabelOverrides, setStudioLabelOverrides] = useState<Map<string, ScreenshotLabel>>(new Map());
+  const studioProjectIds = useMemo(() => projects.map((project) => project.id), [projects]);
+  const studioTotals = useLabelingStudioTotals(studioProjectIds);
   const handleStudioLabelPersisted = useCallback((screenshotId: string, label: ScreenshotLabel) => {
     setStudioLabelOverrides((previous) => {
       const next = new Map(previous);
       next.set(screenshotId, label);
       return next;
     });
-  }, []);
+    studioTotals.refetch();
+  }, [studioTotals]);
   const handleStudioCardClick = useCallback((screenshotId: string) => {
     const familyId = screenshotIdToFamilyId.get(screenshotId);
     if (familyId) {
@@ -622,6 +626,8 @@ export function Catalogue({
               overrides={studioLabelOverrides}
               selectedScreenshotId={previewFamilyId}
               onCardClick={handleStudioCardClick}
+              totals={studioTotals.totals}
+              totalsLoading={studioTotals.loading}
             />
           </div>
         </main>
