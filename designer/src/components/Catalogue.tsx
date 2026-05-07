@@ -10,6 +10,7 @@ import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
 import { useCatalogueGuestGuards } from '../hooks/use-catalogue-guest-guards';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
+import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -460,6 +461,21 @@ export function Catalogue({
       setActiveSection('catalogue');
     }
   }, [activeSection, canAdmin]);
+
+  // Cmd+V (or Ctrl+V) on the catalogue page reads the clipboard, queues any
+  // image into Quick Upload, and opens the modal. Suppressed when an input is
+  // focused so normal paste-into-field behaviour wins.
+  usePasteToUpload({
+    enabled: activeSection === 'catalogue',
+    onPaste: (files) => {
+      upload.handleQuickUploadQueueAdd(files);
+      upload.setShowQuickUpload(true);
+      setToast({
+        message: `${files.length} image${files.length === 1 ? '' : 's'} added to Quick Upload`,
+        type: 'success',
+      });
+    },
+  });
 
   useEffect(() => {
     if (!isAnyModalOpen) return;
