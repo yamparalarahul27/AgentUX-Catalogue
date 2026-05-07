@@ -46,6 +46,7 @@ import { CatalogueScrollToTop } from './CatalogueScrollToTop';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueLabelingStudio } from './labeling/CatalogueLabelingStudio';
+import { deriveLabelFilterValues } from '../lib/labeling/derive-filter-values';
 import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
@@ -78,8 +79,12 @@ export function Catalogue({
     filterFlow,
     filterGroup,
     filterMobileOs,
+    filterPageType,
     filterPlatform,
+    filterScreenState,
     filterTheme,
+    filterUiElement,
+    filterUxPattern,
     filterWebPreset,
     searchQuery,
     searchQueryDebounced,
@@ -87,8 +92,12 @@ export function Catalogue({
     setFilterFlow,
     setFilterGroup,
     setFilterMobileOs,
+    setFilterPageType,
     setFilterPlatform,
+    setFilterScreenState,
     setFilterTheme,
+    setFilterUiElement,
+    setFilterUxPattern,
     setFilterWebPreset,
     setSearchQuery,
     setSortBy,
@@ -187,6 +196,13 @@ export function Catalogue({
 
   const groupStats = useMemo(
     () => (CATALOGUE_CHIP_STRIP_ENABLED ? deriveGroupStats(fullScopeScreenshots) : []),
+    [fullScopeScreenshots],
+  );
+
+  // Label-derived filter chip pools (Phase 4). Only labels in active use show
+  // up — keeps the public catalogue UI clean while vocab is being filled in.
+  const labelFilterValues = useMemo(
+    () => deriveLabelFilterValues(fullScopeScreenshots),
     [fullScopeScreenshots],
   );
 
@@ -633,12 +649,20 @@ export function Catalogue({
                 allMobileOs={allMobileOs}
                 allWebPresets={allWebPresets}
                 annotationLabels={annotationLabels}
+                allPageTypes={labelFilterValues.pageTypes}
+                allUiElements={labelFilterValues.uiElements}
+                allUxPatterns={labelFilterValues.uxPatterns}
+                allScreenStates={labelFilterValues.screenStates}
                 filterAnnotation={filterAnnotation}
                 filterFlow={filterFlow}
                 filterGroup={filterGroup}
                 filterMobileOs={filterMobileOs}
+                filterPageType={filterPageType}
                 filterPlatform={filterPlatform}
+                filterScreenState={filterScreenState}
                 filterTheme={filterTheme}
+                filterUiElement={filterUiElement}
+                filterUxPattern={filterUxPattern}
                 filterWebPreset={filterWebPreset}
                 gridDensity={gridDensity}
                 groups={allGroups}
@@ -647,8 +671,12 @@ export function Catalogue({
                 onFilterFlowChange={setFilterFlow}
                 onFilterGroupChange={setFilterGroup}
                 onFilterMobileOsChange={setFilterMobileOs}
+                onFilterPageTypeChange={setFilterPageType}
                 onFilterPlatformChange={setFilterPlatform}
+                onFilterScreenStateChange={setFilterScreenState}
                 onFilterThemeChange={setFilterTheme}
+                onFilterUiElementChange={setFilterUiElement}
+                onFilterUxPatternChange={setFilterUxPattern}
                 onFilterWebPresetChange={setFilterWebPreset}
                 onGridDensityChange={setGridDensity}
                 onQuickUploadClick={() => {
