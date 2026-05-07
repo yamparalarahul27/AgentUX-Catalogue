@@ -139,6 +139,26 @@ export function CatalogueLightboxCrop({
   const finalHeight = Math.max(1, naturalHeight - topPx - bottomPx);
   const canApply = hasTrim && !isApplying;
 
+  // Enter applies the crop when there's a trim to apply and we're not already
+  // applying. Suppressed when an input/textarea/contenteditable is focused so
+  // form fields keep their normal Enter behaviour.
+  useEffect(() => {
+    if (!canApply) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Enter') return;
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
+      event.preventDefault();
+      onApply({ topTrim: topPx, bottomTrim: bottomPx, leftTrim: leftPx, rightTrim: rightPx });
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canApply, onApply, topPx, bottomPx, leftPx, rightPx]);
+
   return (
     <div className="catalogue-lightbox-crop">
       <div className="catalogue-lightbox-crop__media" ref={containerRef}>
@@ -346,6 +366,7 @@ export function CatalogueLightboxCrop({
             className="btn-primary catalogue-lightbox-crop__apply"
             onClick={() => onApply({ topTrim: topPx, bottomTrim: bottomPx, leftTrim: leftPx, rightTrim: rightPx })}
             disabled={!canApply}
+            title={canApply ? 'Apply crop (Enter)' : 'Drag a handle to set a crop area'}
           >
             {isApplying ? (
               <>
