@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCatalogueGalleryFeedback } from '../hooks/use-catalogue-gallery-feedback';
 import { getActiveFamilyVariant, getVariantKey, type CatalogueFamilyView } from '../lib/catalogue-families';
+import { REFERENCE_IMAGES_ENABLED } from '../lib/feature-flags';
 import { formatDateTime } from '../lib/catalogue-lightbox';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueGalleryFeedbackPanel } from './CatalogueGalleryFeedbackPanel';
@@ -673,24 +674,26 @@ export function CatalogueGalleryView({
             Delete
           </button>
         </div>
-        <div className="catalogue-gallery-reference">
-          <h4>Reference Image</h4>
-          {activeScreenshot.reference_url ? (
-            <>
-              <img src={activeScreenshot.reference_url} alt={activeScreenshot.reference_label || 'Reference'} draggable={false} />
-              <p>{activeScreenshot.reference_label || 'Reference'}</p>
-              <button
-                type="button"
-                className="catalogue-gallery-reference-remove"
-                onClick={() => void requestRemoveReference()}
-              >
-                Remove reference
-              </button>
-            </>
-          ) : (
-            <p className="catalogue-gallery-reference-empty">No reference image</p>
-          )}
-        </div>
+        {REFERENCE_IMAGES_ENABLED && (
+          <div className="catalogue-gallery-reference">
+            <h4>Reference Image</h4>
+            {activeScreenshot.reference_url ? (
+              <>
+                <img src={activeScreenshot.reference_url} alt={activeScreenshot.reference_label || 'Reference'} draggable={false} />
+                <p>{activeScreenshot.reference_label || 'Reference'}</p>
+                <button
+                  type="button"
+                  className="catalogue-gallery-reference-remove"
+                  onClick={() => void requestRemoveReference()}
+                >
+                  Remove reference
+                </button>
+              </>
+            ) : (
+              <p className="catalogue-gallery-reference-empty">No reference image</p>
+            )}
+          </div>
+        )}
       </aside>
     </div>
   );

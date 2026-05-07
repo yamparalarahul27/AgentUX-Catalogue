@@ -24,8 +24,15 @@ export const REUPLOAD_ENABLED = false;
 // the date-wise upload-volume table becomes useful again.
 export const TEAM_UPLOAD_ANALYTICS_ENABLED = false;
 
+// Reference image attachments per screenshot (the "Ref" chip on cards,
+// reference upload UI in the lightbox inline editor, and reference image
+// rendering in gallery view). Off by default. Database fields and stored
+// data are untouched — flipping back to true reveals the existing rows.
+export const REFERENCE_IMAGES_ENABLED = false;
+
 // Labeling Studio: admin-only manual labelling surface backing
-// metadata.label.*. Off until the editor lands (Phase 3).
+// metadata.label.*. Gated additionally by canAdmin email check + the
+// label_vocab Supabase migration (without the migration, typeahead is empty).
 export const LABELING_STUDIO_ENABLED = true;
 
 // Studio is desktop-only. Below this width: nav entry hidden;
