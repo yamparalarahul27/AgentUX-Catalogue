@@ -22,6 +22,11 @@ export interface CatalogueQueryFilters {
   webPreset: string | null;
   mobileOs: 'ios' | 'android' | null;
   annotation: string[];
+  // Label-derived filters (Phase 4). Read from metadata.label.* JSONB.
+  pageType: string[];
+  uiElement: string[];
+  uxPattern: string[];
+  screenState: string | null;
 }
 
 export const EMPTY_CATALOGUE_FILTERS: CatalogueQueryFilters = {
@@ -32,6 +37,10 @@ export const EMPTY_CATALOGUE_FILTERS: CatalogueQueryFilters = {
   webPreset: null,
   mobileOs: null,
   annotation: [],
+  pageType: [],
+  uiElement: [],
+  uxPattern: [],
+  screenState: null,
 };
 
 type CursorColumn = 'created_at' | 'name';
@@ -228,11 +237,46 @@ export function useCatalogueData({
         query = query.eq('mobile_os', filters.mobileOs);
       }
 
+      // Label-derived filters (Phase 4). Read from metadata.label.* JSONB.
+      // For nested string fields use the ->> text-extract operator.
+      // For nested arrays use the @> contains operator (PostgREST `cs`)
+      // and OR multiple values for "any of" semantics.
+      if (filters.screenState) {
+        query = query.eq(
+          'metadata->label->identity->>screen_state',
+          filters.screenState,
+        );
+      }
+      if (filters.pageType.length > 0) {
+        const ors = filters.pageType
+          .map((value) => `metadata->label->identity->page_types.cs.["${value.replace(/"/g, '\\"')}"]`)
+          .join(',');
+        query = query.or(ors);
+      }
+      if (filters.uiElement.length > 0) {
+        const ors = filters.uiElement
+          .map((value) => `metadata->label->screen_analysis->ui_elements.cs.["${value.replace(/"/g, '\\"')}"]`)
+          .join(',');
+        query = query.or(ors);
+      }
+      if (filters.uxPattern.length > 0) {
+        const ors = filters.uxPattern
+          .map((value) => `metadata->label->screen_analysis->ux_patterns.cs.["${value.replace(/"/g, '\\"')}"]`)
+          .join(',');
+        query = query.or(ors);
+      }
+
       const trimmedSearch = searchQuery.trim();
       if (trimmedSearch) {
         // Escape commas and percent signs which have special meaning in Supabase or-clauses
         const safe = trimmedSearch.replace(/[,%]/g, ' ');
-        query = query.or(`name.ilike.%${safe}%,file_name.ilike.%${safe}%,group.ilike.%${safe}%`);
+        query = query.or(
+          `name.ilike.%${safe}%,` +
+          `file_name.ilike.%${safe}%,` +
+          `group.ilike.%${safe}%,` +
+          `metadata->label->identity->>title.ilike.%${safe}%,` +
+          `metadata->label->identity->>one_line_summary.ilike.%${safe}%`,
+        );
       }
 
       query = query

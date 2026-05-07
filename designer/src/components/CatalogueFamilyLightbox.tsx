@@ -19,6 +19,7 @@ import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions
 import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { LabelEditor } from './labeling/LabelEditor';
 import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib/feature-flags';
 import { ConfirmModal } from './ConfirmModal';
 interface CatalogueFamilyLightboxProps {
@@ -32,6 +33,8 @@ interface CatalogueFamilyLightboxProps {
   isOpen: boolean;
   isLoadingNext?: boolean;
   onRequireAuth?: () => void;
+  showLabelTab?: boolean;
+  onLabelPersisted?: (screenshotId: string, label: import('../lib/labeling/types').ScreenshotLabel) => void;
   startInlineEdit?: boolean;
   userEmail: string;
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
@@ -59,7 +62,7 @@ interface CatalogueFamilyLightboxProps {
   onToggleBookmark?: (screenshotId: string) => void;
 }
 type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string };
-type LightboxPanel = 'comments' | 'annotations';
+type LightboxPanel = 'label' | 'comments' | 'annotations';
 type AnnotationDraft = { shape: 'pin' | 'area'; x: number; y: number; width: number; height: number };
 type DrawingState = { startX: number; startY: number; currentX: number; currentY: number };
 
@@ -103,6 +106,8 @@ export function CatalogueFamilyLightbox({
   isOpen,
   isLoadingNext = false,
   onRequireAuth,
+  showLabelTab = false,
+  onLabelPersisted,
   startInlineEdit = false,
   userEmail,
   onActiveVariantChange,
@@ -126,7 +131,7 @@ export function CatalogueFamilyLightbox({
   const fileRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const annotationInputRef = useRef<HTMLInputElement>(null);
-  const [lightboxPanel, setLightboxPanel] = useState<LightboxPanel>('comments');
+  const [lightboxPanel, setLightboxPanel] = useState<LightboxPanel>(showLabelTab ? 'label' : 'comments');
   const [sheetMinimized, setSheetMinimized] = useState(shouldStartLightboxSheetMinimized);
   const [isInlineEditing, setIsInlineEditing] = useState(startInlineEdit && canEdit);
   const [isSavingInline, setIsSavingInline] = useState(false);
@@ -154,7 +159,7 @@ export function CatalogueFamilyLightbox({
 
   useEffect(() => {
     if (!isOpen || !screenshot) return;
-    setLightboxPanel('comments');
+    setLightboxPanel(showLabelTab ? 'label' : 'comments');
     setSheetMinimized(shouldStartLightboxSheetMinimized());
     setComments([]);
     setNewComment('');
@@ -719,6 +724,7 @@ export function CatalogueFamilyLightbox({
                 annotationsCount={annotations.length}
                 canCrop={Boolean(canEdit && imageSize && !cropMode)}
                 commentsCount={comments.length}
+                hideCatalogueActions={showLabelTab}
                 isBookmarked={Boolean(screenshot && bookmarkedIds?.has(screenshot.id))}
                 onToggleBookmark={onToggleBookmark && screenshot ? () => onToggleBookmark(screenshot.id) : undefined}
                 existingGroups={existingGroups}
@@ -762,26 +768,47 @@ export function CatalogueFamilyLightbox({
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
             <div className="catalogue-family-lightbox__panel">
               <div className="catalogue-lightbox-panel-tabs" role="tablist" aria-label="Lightbox details">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={lightboxPanel === 'comments'}
-                  className={`catalogue-lightbox-tab ${lightboxPanel === 'comments' ? 'is-active' : ''}`}
-                  onClick={() => setLightboxPanel('comments')}
-                >
-                  Comments ({comments.length})
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={lightboxPanel === 'annotations'}
-                  className={`catalogue-lightbox-tab ${lightboxPanel === 'annotations' ? 'is-active' : ''}`}
-                  onClick={() => setLightboxPanel('annotations')}
-                >
-                  Annotations ({annotations.length})
-                </button>
+                {showLabelTab ? (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={lightboxPanel === 'label'}
+                    className={`catalogue-lightbox-tab ${lightboxPanel === 'label' ? 'is-active' : ''}`}
+                    onClick={() => setLightboxPanel('label')}
+                  >
+                    Label
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={lightboxPanel === 'comments'}
+                      className={`catalogue-lightbox-tab ${lightboxPanel === 'comments' ? 'is-active' : ''}`}
+                      onClick={() => setLightboxPanel('comments')}
+                    >
+                      Comments ({comments.length})
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={lightboxPanel === 'annotations'}
+                      className={`catalogue-lightbox-tab ${lightboxPanel === 'annotations' ? 'is-active' : ''}`}
+                      onClick={() => setLightboxPanel('annotations')}
+                    >
+                      Annotations ({annotations.length})
+                    </button>
+                  </>
+                )}
               </div>
-              {lightboxPanel === 'comments' ? (
+              {lightboxPanel === 'label' && screenshot ? (
+                <LabelEditor
+                  key={screenshot.id}
+                  screenshot={screenshot}
+                  userEmail={userEmail}
+                  onLabelPersisted={onLabelPersisted}
+                />
+              ) : lightboxPanel === 'comments' ? (
                 <>
                   <div className="catalogue-lightbox-comments-list">
                     {loadingComments ? (

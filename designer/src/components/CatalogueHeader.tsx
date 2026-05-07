@@ -2,16 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
 
 import agentuxLogo from '../assets/agentux-logo.svg';
+import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
+import { useViewportWidth } from '../hooks/use-viewport-width';
 
 type CatalogueSection =
   | 'catalogue'
   | 'videos'
   | 'links'
-  | 'team';
+  | 'team'
+  | 'studio';
 
 interface CatalogueHeaderProps {
   activeSection: CatalogueSection;
-  canViewTeam: boolean;
+  canAdmin: boolean;
   onOpenSettings: () => void;
   onSectionChange: (section: CatalogueSection) => void;
   bookmarkEmail?: string | null;
@@ -20,7 +23,7 @@ interface CatalogueHeaderProps {
 
 export function CatalogueHeader({
   activeSection,
-  canViewTeam,
+  canAdmin,
   onOpenSettings,
   onSectionChange,
   bookmarkEmail,
@@ -29,6 +32,9 @@ export function CatalogueHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const viewportWidth = useViewportWidth();
+  const showStudioEntry =
+    canAdmin && LABELING_STUDIO_ENABLED && viewportWidth >= LABELING_STUDIO_MIN_VIEWPORT_PX;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -125,7 +131,7 @@ export function CatalogueHeader({
             Settings
           </button>
 
-          {canViewTeam && (
+          {canAdmin && (
             <button
               type="button"
               className={`catalogue-header-menu__item ${activeSection === 'team' ? 'is-active' : ''}`}
@@ -133,6 +139,17 @@ export function CatalogueHeader({
               onClick={() => openSection('team')}
             >
               Team
+            </button>
+          )}
+
+          {showStudioEntry && (
+            <button
+              type="button"
+              className={`catalogue-header-menu__item ${activeSection === 'studio' ? 'is-active' : ''}`}
+              role="menuitem"
+              onClick={() => openSection('studio')}
+            >
+              Labelling Studio
             </button>
           )}
 

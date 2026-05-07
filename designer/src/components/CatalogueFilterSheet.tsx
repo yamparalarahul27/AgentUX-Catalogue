@@ -9,12 +9,21 @@ interface CatalogueFilterSheetProps {
   allMobileOs: { id: string; label: string }[];
   allWebPresets: { id: string; label: string }[];
   annotationLabels?: string[];
+  // Label-derived chip pools (Phase 4). Empty arrays hide the section.
+  allPageTypes?: string[];
+  allUiElements?: string[];
+  allUxPatterns?: string[];
+  allScreenStates?: string[];
   filterAnnotation?: string[];
   filterFlow: string[];
   filterGroup: string[];
   filterMobileOs: string | null;
+  filterPageType?: string[];
   filterPlatform: string | null;
+  filterScreenState?: string | null;
   filterTheme: string | null;
+  filterUiElement?: string[];
+  filterUxPattern?: string[];
   filterWebPreset: string | null;
   groups: string[];
   isOpen: boolean;
@@ -23,8 +32,12 @@ interface CatalogueFilterSheetProps {
     flow: string[];
     group: string[];
     mobileOs: string | null;
+    pageType: string[];
     platform: string | null;
+    screenState: string | null;
     theme: string | null;
+    uiElement: string[];
+    uxPattern: string[];
     viewBy: CatalogueViewBy;
     webPreset: string | null;
   }) => void;
@@ -37,12 +50,20 @@ export function CatalogueFilterSheet({
   allMobileOs,
   allWebPresets,
   annotationLabels = [],
+  allPageTypes = [],
+  allUiElements = [],
+  allUxPatterns = [],
+  allScreenStates = [],
   filterAnnotation = [],
   filterFlow,
   filterGroup,
   filterMobileOs,
+  filterPageType = [],
   filterPlatform,
+  filterScreenState = null,
   filterTheme,
+  filterUiElement = [],
+  filterUxPattern = [],
   filterWebPreset,
   groups,
   isOpen,
@@ -57,6 +78,10 @@ export function CatalogueFilterSheet({
   const [draftTheme, setDraftTheme] = useState<string | null>(filterTheme);
   const [draftWebPreset, setDraftWebPreset] = useState<string | null>(filterWebPreset);
   const [draftMobileOs, setDraftMobileOs] = useState<string | null>(filterMobileOs);
+  const [draftPageType, setDraftPageType] = useState<string[]>(filterPageType);
+  const [draftUiElement, setDraftUiElement] = useState<string[]>(filterUiElement);
+  const [draftUxPattern, setDraftUxPattern] = useState<string[]>(filterUxPattern);
+  const [draftScreenState, setDraftScreenState] = useState<string | null>(filterScreenState);
   const [draftViewBy, setDraftViewBy] = useState<CatalogueViewBy>(viewBy);
 
   useEffect(() => {
@@ -68,8 +93,12 @@ export function CatalogueFilterSheet({
     setDraftTheme(filterTheme);
     setDraftWebPreset(filterWebPreset);
     setDraftMobileOs(filterMobileOs);
+    setDraftPageType(filterPageType);
+    setDraftUiElement(filterUiElement);
+    setDraftUxPattern(filterUxPattern);
+    setDraftScreenState(filterScreenState);
     setDraftViewBy(viewBy);
-  }, [isOpen, filterGroup, filterFlow, filterAnnotation, filterPlatform, filterTheme, filterWebPreset, filterMobileOs, viewBy]);
+  }, [isOpen, filterGroup, filterFlow, filterAnnotation, filterPlatform, filterTheme, filterWebPreset, filterMobileOs, filterPageType, filterUiElement, filterUxPattern, filterScreenState, viewBy]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -97,6 +126,10 @@ export function CatalogueFilterSheet({
     setDraftTheme(null);
     setDraftWebPreset(null);
     setDraftMobileOs(null);
+    setDraftPageType([]);
+    setDraftUiElement([]);
+    setDraftUxPattern([]);
+    setDraftScreenState(null);
     setDraftViewBy('all');
   }
 
@@ -113,6 +146,10 @@ export function CatalogueFilterSheet({
       theme: draftTheme,
       webPreset: draftWebPreset,
       mobileOs: draftMobileOs,
+      pageType: draftPageType,
+      uiElement: draftUiElement,
+      uxPattern: draftUxPattern,
+      screenState: draftScreenState,
       viewBy: draftViewBy,
     });
     onClose();
@@ -293,9 +330,81 @@ export function CatalogueFilterSheet({
             </div>
           </div>
 
+          {allPageTypes.length > 0 && (
+            <div className="catalogue-filter-sheet__section">
+              <span className="catalogue-filter-sheet__section-label">Page type</span>
+              <div className="catalogue-filter-sheet__chips">
+                {allPageTypes.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`catalogue-filter-chip ${draftPageType.includes(value) ? 'is-active' : ''}`}
+                    onClick={() => toggleListValue(draftPageType, value, setDraftPageType)}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {allUiElements.length > 0 && (
+            <div className="catalogue-filter-sheet__section">
+              <span className="catalogue-filter-sheet__section-label">UI element</span>
+              <div className="catalogue-filter-sheet__chips">
+                {allUiElements.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`catalogue-filter-chip ${draftUiElement.includes(value) ? 'is-active' : ''}`}
+                    onClick={() => toggleListValue(draftUiElement, value, setDraftUiElement)}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {allUxPatterns.length > 0 && (
+            <div className="catalogue-filter-sheet__section">
+              <span className="catalogue-filter-sheet__section-label">UX pattern</span>
+              <div className="catalogue-filter-sheet__chips">
+                {allUxPatterns.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`catalogue-filter-chip ${draftUxPattern.includes(value) ? 'is-active' : ''}`}
+                    onClick={() => toggleListValue(draftUxPattern, value, setDraftUxPattern)}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {allScreenStates.length > 0 && (
+            <div className="catalogue-filter-sheet__section">
+              <span className="catalogue-filter-sheet__section-label">Screen state</span>
+              <div className="catalogue-filter-sheet__chips">
+                {allScreenStates.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`catalogue-filter-chip ${draftScreenState === value ? 'is-active' : ''}`}
+                    onClick={() => toggleChip(draftScreenState, value, setDraftScreenState)}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {annotationLabels.length > 0 && (
             <div className="catalogue-filter-sheet__section">
-              <span className="catalogue-filter-sheet__section-label">Annotation</span>
+              <span className="catalogue-filter-sheet__section-label">Annotation note</span>
               <div className="catalogue-filter-sheet__chips">
                 {annotationLabels.map((label) => (
                   <button

@@ -29,3 +29,12 @@ export const TEAM_UPLOAD_ANALYTICS_ENABLED = false;
 // rendering in gallery view). Off by default. Database fields and stored
 // data are untouched — flipping back to true reveals the existing rows.
 export const REFERENCE_IMAGES_ENABLED = false;
+
+// Labeling Studio: admin-only manual labelling surface backing
+// metadata.label.*. Gated additionally by canAdmin email check + the
+// label_vocab Supabase migration (without the migration, typeahead is empty).
+export const LABELING_STUDIO_ENABLED = true;
+
+// Studio is desktop-only. Below this width: nav entry hidden;
+// in-Studio resize-down swaps content for a placeholder.
+export const LABELING_STUDIO_MIN_VIEWPORT_PX = 1024;

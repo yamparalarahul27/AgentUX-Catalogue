@@ -170,6 +170,46 @@ Already built in `CatalogueVideosSection.tsx`:
 
 ---
 
+## 1b. Labelling Studio — SHIPPED
+
+Admin-facing surface that turns each screenshot from "an image" into
+structured design metadata. Lives at a new `'studio'` `CatalogueSection`,
+gated by `canAdmin` (email check) + viewport ≥ 1024 px +
+`LABELING_STUDIO_ENABLED` feature flag. Single source of truth doc:
+[`docs/labeling-studio.md`](labeling-studio.md).
+
+What's there:
+- **Studio grid** mirrors the catalogue grid (paginated 50/page +
+  scroll-load) with cards that carry a label-status badge and a
+  database-aggregated totals strip ("N screenshots · M verified ·
+  K unlabelled"). Status filter chips show DB totals across the whole
+  catalogue (not just the loaded set).
+- **Editor** lives inside the catalogue lightbox as a `Label` tab. In
+  studio context, Comments + Annotations tabs are hidden; the action
+  toolbar is reduced to Edit (pencil) only. Six collapsible sections
+  (Identity / Journey / Screen analysis / Visual design / Design
+  reference / Review). Autosave with 800 ms debounce. Verify is
+  explicit and gated by 10 strict required-field rules.
+- **Auto-fill** on first open: pulls `identity.platform` /
+  `identity.device_type` / `visual_design.theme` /
+  `journey.flow_name` from existing screenshot metadata.
+- **Paste JSON** modal: lenient parser with live preview. Unknown keys
+  ignored, type-mismatched fields skipped, `verified` silently
+  downgraded to `draft` so paste cannot bypass human verification.
+- **Public catalogue benefit**: filter chip pools (Page type / UI
+  element / UX pattern / Screen state) and search across `title` +
+  `one_line_summary` are populated from labelled screenshots.
+
+Storage: existing `screenshots.metadata` JSONB column with a `label`
+key — no new tables for label data. One new table `label_vocab` for
+controlled vocabulary (~140 seeded values across 8 kinds).
+
+Deferred (not done in this PR): mirror columns for hot label paths,
+vocab admin UI, batch-import script, MCP retrieval surface, AI
+vision pre-fill. See `docs/labeling-studio.md` §6 for triggers.
+
+---
+
 ## 2. Quick Upload Enhancement
 
 ### Problem

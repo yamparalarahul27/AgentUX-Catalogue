@@ -17,12 +17,21 @@ interface CatalogueToolbarProps {
   allMobileOs: { id: string; label: string }[];
   allWebPresets: { id: string; label: string }[];
   annotationLabels: string[];
+  // Label-derived chip pools (Phase 4). Empty arrays hide the chip section.
+  allPageTypes?: string[];
+  allUiElements?: string[];
+  allUxPatterns?: string[];
+  allScreenStates?: string[];
   filterAnnotation: string[];
   filterFlow: string[];
   filterGroup: string[];
   filterMobileOs: string | null;
+  filterPageType?: string[];
   filterPlatform: string | null;
+  filterScreenState?: string | null;
   filterTheme: string | null;
+  filterUiElement?: string[];
+  filterUxPattern?: string[];
   filterWebPreset: string | null;
   gridDensity: GridDensity;
   groups: string[];
@@ -41,8 +50,12 @@ interface CatalogueToolbarProps {
   onFilterFlowChange: (value: string[]) => void;
   onGridDensityChange: (value: GridDensity) => void;
   onFilterMobileOsChange: (value: string | null) => void;
+  onFilterPageTypeChange?: (value: string[]) => void;
   onFilterPlatformChange: (value: string | null) => void;
+  onFilterScreenStateChange?: (value: string | null) => void;
   onFilterThemeChange: (value: string | null) => void;
+  onFilterUiElementChange?: (value: string[]) => void;
+  onFilterUxPatternChange?: (value: string[]) => void;
   onFilterWebPresetChange: (value: string | null) => void;
   onQuickUploadAll?: () => void;
   onQuickUploadClick: () => void;
@@ -113,12 +126,20 @@ export function CatalogueToolbar({
   allMobileOs,
   allWebPresets,
   annotationLabels,
+  allPageTypes = [],
+  allUiElements = [],
+  allUxPatterns = [],
+  allScreenStates = [],
   filterAnnotation,
   filterFlow,
   filterGroup,
   filterMobileOs,
+  filterPageType = [],
   filterPlatform,
+  filterScreenState = null,
   filterTheme,
+  filterUiElement = [],
+  filterUxPattern = [],
   filterWebPreset,
   gridDensity,
   groups,
@@ -128,8 +149,12 @@ export function CatalogueToolbar({
   onFilterFlowChange,
   onGridDensityChange,
   onFilterMobileOsChange,
+  onFilterPageTypeChange,
   onFilterPlatformChange,
+  onFilterScreenStateChange,
   onFilterThemeChange,
+  onFilterUiElementChange,
+  onFilterUxPatternChange,
   onFilterWebPresetChange,
   onQuickUploadClick,
   onSearchChange,
@@ -269,8 +294,12 @@ export function CatalogueToolbar({
     flow: string[];
     group: string[];
     mobileOs: string | null;
+    pageType: string[];
     platform: string | null;
+    screenState: string | null;
     theme: string | null;
+    uiElement: string[];
+    uxPattern: string[];
     viewBy: CatalogueViewBy;
     webPreset: string | null;
   }) {
@@ -281,6 +310,10 @@ export function CatalogueToolbar({
     onFilterThemeChange(filters.theme);
     onFilterWebPresetChange(filters.webPreset);
     onFilterMobileOsChange(filters.mobileOs);
+    onFilterPageTypeChange?.(filters.pageType);
+    onFilterUiElementChange?.(filters.uiElement);
+    onFilterUxPatternChange?.(filters.uxPattern);
+    onFilterScreenStateChange?.(filters.screenState);
     onViewByChange(filters.viewBy);
   }
 
@@ -557,12 +590,20 @@ export function CatalogueToolbar({
         filterTheme={filterTheme}
         filterWebPreset={filterWebPreset}
         filterMobileOs={filterMobileOs}
+        filterPageType={filterPageType}
+        filterUiElement={filterUiElement}
+        filterUxPattern={filterUxPattern}
+        filterScreenState={filterScreenState}
         viewBy={viewBy}
         groups={groups}
         allFlows={allFlows}
         allWebPresets={allWebPresets}
         allMobileOs={allMobileOs}
         annotationLabels={annotationLabels}
+        allPageTypes={allPageTypes}
+        allUiElements={allUiElements}
+        allUxPatterns={allUxPatterns}
+        allScreenStates={allScreenStates}
         onApply={handleApplyFilters}
       />
 

@@ -22,6 +22,7 @@ interface CatalogueFamilyLightboxActionsProps {
   webPresetDraft: string | null;
   webPresets: WebPreset[];
   canCrop: boolean;
+  hideCatalogueActions?: boolean;
   isBookmarked?: boolean;
   onToggleBookmark?: () => void;
   onDelete: () => void;
@@ -60,6 +61,7 @@ export function CatalogueFamilyLightboxActions({
   webPresetDraft,
   webPresets,
   canCrop,
+  hideCatalogueActions = false,
   isBookmarked,
   onToggleBookmark,
   onDelete,
@@ -90,10 +92,12 @@ export function CatalogueFamilyLightboxActions({
             <RefreshCw size={15} />
           </button>
         )}
-        <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenCrop} disabled={!canCrop} title="Crop">
-          <Crop size={15} />
-        </button>
-        {onToggleBookmark && (
+        {!hideCatalogueActions && (
+          <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenCrop} disabled={!canCrop} title="Crop">
+            <Crop size={15} />
+          </button>
+        )}
+        {!hideCatalogueActions && onToggleBookmark && (
           <button
             type="button"
             className={`catalogue-lightbox-icon-btn ${isBookmarked ? 'is-bookmarked' : ''}`}
@@ -105,17 +109,21 @@ export function CatalogueFamilyLightboxActions({
           </button>
         )}
         <span className="catalogue-lightbox-icon-bar__spacer" />
-        <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenComments} title={`Comments (${commentsCount})`}>
-          <MessageCircle size={15} />
-          {commentsCount > 0 && <span className="catalogue-lightbox-icon-badge">{commentsCount}</span>}
-        </button>
-        <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenAnnotations} title={`Annotations (${annotationsCount})`}>
-          <MapPin size={15} />
-          {annotationsCount > 0 && <span className="catalogue-lightbox-icon-badge">{annotationsCount}</span>}
-        </button>
-        <button type="button" className="catalogue-lightbox-icon-btn is-danger" onClick={onDelete} title="Delete">
-          <Trash2 size={15} />
-        </button>
+        {!hideCatalogueActions && (
+          <>
+            <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenComments} title={`Comments (${commentsCount})`}>
+              <MessageCircle size={15} />
+              {commentsCount > 0 && <span className="catalogue-lightbox-icon-badge">{commentsCount}</span>}
+            </button>
+            <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenAnnotations} title={`Annotations (${annotationsCount})`}>
+              <MapPin size={15} />
+              {annotationsCount > 0 && <span className="catalogue-lightbox-icon-badge">{annotationsCount}</span>}
+            </button>
+            <button type="button" className="catalogue-lightbox-icon-btn is-danger" onClick={onDelete} title="Delete">
+              <Trash2 size={15} />
+            </button>
+          </>
+        )}
       </div>
       {isInlineEditing && (
         <CatalogueFamilyLightboxInlineEditor

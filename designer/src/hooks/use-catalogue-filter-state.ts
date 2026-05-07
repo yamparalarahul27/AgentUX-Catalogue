@@ -25,6 +25,10 @@ export function useCatalogueFilterState() {
   const [filterWebPreset, setFilterWebPreset] = useState<string | null>(null);
   const [filterMobileOs, setFilterMobileOs] = useState<string | null>(null);
   const [filterAnnotation, setFilterAnnotation] = useState<string[]>([]);
+  const [filterPageType, setFilterPageType] = useState<string[]>([]);
+  const [filterUiElement, setFilterUiElement] = useState<string[]>([]);
+  const [filterUxPattern, setFilterUxPattern] = useState<string[]>([]);
+  const [filterScreenState, setFilterScreenState] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<CatalogueSortOption>(DEFAULT_CATALOGUE_SORT);
   const [viewBy, setViewBy] = useState<CatalogueViewBy>(DEFAULT_CATALOGUE_VIEW_BY);
 
@@ -49,7 +53,23 @@ export function useCatalogueFilterState() {
     webPreset: filterWebPreset,
     mobileOs: filterMobileOs as 'ios' | 'android' | null,
     annotation: filterAnnotation,
-  }), [filterAnnotation, filterFlow, filterGroup, filterMobileOs, filterPlatform, filterTheme, filterWebPreset]);
+    pageType: filterPageType,
+    uiElement: filterUiElement,
+    uxPattern: filterUxPattern,
+    screenState: filterScreenState,
+  }), [
+    filterAnnotation,
+    filterFlow,
+    filterGroup,
+    filterMobileOs,
+    filterPageType,
+    filterPlatform,
+    filterScreenState,
+    filterTheme,
+    filterUiElement,
+    filterUxPattern,
+    filterWebPreset,
+  ]);
 
   return {
     filters,
@@ -57,8 +77,12 @@ export function useCatalogueFilterState() {
     filterFlow,
     filterGroup,
     filterMobileOs,
+    filterPageType,
     filterPlatform,
+    filterScreenState,
     filterTheme,
+    filterUiElement,
+    filterUxPattern,
     filterWebPreset,
     searchQuery,
     searchQueryDebounced,
@@ -66,8 +90,12 @@ export function useCatalogueFilterState() {
     setFilterFlow,
     setFilterGroup,
     setFilterMobileOs,
+    setFilterPageType,
     setFilterPlatform,
+    setFilterScreenState,
     setFilterTheme,
+    setFilterUiElement,
+    setFilterUxPattern,
     setFilterWebPreset,
     setSearchQuery,
     setSortBy,

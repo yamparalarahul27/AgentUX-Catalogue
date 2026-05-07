@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
 import { useBookmarks } from '../hooks/use-bookmarks';
@@ -27,6 +27,7 @@ import {
 import {
   CATALOGUE_CHIP_RECENCY_HOURS,
   CATALOGUE_CHIP_STRIP_ENABLED,
+  LABELING_STUDIO_ENABLED,
 } from '../lib/feature-flags';
 import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
 import type { GridDensity } from '../lib/catalogue-helpers';
@@ -44,6 +45,10 @@ import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueScrollToTop } from './CatalogueScrollToTop';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
+import { CatalogueLabelingStudio } from './labeling/CatalogueLabelingStudio';
+import { useLabelingStudioTotals } from '../hooks/use-labeling-studio-totals';
+import type { ScreenshotLabel } from '../lib/labeling/types';
+import { deriveLabelFilterValues } from '../lib/labeling/derive-filter-values';
 import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
@@ -61,7 +66,8 @@ type CatalogueSection =
   | 'catalogue'
   | 'videos'
   | 'links'
-  | 'team';
+  | 'team'
+  | 'studio';
 export function Catalogue({
   user,
   isGuest = false,
@@ -75,8 +81,12 @@ export function Catalogue({
     filterFlow,
     filterGroup,
     filterMobileOs,
+    filterPageType,
     filterPlatform,
+    filterScreenState,
     filterTheme,
+    filterUiElement,
+    filterUxPattern,
     filterWebPreset,
     searchQuery,
     searchQueryDebounced,
@@ -84,8 +94,12 @@ export function Catalogue({
     setFilterFlow,
     setFilterGroup,
     setFilterMobileOs,
+    setFilterPageType,
     setFilterPlatform,
+    setFilterScreenState,
     setFilterTheme,
+    setFilterUiElement,
+    setFilterUxPattern,
     setFilterWebPreset,
     setSearchQuery,
     setSortBy,
@@ -184,6 +198,13 @@ export function Catalogue({
 
   const groupStats = useMemo(
     () => (CATALOGUE_CHIP_STRIP_ENABLED ? deriveGroupStats(fullScopeScreenshots) : []),
+    [fullScopeScreenshots],
+  );
+
+  // Label-derived filter chip pools (Phase 4). Only labels in active use show
+  // up — keeps the public catalogue UI clean while vocab is being filled in.
+  const labelFilterValues = useMemo(
+    () => deriveLabelFilterValues(fullScopeScreenshots),
     [fullScopeScreenshots],
   );
 
@@ -293,7 +314,7 @@ export function Catalogue({
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
   const [gridDensity, setGridDensity] = useState<GridDensity>(defaultGridDensity);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const canViewTeamSection = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
+  const canAdmin = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
@@ -303,6 +324,32 @@ export function Catalogue({
     () => Object.fromEntries(allFamilies.map((family) => [family.id, family])),
     [allFamilies],
   );
+  const screenshotIdToFamilyId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const family of allFamilies) {
+      for (const variant of family.variants) {
+        map.set(variant.id, family.id);
+      }
+    }
+    return map;
+  }, [allFamilies]);
+  const [studioLabelOverrides, setStudioLabelOverrides] = useState<Map<string, ScreenshotLabel>>(new Map());
+  const studioProjectIds = useMemo(() => projects.map((project) => project.id), [projects]);
+  const studioTotals = useLabelingStudioTotals(studioProjectIds);
+  const handleStudioLabelPersisted = useCallback((screenshotId: string, label: ScreenshotLabel) => {
+    setStudioLabelOverrides((previous) => {
+      const next = new Map(previous);
+      next.set(screenshotId, label);
+      return next;
+    });
+    studioTotals.refetch();
+  }, [studioTotals]);
+  const handleStudioCardClick = useCallback((screenshotId: string) => {
+    const familyId = screenshotIdToFamilyId.get(screenshotId);
+    if (familyId) {
+      setPreviewFamilyId(familyId);
+    }
+  }, [screenshotIdToFamilyId]);
   const presetUsage = useMemo(() => buildPresetUsage(scopedScreenshots), [scopedScreenshots]);
   const selectedVisibleCount = useMemo(
     () => filteredFamilies.filter((family) => selected.has(family.id)).length,
@@ -409,10 +456,10 @@ export function Catalogue({
     }
   }, [familyById, previewFamilyId]);
   useEffect(() => {
-    if (!canViewTeamSection && activeSection === 'team') {
+    if (!canAdmin && (activeSection === 'team' || activeSection === 'studio')) {
       setActiveSection('catalogue');
     }
-  }, [activeSection, canViewTeamSection]);
+  }, [activeSection, canAdmin]);
 
   useEffect(() => {
     if (!isAnyModalOpen) return;
@@ -546,10 +593,10 @@ export function Catalogue({
     });
   }
   return (
-    <div className={`catalogue-page ${canViewTeamSection ? 'catalogue-page--team-enabled' : ''}`}>
+    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
-        canViewTeam={canViewTeamSection}
+        canAdmin={canAdmin}
         onOpenSettings={() => setShowSettings(true)}
         onSectionChange={setActiveSection}
         bookmarkEmail={bookmarks.email}
@@ -558,13 +605,29 @@ export function Catalogue({
           setBookmarkFilterOn(false);
         }}
       />
-      {activeSection === 'team' && canViewTeamSection ? (
+      {activeSection === 'team' && canAdmin ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueTeamSection
               projects={projects}
               screenshots={fullScopeScreenshots}
               onRenameGroupKey={handleRenameGroupKey}
+            />
+          </div>
+        </main>
+      ) : activeSection === 'studio' && canAdmin && LABELING_STUDIO_ENABLED ? (
+        <main className="catalogue-main">
+          <div className="catalogue-shell catalogue-shell--team">
+            <CatalogueLabelingStudio
+              screenshots={screenshots}
+              hasMore={hasMore}
+              loadMore={loadMore}
+              loadingMore={loadingMore}
+              overrides={studioLabelOverrides}
+              selectedScreenshotId={previewFamilyId}
+              onCardClick={handleStudioCardClick}
+              totals={studioTotals.totals}
+              totalsLoading={studioTotals.loading}
             />
           </div>
         </main>
@@ -621,12 +684,20 @@ export function Catalogue({
                 allMobileOs={allMobileOs}
                 allWebPresets={allWebPresets}
                 annotationLabels={annotationLabels}
+                allPageTypes={labelFilterValues.pageTypes}
+                allUiElements={labelFilterValues.uiElements}
+                allUxPatterns={labelFilterValues.uxPatterns}
+                allScreenStates={labelFilterValues.screenStates}
                 filterAnnotation={filterAnnotation}
                 filterFlow={filterFlow}
                 filterGroup={filterGroup}
                 filterMobileOs={filterMobileOs}
+                filterPageType={filterPageType}
                 filterPlatform={filterPlatform}
+                filterScreenState={filterScreenState}
                 filterTheme={filterTheme}
+                filterUiElement={filterUiElement}
+                filterUxPattern={filterUxPattern}
                 filterWebPreset={filterWebPreset}
                 gridDensity={gridDensity}
                 groups={allGroups}
@@ -635,8 +706,12 @@ export function Catalogue({
                 onFilterFlowChange={setFilterFlow}
                 onFilterGroupChange={setFilterGroup}
                 onFilterMobileOsChange={setFilterMobileOs}
+                onFilterPageTypeChange={setFilterPageType}
                 onFilterPlatformChange={setFilterPlatform}
+                onFilterScreenStateChange={setFilterScreenState}
                 onFilterThemeChange={setFilterTheme}
+                onFilterUiElementChange={setFilterUiElement}
+                onFilterUxPatternChange={setFilterUxPattern}
                 onFilterWebPresetChange={setFilterWebPreset}
                 onGridDensityChange={setGridDensity}
                 onQuickUploadClick={() => {
@@ -835,10 +910,12 @@ export function Catalogue({
           existingGroups={allGroups}
           family={previewFamily}
           flowName={previewFamily.flow_label}
-          isAdmin={canViewTeamSection}
+          isAdmin={canAdmin}
           isOpen
           isLoadingNext={pendingPreviewNext}
           onRequireAuth={() => setShowAuthPrompt(true)}
+          showLabelTab={activeSection === 'studio'}
+          onLabelPersisted={activeSection === 'studio' ? handleStudioLabelPersisted : undefined}
           startInlineEdit={previewStartInlineEdit}
           webPresets={webPresets}
           userEmail={user.email || ''}
