@@ -390,7 +390,153 @@ Two open questions from that doc that survive into the AI re-introduction:
   [`security-rls-public-release.md`](security-rls-public-release.md) —
   the auth/RLS gate that the studio inherits.
 
-## 10. Changelog
+## 10. Testing locally
+
+The studio ships behind a flag and depends on one DB migration. Follow
+these in order — without the migration the editor crashes on vocab
+fetch.
+
+### 10.1 Prerequisites
+
+- Repo cloned locally with `node_modules` installed (`npm install` in
+  `designer/`).
+- `designer/.env` populated with `VITE_SUPABASE_URL` and
+  `VITE_SUPABASE_ANON_KEY` for the catalogue's Supabase project.
+- Admin email recognised by the existing gate:
+  `rahul@equicomtech.com` (set in `Catalogue.tsx:296` —
+  `canAdmin = email === 'rahul@equicomtech.com'`).
+
+### 10.2 Apply the vocab migration
+
+The studio reads from `public.label_vocab`. Without the table the
+typeahead returns nothing and validation can't lock `verified`.
+
+```bash
+# Easiest: paste the file into Supabase SQL editor and Run.
+# Or via psql:
+psql "$DATABASE_URL" -f supabase/migrations/20260506_create_label_vocab.sql
+
+# Verify (should print 8):
+psql "$DATABASE_URL" -c "select count(distinct kind) from label_vocab;"
+```
+
+### 10.3 Flip the feature flag
+
+In `designer/src/lib/feature-flags.ts:30`:
+
+```ts
+export const LABELING_STUDIO_ENABLED = true;   // was false
+```
+
+`LABELING_STUDIO_MIN_VIEWPORT_PX = 1024` stays as-is.
+
+Restart the dev server (`npm run dev` in `designer/`).
+
+### 10.4 Smoke test (admin path)
+
+1. Sign in to the catalogue as `rahul@equicomtech.com`.
+2. Open the hamburger menu (top right) — *Labelling Studio* should
+   appear under *Team*. (If not: confirm viewport ≥1024 px and the flag
+   is on; reload.)
+3. Click *Labelling Studio* — the grid renders with all screenshots
+   shown as **Unlabelled** (no `metadata.label` exists yet anywhere).
+4. Click any card — editor pane slides in from the right (~480 px).
+5. **Identity** is open by default. Fill the 6 required fields there:
+   - *Title* — e.g. "Hedge Mode vs One-Way Mode Selection"
+   - *One-line summary* — one sentence
+   - *Platform* — type/pick from typeahead. Try typing `web` → should
+     auto-suggest `web`. Then test synonym resolution: clear and type
+     a synonym from the vocab (e.g. for `ui_element`, type `snackbar`
+     → blur → resolves to canonical `Toast`).
+   - *Device type*, *Page types* (≥1), *Screen state*.
+6. Open **Screen analysis** — pick at least one *UI element* and one
+   *UX pattern* (both required).
+7. Open **Design reference** — add at least one *Good for* chip and
+   ≥3 *Similar reference queries* (Enter to add each).
+8. Header should show `10/10 required` and `Verify` button is enabled.
+   Click `Verify`. Status pill flips from *Draft* → *Verified*.
+9. Reload page → reopen the same screenshot → all values persist.
+10. Card in the grid now shows green *Verified* badge.
+
+### 10.5 Smoke test (public catalogue path)
+
+1. Sign out, or sign in with any non-admin email.
+2. Browse Catalogue normally — no Studio entry, normal experience.
+3. Open *Filters* in the toolbar. New chip sections appear:
+   - **Page type**, **UI element**, **UX pattern**, **Screen state**.
+   - Sections render only if values exist on at least one labelled
+     screenshot.
+4. Click a chip — grid filters to matching screenshots.
+5. Search box: type a substring of the *title* or *one-line summary* of
+   any verified screenshot — it should match.
+
+### 10.6 Keyboard nav (admin path)
+
+In the editor pane, **with no input focused**:
+
+- `J` / `K` — next / previous screenshot in the filtered list.
+- `S` — explicit save draft (autosave already runs on activity, this
+  flushes immediately and shows *Saving… → Saved*).
+- `V` — verify (only writes if all 10 required pass; otherwise no-op).
+- `R` — mark *Needs review*.
+- `Esc` — close editor pane.
+
+In an input/textarea, the keys behave normally (typing a `j` types `j`).
+
+### 10.7 Status filter chips
+
+Top of the studio: `All / Unlabelled / Draft / Needs review / Verified`
+with counts. Clicking filters the grid client-side. Counts update
+optimistically when you save in the editor pane (no refetch needed).
+
+### 10.8 Known edge cases worth checking
+
+These are the items I flagged but didn't fix retroactively. If they
+bite during testing they're cheap to fix:
+
+- **Combobox dropdown overflow** — when the typeahead opens for a
+  field near the bottom of the editor pane, the suggestion list can
+  clip. Workaround: scroll the editor pane up.
+- **Sub-800 ms debounce loss** — if you type a few characters then
+  immediately hit `J` to nav next, those last keystrokes can be lost
+  (debounce cleared on screenshot change without flushing). Workaround:
+  hit `S` before nav, or pause briefly.
+- **Vocab cache staleness** — `useLabelVocabKind` caches per-kind in
+  module scope. If you edit `label_vocab` in SQL while the app is
+  running, reload to see new values.
+- **Studio writes use the anon key** — RLS is currently disabled on
+  `screenshots` (per `docs/security-rls-public-release.md`). When the
+  auth gate lands, studio writes will need to be re-tested under the
+  authenticated session.
+
+### 10.9 Rolling back
+
+If anything goes sideways:
+
+- **Disable the studio**: flip `LABELING_STUDIO_ENABLED = false`,
+  reload. No code path runs the studio after that.
+- **Remove a stuck label**: `UPDATE screenshots SET metadata =
+  metadata - 'label' WHERE id = '...'`. The studio will re-create from
+  the default on next edit.
+- **Drop vocab and redo**: `TRUNCATE label_vocab` then re-run the seed
+  migration. The studio will re-populate vocab on next editor open.
+
+### 10.10 What "done" looks like for this PR
+
+- Migration applied; `select count(*) from label_vocab` returns ~140.
+- One screenshot reaches `verified` status.
+- Filter chip appears in the public catalogue's filter sheet for the
+  values you used.
+- Search match works for the labelled `title` / `one_line_summary`.
+- Reload preserves everything.
+- Flipping the flag off cleanly hides the studio with no console
+  errors.
+
+If all six are true, ship it.
+
+---
+
+## 11. Changelog
 
 - **2026-05-06** — PR #47 lands. This doc consolidates and replaces:
   `catalogue-ideation-2026-05-04-ui-element-annotations.md`,
