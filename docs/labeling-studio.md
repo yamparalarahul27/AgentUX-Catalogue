@@ -1,5 +1,10 @@
 # Labelling Studio
 
+> **Status update (2026-05-08): SHIPPED (Phases 1–5).** Live behind
+> `LABELING_STUDIO_ENABLED` (admin-only, ≥1024px). Deferred items
+> tracked at the bottom of this doc: mirror columns (perf trigger >500ms),
+> vocab admin UI, batch-import script, MCP/API retrieval, AI assist.
+
 > Single source of truth for the Labelling Studio. Supersedes
 > `catalogue-ideation-2026-05-04-ui-element-annotations.md`,
 > `catalogue-ideation-2026-05-06-ai-vision-search.md`, and

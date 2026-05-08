@@ -2,6 +2,13 @@
 
 Single source of truth for all Catalogue feature planning, research, and decisions.
 
+> **Status update (2026-05-08):**
+> - §1 Video Support — **SHIPPED**
+> - §1b Labelling Studio — **SHIPPED** (see [labeling-studio.md](labeling-studio.md))
+> - §2 Quick Upload Enhancement — **PARTIAL** (Cmd+V paste shipped in PR #53; filename parsing for batch upload not wired)
+> - §3 Primary Group + Compare Mode — **PARTIAL** (compare data hook + modal exist, toolbar toggle not wired; primary_group hardcoded)
+> - §4 Screen Audit Dashboard — **PENDING**
+
 ---
 
 ## UX Design: Unified Catalogue
@@ -210,7 +217,7 @@ vision pre-fill. See `docs/labeling-studio.md` §6 for triggers.
 
 ---
 
-## 2. Quick Upload Enhancement
+## 2. Quick Upload Enhancement — PARTIAL
 
 ### Problem
 Bulk uploading screenshots requires setting platform/preset/OS individually. Quick Upload doesn't support batch-level settings, and parsed filename `group` doesn't map to `flow_label`.
@@ -333,7 +340,7 @@ node scripts/catalogue-rename.mjs --apply
 
 ---
 
-## 3. Primary Group + Compare Mode
+## 3. Primary Group + Compare Mode — PARTIAL
 
 ### Problem
 Need to set Crpko as primary product and compare its flows against competitors.
