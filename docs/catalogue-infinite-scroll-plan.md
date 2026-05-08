@@ -1,6 +1,10 @@
 # Catalogue — Infinite Scroll & Server-Side Filtering — Plan
 
-**Status:** In progress
+> **Status update (2026-05-08): SHIPPED.** Milestones M1–M4 and M6 are
+> live in `useCatalogueData.ts`. M5 (stack on-view comments) and M7
+> (retry/prefetch polish) are deferred.
+
+**Status:** Shipped (M1–M4, M6) · Deferred (M5, M7)
 **Scope:** `/designer/catalogue` data loading, filters, sort, search, view rendering
 **Replaces:** Load-all + client-side filter architecture
 

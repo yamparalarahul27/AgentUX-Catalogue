@@ -1,6 +1,9 @@
 # Unused Supabase tables — cleanup plan
 
-**Status:** proposed, not yet executed.
+> **Status update (2026-05-08): COMPLETED.** Tables dropped + code
+> cleanup landed in PRs #49 and #50. Doc preserved as a record.
+
+**Status:** Completed (PRs #49, #50)
 **Date of analysis:** 2026-05-07.
 **Scope:** the `public` schema of the catalogue Supabase project.
 **Why now:** after the catalogue codebase was split with another fork, the local repo no longer reads or writes several tables. They still exist in Supabase, eat schema-review attention, and add noise to the RLS hardening checklist in [security-rls-public-release.md](security-rls-public-release.md).
