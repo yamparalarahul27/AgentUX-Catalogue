@@ -24,6 +24,7 @@ import './styles/catalogue-skeleton.scss';
 import './styles/bookmarks.scss';
 import './styles/catalogue-labeling-studio.scss';
 import './styles/catalogue-drop-overlay.scss';
+import './styles/catalogue-upload-progress.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

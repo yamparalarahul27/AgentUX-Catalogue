@@ -4,7 +4,7 @@ import type { FolderDropContext } from '../components/UploadZone';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId, getVariantKey } from '../lib/catalogue-families';
 import { compressImage } from '../lib/catalogue-image';
-import { buildConventionName, isConventionName, parseScreenshotName } from '../lib/naming';
+import { buildConventionName, parseScreenshotName } from '../lib/naming';
 import { insertScreenshotWithUploader } from '../lib/screenshot-write';
 import { supabase } from '../lib/supabase';
 import { generateThumbHash } from '../lib/thumbhash';
@@ -20,6 +20,19 @@ interface QuickUploadQueueItem {
   file: File;
   previewUrl: string;
   parsed: ReturnType<typeof parseScreenshotName>;
+}
+
+export type UploadProgressStatus = 'queued' | 'uploading' | 'uploaded' | 'failed';
+
+export interface UploadProgressItem {
+  id: string;
+  fileName: string;
+  previewUrl: string;
+  status: UploadProgressStatus;
+  errorMessage?: string;
+  // Retained so that "Retry failed" can re-submit the original file.
+  // Internal — not surfaced to consumers' rendering.
+  retryItem?: QuickUploadQueueItem;
 }
 
 interface UseCatalogueUploadArgs {
@@ -68,6 +81,12 @@ export function useCatalogueUpload({
   const [quickUploadWebPresetKey, setQuickUploadWebPresetKey] = useState<string | null>(null);
   const [quickUploadMobileOs, setQuickUploadMobileOs] = useState<MobileOs | null>(null);
   const hasSeededQuickUploadFromFiltersRef = useRef(false);
+  // Upload progress state surfaces the slim ribbon. Items move queued →
+  // uploading → uploaded | failed. Successes vanish from the visible
+  // ribbon, failures remain for retry. Cleared on dismiss.
+  const [uploadProgress, setUploadProgress] = useState<UploadProgressItem[]>([]);
+  const uploadProgressRef = useRef<UploadProgressItem[]>([]);
+  useEffect(() => { uploadProgressRef.current = uploadProgress; }, [uploadProgress]);
   function buildFlowMetadata(value: string) {
     const label = value.trim();
     if (!label) return {};
@@ -395,9 +414,69 @@ export function useCatalogueUpload({
     resetUploadState();
   }
 
-  async function handleQuickUploadUploadAll() {
+  async function uploadOneQuickItem(
+    item: QuickUploadQueueItem,
+    batch: {
+      projectId: string;
+      group: string;
+      flowLabel: string;
+      platform: 'web' | 'mobile' | null;
+      theme: 'light' | 'dark' | null;
+      webPresetKey: string | null;
+      mobileOs: MobileOs | null;
+    },
+  ): Promise<ScreenshotNode> {
+    const { file, parsed } = item;
+    const group = batch.group || parsed.group;
+    const flowLabel = batch.flowLabel || parsed.group || null;
+    const flowMetadata = flowLabel ? { [CATALOGUE_FLOW_LABEL_KEY]: flowLabel } : {};
+    const compressed = await compressImage(file);
+    const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+    const storagePath = `${userId}/${batch.projectId}/${safeName}`;
+    const { error: uploadError } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
+    if (uploadError) throw uploadError;
+
+    const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
+    const { data, error } = await insertScreenshotWithUploader({
+      supabase,
+      payload: {
+        project_id: batch.projectId,
+        flow_id: null,
+        screen_family_id: null,
+        name: buildConventionName(parsed.sequence, flowLabel || parsed.group, parsed.name),
+        file_name: file.name,
+        storage_path: storagePath,
+        sequence: parsed.sequence,
+        group,
+        theme: batch.theme,
+        platform: batch.platform,
+        web_preset_key: batch.webPresetKey,
+        mobile_os: batch.mobileOs,
+        metadata: flowMetadata,
+        reference_url: null,
+        reference_storage_path: null,
+        reference_label: null,
+      },
+      uploader: { userEmail, userId },
+    });
+    if (error || !data) throw error ?? new Error('Insert returned no data');
+
+    return {
+      ...data,
+      image_url: imageUrl,
+      metadata: data.metadata && typeof data.metadata === 'object' ? data.metadata as Record<string, unknown> : {},
+      version_count: 0,
+      comment_count: 0,
+      comment_last_added_at: null,
+      annotation_count: 0,
+      annotation_last_added_at: null,
+    } as ScreenshotNode;
+  }
+
+  async function handleQuickUploadUploadAll(retryQueue?: QuickUploadQueueItem[]) {
     const projectId = quickUploadProjectId ?? defaultProjectId;
-    if (quickUploadQueue.length === 0) {
+    const sourceQueue = retryQueue ?? quickUploadQueue;
+    if (sourceQueue.length === 0) {
       return [] as ScreenshotNode[];
     }
     if (!projectId) {
@@ -405,102 +484,115 @@ export function useCatalogueUpload({
       return [] as ScreenshotNode[];
     }
 
-    const queue = [...quickUploadQueue];
+    const queue = [...sourceQueue];
     const batchGroup = quickUploadGroup.trim();
     const batchFlowLabel = quickUploadFlowLabel.trim();
-    const batchPlatform = quickUploadPlatform;
-    const batchTheme = quickUploadTheme;
-    const batchWebPresetKey = quickUploadPlatform === 'web' ? quickUploadWebPresetKey : null;
-    const batchMobileOs = quickUploadPlatform === 'mobile' ? quickUploadMobileOs : null;
 
     if (!batchFlowLabel) {
       setToast({ message: 'Add a flow name before uploading', type: 'error' });
       return [] as ScreenshotNode[];
     }
 
+    const batch = {
+      projectId,
+      group: batchGroup,
+      flowLabel: batchFlowLabel,
+      platform: quickUploadPlatform,
+      theme: quickUploadTheme,
+      webPresetKey: quickUploadPlatform === 'web' ? quickUploadWebPresetKey : null,
+      mobileOs: quickUploadPlatform === 'mobile' ? quickUploadMobileOs : null,
+    };
+
     setUploading(true);
-    resetQuickUploadState();
 
-    const results = await Promise.allSettled(
-      queue.map(async (item) => {
-        const { file, parsed } = item;
-        const group = batchGroup || parsed.group;
-        const flowLabel = batchFlowLabel || parsed.group || null;
-        const flowMetadata = flowLabel ? { [CATALOGUE_FLOW_LABEL_KEY]: flowLabel } : {};
-        const compressed = await compressImage(file);
-        const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-        const storagePath = `${userId}/${projectId}/${safeName}`;
-        const { error: uploadError } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
+    // Seed the progress ribbon: append items in 'queued' state. For a
+    // retry, the items are already in the ribbon as 'failed' — flip
+    // them back to 'queued'. For a fresh batch, start from blank.
+    if (retryQueue) {
+      const retryIds = new Set(retryQueue.map((item) => item.id));
+      setUploadProgress((previous) =>
+        previous.map((entry) =>
+          retryIds.has(entry.id)
+            ? { ...entry, status: 'queued', errorMessage: undefined }
+            : entry,
+        ),
+      );
+    } else {
+      // Fresh ObjectURLs for the progress ribbon — the queue's URLs are
+      // about to be revoked by resetQuickUploadState() below, so we own
+      // an independent set here. Revoked when progress is dismissed.
+      const seeded: UploadProgressItem[] = queue.map((item) => ({
+        id: item.id,
+        fileName: item.file.name,
+        previewUrl: URL.createObjectURL(item.file),
+        status: 'queued',
+        retryItem: item,
+      }));
+      setUploadProgress(seeded);
+    }
 
-        if (uploadError) {
-          throw uploadError;
-        }
+    if (!retryQueue) resetQuickUploadState();
 
-        const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
-        const { data, error } = await insertScreenshotWithUploader({
-          supabase,
-          payload: {
-            project_id: projectId,
-            flow_id: null,
-            screen_family_id: null,
-            name: buildConventionName(parsed.sequence, flowLabel || parsed.group, parsed.name),
-            file_name: file.name,
-            storage_path: storagePath,
-            sequence: parsed.sequence,
-            group,
-            theme: batchTheme,
-            platform: batchPlatform,
-            web_preset_key: batchWebPresetKey,
-            mobile_os: batchMobileOs,
-            metadata: flowMetadata,
-            reference_url: null,
-            reference_storage_path: null,
-            reference_label: null,
-          },
-          uploader: { userEmail, userId },
-        });
+    const tasks = queue.map((item) => {
+      setUploadProgress((previous) =>
+        previous.map((entry) => (entry.id === item.id ? { ...entry, status: 'uploading' } : entry)),
+      );
+      return uploadOneQuickItem(item, batch).then(
+        (result) => {
+          setUploadProgress((previous) =>
+            previous.map((entry) => (entry.id === item.id ? { ...entry, status: 'uploaded' } : entry)),
+          );
+          return result;
+        },
+        (err) => {
+          const message = err instanceof Error ? err.message : String(err ?? 'Upload failed');
+          setUploadProgress((previous) =>
+            previous.map((entry) =>
+              entry.id === item.id ? { ...entry, status: 'failed', errorMessage: message } : entry,
+            ),
+          );
+          throw err;
+        },
+      );
+    });
 
-        if (error || !data) {
-          throw error;
-        }
-
-        return {
-          ...data,
-          image_url: imageUrl,
-          metadata: data.metadata && typeof data.metadata === 'object' ? data.metadata as Record<string, unknown> : {},
-          version_count: 0,
-          comment_count: 0,
-          comment_last_added_at: null,
-          annotation_count: 0,
-          annotation_last_added_at: null,
-        } as ScreenshotNode;
-      }),
-    );
-
+    const results = await Promise.allSettled(tasks);
     const inserted = results
       .filter((result): result is PromiseFulfilledResult<ScreenshotNode> => result.status === 'fulfilled')
       .map((result) => result.value);
-    const failed = results.filter((result) => result.status === 'rejected').length;
 
     if (inserted.length > 0) {
       setScreenshots((previous) => [...inserted, ...previous]);
       inserted.forEach((item) => {
         updateActiveVariant(getScreenshotFamilyId(item), getVariantKey(item));
       });
-      const nonConventionCount = inserted.filter((item) => !isConventionName(item.name)).length;
-      const messages = [`${inserted.length} uploaded`];
-      if (failed) messages.push(`${failed} failed`);
-      if (nonConventionCount) messages.push(`${nonConventionCount} need renaming to convention format`);
-      setToast({
-        message: messages.join(' · '),
-        type: failed || nonConventionCount ? 'info' : 'success',
-      });
-    } else if (failed > 0) {
-      setToast({ message: `Upload failed for ${failed} file${failed > 1 ? 's' : ''}`, type: 'error' });
     }
 
     setUploading(false);
     return inserted;
+  }
+
+  function dismissUploadProgress() {
+    uploadProgressRef.current.forEach((entry) => {
+      URL.revokeObjectURL(entry.previewUrl);
+    });
+    setUploadProgress([]);
+  }
+
+  async function retryFailedUploads() {
+    const failedIds = uploadProgressRef.current
+      .filter((entry) => entry.status === 'failed')
+      .map((entry) => entry.id);
+    if (failedIds.length === 0) return;
+    // Failed items are no longer in the queue (queue clears on first
+    // upload start). Reconstruct from progress entries' previewUrl
+    // isn't enough — we need the underlying File. Cache files in the
+    // progress entries themselves.
+    const items = uploadProgressRef.current
+      .filter((entry) => entry.status === 'failed' && entry.retryItem)
+      .map((entry) => entry.retryItem as QuickUploadQueueItem);
+    if (items.length === 0) return;
+    await handleQuickUploadUploadAll(items);
   }
 
   return {
@@ -510,6 +602,9 @@ export function useCatalogueUpload({
     handleQuickUploadQueueClear,
     handleQuickUploadQueueRemove,
     handleQuickUploadUploadAll,
+    uploadProgress,
+    dismissUploadProgress,
+    retryFailedUploads,
     resetUploadState,
     resetQuickUploadState,
     seedQuickUploadFromFiltersIfFirstOpen,

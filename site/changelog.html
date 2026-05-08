@@ -89,23 +89,32 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
-        <!-- May 7 – 8, 2026 -->
+        <!-- May 7 – 9, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">
-            <span class="changelog-date">May 7 – 8, 2026</span>
-            <span class="changelog-title">Identity pill, Logout &amp; Drag-Drop Upload</span>
+            <span class="changelog-date">May 7 – 9, 2026</span>
+            <span class="changelog-title">Identity pill, Logout, Drag-Drop Upload &amp; Progress Ribbon</span>
           </div>
           <div class="changelog-section">
             <span class="changelog-section-label changelog-section-label--added">Added</span>
             <ul class="changelog-items">
               <li><strong>Identity pill in the header</strong> — replaces the hamburger menu. Click reveals a dropdown with the signed-in email, a <strong>★ My bookmarks</strong> toggle (flips the toolbar bookmark filter), Settings, Team (admin), Labelling Studio (admin), and <strong>Logout</strong>. When no email is set the pill becomes a <strong>Sign in</strong> CTA.</li>
               <li><strong>Drag-and-drop to Quick Upload</strong> — drop image files (or a top-level folder of images) anywhere on the catalogue grid and they queue into the Quick Upload modal. Folders walk one level deep; subfolders are skipped. Non-image files are silently filtered, hidden files (<code>.DS_Store</code> etc) ignored, and drops are capped at 200 files with a toast if exceeded.</li>
+              <li><strong>Upload progress ribbon</strong> — bottom-right slim card with a thumbnail per file. Each box shows live status: <strong>queued</strong>, <strong>uploading</strong> (spinner), <strong>uploaded</strong>, or <strong>failed</strong> (red badge with error). Successful uploads fade out (blur + scale + width-to-zero) and the ribbon shrinks; the card itself shrinks to fit. A <strong>Retry failed</strong> button appears whenever any item failed and re-runs only those. Auto-dismisses 2s after a clean run; persists with errors visible until dismissed.</li>
             </ul>
           </div>
           <div class="changelog-section">
             <span class="changelog-section-label changelog-section-label--changed">Changed</span>
             <ul class="changelog-items">
               <li><strong>One identity, one email.</strong> The bookmark-only email key (<code>agentux:bookmark-email</code>) and its prompt modal are gone — bookmarks now read the same login email used for comments, annotations, and label review. Guests bookmarking a card open the standard login modal instead of a separate flow.</li>
+              <li>The legacy "Uploading screenshots…" canvas overlay is gone. The progress ribbon is the single source of truth for upload status now.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li>Drag-drop overlay no longer covers the Quick Upload modal — when the modal is already open, the global drop handler stands down so the modal's own drop zone takes the files.</li>
+              <li>Upload outcomes were silent — the toast briefly flashed then nothing, leaving users wondering whether the batch succeeded. Per-file status in the ribbon makes outcome unambiguous, and individual errors are now surfaced with the actual error message.</li>
             </ul>
           </div>
         </article>

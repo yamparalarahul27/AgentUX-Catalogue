@@ -40,6 +40,7 @@ import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
 import { CatalogueDropOverlay } from './CatalogueDropOverlay';
+import { CatalogueUploadProgress } from './CatalogueUploadProgress';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
@@ -486,7 +487,7 @@ export function Catalogue({
   // Top-level folders are walked one level deep; subfolders skipped. Cap at
   // 200 files per drop to protect against accidental large drops.
   const { dragActive } = useDropToUpload({
-    enabled: activeSection === 'catalogue' && !previewFamilyId,
+    enabled: activeSection === 'catalogue' && !previewFamilyId && !upload.showQuickUpload,
     onDrop: (files, stats) => {
       if (files.length === 0) {
         if (stats.skipped > 0) {
@@ -950,12 +951,6 @@ export function Catalogue({
         onClose={() => setShowSettings(false)}
         onSave={handleSavePresets}
       />
-      {upload.uploading && (
-        <div className="canvas-uploading">
-          <div className="loading-spinner" />
-          Uploading screenshots...
-        </div>
-      )}
       {previewFamily && (
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
@@ -1077,6 +1072,11 @@ export function Catalogue({
         }}
       />
       {dragActive && <CatalogueDropOverlay />}
+      <CatalogueUploadProgress
+        items={upload.uploadProgress}
+        onDismiss={upload.dismissUploadProgress}
+        onRetryFailed={() => { void upload.retryFailedUploads(); }}
+      />
     </div>
   );
 }
