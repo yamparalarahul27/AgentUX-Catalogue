@@ -33,7 +33,6 @@ import {
 import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
-import { BookmarkEmailModal } from './BookmarkEmailModal';
 import { CatalogueBulkBar } from './CatalogueBulkBar';
 import { CatalogueBulkFlowDialog } from './CatalogueBulkFlowDialog';
 import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
@@ -61,6 +60,7 @@ interface CatalogueProps {
   user: User;
   isGuest?: boolean;
   onRequestLogin: (email: string) => void;
+  onLogout: () => void;
 }
 
 type CatalogueSection =
@@ -73,6 +73,7 @@ export function Catalogue({
   user,
   isGuest = false,
   onRequestLogin,
+  onLogout,
 }: CatalogueProps) {
   // Filter UI state (owns filter/sort/search/viewBy state, with debounced search)
   const filterState = useCatalogueFilterState();
@@ -276,8 +277,9 @@ export function Catalogue({
     groupOrder,
   });
 
-  // Per-email bookmarks (no Supabase auth — email cached client-side).
-  const bookmarks = useBookmarks();
+  // Per-email bookmarks. Identity comes from the same login email that
+  // powers comments + annotations + label review — one identity, one key.
+  const bookmarks = useBookmarks(user.email);
   const [bookmarkFilterOn, setBookmarkFilterOn] = useState(false);
 
   // Apply bookmark filter on top of the standard filter pass. A family
@@ -615,10 +617,19 @@ export function Catalogue({
         canAdmin={canAdmin}
         onOpenSettings={() => setShowSettings(true)}
         onSectionChange={setActiveSection}
-        bookmarkEmail={bookmarks.email}
-        onResetBookmarkEmail={() => {
-          bookmarks.clearEmail();
+        userEmail={user.email ?? null}
+        onSignIn={() => setShowAuthPrompt(true)}
+        onLogout={() => {
+          onLogout();
           setBookmarkFilterOn(false);
+        }}
+        myBookmarksActive={bookmarkFilterOn}
+        onToggleMyBookmarks={() => {
+          if (!user.email) {
+            setShowAuthPrompt(true);
+            return;
+          }
+          setBookmarkFilterOn((previous) => !previous);
         }}
       />
       {activeSection === 'team' && canAdmin ? (
@@ -766,8 +777,8 @@ export function Catalogue({
                     setBookmarkFilterOn(false);
                     return;
                   }
-                  if (!bookmarks.email) {
-                    bookmarks.requestFilterEmail();
+                  if (!user.email) {
+                    setShowAuthPrompt(true);
                     return;
                   }
                   setBookmarkFilterOn(true);
@@ -813,8 +824,8 @@ export function Catalogue({
                     webPresets={webPresets}
                     bookmarkedIds={bookmarks.bookmarkedIds}
                     onToggleBookmark={(screenshotId) => {
-                      if (!bookmarks.email) {
-                        bookmarks.requestBookmarkEmail(screenshotId);
+                      if (!user.email) {
+                        setShowAuthPrompt(true);
                         return;
                       }
                       void bookmarks.toggleBookmark(screenshotId).then((result) => {
@@ -957,8 +968,8 @@ export function Catalogue({
           onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
           bookmarkedIds={bookmarks.bookmarkedIds}
           onToggleBookmark={(screenshotId) => {
-            if (!bookmarks.email) {
-              bookmarks.requestBookmarkEmail(screenshotId);
+            if (!user.email) {
+              setShowAuthPrompt(true);
               return;
             }
             void bookmarks.toggleBookmark(screenshotId).then((result) => {
@@ -1038,27 +1049,6 @@ export function Catalogue({
           setToast({ message: 'Editing enabled for this session.', type: 'success' });
         }}
       />
-      {bookmarks.emailModalContext && (
-        <BookmarkEmailModal
-          context={bookmarks.emailModalContext.kind}
-          initialEmail={bookmarks.email}
-          onCancel={bookmarks.closeEmailModal}
-          onSubmit={async (email) => {
-            const context = bookmarks.emailModalContext;
-            const result = await bookmarks.saveEmailAndContinue(email);
-            if (!result.ok) {
-              setToast({ message: 'Could not save bookmark. Try again.', type: 'error' });
-              return;
-            }
-            if (context?.kind === 'filter') {
-              setBookmarkFilterOn(true);
-            }
-            if (context?.kind === 'bookmark') {
-              setToast({ message: 'Bookmarked.', type: 'success' });
-            }
-          }}
-        />
-      )}
     </div>
   );
 }

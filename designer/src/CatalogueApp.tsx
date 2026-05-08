@@ -15,7 +15,7 @@ function createGuestUser(): User {
 }
 
 export function CatalogueApp() {
-  const { user, login } = useAuth();
+  const { user, login, logout } = useAuth();
   const effectiveUser = user ?? createGuestUser();
 
   return (
@@ -24,6 +24,7 @@ export function CatalogueApp() {
         user={effectiveUser}
         isGuest={!user}
         onRequestLogin={login}
+        onLogout={logout}
       />
       {import.meta.env.DEV && <Agentation />}
     </>

@@ -1,18 +1,60 @@
-.catalogue-header__menu-trigger {
+// Identity pill in the header — replaces the legacy hamburger trigger.
+// Shows the signed-in user's username (before @) on desktop with a
+// chevron, or "Sign in" with a login icon when no user is set.
+.catalogue-identity-pill {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(17, 17, 19, 0.9);
+  color: #d4d4d8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 
-  span[aria-hidden='true'] {
-    font-size: 16px;
-    line-height: 1;
-  }
-
-  &.is-active {
-    border-color: rgba(99, 102, 241, 0.5);
-    background: rgba(99, 102, 241, 0.24);
+  &:hover {
     color: #fff;
+    border-color: rgba(99, 102, 241, 0.45);
   }
+
+  &.is-open {
+    color: #fff;
+    border-color: rgba(99, 102, 241, 0.55);
+    background: rgba(99, 102, 241, 0.18);
+  }
+
+  // Subtle accent ring for admin — quiet but findable.
+  &.is-admin {
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35) inset;
+  }
+
+  &--signin {
+    color: #c7d2fe;
+    border-color: rgba(99, 102, 241, 0.35);
+    background: rgba(99, 102, 241, 0.12);
+
+    &:hover {
+      color: #fff;
+      border-color: rgba(99, 102, 241, 0.6);
+      background: rgba(99, 102, 241, 0.22);
+    }
+  }
+}
+
+.catalogue-identity-pill__name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: capitalize;
 }
 
 .catalogue-header-menu {
@@ -40,7 +82,7 @@
   text-align: left;
   padding: 8px 10px;
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
     border-color: rgba(99, 102, 241, 0.35);
@@ -51,6 +93,22 @@
     border-color: rgba(99, 102, 241, 0.42);
     background: rgba(99, 102, 241, 0.2);
     color: #fff;
+  }
+
+  &--row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &--danger {
+    color: #fca5a5;
+
+    &:hover {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
+      color: #fecaca;
+    }
   }
 }
 
@@ -168,10 +226,12 @@
 }
 
 @media (max-width: 900px) {
-  .catalogue-header__menu-trigger {
-    &::after {
-      content: none;
-    }
+  .catalogue-identity-pill {
+    right: 12px;
+  }
+
+  .catalogue-identity-pill__name {
+    max-width: 80px;
   }
 
   .catalogue-header-menu {

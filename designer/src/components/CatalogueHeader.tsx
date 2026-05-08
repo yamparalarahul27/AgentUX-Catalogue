@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Bookmark, ChevronDown, LogIn } from 'lucide-react';
 
 import agentuxLogo from '../assets/agentux-logo.svg';
 import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
@@ -17,8 +17,16 @@ interface CatalogueHeaderProps {
   canAdmin: boolean;
   onOpenSettings: () => void;
   onSectionChange: (section: CatalogueSection) => void;
-  bookmarkEmail?: string | null;
-  onResetBookmarkEmail?: () => void;
+  userEmail: string | null;
+  onSignIn: () => void;
+  onLogout: () => void;
+  myBookmarksActive: boolean;
+  onToggleMyBookmarks: () => void;
+}
+
+function usernameOf(email: string): string {
+  const at = email.indexOf('@');
+  return at > 0 ? email.slice(0, at) : email;
 }
 
 export function CatalogueHeader({
@@ -26,12 +34,15 @@ export function CatalogueHeader({
   canAdmin,
   onOpenSettings,
   onSectionChange,
-  bookmarkEmail,
-  onResetBookmarkEmail,
+  userEmail,
+  onSignIn,
+  onLogout,
+  myBookmarksActive,
+  onToggleMyBookmarks,
 }: CatalogueHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const pillRef = useRef<HTMLButtonElement>(null);
   const viewportWidth = useViewportWidth();
   const showStudioEntry =
     canAdmin && LABELING_STUDIO_ENABLED && viewportWidth >= LABELING_STUDIO_MIN_VIEWPORT_PX;
@@ -43,7 +54,7 @@ export function CatalogueHeader({
       const target = event.target as Node;
       if (
         menuRef.current && !menuRef.current.contains(target) &&
-        menuButtonRef.current && !menuButtonRef.current.contains(target)
+        pillRef.current && !pillRef.current.contains(target)
       ) {
         setMenuOpen(false);
       }
@@ -71,6 +82,16 @@ export function CatalogueHeader({
 
   function openSettings() {
     onOpenSettings();
+    setMenuOpen(false);
+  }
+
+  function toggleMyBookmarks() {
+    onToggleMyBookmarks();
+    setMenuOpen(false);
+  }
+
+  function handleLogout() {
+    onLogout();
     setMenuOpen(false);
   }
 
@@ -113,20 +134,52 @@ export function CatalogueHeader({
         </button>
       </div>
 
-      <button
-        ref={menuButtonRef}
-        type="button"
-        className={`catalogue-header__settings catalogue-header__menu-trigger ${activeSection !== 'catalogue' && activeSection !== 'videos' && activeSection !== 'links' ? 'is-active' : ''}`}
-        aria-label="Open catalogue menu"
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((previous) => !previous)}
-      >
-        <Menu size={18} aria-hidden="true" />
-      </button>
+      {userEmail ? (
+        <button
+          ref={pillRef}
+          type="button"
+          className={`catalogue-identity-pill ${canAdmin ? 'is-admin' : ''} ${menuOpen ? 'is-open' : ''}`}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((previous) => !previous)}
+          title={userEmail}
+        >
+          <span className="catalogue-identity-pill__name">{usernameOf(userEmail)}</span>
+          <ChevronDown size={14} aria-hidden="true" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="catalogue-identity-pill catalogue-identity-pill--signin"
+          onClick={onSignIn}
+        >
+          <LogIn size={14} aria-hidden="true" />
+          <span>Sign in</span>
+        </button>
+      )}
 
-      {menuOpen && (
-        <div ref={menuRef} className="catalogue-header-menu" role="menu" aria-label="Catalogue menu">
+      {menuOpen && userEmail && (
+        <div ref={menuRef} className="catalogue-header-menu" role="menu" aria-label="Account menu">
+          <div className="catalogue-header-menu__meta" role="presentation">
+            Signed in as
+            <span className="catalogue-header-menu__meta-value">{userEmail}</span>
+          </div>
+
+          <div className="catalogue-header-menu__divider" role="presentation" />
+
+          <button
+            type="button"
+            className={`catalogue-header-menu__item catalogue-header-menu__item--row ${myBookmarksActive ? 'is-active' : ''}`}
+            role="menuitemcheckbox"
+            aria-checked={myBookmarksActive}
+            onClick={toggleMyBookmarks}
+          >
+            <Bookmark size={14} aria-hidden="true" />
+            My bookmarks
+          </button>
+
+          <div className="catalogue-header-menu__divider" role="presentation" />
+
           <button type="button" className="catalogue-header-menu__item" role="menuitem" onClick={openSettings}>
             Settings
           </button>
@@ -153,23 +206,16 @@ export function CatalogueHeader({
             </button>
           )}
 
-          {bookmarkEmail && onResetBookmarkEmail && (
-            <>
-              <div className="catalogue-header-menu__divider" role="presentation" />
-              <div className="catalogue-header-menu__meta" role="presentation">
-                Bookmark email
-                <span className="catalogue-header-menu__meta-value">{bookmarkEmail}</span>
-              </div>
-              <button
-                type="button"
-                className="catalogue-header-menu__item"
-                role="menuitem"
-                onClick={() => { onResetBookmarkEmail(); setMenuOpen(false); }}
-              >
-                Reset bookmark email
-              </button>
-            </>
-          )}
+          <div className="catalogue-header-menu__divider" role="presentation" />
+
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--danger"
+            role="menuitem"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
         </div>
       )}
     </header>
