@@ -11,6 +11,7 @@ import { useCatalogueGuestGuards } from '../hooks/use-catalogue-guest-guards';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
+import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { buildCatalogueFamilies } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -38,6 +39,8 @@ import { CatalogueBulkFlowDialog } from './CatalogueBulkFlowDialog';
 import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
+import { CatalogueDropOverlay } from './CatalogueDropOverlay';
+import { CatalogueUploadProgress } from './CatalogueUploadProgress';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
@@ -476,6 +479,31 @@ export function Catalogue({
         message: `${files.length} image${files.length === 1 ? '' : 's'} added to Quick Upload`,
         type: 'success',
       });
+    },
+  });
+
+  // Drag-drop files anywhere on the catalogue grid → Quick Upload queue.
+  // Suppressed when the lightbox is open so editing mode isn't disrupted.
+  // Top-level folders are walked one level deep; subfolders skipped. Cap at
+  // 200 files per drop to protect against accidental large drops.
+  const { dragActive } = useDropToUpload({
+    enabled: activeSection === 'catalogue' && !previewFamilyId && !upload.showQuickUpload,
+    onDrop: (files, stats) => {
+      if (files.length === 0) {
+        if (stats.skipped > 0) {
+          setToast({
+            message: `No images in drop · skipped ${stats.skipped} non-image${stats.skipped === 1 ? '' : 's'}`,
+            type: 'info',
+          });
+        }
+        return;
+      }
+      upload.handleQuickUploadQueueAdd(files);
+      upload.setShowQuickUpload(true);
+      const parts = [`${files.length} image${files.length === 1 ? '' : 's'} added to Quick Upload`];
+      if (stats.skipped > 0) parts.push(`skipped ${stats.skipped} non-image${stats.skipped === 1 ? '' : 's'}`);
+      if (stats.truncated > 0) parts.push(`capped at 200 (${stats.truncated} more skipped)`);
+      setToast({ message: parts.join(' · '), type: 'success' });
     },
   });
 
@@ -923,12 +951,6 @@ export function Catalogue({
         onClose={() => setShowSettings(false)}
         onSave={handleSavePresets}
       />
-      {upload.uploading && (
-        <div className="canvas-uploading">
-          <div className="loading-spinner" />
-          Uploading screenshots...
-        </div>
-      )}
       {previewFamily && (
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
@@ -1048,6 +1070,12 @@ export function Catalogue({
           setShowAuthPrompt(false);
           setToast({ message: 'Editing enabled for this session.', type: 'success' });
         }}
+      />
+      {dragActive && <CatalogueDropOverlay />}
+      <CatalogueUploadProgress
+        items={upload.uploadProgress}
+        onDismiss={upload.dismissUploadProgress}
+        onRetryFailed={() => { void upload.retryFailedUploads(); }}
       />
     </div>
   );

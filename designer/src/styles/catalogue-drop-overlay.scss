@@ -1,0 +1,46 @@
+.catalogue-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: rgba(15, 15, 16, 0.78);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: catalogueDropOverlayFadeIn 0.12s ease-out;
+}
+
+.catalogue-drop-overlay__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 56px;
+  border-radius: 16px;
+  border: 2px dashed rgba(99, 102, 241, 0.6);
+  background: rgba(24, 24, 27, 0.92);
+  color: #e4e4e7;
+  text-align: center;
+
+  svg {
+    color: #a5b4fc;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: #a1a1aa;
+    font-size: 13px;
+  }
+}
+
+@keyframes catalogueDropOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
