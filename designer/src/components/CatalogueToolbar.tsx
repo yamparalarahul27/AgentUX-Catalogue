@@ -456,12 +456,12 @@ export function CatalogueToolbar({
               value={sortBy}
               placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
               options={[
-                { value: 'date-desc', label: 'Date: Latest' },
                 { value: 'date-desc-global', label: 'Date: Latest (All groups)' },
+                { value: 'date-desc', label: 'Date: Latest' },
                 { value: 'date-asc', label: 'Date: Oldest' },
                 { value: 'name-asc', label: 'Name: A-Z' },
               ]}
-              onChange={(value) => onSortByChange((value || 'date-desc') as CatalogueSortOption)}
+              onChange={(value) => onSortByChange((value || 'date-desc-global') as CatalogueSortOption)}
               disabled={isSortLocked}
               className="catalogue-sort-dropdown"
             />

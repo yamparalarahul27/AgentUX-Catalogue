@@ -181,7 +181,7 @@ export function CatalogueHeader({
           <div className="catalogue-header-menu__divider" role="presentation" />
 
           <button type="button" className="catalogue-header-menu__item" role="menuitem" onClick={openSettings}>
-            Settings
+            Web Breakpoints Settings
           </button>
 
           {canAdmin && (
@@ -191,18 +191,19 @@ export function CatalogueHeader({
               role="menuitem"
               onClick={() => openSection('team')}
             >
-              Team
+              Settings
             </button>
           )}
 
           {showStudioEntry && (
             <button
               type="button"
-              className={`catalogue-header-menu__item ${activeSection === 'studio' ? 'is-active' : ''}`}
+              className={`catalogue-header-menu__item catalogue-header-menu__item--row ${activeSection === 'studio' ? 'is-active' : ''}`}
               role="menuitem"
               onClick={() => openSection('studio')}
             >
-              Labelling Studio
+              <span>Labelling Studio</span>
+              <span className="catalogue-header-menu__tag">For AI</span>
             </button>
           )}
 
