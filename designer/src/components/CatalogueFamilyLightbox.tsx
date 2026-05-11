@@ -12,7 +12,7 @@ import {
 } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, WebPreset } from '../types';
-import { Send, X } from 'lucide-react';
+import { Check, Copy, Send, X } from 'lucide-react';
 
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
@@ -20,6 +20,7 @@ import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { LabelEditor } from './labeling/LabelEditor';
+import { AI_LABELING_PROMPT } from '../lib/labeling/ai-prompt';
 import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib/feature-flags';
 import { ConfirmModal } from './ConfirmModal';
 interface CatalogueFamilyLightboxProps {
@@ -132,6 +133,18 @@ export function CatalogueFamilyLightbox({
   const mediaRef = useRef<HTMLDivElement>(null);
   const annotationInputRef = useRef<HTMLInputElement>(null);
   const [lightboxPanel, setLightboxPanel] = useState<LightboxPanel>(showLabelTab ? 'label' : 'comments');
+  const [promptCopied, setPromptCopied] = useState(false);
+
+  async function handleCopyPrompt() {
+    try {
+      await navigator.clipboard.writeText(AI_LABELING_PROMPT);
+      setPromptCopied(true);
+      window.setTimeout(() => setPromptCopied(false), 1500);
+    } catch {
+      // Older browsers without clipboard permission — silently no-op.
+      // Studio is admin-only, so this path is vanishingly rare.
+    }
+  }
   const [sheetMinimized, setSheetMinimized] = useState(shouldStartLightboxSheetMinimized);
   const [isInlineEditing, setIsInlineEditing] = useState(startInlineEdit && canEdit);
   const [isSavingInline, setIsSavingInline] = useState(false);
@@ -769,15 +782,26 @@ export function CatalogueFamilyLightbox({
             <div className="catalogue-family-lightbox__panel">
               <div className="catalogue-lightbox-panel-tabs" role="tablist" aria-label="Lightbox details">
                 {showLabelTab ? (
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={lightboxPanel === 'label'}
-                    className={`catalogue-lightbox-tab ${lightboxPanel === 'label' ? 'is-active' : ''}`}
-                    onClick={() => setLightboxPanel('label')}
-                  >
-                    Label
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={lightboxPanel === 'label'}
+                      className={`catalogue-lightbox-tab ${lightboxPanel === 'label' ? 'is-active' : ''}`}
+                      onClick={() => setLightboxPanel('label')}
+                    >
+                      Label
+                    </button>
+                    <button
+                      type="button"
+                      className={`catalogue-lightbox-copy-prompt ${promptCopied ? 'is-copied' : ''}`}
+                      onClick={handleCopyPrompt}
+                      title="Copy the AI labelling prompt to clipboard"
+                    >
+                      {promptCopied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+                      {promptCopied ? 'Copied' : 'Copy Prompt'}
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button
