@@ -5,7 +5,7 @@ import { Bookmark, Check, MapPin, Monitor, RefreshCw, Smartphone, Trash2 } from 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
 import { REFERENCE_IMAGES_ENABLED, REUPLOAD_ENABLED } from '../lib/feature-flags';
-import { getGroupColor } from '../lib/naming';
+// import { getGroupColor } from '../lib/naming'; // unused while group colour dot is disabled — see catalogue-card-dot note in render
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { ThumbHashImage } from './ThumbHashImage';
@@ -52,7 +52,7 @@ export function CatalogueFamilyCard({
   );
   const screenshot = activeVariant?.screenshot ?? null;
   const imageUrl = screenshot?.image_url ?? '';
-  const groupColor = getGroupColor(family.group);
+  // const groupColor = getGroupColor(family.group); // unused while .catalogue-card-dot is commented out below
   const platform = screenshot?.platform;
   const [isImageLoading, setIsImageLoading] = useState(Boolean(imageUrl));
   const [hasImageError, setHasImageError] = useState(false);
@@ -235,7 +235,15 @@ export function CatalogueFamilyCard({
 
           <div className="catalogue-card-meta">
             <div className="catalogue-card-group">
-              <span className="catalogue-card-dot" style={{ background: groupColor }} />
+              {/* Group colour dot — not useful in the current setup. The
+                  groupColors map in lib/naming.ts only assigns unique colours
+                  to generic groups (auth/dashboard/settings/…), and every
+                  brand-based group (bybit, binance, …) falls through to the
+                  same indigo fallback. The Group icon (avatar) already
+                  conveys identity, so the dot is redundant. Keeping the
+                  groupColor derivation in case we want to revive a dot
+                  with per-group hashed colours later. */}
+              {/* <span className="catalogue-card-dot" style={{ background: groupColor }} /> */}
               <CatalogueGroupLabel
                 className="catalogue-family-card__group"
                 group={family.group}
