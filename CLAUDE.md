@@ -45,7 +45,8 @@ These bias toward caution over speed. For trivial tasks, use judgment.
 
 ## Pre-public-release checklist
 
-Items that must be resolved before the catalogue is linked from the public portfolio (`hirahul.xyz`). Until then the URL is unlisted and these are deferred — but they block public release.
+> **MUST-DO next session — surface every time.** Items here block linking the catalogue from the public portfolio (`hirahul.xyz`). Until that link goes live the URL is unlisted, but these are not "deferred forever" — raise them on session start, and any time the user mentions auth / signup / spoofing / share-recipient permissions / public-launch.
 
+- **Non-signed-in user experience / auth gate** — **THIS IS THE TOP ITEM.** Today anyone visiting the catalogue can type any email at the login prompt and gain editing permissions. Email is self-asserted; the anon Supabase key is in the JS bundle, so comments / annotations / labels / bookmarks can all be made under a spoofed teammate identity. User has explicitly asked this be raised every session until closed. Connects to the RLS work below. See also `memory/parked_auth_gate.md`.
 - **RLS + auth gate** — public schema currently ships with RLS disabled on 11 tables; the browser holds the anon key, so anyone with the URL can read/write/delete. Decision doc: [`docs/security-rls-public-release.md`](docs/security-rls-public-release.md). Recommended path is a magic-link auth gate with permissive RLS for authed users; confirm before implementing.
 - **Claude Code permissions hardening** — tighten `.claude/settings.json` deny rules (Read/Write/Edit mirrored, additional secret paths) and split universal vs project-specific denies into global vs project settings. Decision doc: [`docs/security-claude-permissions-public-release.md`](docs/security-claude-permissions-public-release.md). Lean on `.claude/hooks/scan-secrets.js` to cover the Bash bypass that deny rules can't.
