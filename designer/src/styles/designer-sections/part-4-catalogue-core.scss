@@ -61,7 +61,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 0;
+  padding: 20px 0 12px;
   gap: 12px;
   // nowrap so Quick Upload (right child) stays on the same line as the
   // filter row. Overflow is absorbed by .catalogue-filter-row's horizontal
@@ -159,8 +159,7 @@
   font-weight: 600;
   color: $text-muted;
   text-transform: capitalize;
-  padding-top: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding-bottom: 8px;
   border-bottom: 1px solid $border;
 }
