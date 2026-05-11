@@ -2,6 +2,8 @@ import { Agentation } from 'agentation';
 import type { User } from '@supabase/supabase-js';
 import { useAuth } from './lib/useAuth';
 import { Catalogue } from './components/Catalogue';
+import { SharePage } from './components/SharePage';
+import { isSharePath } from './lib/share-url';
 
 function createGuestUser(): User {
   return {
@@ -17,6 +19,12 @@ function createGuestUser(): User {
 export function CatalogueApp() {
   const { user, login, logout } = useAuth();
   const effectiveUser = user ?? createGuestUser();
+
+  // Public share view — bypasses the catalogue entirely. No auth, no
+  // catalogue chrome; only reads. See lib/share-url.ts.
+  if (typeof window !== 'undefined' && isSharePath(window.location.pathname)) {
+    return <SharePage />;
+  }
 
   return (
     <>

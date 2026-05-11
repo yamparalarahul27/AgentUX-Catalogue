@@ -1,0 +1,312 @@
+// ---- Create-share modal ----
+
+.catalogue-share-modal {
+  width: min(560px, 94vw);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: visible; // dropdown menus portal out, but allow chrome to fit
+}
+
+.catalogue-share-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(63, 63, 70, 0.6);
+
+  .confirm-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #f4f4f5;
+  }
+}
+
+.catalogue-share-modal__close {
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+
+  &:hover {
+    color: #f4f4f5;
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.catalogue-share-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+  text-align: left; // override .confirm-modal centring
+}
+
+// 2×2 grid: Group | Flow, then Platform | Title.
+// Each cell is a row with label-on-left + control-on-right.
+.catalogue-share-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+
+.catalogue-share-modal__row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.catalogue-share-modal__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #a1a1aa;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.catalogue-share-modal__label-hint {
+  color: #71717a;
+  font-weight: 400;
+}
+
+.catalogue-share-modal__control {
+  min-width: 0;
+}
+
+.catalogue-share-modal__dropdown {
+  width: 100%;
+
+  .dropdown__trigger {
+    width: 100%;
+  }
+}
+
+.catalogue-share-modal__title-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  background: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  color: #e4e4e7;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: #6366f1;
+  }
+
+  &::placeholder {
+    color: #71717a;
+  }
+}
+
+.catalogue-share-modal__count {
+  font-size: 12px;
+  color: #a1a1aa;
+  padding: 8px 10px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 8px;
+
+  strong {
+    color: #e4e4e7;
+  }
+
+  &--idle {
+    color: #71717a;
+  }
+
+  &--zero {
+    color: #fca5a5;
+  }
+}
+
+.catalogue-share-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(63, 63, 70, 0.6);
+  background: rgba(15, 15, 16, 0.4);
+}
+
+.catalogue-share-modal__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &.is-copied {
+    background: #22c55e;
+    border-color: #22c55e;
+
+    &:hover { background: #16a34a; }
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+// ---- Public share view page ----
+
+.share-page {
+  min-height: 100vh;
+  background: #0f0f10;
+  color: #e4e4e7;
+  display: flex;
+  flex-direction: column;
+}
+
+.share-page__top {
+  display: flex;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #27272a;
+}
+
+.share-page__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #e4e4e7;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+
+  img {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.share-page__main {
+  flex: 1;
+  max-width: 880px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.share-page__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #fafafa;
+  }
+}
+
+.share-page__meta {
+  margin: 0;
+  font-size: 13px;
+  color: #a1a1aa;
+}
+
+.share-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.share-page__item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-page__item-image {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #27272a;
+  background: #18181b;
+  display: flex;
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+.share-page__item-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #f4f4f5;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #a1a1aa;
+    line-height: 1.55;
+  }
+}
+
+.share-page__empty {
+  padding: 48px 0;
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 14px;
+
+  &--error {
+    color: #fca5a5;
+  }
+}
+
+.share-page__footer {
+  border-top: 1px solid #27272a;
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.share-page__footer-link {
+  color: #71717a;
+  font-size: 12px;
+  text-decoration: none;
+
+  &:hover {
+    color: #a1a1aa;
+  }
+}
+
+@media (max-width: 640px) {
+  .share-page__main {
+    padding: 32px 16px 48px;
+  }
+
+  .share-page__intro h1 {
+    font-size: 22px;
+  }
+
+  // 2×2 grid collapses to 1-per-row on narrow viewports; label stays left.
+  .catalogue-share-modal__grid {
+    grid-template-columns: 1fr;
+  }
+}

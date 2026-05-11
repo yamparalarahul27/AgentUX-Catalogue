@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, Check, ChevronDown, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Bookmark, Check, ChevronDown, Plus, Search, Share2, SlidersHorizontal, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -45,6 +45,7 @@ interface CatalogueToolbarProps {
   bookmarkFilterOn?: boolean;
   bookmarkCount?: number;
   onBookmarkFilterToggle?: () => void;
+  onOpenShare?: () => void;
   onFilterAnnotationChange: (value: string[]) => void;
   onFilterGroupChange: (value: string[]) => void;
   onFilterFlowChange: (value: string[]) => void;
@@ -168,6 +169,7 @@ export function CatalogueToolbar({
   bookmarkFilterOn = false,
   bookmarkCount = 0,
   onBookmarkFilterToggle,
+  onOpenShare,
   searchQuery,
   sortBy,
   viewBy,
@@ -476,6 +478,17 @@ export function CatalogueToolbar({
         </div>
 
         <div className="catalogue-toolbar-right">
+          {onOpenShare && (
+            <button
+              type="button"
+              className="catalogue-toolbar-bookmark catalogue-toolbar--desktop-only"
+              onClick={onOpenShare}
+              title="Share this view"
+              aria-label="Share this view"
+            >
+              <Share2 size={16} />
+            </button>
+          )}
           {onBookmarkFilterToggle && (
             <button
               type="button"

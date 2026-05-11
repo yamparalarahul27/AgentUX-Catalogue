@@ -41,6 +41,7 @@ import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
 import { CatalogueDropOverlay } from './CatalogueDropOverlay';
 import { CatalogueUploadProgress } from './CatalogueUploadProgress';
+import { CatalogueShareModal } from './CatalogueShareModal';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
@@ -306,6 +307,7 @@ export function Catalogue({
     return next;
   }, [bookmarkFilterOn, rawGroupedFamilies, bookmarks.bookmarkedIds]);
   const [showSettings, setShowSettings] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
@@ -811,6 +813,7 @@ export function Catalogue({
                   }
                   setBookmarkFilterOn(true);
                 }}
+                onOpenShare={isGuest ? undefined : () => setShowShareModal(true)}
               />
 
               <div className="catalogue-body-layout">
@@ -1076,6 +1079,16 @@ export function Catalogue({
         items={upload.uploadProgress}
         onDismiss={upload.dismissUploadProgress}
         onRetryFailed={() => { void upload.retryFailedUploads(); }}
+      />
+      <CatalogueShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        groups={allGroups}
+        screenshots={fullScopeScreenshots}
+        initialGroup={filterGroup.length === 1 ? filterGroup[0] : null}
+        initialFlow={filterFlow.length === 1 ? filterFlow[0] : null}
+        initialPlatform={filterPlatform === 'web' || filterPlatform === 'mobile' ? filterPlatform : null}
+        userEmail={user.email ?? null}
       />
     </div>
   );
