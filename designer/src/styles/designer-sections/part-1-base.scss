@@ -63,6 +63,8 @@ $success: #22c55e;
 }
 
 .dropdown__menu {
+  min-width: 220px;
+  max-width: 320px;
   max-height: 240px;
   overflow-y: auto;
   background: $surface;
@@ -149,7 +151,9 @@ $success: #22c55e;
   color: $text-muted;
   cursor: pointer;
   text-align: left;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
   transition: background 0.1s, color 0.1s;
 
   &:hover { background: rgba($accent, 0.08); color: $text; }
