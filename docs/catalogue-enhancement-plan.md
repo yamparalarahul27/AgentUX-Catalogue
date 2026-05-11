@@ -2,11 +2,11 @@
 
 Single source of truth for all Catalogue feature planning, research, and decisions.
 
-> **Status update (2026-05-08):**
+> **Status update (2026-05-09):**
 > - §1 Video Support — **SHIPPED**
 > - §1b Labelling Studio — **SHIPPED** (see [labeling-studio.md](labeling-studio.md))
 > - §2 Quick Upload Enhancement — **PARTIAL** (Cmd+V paste shipped in PR #53; filename parsing for batch upload not wired)
-> - §3 Primary Group + Compare Mode — **PARTIAL** (compare data hook + modal exist, toolbar toggle not wired; primary_group hardcoded)
+> - §3 Primary Group + Compare Mode — **MOVED to [AgentUX-Others](https://github.com/yamparalarahul27/AgentUX-Others)** — dormant scaffolding (compare hook, modal, SCSS) deleted from this repo. Canonical source preserved in the staged-features repo.
 > - §4 Screen Audit Dashboard — **PENDING**
 
 ---
@@ -340,7 +340,7 @@ node scripts/catalogue-rename.mjs --apply
 
 ---
 
-## 3. Primary Group + Compare Mode — PARTIAL
+## 3. Primary Group + Compare Mode — MOVED to AgentUX-Others
 
 ### Problem
 Need to set Crpko as primary product and compare its flows against competitors.
