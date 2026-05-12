@@ -20,10 +20,11 @@ import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/ca
 import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
 import type { Project, ScreenshotNode } from '../types';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { CatalogueTrashSection } from './CatalogueTrashSection';
 import { ConfirmModal } from './ConfirmModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 
-type TeamSubTab = 'analytics' | 'flows' | 'groups';
+type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash';
 
 interface CatalogueTeamSectionProps {
   projects: Project[];
@@ -413,10 +414,14 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
             <button type="button" className={`catalogue-team__sub-tab ${subTab === 'groups' ? 'is-active' : ''}`} onClick={() => setSubTab('groups')}>
               Groups
             </button>
+            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'trash' ? 'is-active' : ''}`} onClick={() => setSubTab('trash')}>
+              Trash
+            </button>
           </div>
           {TEAM_UPLOAD_ANALYTICS_ENABLED && subTab === 'analytics' && <p>Date-wise screenshot uploads grouped in IST with Web and Mobile split.</p>}
           {subTab === 'flows' && <p>All flows from uploaded screenshots. {flowChecklist.length} flow{flowChecklist.length !== 1 ? 's' : ''} tracked.</p>}
           {subTab === 'groups' && <p>All groups used in uploaded screenshots. {groupChecklist.length} group{groupChecklist.length !== 1 ? 's' : ''} found.</p>}
+          {subTab === 'trash' && <p>Deleted screenshots from the last 15 days. Auto-purged after that.</p>}
         </div>
       </div>
 
@@ -581,6 +586,10 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
             </div>
           )}
         </>
+      )}
+
+      {subTab === 'trash' && (
+        <CatalogueTrashSection projects={projects} />
       )}
 
       {editingGroupKey && (

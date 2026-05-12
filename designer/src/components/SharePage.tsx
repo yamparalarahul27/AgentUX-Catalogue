@@ -51,6 +51,7 @@ async function fetchShareScreenshots(params: ShareParams): Promise<ScreenshotNod
   const { data, error } = await supabase
     .from('screenshots')
     .select('*')
+    .is('deleted_at', null)
     .eq('group', params.group)
     .eq('platform', params.platform)
     .eq(flowKey, params.flow)

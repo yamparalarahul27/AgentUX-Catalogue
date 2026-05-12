@@ -31,6 +31,7 @@ interface UseCatalogueFamilyActionsArgs {
   setScreenFamilies: React.Dispatch<React.SetStateAction<ScreenFamily[]>>;
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
+  userEmail?: string | null;
   userId: string;
   webPresets: { key: string }[];
 }
@@ -67,6 +68,7 @@ export function useCatalogueFamilyActions({
   setScreenFamilies,
   setScreenshots,
   setToast,
+  userEmail,
   userId,
   webPresets,
 }: UseCatalogueFamilyActionsArgs) {
@@ -367,27 +369,39 @@ export function useCatalogueFamilyActions({
   const handleDeleteFamily = useCallback(async (id: string) => {
     const familyScreenshots = screenshots.filter((screenshot) => getScreenshotFamilyId(screenshot) === id);
     const screenshotIds = familyScreenshots.map((screenshot) => screenshot.id);
-    const storagePaths = familyScreenshots.map((screenshot) => screenshot.storage_path).filter(Boolean);
 
     if (screenshotIds.length > 0) {
-      await supabase.from('connections').delete().or(
-        screenshotIds.map((screenshotId) => `source_id.eq.${screenshotId},target_id.eq.${screenshotId}`).join(','),
-      );
-      await supabase.from('screenshots').delete().in('id', screenshotIds);
-      if (storagePaths.length > 0) {
-        await supabase.storage.from('screenshots').remove(storagePaths);
-      }
+      await supabase
+        .from('screenshots')
+        .update({
+          deleted_at: new Date().toISOString(),
+          deleted_by_email: userEmail || null,
+        })
+        .in('id', screenshotIds);
     }
 
-    if (screenFamilies.some((family) => family.id === id)) {
-      await supabase.from('screen_families').delete().eq('id', id);
-      setScreenFamilies((previous) => previous.filter((family) => family.id !== id));
-    }
-
+    // Screen_families rows stay put; the UI filters them out by their
+    // screenshot count (a family with zero live screenshots doesn't render).
     setScreenshots((previous) => previous.filter((screenshot) => getScreenshotFamilyId(screenshot) !== id));
     onFamilyDeleted?.(id);
-    setToast({ message: 'Screenshot deleted', type: 'success' });
-  }, [onFamilyDeleted, screenFamilies, screenshots, setScreenFamilies, setScreenshots, setToast]);
+    setToast({ message: 'Moved to Trash. Recoverable for 15 days.', type: 'success' });
+  }, [onFamilyDeleted, screenshots, setScreenshots, setToast, userEmail]);
+
+  // Trash → Restore: clears deleted_at on every screenshot in the family.
+  // The screenshots reappear in the catalogue once their rows refetch.
+  const handleRestoreFamily = useCallback(async (screenshotIds: string[]) => {
+    if (screenshotIds.length === 0) return { ok: false as const };
+    const { error } = await supabase
+      .from('screenshots')
+      .update({ deleted_at: null, deleted_by_email: null })
+      .in('id', screenshotIds);
+    if (error) {
+      setToast({ message: `Restore failed: ${error.message}`, type: 'error' });
+      return { ok: false as const, error: error.message };
+    }
+    setToast({ message: 'Restored from Trash.', type: 'success' });
+    return { ok: true as const };
+  }, [setToast]);
 
   const handleReplaceImage = useCallback(async (id: string, file: File) => {
     const screenshot = screenshots.find((item) => item.id === id);
@@ -703,6 +717,7 @@ export function useCatalogueFamilyActions({
     handleCommentCountChange,
     handleCropFamilyImage,
     handleDeleteFamily,
+    handleRestoreFamily,
     handlePrimaryGroupChange,
     handleRenameFamily,
     handleRenameGroupKey,

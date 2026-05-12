@@ -271,8 +271,8 @@ export function CatalogueFamilyCard({
 
       {showDeleteConfirm && createPortal(
         <ConfirmModal
-          title="Delete Screenshot"
-          message={`Delete "${family.name}" and all variants? This cannot be undone.`}
+          title="Move to Trash"
+          message={`Move "${family.name}" to Trash? Recoverable for 15 days from Settings → Team → Trash.`}
           onConfirm={() => {
             if (!isDeleting) void confirmDelete();
           }}

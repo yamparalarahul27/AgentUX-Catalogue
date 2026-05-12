@@ -1003,8 +1003,8 @@ export function CatalogueFamilyLightbox({
     </div>
     {confirmDeleteOpen && (
       <ConfirmModal
-        title="Delete screenshot"
-        message={`Delete "${family.name}" and all of its variants?`}
+        title="Move to Trash"
+        message={`Move "${family.name}" to Trash? Recoverable for 15 days from Settings → Team → Trash.`}
         onConfirm={() => void performDeleteFamily()}
         onCancel={() => setConfirmDeleteOpen(false)}
       />

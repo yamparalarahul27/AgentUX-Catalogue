@@ -93,6 +93,8 @@ export interface ScreenshotNode {
   uploader_user_id?: string | null;
   uploader_email?: string | null;
   created_at?: string;
+  deleted_at?: string | null;
+  deleted_by_email?: string | null;
 }
 
 export interface Connection {

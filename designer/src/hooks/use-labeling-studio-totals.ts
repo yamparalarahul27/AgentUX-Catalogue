@@ -43,10 +43,10 @@ export function useLabelingStudioTotals(projectIds: string[]) {
       setError(null);
       const path = 'metadata->label->review->>label_status';
       const [totalRes, draftRes, needsRes, verifiedRes] = await Promise.all([
-        supabase.from('screenshots').select('id', { count: 'exact', head: true }).in('project_id', ids),
-        supabase.from('screenshots').select('id', { count: 'exact', head: true }).in('project_id', ids).eq(path, 'draft'),
-        supabase.from('screenshots').select('id', { count: 'exact', head: true }).in('project_id', ids).eq(path, 'needs_review'),
-        supabase.from('screenshots').select('id', { count: 'exact', head: true }).in('project_id', ids).eq(path, 'verified'),
+        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).in('project_id', ids),
+        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).in('project_id', ids).eq(path, 'draft'),
+        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).in('project_id', ids).eq(path, 'needs_review'),
+        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).in('project_id', ids).eq(path, 'verified'),
       ]);
       if (cancelled) return;
       const firstError = totalRes.error || draftRes.error || needsRes.error || verifiedRes.error;
