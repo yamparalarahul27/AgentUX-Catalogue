@@ -187,8 +187,14 @@
   text-decoration: none;
 
   img {
-    width: 42px;
-    height: 42px;
+    // Icon-only crop. The SVG asset includes both the mark and the
+    // "AgentUX" wordmark; we slice off the wordmark by sizing the box
+    // to the icon's natural aspect (390.957/400 ≈ 0.977) and using
+    // object-fit cover anchored to the left.
+    width: 55px;
+    height: 56px;
+    object-fit: cover;
+    object-position: left center;
     display: block;
   }
 }
@@ -550,8 +556,11 @@
   display: inline-flex;
 
   img {
-    width: 30px;
+    // Same icon-only crop as the header logo, scaled down for the footer.
+    width: 29px;
     height: 30px;
+    object-fit: cover;
+    object-position: left center;
     display: block;
   }
 }

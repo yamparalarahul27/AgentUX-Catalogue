@@ -33,7 +33,7 @@ type FetchState =
 type ShareView = 'list' | 'carousel';
 
 const AGENTUX_URL = 'https://agentux.hirahul.xyz/designer/';
-const PORTFOLIO_URL = 'https://hirahul.xyz';
+const PORTFOLIO_URL = 'https://www.hirahul.xyz';
 
 function getLabelSummary(screenshot: ScreenshotNode): string | null {
   const metadata = screenshot.metadata as Record<string, unknown> | null | undefined;
