@@ -404,6 +404,7 @@ export function Catalogue({
     setScreenFamilies,
     setScreenshots,
     setToast,
+    userEmail: user.email,
     userId: user.id,
     webPresets,
   });
@@ -1029,8 +1030,8 @@ export function Catalogue({
       )}
       {confirmDeleteOpen && (
         <ConfirmModal
-          title={`Delete ${selected.size} Screen Famil${selected.size === 1 ? 'y' : 'ies'}`}
-          message={`This will permanently delete ${selected.size} screen famil${selected.size === 1 ? 'y' : 'ies'} and all attached variants. This cannot be undone.`}
+          title={`Move ${selected.size} to Trash`}
+          message={`Move ${selected.size} screen famil${selected.size === 1 ? 'y' : 'ies'} to Trash? Recoverable for 15 days from Settings → Team → Trash.`}
           onConfirm={() => {
             setConfirmDeleteOpen(false);
             void handleBulkDelete();

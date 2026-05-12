@@ -44,6 +44,7 @@ export function CatalogueFamilyCard({
   const fileRef = useRef<HTMLInputElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(family.name);
   const activeVariant = useMemo(
@@ -70,9 +71,14 @@ export function CatalogueFamilyCard({
 
   async function confirmDelete() {
     setIsDeleting(true);
+    setIsRemoving(true);
+    setShowDeleteConfirm(false);
+    // Let the dissolve animation play, then run the actual delete.
+    // The card unmounts when the parent filters this family out, so
+    // setIsDeleting(false) in finally fires on an unmounted node — no-op.
+    await new Promise((resolve) => setTimeout(resolve, 340));
     try {
       await onDeleteFamily(family.id);
-      setShowDeleteConfirm(false);
     } finally {
       setIsDeleting(false);
     }
@@ -80,7 +86,7 @@ export function CatalogueFamilyCard({
 
   return (
     <>
-      <article className={`catalogue-card catalogue-family-card ${isSelected ? 'catalogue-card--selected is-selected' : ''}`} data-family-id={family.id}>
+      <article className={`catalogue-card catalogue-family-card ${isSelected ? 'catalogue-card--selected is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} data-family-id={family.id}>
         <div className="catalogue-family-card__media">
           <button
             type="button"
@@ -271,8 +277,8 @@ export function CatalogueFamilyCard({
 
       {showDeleteConfirm && createPortal(
         <ConfirmModal
-          title="Delete Screenshot"
-          message={`Delete "${family.name}" and all variants? This cannot be undone.`}
+          title="Move to Trash"
+          message={`Move "${family.name}" to Trash? Recoverable for 15 days from Settings → Team → Trash.`}
           onConfirm={() => {
             if (!isDeleting) void confirmDelete();
           }}

@@ -204,6 +204,7 @@ export function useCatalogueData({
       let query = supabase
         .from('screenshots')
         .select('*')
+        .is('deleted_at', null)
         .in('project_id', projectIds);
 
       if (annotationMatchedIds) {

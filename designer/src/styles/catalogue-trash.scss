@@ -1,0 +1,89 @@
+// Catalogue Trash list (Settings → Team → Trash).
+// One row per soft-deleted family. Each row: thumb · meta · Restore.
+
+.catalogue-team__trash-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalogue-team__trash-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(63, 63, 70, 0.8);
+  border-radius: 12px;
+  background: rgba(17, 17, 19, 0.9);
+}
+
+.catalogue-team__trash-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #18181b;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.catalogue-team__trash-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.catalogue-team__trash-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e4e4e7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogue-team__trash-sub {
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.catalogue-team__trash-when {
+  font-size: 11px;
+  color: #71717a;
+}
+
+.catalogue-team__trash-restore {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+@media (max-width: 640px) {
+  .catalogue-team__trash-row {
+    flex-wrap: wrap;
+  }
+
+  .catalogue-team__trash-restore {
+    margin-left: auto;
+  }
+}

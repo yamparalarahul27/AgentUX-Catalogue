@@ -11,6 +11,7 @@ import './styles/catalogue-family-details-modal.scss';
 import './styles/catalogue-gallery-zoom.scss';
 import './styles/catalogue-lightbox-annotations.scss';
 import './styles/catalogue-team.scss';
+import './styles/catalogue-trash.scss';
 import './styles/catalogue-videos.scss';
 import './styles/catalogue-links.scss';
 import './styles/catalogue-header-menu.scss';

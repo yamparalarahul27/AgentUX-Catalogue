@@ -101,6 +101,7 @@ export function useCatalogueFullScope({
         const { data, error } = await supabase
           .from('screenshots')
           .select('id,project_id,group,platform,theme,web_preset_key,mobile_os,metadata,created_at,uploader_email')
+          .is('deleted_at', null)
           .in('project_id', projectIds)
           .order('id', { ascending: true })
           .range(from, from + SCREENSHOT_PAGE_SIZE - 1);
