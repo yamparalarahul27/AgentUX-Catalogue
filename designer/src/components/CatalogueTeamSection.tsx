@@ -38,6 +38,9 @@ interface CatalogueTeamSectionProps {
     oldNames: string[],
     newName: string,
   ) => Promise<{ ok: boolean; updatedCount: number; error?: string }>;
+  // Trash subtab calls this after a successful restore so the parent
+  // catalogue can refetch and the restored card reappears immediately.
+  onTrashRestored?: () => void;
 }
 
 interface FlowChecklistItem {
@@ -109,7 +112,7 @@ function buildGroupChecklist(screenshots: ScreenshotNode[]): GroupChecklistItem[
   return [...counts.values()].sort((left, right) => left.group.localeCompare(right.group));
 }
 
-export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }: CatalogueTeamSectionProps) {
+export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey, onTrashRestored }: CatalogueTeamSectionProps) {
   const [subTab, setSubTab] = useState<TeamSubTab>(TEAM_UPLOAD_ANALYTICS_ENABLED ? 'analytics' : 'flows');
   // The project picker has been removed — single-project workflow. Default
   // to the first project's id (or null if none) so per-project appearance
@@ -589,7 +592,7 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
       )}
 
       {subTab === 'trash' && (
-        <CatalogueTrashSection projects={projects} />
+        <CatalogueTrashSection projects={projects} onRestored={onTrashRestored} />
       )}
 
       {editingGroupKey && (

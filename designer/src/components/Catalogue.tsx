@@ -118,6 +118,7 @@ export function Catalogue({
   const {
     flowMap,
     hasMore,
+    loadData,
     loading,
     loadingMore,
     loadMore,
@@ -670,6 +671,7 @@ export function Catalogue({
               projects={projects}
               screenshots={fullScopeScreenshots}
               onRenameGroupKey={handleRenameGroupKey}
+              onTrashRestored={loadData}
             />
           </div>
         </main>
