@@ -1,6 +1,23 @@
 // Catalogue Trash list (Settings → Team → Trash).
 // One row per soft-deleted family. Each row: thumb · meta · Restore.
 
+.catalogue-team__trash-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.catalogue-team__trash-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
 .catalogue-team__trash-list {
   list-style: none;
   margin: 0;

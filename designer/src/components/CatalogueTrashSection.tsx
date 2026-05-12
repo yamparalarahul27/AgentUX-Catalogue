@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Trash2 } from 'lucide-react';
 
 import { formatRelativeTime } from '../lib/relative-time';
 import { supabase } from '../lib/supabase';
 import type { Project, ScreenshotNode } from '../types';
+import { ConfirmModal } from './ConfirmModal';
 import { ThumbHashImage } from './ThumbHashImage';
 
 interface CatalogueTrashSectionProps {
   projects: Project[];
+  onRestored?: () => void;
 }
 
 interface TrashFamily {
@@ -36,12 +38,14 @@ function platformLabel(platform: string): string {
   return platform;
 }
 
-export function CatalogueTrashSection({ projects }: CatalogueTrashSectionProps) {
+export function CatalogueTrashSection({ projects, onRestored }: CatalogueTrashSectionProps) {
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<string | null>(null);
+  const [showCleanConfirm, setShowCleanConfirm] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
 
   const projectIds = useMemo(() => projects.map((project) => project.id), [projects]);
 
@@ -126,59 +130,142 @@ export function CatalogueTrashSection({ projects }: CatalogueTrashSectionProps) 
       return;
     }
     setScreenshots((previous) => previous.filter((screenshot) => !family.screenshotIds.includes(screenshot.id)));
-    setMessage(`Restored "${family.name}". Reload the catalogue to see it back.`);
+    setMessage(`Restored "${family.name}".`);
+    onRestored?.();
   }
 
-  if (loading) return <div className="catalogue-team__empty">Loading Trash…</div>;
-  if (error) return <div className="catalogue-team__empty">Couldn't load Trash: {error}</div>;
-  if (families.length === 0) {
-    return <div className="catalogue-team__empty">Trash is empty. Items you delete will appear here for 15 days.</div>;
+  async function handleCleanOrphans() {
+    setShowCleanConfirm(false);
+    setIsCleaning(true);
+    setMessage(null);
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke<{
+        bucket_objects: number;
+        referenced_count: number;
+        orphans_found: number;
+        deleted: number;
+        failures: { path: string; error: string }[];
+      }>('purge-orphan-storage', { body: {} });
+
+      if (invokeError) {
+        setMessage(`Cleanup failed: ${invokeError.message}`);
+        return;
+      }
+      if (!data) {
+        setMessage('Cleanup failed: empty response.');
+        return;
+      }
+      if (data.orphans_found === 0) {
+        setMessage('No orphan files found. Storage is clean.');
+        return;
+      }
+      const failureNote = data.failures.length > 0
+        ? ` ${data.failures.length} could not be deleted.`
+        : '';
+      setMessage(`Cleaned ${data.deleted} orphan file${data.deleted === 1 ? '' : 's'} from storage.${failureNote}`);
+    } catch (err) {
+      setMessage(`Cleanup failed: ${err instanceof Error ? err.message : 'unknown error'}`);
+    } finally {
+      setIsCleaning(false);
+    }
+  }
+
+  const headerBar = (
+    <div className="catalogue-team__trash-header">
+      <button
+        type="button"
+        className="btn-secondary catalogue-team__trash-clean"
+        onClick={() => setShowCleanConfirm(true)}
+        disabled={isCleaning}
+        title="Delete storage files that no DB row references"
+      >
+        <Trash2 size={14} aria-hidden="true" />
+        {isCleaning ? 'Cleaning…' : 'Clean orphaned storage'}
+      </button>
+    </div>
+  );
+
+  const cleanConfirm = showCleanConfirm ? (
+    <ConfirmModal
+      title="Clean orphaned storage?"
+      message="This scans the screenshots bucket and permanently deletes any file no DB row references. It cannot remove anything still in active use or in Trash."
+      confirmLabel="Clean now"
+      cancelLabel="Cancel"
+      danger
+      onConfirm={() => { void handleCleanOrphans(); }}
+      onCancel={() => setShowCleanConfirm(false)}
+    />
+  ) : null;
+
+  if (loading) {
+    return (
+      <>
+        {headerBar}
+        <div className="catalogue-team__empty">Loading Trash…</div>
+        {cleanConfirm}
+      </>
+    );
+  }
+  if (error) {
+    return (
+      <>
+        {headerBar}
+        <div className="catalogue-team__empty">Couldn't load Trash: {error}</div>
+        {cleanConfirm}
+      </>
+    );
   }
 
   return (
     <>
+      {headerBar}
       {message && <div className="catalogue-team__group-note">{message}</div>}
-      <ul className="catalogue-team__trash-list">
-        {families.map((family) => {
-          const isRestoring = restoringIds.has(family.id);
-          const subLineParts: string[] = [];
-          if (family.group) subLineParts.push(family.group);
-          if (family.flow) subLineParts.push(family.flow);
-          if (family.platforms.length > 0) subLineParts.push(family.platforms.map(platformLabel).join(', '));
-          return (
-            <li key={family.id} className="catalogue-team__trash-row">
-              <div className="catalogue-team__trash-thumb">
-                {family.thumbUrl && (
-                  <ThumbHashImage
-                    src={family.thumbUrl}
-                    thumbHash={family.thumbHash}
-                    alt={family.name}
-                  />
-                )}
-              </div>
-              <div className="catalogue-team__trash-meta">
-                <div className="catalogue-team__trash-name">{family.name}</div>
-                {subLineParts.length > 0 && (
-                  <div className="catalogue-team__trash-sub">{subLineParts.join(' · ')}</div>
-                )}
-                <div className="catalogue-team__trash-when">
-                  deleted by {family.deletedByEmail || 'someone'}
-                  {family.deletedAt && `, ${formatRelativeTime(family.deletedAt)}`}
+      {families.length === 0 ? (
+        <div className="catalogue-team__empty">Trash is empty. Items you delete will appear here for 15 days.</div>
+      ) : (
+        <ul className="catalogue-team__trash-list">
+          {families.map((family) => {
+            const isRestoring = restoringIds.has(family.id);
+            const subLineParts: string[] = [];
+            if (family.group) subLineParts.push(family.group);
+            if (family.flow) subLineParts.push(family.flow);
+            if (family.platforms.length > 0) subLineParts.push(family.platforms.map(platformLabel).join(', '));
+            return (
+              <li key={family.id} className="catalogue-team__trash-row">
+                <div className="catalogue-team__trash-thumb">
+                  {family.thumbUrl && (
+                    <ThumbHashImage
+                      src={family.thumbUrl}
+                      thumbHash={family.thumbHash}
+                      alt={family.name}
+                    />
+                  )}
                 </div>
-              </div>
-              <button
-                type="button"
-                className="btn-secondary catalogue-team__trash-restore"
-                onClick={() => { void handleRestore(family); }}
-                disabled={isRestoring}
-              >
-                <RotateCcw size={14} aria-hidden="true" />
-                {isRestoring ? 'Restoring…' : 'Restore'}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                <div className="catalogue-team__trash-meta">
+                  <div className="catalogue-team__trash-name">{family.name}</div>
+                  {subLineParts.length > 0 && (
+                    <div className="catalogue-team__trash-sub">{subLineParts.join(' · ')}</div>
+                  )}
+                  <div className="catalogue-team__trash-when">
+                    deleted by {family.deletedByEmail || 'someone'}
+                    {family.deletedAt && `, ${formatRelativeTime(family.deletedAt)}`}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn-secondary catalogue-team__trash-restore"
+                  onClick={() => { void handleRestore(family); }}
+                  disabled={isRestoring}
+                >
+                  <RotateCcw size={14} aria-hidden="true" />
+                  {isRestoring ? 'Restoring…' : 'Restore'}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {cleanConfirm}
     </>
   );
 }
