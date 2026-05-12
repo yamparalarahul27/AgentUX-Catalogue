@@ -187,8 +187,8 @@
   text-decoration: none;
 
   img {
-    width: 28px;
-    height: 28px;
+    width: 42px;
+    height: 42px;
     display: block;
   }
 }
@@ -550,8 +550,8 @@
   display: inline-flex;
 
   img {
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
     display: block;
   }
 }
@@ -573,8 +573,10 @@
 
 @media (max-width: 768px) {
   // Peeks become awkward slivers below this width — hide them, let the
-  // center take the full row.
-  .share-page__carousel-peek {
+  // center take the full row. Arrows also dropped: touch input + dots
+  // already convey "swipe to navigate".
+  .share-page__carousel-peek,
+  .share-page__carousel-arrow {
     display: none;
   }
 

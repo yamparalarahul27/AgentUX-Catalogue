@@ -34,3 +34,13 @@
     color: #fbbf24;
   }
 }
+
+// Hide the bookmark-filter button on mobile/tablet — users get to bookmarks
+// via the header kebab → My Bookmarks. The attribute selector targets only
+// the filter button (it has `aria-pressed`) and not the Share button next to
+// it, which reuses the same `.catalogue-toolbar-bookmark` styling.
+@media (max-width: 960px) {
+  .catalogue-toolbar-bookmark[aria-pressed] {
+    display: none;
+  }
+}
