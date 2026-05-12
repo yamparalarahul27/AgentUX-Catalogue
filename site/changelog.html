@@ -89,6 +89,44 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- May 11 – 12, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">May 11 – 12, 2026</span>
+            <span class="changelog-title">Trash, Groups Taxonomy &amp; Carousel Share View</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li><strong>Trash with 15-day Restore</strong> — deletes are now soft. Cards move to a new <strong>Settings → Team → Trash</strong> tab where each row shows thumb, name, group/flow/platform, who deleted it, and when. One-click <strong>Restore</strong>. A <code>pg_cron</code> job at 03:00 UTC permanently purges anything older than 15 days. The delete confirm now reads <em>"Move to Trash. Recoverable for 15 days"</em>. Cards animate out with a blur + fade + scale dissolve (~280ms) so the removal feels intentional, not abrupt.</li>
+              <li><strong>Groups Type / Region taxonomy</strong> — tag each group as <strong>CEX</strong> or <strong>DEX</strong>, and as <strong>India</strong> or <strong>Global</strong>. Tags render as coloured pills on each group card. New filter bar above the Groups grid: search input + Type radio + Region radio (each with an <strong>Untagged</strong> option, AND across axes). Filter state mirrors to URL params (<code>?q=&amp;type=&amp;region=</code>) via <code>replaceState</code>, so links are shareable and back/forward restores correctly. The Edit-group modal grew two segmented radio rows for setting Type and Region; icon uploads no longer wipe the taxonomy.</li>
+              <li><strong>Share view: List ⇄ Carousel toggle</strong> — public share links can now be viewed as the existing vertical list or a new carousel. The toggle sits next to the title; URL persists the choice (<code>?view=carousel</code>). Carousel uses a <strong>peek layout</strong> on desktop (~75% centre, ~12% prev/next neighbours dimmed and blurred), <strong>full-width single screen</strong> below 768px. Arrows, dots, keyboard (<kbd>←</kbd> <kbd>→</kbd> <kbd>Home</kbd> <kbd>End</kbd>), touch swipe, click-on-peek to jump. Deep-link to a specific step via <code>?view=carousel&amp;step=N</code>. Edge cases handled: single screen (no chrome), two screens (no peeks), first/last (matching arrow + peek hidden).</li>
+              <li><strong>Share view: Last-updated pill</strong> in the header, with a Clock icon and relative time ("2h ago"). Hover/focus reveals the full date in a tooltip. Header logo centres when no timestamp is available.</li>
+              <li><strong>Share view: Footer attribution links</strong> — <em>"Powered by AgentUX · Built by Yamparala Rahul"</em>. <strong>AgentUX</strong> opens <code>agentux.hirahul.xyz/designer/</code>, <strong>Yamparala Rahul</strong> opens the portfolio at <code>www.hirahul.xyz</code>. Both open in new tabs.</li>
+              <li><strong>Auth gate design spec</strong> — frozen-at-decision document for the upcoming public-release auth gate: per-email passcodes (argon2id hashed), Supabase Edge Functions for login + admin operations, a Members admin panel inside Settings → Team. Lives at <code>docs/security-auth-passcode-and-members.md</code>. Implementation lands in a follow-up PR.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li><strong>Share view header</strong> — the "AgentUX Catalogue" wordmark next to the logo is gone. Logo only on the left, last-updated pill on the right (or logo centred when no timestamp). Cleaner, less visually noisy.</li>
+              <li><strong>Share view logo</strong> — the source SVG contains both the icon mark and a wordmark; previously it was pillarboxed inside a forced square, making the visible mark tiny. Now sized to the icon's natural aspect (~55×56 in the header, ~29×30 in the footer) with the wordmark cropped off via <code>object-fit: cover</code>.</li>
+              <li><strong>Share view meta line</strong> — replaced text labels with lucide icons: <strong>User</strong> for the sharer, <strong>Images</strong> for the count, <strong>Monitor</strong> / <strong>Smartphone</strong> for platform.</li>
+              <li><strong>Share view state visuals</strong> — Loading shows a spinning <strong>Loader2</strong>, errors show <strong>AlertTriangle</strong>, empty shows <strong>Inbox</strong>. Less text, more glance-able.</li>
+              <li><strong>Delete confirms updated everywhere</strong> — per-card, lightbox, and bulk-select dialogs all now read <em>"Move to Trash. Recoverable for 15 days from Settings → Team → Trash."</em> instead of the old "cannot be undone" copy.</li>
+              <li><strong>Groups view card layout</strong> — edit pencil moved into the meta row (top-right of the card); screenshot count drops to its own line below. Tag pills (when set) render below that.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li><strong>Bookmark filter leaked through on mobile</strong> — the toolbar's bookmark-filter button is tagged <code>catalogue-toolbar--desktop-only</code>, but a higher-source-order rule in <code>bookmarks.scss</code> overrode the <code>display: none</code> via equal specificity. Now hidden on viewports ≤ 960px via an attribute-scoped rule that only targets the filter button (Share button next to it stays visible on mobile).</li>
+              <li><strong>Mobile carousel arrows took horizontal room</strong> for no benefit on touch viewports. Hidden below 768px — swipe and dots already convey navigation.</li>
+              <li><strong>Portfolio link in share footer didn't load in Safari</strong> for some users — it pointed to the apex domain (<code>hirahul.xyz</code>). Switched to <code>www.hirahul.xyz</code>.</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- May 7 – 9, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">
