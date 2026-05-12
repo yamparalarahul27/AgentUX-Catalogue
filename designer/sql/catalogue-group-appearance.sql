@@ -13,12 +13,35 @@ alter table public.catalogue_group_appearance
   add column if not exists display_label text,
   add column if not exists icon_url text,
   add column if not exists icon_storage_path text,
+  add column if not exists category text,
+  add column if not exists region text,
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
 
 alter table public.catalogue_group_appearance
   drop column if exists icon,
   drop column if exists icon_emoji;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'catalogue_group_appearance_category_check'
+  ) then
+    alter table public.catalogue_group_appearance
+      add constraint catalogue_group_appearance_category_check
+      check (category is null or category in ('cex', 'dex'));
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'catalogue_group_appearance_region_check'
+  ) then
+    alter table public.catalogue_group_appearance
+      add constraint catalogue_group_appearance_region_check
+      check (region is null or region in ('india', 'global'));
+  end if;
+end $$;
 
 create index if not exists catalogue_group_appearance_project_idx
   on public.catalogue_group_appearance (project_id);

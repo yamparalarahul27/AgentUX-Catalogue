@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, Search } from 'lucide-react';
 
 import { getScreenshotFlowLabel } from '../lib/catalogue-families';
 import {
@@ -11,6 +11,10 @@ import {
   saveCatalogueGroupAppearanceToSupabase,
   subscribeCatalogueGroupAppearance,
   uploadCatalogueGroupIconToSupabase,
+} from '../lib/catalogue-group-appearance';
+import type {
+  CatalogueGroupCategory,
+  CatalogueGroupRegion,
 } from '../lib/catalogue-group-appearance';
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
 import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
@@ -43,6 +47,36 @@ interface FlowChecklistItem {
 interface GroupChecklistItem {
   group: string;
   count: number;
+}
+
+interface EnrichedGroupItem extends GroupChecklistItem {
+  category: CatalogueGroupCategory | null;
+  region: CatalogueGroupRegion | null;
+}
+
+type GroupTypeFilter = 'all' | CatalogueGroupCategory | 'untagged';
+type GroupRegionFilter = 'all' | CatalogueGroupRegion | 'untagged';
+
+const TYPE_FILTER_OPTIONS: { label: string; value: GroupTypeFilter }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'CEX', value: 'cex' },
+  { label: 'DEX', value: 'dex' },
+  { label: 'Untagged', value: 'untagged' },
+];
+
+const REGION_FILTER_OPTIONS: { label: string; value: GroupRegionFilter }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'India', value: 'india' },
+  { label: 'Global', value: 'global' },
+  { label: 'Untagged', value: 'untagged' },
+];
+
+function isGroupTypeFilter(value: string | null): value is GroupTypeFilter {
+  return value === 'all' || value === 'cex' || value === 'dex' || value === 'untagged';
+}
+
+function isGroupRegionFilter(value: string | null): value is GroupRegionFilter {
+  return value === 'all' || value === 'india' || value === 'global' || value === 'untagged';
 }
 
 function buildFlowChecklist(screenshots: ScreenshotNode[]): FlowChecklistItem[] {
@@ -86,10 +120,15 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
   const [groupLabelDraft, setGroupLabelDraft] = useState('');
   const [groupIconStoragePathDraft, setGroupIconStoragePathDraft] = useState('');
   const [groupIconUrlDraft, setGroupIconUrlDraft] = useState('');
+  const [groupCategoryDraft, setGroupCategoryDraft] = useState<CatalogueGroupCategory | null>(null);
+  const [groupRegionDraft, setGroupRegionDraft] = useState<CatalogueGroupRegion | null>(null);
   const [groupSaveMessage, setGroupSaveMessage] = useState<string | null>(null);
   const [isSavingGroupAppearance, setIsSavingGroupAppearance] = useState(false);
   const [isUploadingGroupIcon, setIsUploadingGroupIcon] = useState(false);
   const [renameConfirm, setRenameConfirm] = useState<{ group: string; newName: string; count: number; sourceCasings: string[] } | null>(null);
+  const [groupSearch, setGroupSearch] = useState('');
+  const [groupTypeFilter, setGroupTypeFilter] = useState<GroupTypeFilter>('all');
+  const [groupRegionFilter, setGroupRegionFilter] = useState<GroupRegionFilter>('all');
 
   const scopedScreenshots = useMemo(
     () => (projectId ? screenshots.filter((screenshot) => screenshot.project_id === projectId) : screenshots),
@@ -103,6 +142,40 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
 
   const flowChecklist = useMemo(() => buildFlowChecklist(scopedScreenshots), [scopedScreenshots]);
   const groupChecklist = useMemo(() => buildGroupChecklist(scopedScreenshots), [scopedScreenshots]);
+
+  const enrichedGroupChecklist = useMemo<EnrichedGroupItem[]>(
+    () => groupChecklist.map((item) => {
+      const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, item.group, projectId);
+      return { ...item, category: appearance.category, region: appearance.region };
+    }),
+    [groupAppearanceMap, groupChecklist, projectId],
+  );
+
+  const filteredGroupChecklist = useMemo<EnrichedGroupItem[]>(() => {
+    const query = groupSearch.trim().toLowerCase();
+    return enrichedGroupChecklist.filter((item) => {
+      if (query && !item.group.toLowerCase().includes(query)) return false;
+      if (groupTypeFilter !== 'all') {
+        if (groupTypeFilter === 'untagged') {
+          if (item.category) return false;
+        } else if (item.category !== groupTypeFilter) {
+          return false;
+        }
+      }
+      if (groupRegionFilter !== 'all') {
+        if (groupRegionFilter === 'untagged') {
+          if (item.region) return false;
+        } else if (item.region !== groupRegionFilter) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [enrichedGroupChecklist, groupRegionFilter, groupSearch, groupTypeFilter]);
+
+  const hasActiveGroupFilter = Boolean(
+    groupSearch.trim() || groupTypeFilter !== 'all' || groupRegionFilter !== 'all',
+  );
 
   useEffect(() => {
     const unsubscribe = subscribeCatalogueGroupAppearance(() => {
@@ -120,6 +193,46 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
     void ensureCatalogueGroupAppearanceLoadedForProjects(projects.map((project) => project.id));
   }, [projectId, projects]);
 
+  // Hydrate filter state from URL on mount and on back/forward navigation.
+  // Only applied when the Groups subtab is showing; values for the other
+  // subtabs do not pollute the params (we strip them on write).
+  useEffect(() => {
+    function readFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const query = params.get('q') ?? '';
+      const type = params.get('type');
+      const region = params.get('region');
+      setGroupSearch(query);
+      setGroupTypeFilter(isGroupTypeFilter(type) ? type : 'all');
+      setGroupRegionFilter(isGroupRegionFilter(region) ? region : 'all');
+    }
+    readFromUrl();
+    window.addEventListener('popstate', readFromUrl);
+    return () => window.removeEventListener('popstate', readFromUrl);
+  }, []);
+
+  // Mirror filter state to the URL. Uses replaceState so search-input
+  // keystrokes don't pile up in browser history.
+  useEffect(() => {
+    if (subTab !== 'groups') return;
+    const params = new URLSearchParams(window.location.search);
+    if (groupSearch.trim()) params.set('q', groupSearch.trim());
+    else params.delete('q');
+    if (groupTypeFilter !== 'all') params.set('type', groupTypeFilter);
+    else params.delete('type');
+    if (groupRegionFilter !== 'all') params.set('region', groupRegionFilter);
+    else params.delete('region');
+    const next = params.toString();
+    const url = next ? `${window.location.pathname}?${next}` : window.location.pathname;
+    window.history.replaceState({}, '', url);
+  }, [groupRegionFilter, groupSearch, groupTypeFilter, subTab]);
+
+  function clearGroupFilters() {
+    setGroupSearch('');
+    setGroupTypeFilter('all');
+    setGroupRegionFilter('all');
+  }
+
   function getAppearanceScope() {
     if (projectId) {
       return { projectId };
@@ -134,6 +247,8 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
     setGroupLabelDraft(appearance.label || group);
     setGroupIconStoragePathDraft(appearance.iconStoragePath || '');
     setGroupIconUrlDraft(appearance.iconUrl || '');
+    setGroupCategoryDraft(appearance.category);
+    setGroupRegionDraft(appearance.region);
     setGroupSaveMessage(null);
   }
 
@@ -143,17 +258,18 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
     setGroupLabelDraft('');
     setGroupIconStoragePathDraft('');
     setGroupIconUrlDraft('');
+    setGroupCategoryDraft(null);
+    setGroupRegionDraft(null);
   }
 
-  // Saves the group appearance row (display label + icon). Pure cosmetic.
-  // Called after the rename DB write succeeds (or directly when no rename
-  // is needed).
   async function saveAppearanceForGroup(group: string) {
     const result = await saveCatalogueGroupAppearanceToSupabase({
+      category: groupCategoryDraft,
       group,
       iconStoragePath: groupIconStoragePathDraft || null,
       iconUrl: groupIconUrlDraft || null,
       label: groupLabelDraft,
+      region: groupRegionDraft,
       ...getAppearanceScope(),
     });
     return result;
@@ -240,9 +356,11 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
     setGroupSaveMessage(null);
     try {
       const result = await uploadCatalogueGroupIconToSupabase({
+        category: groupCategoryDraft,
         file,
         group,
         label: groupLabelDraft,
+        region: groupRegionDraft,
         ...getAppearanceScope(),
       });
 
@@ -262,8 +380,10 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
   async function handleRemoveUploadedIcon(group: string) {
     setGroupSaveMessage(null);
     const result = await removeCatalogueGroupUploadedIconFromSupabase({
+      category: groupCategoryDraft,
       group,
       label: groupLabelDraft,
+      region: groupRegionDraft,
       ...getAppearanceScope(),
     });
 
@@ -352,11 +472,78 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
               {groupSaveMessage}
             </div>
           )}
+
+          {groupChecklist.length > 0 && (
+            <div className="catalogue-team__filterbar">
+              <label className="catalogue-team__search">
+                <Search size={14} aria-hidden="true" />
+                <input
+                  type="text"
+                  value={groupSearch}
+                  onChange={(event) => setGroupSearch(event.target.value)}
+                  placeholder="Search groups…"
+                  aria-label="Search groups"
+                />
+              </label>
+
+              <div className="catalogue-team__filtergroup" role="radiogroup" aria-label="Type">
+                <span className="catalogue-team__filterlabel">Type</span>
+                {TYPE_FILTER_OPTIONS.map((option) => {
+                  const checked = groupTypeFilter === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={checked}
+                      className={`catalogue-team__filterchip${checked ? ' is-active' : ''}`}
+                      onClick={() => setGroupTypeFilter(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="catalogue-team__filtergroup" role="radiogroup" aria-label="Region">
+                <span className="catalogue-team__filterlabel">Region</span>
+                {REGION_FILTER_OPTIONS.map((option) => {
+                  const checked = groupRegionFilter === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={checked}
+                      className={`catalogue-team__filterchip${checked ? ' is-active' : ''}`}
+                      onClick={() => setGroupRegionFilter(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {hasActiveGroupFilter && groupChecklist.length > 0 && (
+            <div className="catalogue-team__filterstatus">
+              <span>
+                Showing {filteredGroupChecklist.length} of {groupChecklist.length} group{groupChecklist.length === 1 ? '' : 's'}
+              </span>
+              <button type="button" className="catalogue-team__filterclear" onClick={clearGroupFilters}>
+                Clear
+              </button>
+            </div>
+          )}
+
           {groupChecklist.length === 0 ? (
             <div className="catalogue-team__empty">No groups found yet. Add or rename screenshot groups to populate this list.</div>
+          ) : filteredGroupChecklist.length === 0 ? (
+            <div className="catalogue-team__empty">No groups match the current filters.</div>
           ) : (
             <div className="catalogue-team__checklist">
-              {groupChecklist.map((item) => (
+              {filteredGroupChecklist.map((item) => (
                 <div key={item.group.toLowerCase()} className="catalogue-team__checklist-item catalogue-team__checklist-item--group">
                   <div className="catalogue-team__group-meta">
                     <CatalogueGroupLabel
@@ -364,17 +551,31 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
                       group={item.group}
                       projectId={projectId}
                     />
-                    <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
+                    <button
+                      type="button"
+                      className="catalogue-team__group-edit-btn"
+                      onClick={() => beginGroupEdit(item.group)}
+                      title="Edit group"
+                      aria-label="Edit group"
+                    >
+                      <Pencil size={14} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="catalogue-team__group-edit-btn"
-                    onClick={() => beginGroupEdit(item.group)}
-                    title="Edit icon"
-                    aria-label="Edit icon"
-                  >
-                    <Pencil size={14} />
-                  </button>
+                  <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
+                  {(item.category || item.region) && (
+                    <div className="catalogue-team__checklist-tags">
+                      {item.category && (
+                        <span className={`catalogue-team__checklist-tag catalogue-team__checklist-tag--${item.category}`}>
+                          {item.category.toUpperCase()}
+                        </span>
+                      )}
+                      {item.region && (
+                        <span className={`catalogue-team__checklist-tag catalogue-team__checklist-tag--${item.region}`}>
+                          {item.region === 'india' ? 'India' : 'Global'}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -387,11 +588,15 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey }
           group={editingGroupOriginal}
           labelDraft={groupLabelDraft}
           iconUrlDraft={groupIconUrlDraft}
+          categoryDraft={groupCategoryDraft}
+          regionDraft={groupRegionDraft}
           hasUploadedIcon={Boolean(groupIconStoragePathDraft)}
           isUploading={isUploadingGroupIcon}
           isSaving={isSavingGroupAppearance}
           message={groupSaveMessage}
           onChangeLabel={setGroupLabelDraft}
+          onChangeCategory={setGroupCategoryDraft}
+          onChangeRegion={setGroupRegionDraft}
           onPickFile={(file) => { void handleGroupIconUpload(editingGroupOriginal, file); }}
           onRemoveUploadedIcon={() => { void handleRemoveUploadedIcon(editingGroupOriginal); }}
           onSave={() => { void saveGroupAppearance(editingGroupOriginal); }}

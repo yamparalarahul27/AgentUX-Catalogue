@@ -1,19 +1,38 @@
 import { supabase } from './supabase';
 
+export type CatalogueGroupCategory = 'cex' | 'dex';
+export type CatalogueGroupRegion = 'india' | 'global';
+
 export interface CatalogueGroupAppearance {
+  category?: CatalogueGroupCategory;
   iconStoragePath?: string;
   iconUrl?: string;
   label?: string;
+  region?: CatalogueGroupRegion;
 }
 
 export type CatalogueGroupAppearanceMap = Record<string, Record<string, CatalogueGroupAppearance>>;
 
 interface CatalogueGroupAppearanceRow {
+  category: string | null;
   display_label: string | null;
   group_key: string;
   icon_storage_path: string | null;
   icon_url: string | null;
   project_id: string;
+  region: string | null;
+}
+
+function normalizeCategory(value?: string | null): CatalogueGroupCategory | undefined {
+  const cleaned = value?.trim().toLowerCase();
+  if (cleaned === 'cex' || cleaned === 'dex') return cleaned;
+  return undefined;
+}
+
+function normalizeRegion(value?: string | null): CatalogueGroupRegion | undefined {
+  const cleaned = value?.trim().toLowerCase();
+  if (cleaned === 'india' || cleaned === 'global') return cleaned;
+  return undefined;
 }
 
 const CATALOGUE_GROUP_APPEARANCE_KEY = 'catalogue:group-appearance:v1';
@@ -78,14 +97,18 @@ function buildGroupIconStoragePath(projectId: string, groupKey: string, fileName
 function buildAppearanceEntry(
   group: string,
   input: {
+    category?: CatalogueGroupCategory | null;
     iconStoragePath?: string | null;
     iconUrl?: string | null;
     label?: string | null;
+    region?: CatalogueGroupRegion | null;
   },
 ): CatalogueGroupAppearance | null {
   const cleanedIconUrl = cleanText(input.iconUrl);
   const cleanedIconStoragePath = cleanText(input.iconStoragePath);
   const cleanedLabel = cleanText(input.label);
+  const category = normalizeCategory(input.category ?? undefined);
+  const region = normalizeRegion(input.region ?? undefined);
   const entry: CatalogueGroupAppearance = {};
 
   if (cleanedIconUrl) entry.iconUrl = cleanedIconUrl;
@@ -95,7 +118,10 @@ function buildAppearanceEntry(
     entry.label = cleanedLabel;
   }
 
-  return entry.iconUrl || entry.label ? entry : null;
+  if (category) entry.category = category;
+  if (region) entry.region = region;
+
+  return entry.iconUrl || entry.label || entry.category || entry.region ? entry : null;
 }
 
 function notifyGroupAppearanceSubscribers() {
@@ -120,9 +146,11 @@ function setProjectEntries(
 
 function normalizeRowToEntry(row: CatalogueGroupAppearanceRow): CatalogueGroupAppearance | null {
   return buildAppearanceEntry(row.group_key, {
+    category: normalizeCategory(row.category),
     iconStoragePath: row.icon_storage_path,
     iconUrl: row.icon_url,
     label: row.display_label,
+    region: normalizeRegion(row.region),
   });
 }
 
@@ -202,11 +230,13 @@ export function writeCatalogueGroupAppearanceMap(map: CatalogueGroupAppearanceMa
 export function upsertCatalogueGroupAppearance(
   map: CatalogueGroupAppearanceMap,
   input: {
+    category?: CatalogueGroupCategory | null;
     group: string;
     iconStoragePath?: string | null;
     iconUrl?: string | null;
     label?: string | null;
     projectId?: string | null;
+    region?: CatalogueGroupRegion | null;
   },
 ): CatalogueGroupAppearanceMap {
   const cleanedGroup = input.group.trim();
@@ -217,9 +247,11 @@ export function upsertCatalogueGroupAppearance(
   const projectEntries = { ...(map[projectKey] || {}) };
   const nextMap: CatalogueGroupAppearanceMap = { ...map };
   const entry = buildAppearanceEntry(cleanedGroup, {
+    category: input.category,
     iconStoragePath: input.iconStoragePath,
     iconUrl: input.iconUrl,
     label: input.label,
+    region: input.region,
   });
 
   if (!entry) {
@@ -251,7 +283,7 @@ export async function ensureCatalogueGroupAppearanceLoaded(projectId?: string | 
   const nextLoad = (async () => {
     const { data, error } = await supabase
       .from('catalogue_group_appearance')
-      .select('project_id, group_key, display_label, icon_url, icon_storage_path')
+      .select('project_id, group_key, display_label, icon_url, icon_storage_path, category, region')
       .eq('project_id', projectKey);
 
     if (error || !data) return;
@@ -291,12 +323,14 @@ export function subscribeCatalogueGroupAppearance(listener: () => void) {
 }
 
 export async function saveCatalogueGroupAppearanceToSupabase(input: {
+  category?: CatalogueGroupCategory | null;
   group: string;
   iconStoragePath?: string | null;
   iconUrl?: string | null;
   label?: string | null;
   projectId?: string | null;
   projectIds?: string[] | null;
+  region?: CatalogueGroupRegion | null;
 }) {
   const scopedProjects = input.projectId
     ? normalizeProjectKeys([input.projectId])
@@ -314,21 +348,25 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
 
   for (const projectKey of scopedProjects) {
     nextMap = upsertCatalogueGroupAppearance(nextMap, {
+      category: input.category,
       group: input.group,
       iconStoragePath: input.iconStoragePath,
       iconUrl: input.iconUrl,
       label: input.label,
       projectId: projectKey,
+      region: input.region,
     });
   }
 
   if (!input.projectId) {
     nextMap = upsertCatalogueGroupAppearance(nextMap, {
+      category: input.category,
       group: input.group,
       iconStoragePath: input.iconStoragePath,
       iconUrl: input.iconUrl,
       label: input.label,
       projectId: null,
+      region: input.region,
     });
   }
 
@@ -340,11 +378,13 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
       const { error } = await supabase
         .from('catalogue_group_appearance')
         .upsert({
+          category: entry.category || null,
           display_label: entry.label || null,
           group_key: groupKey,
           icon_storage_path: entry.iconStoragePath || null,
           icon_url: entry.iconUrl || null,
           project_id: projectKey,
+          region: entry.region || null,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'project_id,group_key' });
 
@@ -373,11 +413,13 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
 }
 
 export async function uploadCatalogueGroupIconToSupabase(input: {
+  category?: CatalogueGroupCategory | null;
   file: File;
   group: string;
   label?: string | null;
   projectId?: string | null;
   projectIds?: string[] | null;
+  region?: CatalogueGroupRegion | null;
 }) {
   const scopedProjects = input.projectId
     ? normalizeProjectKeys([input.projectId])
@@ -440,12 +482,14 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
   }
 
   const saveResult = await saveCatalogueGroupAppearanceToSupabase({
+    category: input.category,
     group: input.group,
     iconStoragePath: storagePath,
     iconUrl: publicUrl,
     label: input.label,
     projectId: input.projectId,
     projectIds: input.projectIds,
+    region: input.region,
   });
 
   if (!saveResult.ok) {
@@ -466,10 +510,12 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
 }
 
 export async function removeCatalogueGroupUploadedIconFromSupabase(input: {
+  category?: CatalogueGroupCategory | null;
   group: string;
   label?: string | null;
   projectId?: string | null;
   projectIds?: string[] | null;
+  region?: CatalogueGroupRegion | null;
 }) {
   const scopedProjects = input.projectId
     ? normalizeProjectKeys([input.projectId])
@@ -492,12 +538,14 @@ export async function removeCatalogueGroupUploadedIconFromSupabase(input: {
   );
 
   const saveResult = await saveCatalogueGroupAppearanceToSupabase({
+    category: input.category,
     group: input.group,
     iconStoragePath: null,
     iconUrl: null,
     label: input.label,
     projectId: input.projectId,
     projectIds: input.projectIds,
+    region: input.region,
   });
 
   if (!saveResult.ok) return saveResult;
@@ -517,17 +565,21 @@ export function resolveCatalogueGroupAppearance(
   const cleanedGroup = group?.trim();
   if (!cleanedGroup) {
     return {
+      category: null as CatalogueGroupCategory | null,
       iconStoragePath: null as string | null,
       iconUrl: null as string | null,
       label: null as string | null,
+      region: null as CatalogueGroupRegion | null,
     };
   }
 
   const entry = getScopedGroupAppearance(map, cleanedGroup, projectId);
 
   return {
+    category: entry?.category ?? null,
     iconStoragePath: cleanText(entry?.iconStoragePath) || null,
     iconUrl: cleanText(entry?.iconUrl) || null,
     label: cleanText(entry?.label) || cleanedGroup,
+    region: entry?.region ?? null,
   };
 }

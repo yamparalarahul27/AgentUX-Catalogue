@@ -1,30 +1,55 @@
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Upload, X } from 'lucide-react';
 
+import type {
+  CatalogueGroupCategory,
+  CatalogueGroupRegion,
+} from '../lib/catalogue-group-appearance';
+
 interface GroupAppearanceEditModalProps {
   group: string;
   labelDraft: string;
   iconUrlDraft: string;
+  categoryDraft: CatalogueGroupCategory | null;
+  regionDraft: CatalogueGroupRegion | null;
   hasUploadedIcon: boolean;
   isUploading: boolean;
   isSaving: boolean;
   message: string | null;
   onChangeLabel: (value: string) => void;
+  onChangeCategory: (value: CatalogueGroupCategory | null) => void;
+  onChangeRegion: (value: CatalogueGroupRegion | null) => void;
   onPickFile: (file: File) => void;
   onRemoveUploadedIcon: () => void;
   onSave: () => void;
   onCancel: () => void;
 }
 
+const CATEGORY_OPTIONS: { label: string; value: CatalogueGroupCategory | null }[] = [
+  { label: 'CEX', value: 'cex' },
+  { label: 'DEX', value: 'dex' },
+  { label: 'None', value: null },
+];
+
+const REGION_OPTIONS: { label: string; value: CatalogueGroupRegion | null }[] = [
+  { label: 'India', value: 'india' },
+  { label: 'Global', value: 'global' },
+  { label: 'None', value: null },
+];
+
 export function GroupAppearanceEditModal({
   group,
   labelDraft,
   iconUrlDraft,
+  categoryDraft,
+  regionDraft,
   hasUploadedIcon,
   isUploading,
   isSaving,
   message,
   onChangeLabel,
+  onChangeCategory,
+  onChangeRegion,
   onPickFile,
   onRemoveUploadedIcon,
   onSave,
@@ -136,6 +161,48 @@ export function GroupAppearanceEditModal({
               Remove uploaded icon
             </button>
           )}
+
+          <div className="group-edit-field">
+            <span>Type</span>
+            <div className="group-edit-segmented" role="radiogroup" aria-label="Type">
+              {CATEGORY_OPTIONS.map((option) => {
+                const checked = categoryDraft === option.value;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    className={`group-edit-segmented-option${checked ? ' is-active' : ''}`}
+                    onClick={() => onChangeCategory(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="group-edit-field">
+            <span>Region</span>
+            <div className="group-edit-segmented" role="radiogroup" aria-label="Region">
+              {REGION_OPTIONS.map((option) => {
+                const checked = regionDraft === option.value;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    className={`group-edit-segmented-option${checked ? ' is-active' : ''}`}
+                    onClick={() => onChangeRegion(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {message && <div className="group-edit-message">{message}</div>}
         </div>
