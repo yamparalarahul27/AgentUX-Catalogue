@@ -75,6 +75,20 @@
     border-color: #6366f1;
     box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35);
   }
+
+  // Dissolve animation while a card is moving to Trash. The parent React
+  // node unmounts ~340ms after this class is applied; the grid reflows
+  // at unmount. We don't try to collapse width in-cell — CSS Grid doesn't
+  // honour that transition.
+  &.is-removing {
+    filter: blur(8px);
+    opacity: 0;
+    transform: scale(0.92);
+    pointer-events: none;
+    transition: filter 280ms ease-in,
+                opacity 200ms ease-in,
+                transform 280ms ease-in;
+  }
 }
 
 .catalogue-family-card__media {
