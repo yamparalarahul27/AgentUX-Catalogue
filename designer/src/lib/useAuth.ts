@@ -34,5 +34,12 @@ export function useAuth() {
     await supabase.auth.signOut({ scope: 'local' });
   }
 
-  return { user, loading, logout };
+  // Invalidates every refresh token issued to this user — kicks out
+  // all tabs / devices / browsers. Reach for this if you suspect
+  // session theft or want to forcibly cycle credentials.
+  async function logoutEverywhere() {
+    await supabase.auth.signOut({ scope: 'global' });
+  }
+
+  return { user, loading, logout, logoutEverywhere };
 }

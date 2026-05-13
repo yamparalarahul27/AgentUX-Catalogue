@@ -1,0 +1,390 @@
+// Members admin panel. Lives in its own file because catalogue-team.scss
+// is already at ~700 LOC. Wired via designer/src/catalogue-main.tsx.
+
+.catalogue-members {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// ─── Unlock card ────────────────────────────────────────────
+
+.catalogue-members__unlock {
+  max-width: 420px;
+  padding: 24px;
+  border: 1px solid #27272a;
+  border-radius: 14px;
+  background: rgba(24, 24, 27, 0.7);
+
+  h3 {
+    font-size: 16px;
+    margin-bottom: 6px;
+    color: #e4e4e7;
+  }
+
+  p {
+    color: #a1a1aa;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+}
+
+.catalogue-members__unlock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// ─── Toolbar ────────────────────────────────────────────────
+
+.catalogue-members__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.catalogue-members__count {
+  color: #a1a1aa;
+  font-size: 13px;
+  margin-left: auto;
+}
+
+.catalogue-members__loading {
+  color: #a1a1aa;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+// ─── Table ──────────────────────────────────────────────────
+
+.catalogue-members__table-wrap {
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(24, 24, 27, 0.6);
+}
+
+.catalogue-members__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th,
+  td {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid #27272a;
+    color: #e4e4e7;
+    vertical-align: middle;
+  }
+
+  th {
+    font-weight: 600;
+    color: #a1a1aa;
+    background: rgba(17, 17, 19, 0.6);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.catalogue-members__actions-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.catalogue-members__email {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+}
+
+.catalogue-members__admin-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.catalogue-members__last-seen {
+  color: #a1a1aa;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.catalogue-members__actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+// ─── Status pills ───────────────────────────────────────────
+
+.catalogue-members__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &--active {
+    background: rgba(34, 197, 94, 0.14);
+    color: #86efac;
+  }
+
+  &--disabled {
+    background: rgba(161, 161, 170, 0.14);
+    color: #a1a1aa;
+  }
+
+  &--locked {
+    background: rgba(239, 68, 68, 0.14);
+    color: #fca5a5;
+  }
+}
+
+// ─── Action icon buttons ────────────────────────────────────
+
+.catalogue-members__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e4e4e7;
+    border-color: #27272a;
+  }
+
+  &.is-off {
+    color: #71717a;
+  }
+
+  &--danger:hover {
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+}
+
+// ─── Kebab menu ─────────────────────────────────────────────
+
+.catalogue-members__kebab {
+  position: relative;
+  display: inline-flex;
+}
+
+.catalogue-members__kebab-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 200px;
+  padding: 4px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #18181b;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  button {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #e4e4e7;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+}
+
+// ─── Mobile cards (≤640px) ──────────────────────────────────
+
+.catalogue-members__cards {
+  display: none;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalogue-members__card {
+  padding: 14px;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  background: rgba(24, 24, 27, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalogue-members__card-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.catalogue-members__card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a1a1aa;
+  font-size: 12.5px;
+  flex-wrap: wrap;
+}
+
+.catalogue-members__card-dot {
+  color: #52525b;
+}
+
+.catalogue-members__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.catalogue-members__card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: transparent;
+  color: #e4e4e7;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &--danger:hover {
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+}
+
+@media (max-width: 640px) {
+  .catalogue-members__table-wrap {
+    display: none;
+  }
+  .catalogue-members__cards {
+    display: flex;
+  }
+}
+
+// ─── Modals ─────────────────────────────────────────────────
+
+.catalogue-members__modal {
+  text-align: left;
+  max-width: 420px;
+  width: 90%;
+  padding: 24px 26px;
+
+  .confirm-title {
+    text-align: left;
+  }
+
+  .confirm-message {
+    text-align: left;
+  }
+}
+
+.catalogue-members__modal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #a1a1aa;
+  text-align: left;
+  margin: 14px 0 18px;
+}
+
+.catalogue-members__reveal-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 14px 0;
+}
+
+.catalogue-members__reveal-code {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: rgba(17, 17, 19, 0.8);
+  color: #e4e4e7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  user-select: all;
+}
+
+.catalogue-members__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: transparent;
+  color: #e4e4e7;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.catalogue-members__reveal-warning {
+  font-size: 12.5px;
+  color: #fca5a5;
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+// ─── Toast ──────────────────────────────────────────────────
+
+.catalogue-members__toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #18181b;
+  border: 1px solid #27272a;
+  color: #e4e4e7;
+  font-size: 13px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1500;
+}

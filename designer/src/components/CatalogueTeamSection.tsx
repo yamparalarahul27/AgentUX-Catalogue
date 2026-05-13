@@ -21,15 +21,17 @@ import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
 import type { Project, ScreenshotNode } from '../types';
 import { CatalogueFlagsSection } from './CatalogueFlagsSection';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { CatalogueMembersSection } from './CatalogueMembersSection';
 import { CatalogueTrashSection } from './CatalogueTrashSection';
 import { ConfirmModal } from './ConfirmModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 
-type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash' | 'flags';
+type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash' | 'flags' | 'members';
 
 interface CatalogueTeamSectionProps {
   projects: Project[];
   screenshots: ScreenshotNode[];
+  currentUserEmail: string;
   // When provided, saving a group editor with a changed name will also
   // rename every underlying `screenshots.group` row whose casing matches
   // any of `oldNames`. The Team checklist groups by lowercase canonical,
@@ -113,7 +115,7 @@ function buildGroupChecklist(screenshots: ScreenshotNode[]): GroupChecklistItem[
   return [...counts.values()].sort((left, right) => left.group.localeCompare(right.group));
 }
 
-export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey, onTrashRestored }: CatalogueTeamSectionProps) {
+export function CatalogueTeamSection({ projects, screenshots, currentUserEmail, onRenameGroupKey, onTrashRestored }: CatalogueTeamSectionProps) {
   const [subTab, setSubTab] = useState<TeamSubTab>(TEAM_UPLOAD_ANALYTICS_ENABLED ? 'analytics' : 'flows');
   // The project picker has been removed — single-project workflow. Default
   // to the first project's id (or null if none) so per-project appearance
@@ -424,12 +426,16 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey, 
             <button type="button" className={`catalogue-team__sub-tab ${subTab === 'flags' ? 'is-active' : ''}`} onClick={() => setSubTab('flags')}>
               Flags
             </button>
+            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'members' ? 'is-active' : ''}`} onClick={() => setSubTab('members')}>
+              Members
+            </button>
           </div>
           {TEAM_UPLOAD_ANALYTICS_ENABLED && subTab === 'analytics' && <p>Date-wise screenshot uploads grouped in IST with Web and Mobile split.</p>}
           {subTab === 'flows' && <p>All flows from uploaded screenshots. {flowChecklist.length} flow{flowChecklist.length !== 1 ? 's' : ''} tracked.</p>}
           {subTab === 'groups' && <p>All groups used in uploaded screenshots. {groupChecklist.length} group{groupChecklist.length !== 1 ? 's' : ''} found.</p>}
           {subTab === 'trash' && <p>Deleted screenshots from the last 15 days. Auto-purged after that.</p>}
           {subTab === 'flags' && <p>Compile-time feature flags from feature-flags.ts. Read-only — flip a constant + redeploy to change.</p>}
+          {subTab === 'members' && <p>Mint, rotate, disable, or remove member passcodes. All actions require the admin passcode.</p>}
         </div>
       </div>
 
@@ -602,6 +608,10 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey, 
 
       {subTab === 'flags' && (
         <CatalogueFlagsSection />
+      )}
+
+      {subTab === 'members' && (
+        <CatalogueMembersSection currentUserEmail={currentUserEmail} />
       )}
 
       {editingGroupKey && (
