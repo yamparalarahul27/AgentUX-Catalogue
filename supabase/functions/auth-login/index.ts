@@ -12,7 +12,13 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.0';
-import { hash as _hash, verify } from 'https://deno.land/x/argon2@v0.10.0/lib/mod.ts';
+import { argon2Verify } from 'https://esm.sh/hash-wasm@4.11.0';
+
+// hash-wasm runs pure WebAssembly — works on Supabase Edge Functions
+// where Rust-plugin-based argon2 packages do not. Produces / accepts
+// the standard PHC string format ($argon2id$v=19$...) so hashes are
+// interoperable with the node `argon2` npm package used for the
+// out-of-codebase bootstrap.
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -22,6 +28,14 @@ const supabase = createClient(
 
 const LOCKOUT_AFTER = 5;        // consecutive failed attempts
 const LOCKOUT_MINUTES = 15;     // cool-down duration
+
+async function verify(passcodeHash: string, plaintext: string): Promise<boolean> {
+  try {
+    return await argon2Verify({ hash: passcodeHash, password: plaintext });
+  } catch {
+    return false;
+  }
+}
 
 serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);

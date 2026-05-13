@@ -21,7 +21,13 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.0';
-import { hash } from 'https://deno.land/x/argon2@v0.10.0/lib/mod.ts';
+import { argon2id } from 'https://esm.sh/hash-wasm@4.11.0';
+
+// hash-wasm runs pure WebAssembly — works on Supabase Edge Functions
+// where Rust-plugin-based argon2 packages do not. Produces the
+// standard PHC string format ($argon2id$v=19$...) so hashes are
+// interoperable with the node `argon2` npm package used for the
+// out-of-codebase bootstrap and with auth-login's verify.
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -30,6 +36,22 @@ const supabase = createClient(
 );
 
 const ADMIN_PASSCODE = Deno.env.get('INVITE_ADMIN_PASSCODE')!;
+
+async function hash(plaintext: string): Promise<string> {
+  // OWASP-recommended argon2id parameters as of 2024:
+  // memory ≥ 47 MiB, iterations ≥ 3, parallelism 1. We use 64 MiB.
+  const salt = new Uint8Array(16);
+  crypto.getRandomValues(salt);
+  return await argon2id({
+    password: plaintext,
+    salt,
+    iterations: 3,
+    parallelism: 1,
+    memorySize: 65536, // 64 MiB
+    hashLength: 32,
+    outputType: 'encoded',
+  });
+}
 
 type Action =
   | 'list'
