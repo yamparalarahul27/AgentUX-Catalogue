@@ -424,6 +424,17 @@
   justify-content: center;
 }
 
+// Same cascade trap as .catalogue-toolbar-search above: the
+// `display: inline-flex` here has equal specificity to the
+// `.catalogue-toolbar--desktop-only { display: none }` mobile rule in
+// catalogue-sidebar.scss and is loaded later, so it would otherwise win
+// on mobile and leak the text button alongside the + icon pill.
+@media (max-width: 960px) {
+  .catalogue-toolbar-quick-upload {
+    display: none;
+  }
+}
+
 .catalogue-toolbar-quick-upload__sizer {
   visibility: hidden;
   white-space: nowrap;
