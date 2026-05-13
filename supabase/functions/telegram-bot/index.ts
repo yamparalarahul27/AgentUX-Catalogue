@@ -7,6 +7,12 @@ const ALLOWED_IDS = (Deno.env.get("ALLOWED_TELEGRAM_USER_IDS") || "")
   .split(",")
   .filter(Boolean)
   .map(Number);
+// Random string we set in Supabase secrets AND register with Telegram
+// via setWebhook?secret_token=…. Telegram echoes it on every webhook
+// delivery in the x-telegram-bot-api-secret-token header. Missing or
+// mismatched → reject. Without this, anyone who learns the function
+// URL can forge updates against the service-role key.
+const WEBHOOK_SECRET = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const UPLOAD_GROUP = "Social";
 
@@ -373,6 +379,15 @@ Deno.serve(async (req) => {
     return new Response("OK", { status: 200 });
   }
 
+  // Fail closed if the webhook secret env isn't set — refusing to run
+  // is safer than accepting forged updates with no verification.
+  if (!WEBHOOK_SECRET) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  if (req.headers.get("x-telegram-bot-api-secret-token") !== WEBHOOK_SECRET) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   try {
     const update: TelegramUpdate = await req.json();
     const message = update.message;
@@ -383,8 +398,10 @@ Deno.serve(async (req) => {
     const chatId = message.chat.id;
     const userId = message.from?.id;
 
-    // Access control
-    if (ALLOWED_IDS.length > 0 && (!userId || !ALLOWED_IDS.includes(userId))) {
+    // Access control — fail closed. If ALLOWED_TELEGRAM_USER_IDS is
+    // unset / empty, reject everyone. Otherwise the unauthenticated
+    // webhook would write to the catalogue under any Telegram user.
+    if (ALLOWED_IDS.length === 0 || !userId || !ALLOWED_IDS.includes(userId)) {
       return new Response("OK", { status: 200 });
     }
 

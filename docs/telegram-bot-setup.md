@@ -36,10 +36,20 @@ Run these in the Supabase SQL editor before deploying the function:
 
 ### 1. Set secrets
 
+Generate a webhook secret first — it's the shared value between Supabase and
+Telegram that lets the function reject forged updates. Any random 32+ char
+string works.
+
 ```bash
+openssl rand -base64 32   # copy the output for the next command
+
 supabase secrets set TELEGRAM_BOT_TOKEN=<bot-token-from-botfather>
 supabase secrets set ALLOWED_TELEGRAM_USER_IDS=<your-telegram-user-id>
+supabase secrets set TELEGRAM_WEBHOOK_SECRET=<value-from-openssl-above>
 ```
+
+`ALLOWED_TELEGRAM_USER_IDS` must be set — the function fails closed and
+rejects every request when the list is empty.
 
 ### 2. Deploy the function
 
@@ -53,11 +63,18 @@ requests without a Supabase JWT.
 ### 3. Register the webhook with Telegram
 
 ```bash
-curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<project-ref>.supabase.co/functions/v1/telegram-bot"
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<project-ref>.supabase.co/functions/v1/telegram-bot&secret_token=<TELEGRAM_WEBHOOK_SECRET>"
 ```
 
-Replace `<TOKEN>` with the bot token and `<project-ref>` with your Supabase
-project reference ID.
+Replace `<TOKEN>` with the bot token, `<project-ref>` with your Supabase
+project reference ID, and `<TELEGRAM_WEBHOOK_SECRET>` with the same value
+you set in step 1. Telegram will echo this back on every webhook delivery
+in the `x-telegram-bot-api-secret-token` header; the function rejects any
+request where the header doesn't match.
+
+If the secret stored in Supabase and the one registered with Telegram drift
+apart, every update gets rejected with 401 until you re-run this step with
+the matching value.
 
 ### 4. Verify
 
@@ -80,7 +97,7 @@ No need to re-register the webhook — it persists.
 ## Adding more allowed users
 
 ```bash
-supabase secrets set ALLOWED_TELEGRAM_USER_IDS=6617110970,OTHER_USER_ID
+supabase secrets set ALLOWED_TELEGRAM_USER_IDS=<USER_ID_1>,<USER_ID_2>
 supabase functions deploy telegram-bot --no-verify-jwt
 ```
 
