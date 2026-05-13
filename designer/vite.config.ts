@@ -10,7 +10,12 @@ function spaFallback(): Plugin {
         const url = req.url || '';
         const accept = req.headers.accept || '';
         const isNavigation = accept.includes('text/html');
-        if (isNavigation && url.startsWith('/designer/') && !url.includes('.')) {
+        // Only inspect the pathname for the "looks like a file" check —
+        // query strings often contain dots (emails, file names, URLs)
+        // that shouldn't disqualify the navigation from the SPA fallback.
+        const pathname = url.split('?')[0];
+        const looksLikeFile = pathname.includes('.');
+        if (isNavigation && pathname.startsWith('/designer/') && !looksLikeFile) {
           req.url = '/designer/catalogue.html';
         }
         next();

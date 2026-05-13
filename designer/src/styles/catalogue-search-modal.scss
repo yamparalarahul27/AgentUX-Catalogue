@@ -411,6 +411,41 @@
   }
 }
 
+// ───── Quick Upload button (cross-fade between idle / ready / uploading) ─────
+// The button hosts an invisible sizer plus three overlaid labels.
+// The sizer establishes the button's fixed width based on the widest
+// possible label ("Upload All (200)" — matches the drag-drop cap), so
+// the button never snaps as the active label cycles. Labels cross-fade
+// via opacity transitions.
+.catalogue-toolbar-quick-upload {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.catalogue-toolbar-quick-upload__sizer {
+  visibility: hidden;
+  white-space: nowrap;
+  // Inherits font-size / weight from .btn-primary so the sizer matches.
+}
+
+.catalogue-toolbar-quick-upload__label {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.18s ease;
+
+  &.is-active {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 640px) {
   .catalogue-search-modal-overlay {
     padding: 0;
