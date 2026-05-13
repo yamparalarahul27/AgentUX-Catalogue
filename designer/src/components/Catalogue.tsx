@@ -44,7 +44,6 @@ import { CatalogueDropOverlay } from './CatalogueDropOverlay';
 import { CatalogueUploadProgress } from './CatalogueUploadProgress';
 import { CatalogueShareModal } from './CatalogueShareModal';
 import { CatalogueSearchModal } from './CatalogueSearchModal';
-import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
@@ -64,8 +63,6 @@ import { ConfirmModal } from './ConfirmModal';
 import { Toast } from './Toast';
 interface CatalogueProps {
   user: User;
-  isGuest?: boolean;
-  onRequestLogin: (email: string) => void;
   onLogout: () => void;
 }
 
@@ -77,10 +74,12 @@ type CatalogueSection =
   | 'studio';
 export function Catalogue({
   user,
-  isGuest = false,
-  onRequestLogin,
   onLogout,
 }: CatalogueProps) {
+  // Post-auth-gate: every renderer of this component is authenticated.
+  // Kept as a local const so the existing `!isGuest` / `isGuest && …`
+  // references downstream don't need to be touched.
+  const isGuest = false;
   // Filter UI state (owns filter/sort/search/viewBy state, with debounced search)
   const filterState = useCatalogueFilterState();
   const {
@@ -325,7 +324,11 @@ export function Catalogue({
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
   const [gridDensity, setGridDensity] = useState<GridDensity>(defaultGridDensity);
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  // Pre-auth-gate this opened a spoofable email-prompt modal. The gate
+  // now blocks unauthenticated users before they reach this component;
+  // the callsites below stay only because they're guarded by conditions
+  // that can't fire post-auth (e.g. `!user.email`, `isGuest`).
+  const setShowAuthPrompt = (_value: boolean) => {};
   const canAdmin = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
   const allFamilies = useMemo(
@@ -427,8 +430,7 @@ export function Catalogue({
     showSettings ||
     previewFamily ||
     bulkAction ||
-    confirmDeleteOpen ||
-    showAuthPrompt,
+    confirmDeleteOpen,
   );
   const {
     guardAction,
@@ -725,18 +727,6 @@ export function Catalogue({
         <main className={`catalogue-main${gridDensity !== 'auto' ? ` catalogue-main--density-${gridDensity}` : ''}`}>
           <div className="catalogue-shell">
             <div className="catalogue-body">
-              {isGuest && (
-                <div className="catalogue-guest-banner">
-                  <span>Read-only mode. Enter your email to upload, edit, or delete screenshots.</span>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => setShowAuthPrompt(true)}
-                  >
-                    Enter Email
-                  </button>
-                </div>
-              )}
               {CATALOGUE_CHIP_STRIP_ENABLED && (
                 <CatalogueGroupChipStrip
                   stats={groupStats}
@@ -1077,15 +1067,6 @@ export function Catalogue({
         families={filteredFamilies.filter((family) => selected.has(family.id))}
         onClose={() => setBulkRenameOpen(false)}
         onRenameFamily={handleRenameFamily}
-      />
-      <CatalogueEmailPromptModal
-        isOpen={showAuthPrompt}
-        onClose={() => setShowAuthPrompt(false)}
-        onSubmit={(email) => {
-          onRequestLogin(email);
-          setShowAuthPrompt(false);
-          setToast({ message: 'Editing enabled for this session.', type: 'success' });
-        }}
       />
       {dragActive && <CatalogueDropOverlay />}
       <CatalogueUploadProgress

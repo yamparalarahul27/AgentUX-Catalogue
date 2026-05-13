@@ -37,6 +37,12 @@ const supabase = createClient(
 
 const ADMIN_PASSCODE = Deno.env.get('INVITE_ADMIN_PASSCODE')!;
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 async function hash(plaintext: string): Promise<string> {
   // OWASP-recommended argon2id parameters as of 2024:
   // memory ≥ 47 MiB, iterations ≥ 3, parallelism 1. We use 64 MiB.
@@ -73,6 +79,7 @@ interface MemberRow {
 }
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
   let body: { admin_passcode?: string; action?: Action; payload?: Record<string, unknown> };
@@ -270,6 +277,6 @@ function normaliseEmail(value: unknown): string | null {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...corsHeaders },
   });
 }

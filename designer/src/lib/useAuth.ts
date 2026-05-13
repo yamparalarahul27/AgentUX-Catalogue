@@ -1,39 +1,38 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 
-const STORAGE_KEY = 'agentux-designer-email';
+import { supabase } from './supabase';
 
-function createMockUser(email: string): User {
-  const hash = Array.from(email).reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0);
-  const hex = Math.abs(hash).toString(16).padStart(8, '0');
-  const id = `${hex}-0000-0000-0000-000000000000`;
-
-  return {
-    id,
-    email,
-    app_metadata: {},
-    user_metadata: {},
-    aud: 'authenticated',
-    created_at: new Date().toISOString(),
-  } as User;
-}
-
+// Reads the real Supabase Auth session minted by auth-login. The
+// `loading` flag is true until the initial getSession() resolves so
+// callers can avoid flashing the login screen for users who already
+// have a persisted session in localStorage.
 export function useAuth() {
-  const [email, setEmail] = useState<string | null>(
-    () => localStorage.getItem(STORAGE_KEY),
-  );
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  function login(newEmail: string) {
-    localStorage.setItem(STORAGE_KEY, newEmail);
-    setEmail(newEmail);
+  useEffect(() => {
+    let cancelled = false;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function logout() {
+    await supabase.auth.signOut({ scope: 'local' });
   }
 
-  function logout() {
-    localStorage.removeItem(STORAGE_KEY);
-    setEmail(null);
-  }
-
-  const user = email ? createMockUser(email) : null;
-
-  return { user, login, logout };
+  return { user, loading, logout };
 }
