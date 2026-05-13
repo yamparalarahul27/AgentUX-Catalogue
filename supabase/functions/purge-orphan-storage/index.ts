@@ -96,6 +96,11 @@ serve(async (req) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown error';
+    const stack = err instanceof Error ? err.stack : null;
+    // Surface the full error in Supabase Logs so we don't have to dig
+    // through the browser response body to debug. The client still only
+    // gets the message in the 500 response — stack stays server-side.
+    console.error('purge-orphan-storage failed:', message, stack);
     return json({ error: message }, 500);
   }
 });
