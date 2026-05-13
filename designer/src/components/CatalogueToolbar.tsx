@@ -46,6 +46,7 @@ interface CatalogueToolbarProps {
   bookmarkCount?: number;
   onBookmarkFilterToggle?: () => void;
   onOpenShare?: () => void;
+  onOpenSearch?: () => void;
   onFilterAnnotationChange: (value: string[]) => void;
   onFilterGroupChange: (value: string[]) => void;
   onFilterFlowChange: (value: string[]) => void;
@@ -60,7 +61,6 @@ interface CatalogueToolbarProps {
   onFilterWebPresetChange: (value: string | null) => void;
   onQuickUploadAll?: () => void;
   onQuickUploadClick: () => void;
-  onSearchChange: (value: string) => void;
   onSortByChange: (value: CatalogueSortOption) => void;
   onViewByChange: (value: CatalogueViewBy) => void;
   onViewModeChange: (value: CatalogueViewMode) => void;
@@ -158,7 +158,6 @@ export function CatalogueToolbar({
   onFilterUxPatternChange,
   onFilterWebPresetChange,
   onQuickUploadClick,
-  onSearchChange,
   onSortByChange,
   onViewByChange,
   onViewModeChange,
@@ -170,6 +169,7 @@ export function CatalogueToolbar({
   bookmarkCount = 0,
   onBookmarkFilterToggle,
   onOpenShare,
+  onOpenSearch,
   searchQuery,
   sortBy,
   viewBy,
@@ -179,7 +179,6 @@ export function CatalogueToolbar({
   const menuRef = useRef<HTMLDivElement>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [visibleFilters, setVisibleFilters] = useState<Set<ToolbarFilterKey>>(() => {
     try {
       return parseVisibleFilters(window.localStorage.getItem(TOOLBAR_FILTER_KEY));
@@ -188,18 +187,6 @@ export function CatalogueToolbar({
     }
   });
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
-  const mobileSearchRef = useRef<HTMLInputElement>(null);
-
-  function openMobileSearch() {
-    setMobileSearchOpen(true);
-    requestAnimationFrame(() => mobileSearchRef.current?.focus());
-  }
-
-  function closeMobileSearch() {
-    setMobileSearchOpen(false);
-    onSearchChange('');
-    mobileSearchRef.current?.blur();
-  }
 
   useEffect(() => {
     if (!filterMenuOpen) return undefined;
@@ -351,16 +338,6 @@ export function CatalogueToolbar({
     <div className="catalogue-toolbar-wrapper">
       <div className="catalogue-toolbar">
         <div className="catalogue-toolbar-left">
-          <div className="catalogue-search catalogue-search--desktop">
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(event) => onSearchChange(event.target.value)}
-            />
-          </div>
-
           <button
             ref={triggerRef}
             type="button"
@@ -478,6 +455,17 @@ export function CatalogueToolbar({
         </div>
 
         <div className="catalogue-toolbar-right">
+          {onOpenSearch && (
+            <button
+              type="button"
+              className="catalogue-toolbar-search catalogue-toolbar--desktop-only"
+              onClick={onOpenSearch}
+              title="Search catalogue (⌘K)"
+              aria-label="Search catalogue"
+            >
+              <Search size={16} />
+            </button>
+          )}
           {onOpenShare && (
             <button
               type="button"
@@ -525,7 +513,13 @@ export function CatalogueToolbar({
           )}
 
           {/* Mobile pills - hidden on desktop */}
-          <button type="button" className="catalogue-toolbar-pill catalogue-toolbar--mobile-only" onClick={openMobileSearch}>
+          <button
+            type="button"
+            className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
+            onClick={onOpenSearch}
+            disabled={!onOpenSearch}
+            aria-label="Search catalogue"
+          >
             <Search size={16} strokeWidth={2.5} />
             {searchQuery && <span className="catalogue-toolbar-pill__dot" />}
           </button>
@@ -540,24 +534,6 @@ export function CatalogueToolbar({
         </div>
       </div>
 
-      {/* Mobile expandable search row - below toolbar */}
-      {mobileSearchOpen && (
-        <div className="catalogue-mobile-search-row">
-          <div className="catalogue-mobile-search-input">
-            <Search size={16} />
-            <input
-              ref={mobileSearchRef}
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(event) => onSearchChange(event.target.value)}
-            />
-            <button type="button" className="catalogue-mobile-search-cancel" onClick={closeMobileSearch}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {filterMenuOpen && createPortal(
         <div ref={menuRef} id="catalogue-filter-menu" className="catalogue-filter-menu" style={menuStyle}>

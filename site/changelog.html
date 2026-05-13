@@ -89,6 +89,33 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- May 13, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">May 13, 2026</span>
+            <span class="changelog-title">Categorised Search Modal</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li><strong>Catalogue search modal</strong> — Cmd+K (or Option+Space) opens a Spotlight-style modal that searches across <strong>Groups</strong>, <strong>Flows</strong>, and <strong>Screenshots</strong> at once. Each category gets its own section with match counts; up to five results per category before a "+N more" indicator. The screenshot results render as <strong>vertical cards with thumbnails</strong> in a horizontal scrolling row — click to filter the catalogue to that exact screenshot.</li>
+              <li><strong>Click actions</strong> — selecting a Group filters the catalogue to that group; a Flow narrows to that group + flow; a Screenshot narrows further by platform and search query so the card surfaces immediately. Modal closes on select.</li>
+              <li><strong>Keyboard nav</strong> — ↑/↓ and ←/→ move across results, Enter selects, Esc closes. Cmd+K / Option+Space toggle the modal. Shortcuts are suppressed while typing in any input so they don't fight with paste / undo.</li>
+              <li><strong>Recents</strong> — the last five queries persist across sessions in localStorage and surface as one-tap shortcuts when the modal is empty.</li>
+              <li><strong>Group icons</strong> — uploaded group icons render in the result row; groups without an uploaded icon fall back to a generic Lucide <code>LayoutGrid</code>.</li>
+              <li><strong>HTML mockup preserved</strong> at <code>docs/mockups/mockup-2026-05-13-catalogue-search-modal.html</code> as a before/after visual reference. Static screenshots of the modal in action live alongside it. Future feature: surface these from the changelog page directly.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li><strong>Toolbar search</strong> — the inline desktop search pill is gone, replaced by a <strong>Search icon</strong> sibling to the Share icon on the right side of the toolbar. Single discovery point across desktop and mobile.</li>
+              <li><strong>Mobile search</strong> — the mobile Search pill now opens the same categorised modal full-screen, instead of expanding an inline search row. One mental model for everyone; the inline expandable row has been removed.</li>
+              <li><strong>Full-scope query</strong> picks up <code>name</code>, <code>file_name</code>, and <code>storage_path</code> so search can match on screenshot names and render real thumbnails for top results.</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- May 11 – 12, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">
