@@ -19,12 +19,13 @@ import type {
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
 import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
 import type { Project, ScreenshotNode } from '../types';
+import { CatalogueFlagsSection } from './CatalogueFlagsSection';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueTrashSection } from './CatalogueTrashSection';
 import { ConfirmModal } from './ConfirmModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 
-type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash';
+type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash' | 'flags';
 
 interface CatalogueTeamSectionProps {
   projects: Project[];
@@ -420,11 +421,15 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey, 
             <button type="button" className={`catalogue-team__sub-tab ${subTab === 'trash' ? 'is-active' : ''}`} onClick={() => setSubTab('trash')}>
               Trash
             </button>
+            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'flags' ? 'is-active' : ''}`} onClick={() => setSubTab('flags')}>
+              Flags
+            </button>
           </div>
           {TEAM_UPLOAD_ANALYTICS_ENABLED && subTab === 'analytics' && <p>Date-wise screenshot uploads grouped in IST with Web and Mobile split.</p>}
           {subTab === 'flows' && <p>All flows from uploaded screenshots. {flowChecklist.length} flow{flowChecklist.length !== 1 ? 's' : ''} tracked.</p>}
           {subTab === 'groups' && <p>All groups used in uploaded screenshots. {groupChecklist.length} group{groupChecklist.length !== 1 ? 's' : ''} found.</p>}
           {subTab === 'trash' && <p>Deleted screenshots from the last 15 days. Auto-purged after that.</p>}
+          {subTab === 'flags' && <p>Compile-time feature flags from feature-flags.ts. Read-only — flip a constant + redeploy to change.</p>}
         </div>
       </div>
 
@@ -593,6 +598,10 @@ export function CatalogueTeamSection({ projects, screenshots, onRenameGroupKey, 
 
       {subTab === 'trash' && (
         <CatalogueTrashSection projects={projects} onRestored={onTrashRestored} />
+      )}
+
+      {subTab === 'flags' && (
+        <CatalogueFlagsSection />
       )}
 
       {editingGroupKey && (
