@@ -20,6 +20,7 @@ interface CatalogueHeaderProps {
   userEmail: string | null;
   onSignIn: () => void;
   onLogout: () => void;
+  onLogoutEverywhere: () => void;
   myBookmarksActive: boolean;
   onToggleMyBookmarks: () => void;
 }
@@ -37,6 +38,7 @@ export function CatalogueHeader({
   userEmail,
   onSignIn,
   onLogout,
+  onLogoutEverywhere,
   myBookmarksActive,
   onToggleMyBookmarks,
 }: CatalogueHeaderProps) {
@@ -92,6 +94,11 @@ export function CatalogueHeader({
 
   function handleLogout() {
     onLogout();
+    setMenuOpen(false);
+  }
+
+  function handleLogoutEverywhere() {
+    onLogoutEverywhere();
     setMenuOpen(false);
   }
 
@@ -216,6 +223,14 @@ export function CatalogueHeader({
             onClick={handleLogout}
           >
             Logout
+          </button>
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--danger"
+            role="menuitem"
+            onClick={handleLogoutEverywhere}
+          >
+            Logout everywhere
           </button>
         </div>
       )}

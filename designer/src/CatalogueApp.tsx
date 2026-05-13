@@ -20,7 +20,7 @@ export function CatalogueApp() {
     );
   }
 
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, logoutEverywhere } = useAuth();
 
   // Avoid flashing the login screen for users who already have a
   // persisted session in localStorage; getSession() resolves quickly.
@@ -30,7 +30,7 @@ export function CatalogueApp() {
 
   return (
     <>
-      <Catalogue user={user} onLogout={logout} />
+      <Catalogue user={user} onLogout={logout} onLogoutEverywhere={logoutEverywhere} />
       {import.meta.env.DEV && <Agentation />}
     </>
   );

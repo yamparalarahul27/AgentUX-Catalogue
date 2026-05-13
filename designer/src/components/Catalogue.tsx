@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
 import { useBookmarks } from '../hooks/use-bookmarks';
+import { useIsAdmin } from '../lib/auth-passcode';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
@@ -64,6 +65,7 @@ import { Toast } from './Toast';
 interface CatalogueProps {
   user: User;
   onLogout: () => void;
+  onLogoutEverywhere: () => void;
 }
 
 type CatalogueSection =
@@ -75,6 +77,7 @@ type CatalogueSection =
 export function Catalogue({
   user,
   onLogout,
+  onLogoutEverywhere,
 }: CatalogueProps) {
   // Post-auth-gate: every renderer of this component is authenticated.
   // Kept as a local const so the existing `!isGuest` / `isGuest && …`
@@ -329,7 +332,11 @@ export function Catalogue({
   // the callsites below stay only because they're guarded by conditions
   // that can't fire post-auth (e.g. `!user.email`, `isGuest`).
   const setShowAuthPrompt = (_value: boolean) => {};
-  const canAdmin = user.email?.trim().toLowerCase() === 'rahul@equicomtech.com';
+  // Admin gate is backed by the `admins` table (auth-gate work). The
+  // hook returns null while loading; treat that as "not admin yet" so
+  // we never flash admin chrome to a non-admin during the initial fetch.
+  const isAdminResult = useIsAdmin();
+  const canAdmin = isAdminResult === true;
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
@@ -667,6 +674,10 @@ export function Catalogue({
           onLogout();
           setBookmarkFilterOn(false);
         }}
+        onLogoutEverywhere={() => {
+          onLogoutEverywhere();
+          setBookmarkFilterOn(false);
+        }}
         myBookmarksActive={bookmarkFilterOn}
         onToggleMyBookmarks={() => {
           if (!user.email) {
@@ -682,6 +693,7 @@ export function Catalogue({
             <CatalogueTeamSection
               projects={projects}
               screenshots={fullScopeScreenshots}
+              currentUserEmail={user.email ?? ''}
               onRenameGroupKey={handleRenameGroupKey}
               onTrashRestored={loadData}
             />

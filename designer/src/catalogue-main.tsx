@@ -13,6 +13,7 @@ import './styles/catalogue-lightbox-annotations.scss';
 import './styles/catalogue-team.scss';
 import './styles/catalogue-trash.scss';
 import './styles/catalogue-flags.scss';
+import './styles/catalogue-members.scss';
 import './styles/catalogue-videos.scss';
 import './styles/catalogue-links.scss';
 import './styles/catalogue-header-menu.scss';
