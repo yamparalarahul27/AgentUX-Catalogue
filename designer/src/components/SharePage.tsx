@@ -274,9 +274,6 @@ export function SharePage() {
       </main>
 
       <footer className="share-page__footer">
-        <a href="/" className="share-page__footer-logo" aria-label="AgentUX home">
-          <img src={agentuxLogo} alt="" />
-        </a>
         <span className="share-page__footer-text">
           Powered by{' '}
           <a href={AGENTUX_URL} target="_blank" rel="noopener noreferrer">AgentUX</a>

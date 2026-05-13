@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import type { ScreenshotNode } from '../types';
@@ -33,6 +33,22 @@ export function SharePageCarousel({ items, step, onStepChange }: SharePageCarous
     },
     [clampedStep, onStepChange, total],
   );
+
+  // Direction-aware transition state for the centre slide. Each step
+  // change bumps `key` (forces a remount so the CSS animation re-fires)
+  // and records the direction so we pick the right keyframes. Peek
+  // slides hard-cut — they're dimmed/blurred anyway, the eye is on the
+  // centre.
+  const previousStepRef = useRef(clampedStep);
+  const [enter, setEnter] = useState<{ key: number; direction: 'forward' | 'back' | null }>(
+    { key: 0, direction: null },
+  );
+  useEffect(() => {
+    if (previousStepRef.current === clampedStep) return;
+    const direction = clampedStep > previousStepRef.current ? 'forward' : 'back';
+    previousStepRef.current = clampedStep;
+    setEnter((s) => ({ key: s.key + 1, direction }));
+  }, [clampedStep]);
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
@@ -102,7 +118,11 @@ export function SharePageCarousel({ items, step, onStepChange }: SharePageCarous
           </button>
         )}
 
-        <div className="share-page__carousel-center">
+        <div
+          key={enter.key}
+          className="share-page__carousel-center"
+          data-enter-direction={enter.direction ?? undefined}
+        >
           <ThumbHashImage
             src={current.screenshot.image_url ?? ''}
             thumbHash={current.screenshot.thumb_hash ?? null}

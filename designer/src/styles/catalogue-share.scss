@@ -187,14 +187,11 @@
   text-decoration: none;
 
   img {
-    // Icon-only crop. The SVG asset includes both the mark and the
-    // "AgentUX" wordmark; we slice off the wordmark by sizing the box
-    // to the icon's natural aspect (390.957/400 ≈ 0.977) and using
-    // object-fit cover anchored to the left.
-    width: 55px;
-    height: 56px;
-    object-fit: cover;
-    object-position: left center;
+    // Full AgentUX logo (icon + wordmark). Natural aspect ~3.195:1 from
+    // the 1278×400 SVG; height 36 → width auto keeps proportions intact.
+    height: 36px;
+    width: auto;
+    object-fit: contain;
     display: block;
   }
 }
@@ -219,7 +216,7 @@
 
 .share-page__main {
   flex: 1;
-  max-width: 880px;
+  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
   padding: 48px 24px 64px;
@@ -431,6 +428,45 @@
     height: auto;
     display: block;
   }
+
+  // Direction-aware entry animation. The slide enters from the side
+  // matching the navigation direction with a small scale + opacity ramp.
+  // Peek slides hard-cut — dimming and blur make their content secondary.
+  &[data-enter-direction="forward"] {
+    animation: share-carousel-enter-forward 320ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  &[data-enter-direction="back"] {
+    animation: share-carousel-enter-back 320ms cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
+@keyframes share-carousel-enter-forward {
+  from {
+    transform: translateX(48px) scale(0.94);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes share-carousel-enter-back {
+  from {
+    transform: translateX(-48px) scale(0.94);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-page__carousel-center {
+    animation: none !important;
+  }
 }
 
 .share-page__carousel-peek {
@@ -550,19 +586,6 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
-}
-
-.share-page__footer-logo {
-  display: inline-flex;
-
-  img {
-    // Same icon-only crop as the header logo, scaled down for the footer.
-    width: 29px;
-    height: 30px;
-    object-fit: cover;
-    object-position: left center;
-    display: block;
-  }
 }
 
 .share-page__footer-text {

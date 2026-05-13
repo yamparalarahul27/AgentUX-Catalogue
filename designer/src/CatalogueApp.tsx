@@ -21,9 +21,16 @@ export function CatalogueApp() {
   const effectiveUser = user ?? createGuestUser();
 
   // Public share view — bypasses the catalogue entirely. No auth, no
-  // catalogue chrome; only reads. See lib/share-url.ts.
+  // catalogue chrome; only reads. Agentation feedback toolbar still
+  // mounts in DEV so we can collect UI feedback on the share view too.
+  // See lib/share-url.ts.
   if (typeof window !== 'undefined' && isSharePath(window.location.pathname)) {
-    return <SharePage />;
+    return (
+      <>
+        <SharePage />
+        {import.meta.env.DEV && <Agentation />}
+      </>
+    );
   }
 
   return (

@@ -493,24 +493,50 @@ export function CatalogueToolbar({
               <Bookmark size={16} fill={bookmarkFilterOn ? 'currentColor' : 'none'} />
             </button>
           )}
-          {/* Desktop button — flips to "Upload All (N)" while the Quick
-              Upload modal is open so the user can trigger the upload from
-              the same spot. Disabled while uploading or when queue empty. */}
-          {quickUploadOpen ? (
-            <button
-              className="btn-primary catalogue-toolbar--desktop-only"
-              onClick={onQuickUploadAll}
-              disabled={quickUploadIsUploading || quickUploadQueueCount === 0}
-            >
-              {quickUploadIsUploading
-                ? 'Uploading…'
-                : `Upload All${quickUploadQueueCount > 0 ? ` (${quickUploadQueueCount})` : ''}`}
-            </button>
-          ) : (
-            <button className="btn-primary catalogue-toolbar--desktop-only" onClick={onQuickUploadClick}>
-              Quick Upload
-            </button>
-          )}
+          {/* Desktop button — flips between "Quick Upload" → "Upload All (N)"
+              → "Uploading…" as the Quick Upload flow progresses. The labels
+              cross-fade in place over an invisible sizer that holds the
+              widest possible width (matches the 200-file drag-drop cap),
+              so the button never snaps width between states. */}
+          {(() => {
+            const isOpen = quickUploadOpen;
+            const isUploading = quickUploadIsUploading;
+            const queueCount = quickUploadQueueCount;
+            const activeKey: 'idle' | 'ready' | 'uploading' = isOpen
+              ? (isUploading ? 'uploading' : 'ready')
+              : 'idle';
+            const readyLabel = `Upload All${queueCount > 0 ? ` (${queueCount})` : ''}`;
+            return (
+              <button
+                type="button"
+                className="btn-primary catalogue-toolbar--desktop-only catalogue-toolbar-quick-upload"
+                onClick={isOpen ? onQuickUploadAll : onQuickUploadClick}
+                disabled={isOpen && (isUploading || queueCount === 0)}
+              >
+                <span className="catalogue-toolbar-quick-upload__sizer" aria-hidden="true">
+                  Upload All (200)
+                </span>
+                <span
+                  className={`catalogue-toolbar-quick-upload__label${activeKey === 'idle' ? ' is-active' : ''}`}
+                  aria-hidden={activeKey !== 'idle' || undefined}
+                >
+                  Quick Upload
+                </span>
+                <span
+                  className={`catalogue-toolbar-quick-upload__label${activeKey === 'ready' ? ' is-active' : ''}`}
+                  aria-hidden={activeKey !== 'ready' || undefined}
+                >
+                  {readyLabel}
+                </span>
+                <span
+                  className={`catalogue-toolbar-quick-upload__label${activeKey === 'uploading' ? ' is-active' : ''}`}
+                  aria-hidden={activeKey !== 'uploading' || undefined}
+                >
+                  Uploading…
+                </span>
+              </button>
+            );
+          })()}
 
           {/* Mobile pills - hidden on desktop */}
           <button
