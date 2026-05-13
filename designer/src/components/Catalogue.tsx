@@ -12,7 +12,8 @@ import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
-import { buildCatalogueFamilies } from '../lib/catalogue-families';
+import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
+import { buildCatalogueFamilies, CATALOGUE_FLOW_LABEL_KEY } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
   readCatalogueGroupAppearanceMap,
@@ -42,6 +43,7 @@ import { CatalogueContent } from './CatalogueContent';
 import { CatalogueDropOverlay } from './CatalogueDropOverlay';
 import { CatalogueUploadProgress } from './CatalogueUploadProgress';
 import { CatalogueShareModal } from './CatalogueShareModal';
+import { CatalogueSearchModal } from './CatalogueSearchModal';
 import { CatalogueEmailPromptModal } from './CatalogueEmailPromptModal';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
@@ -309,6 +311,7 @@ export function Catalogue({
   }, [bookmarkFilterOn, rawGroupedFamilies, bookmarks.bookmarkedIds]);
   const [showSettings, setShowSettings] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
@@ -484,6 +487,13 @@ export function Catalogue({
         type: 'success',
       });
     },
+  });
+
+  // Cmd+K (or Ctrl+K) / Option+Space opens the categorised search modal.
+  // Restricted to the catalogue section so it doesn't fire on other tabs.
+  useCatalogueSearchShortcut({
+    enabled: activeSection === 'catalogue',
+    onOpen: () => setShowSearchModal(true),
   });
 
   // Drag-drop files anywhere on the catalogue grid → Quick Upload queue.
@@ -795,7 +805,6 @@ export function Catalogue({
                     if (inserted.length > 0) setSelected(new Set(inserted.map((item) => item.id)));
                   });
                 }}
-                onSearchChange={setSearchQuery}
                 onSortByChange={setSortBy}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
@@ -817,6 +826,7 @@ export function Catalogue({
                   setBookmarkFilterOn(true);
                 }}
                 onOpenShare={isGuest ? undefined : () => setShowShareModal(true)}
+                onOpenSearch={() => setShowSearchModal(true)}
               />
 
               <div className="catalogue-body-layout">
@@ -1092,6 +1102,33 @@ export function Catalogue({
         initialFlow={filterFlow.length === 1 ? filterFlow[0] : null}
         initialPlatform={filterPlatform === 'web' || filterPlatform === 'mobile' ? filterPlatform : null}
         userEmail={user.email ?? null}
+      />
+      <CatalogueSearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        screenshots={fullScopeScreenshots}
+        appearanceMap={appearanceMap}
+        appearanceProjectId={appearanceProjectId}
+        onSelectGroup={(group) => {
+          setFilterGroup([group]);
+          setFilterFlow([]);
+          setFilterPlatform(null);
+        }}
+        onSelectFlow={(group, flow) => {
+          setFilterGroup([group]);
+          setFilterFlow([flow]);
+          setFilterPlatform(null);
+        }}
+        onSelectScreenshot={(screenshot) => {
+          setFilterGroup(screenshot.group ? [screenshot.group] : []);
+          const metadata = screenshot.metadata as Record<string, unknown> | null | undefined;
+          const flowLabel = metadata && typeof metadata === 'object' && typeof metadata[CATALOGUE_FLOW_LABEL_KEY] === 'string'
+            ? (metadata[CATALOGUE_FLOW_LABEL_KEY] as string)
+            : null;
+          setFilterFlow(flowLabel ? [flowLabel] : []);
+          setFilterPlatform(screenshot.platform === 'mobile' || screenshot.platform === 'web' ? screenshot.platform : null);
+          setSearchQuery(screenshot.name);
+        }}
       />
     </div>
   );

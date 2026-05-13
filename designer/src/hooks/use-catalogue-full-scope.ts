@@ -18,6 +18,16 @@ interface ScopeScreenshotRow {
   metadata: Record<string, unknown> | null;
   created_at: string | null;
   uploader_email: string | null;
+  // Added so the categorised search modal can match on screenshot
+  // names and render thumbnails for top matches. These extra columns
+  // add roughly 150 bytes per row over the wire. Note: thumb_hash is
+  // optional in the DB schema (migration 20260420_thumb_hash.sql) — we
+  // deliberately don't SELECT it here so the query works on Supabase
+  // projects that haven't run that migration yet. ThumbHashImage falls
+  // back gracefully when the hash is missing.
+  name: string | null;
+  file_name: string | null;
+  storage_path: string | null;
 }
 
 interface UseCatalogueFullScopeArgs {
@@ -27,14 +37,18 @@ interface UseCatalogueFullScopeArgs {
 }
 
 function toScopeScreenshot(row: ScopeScreenshotRow): ScreenshotNode {
+  const storagePath = row.storage_path ?? '';
+  const imageUrl = storagePath
+    ? supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl
+    : undefined;
   return {
     id: row.id,
     project_id: row.project_id,
     flow_id: null,
     screen_family_id: null,
-    name: '',
-    file_name: '',
-    storage_path: '',
+    name: row.name ?? '',
+    file_name: row.file_name ?? '',
+    storage_path: storagePath,
     sequence: null,
     group: row.group,
     platform: row.platform,
@@ -49,6 +63,7 @@ function toScopeScreenshot(row: ScopeScreenshotRow): ScreenshotNode {
     metadata: row.metadata ?? {},
     uploader_email: row.uploader_email,
     created_at: row.created_at ?? undefined,
+    image_url: imageUrl,
   };
 }
 
@@ -100,7 +115,7 @@ export function useCatalogueFullScope({
       while (true) {
         const { data, error } = await supabase
           .from('screenshots')
-          .select('id,project_id,group,platform,theme,web_preset_key,mobile_os,metadata,created_at,uploader_email')
+          .select('id,project_id,group,platform,theme,web_preset_key,mobile_os,metadata,created_at,uploader_email,name,file_name,storage_path')
           .is('deleted_at', null)
           .in('project_id', projectIds)
           .order('id', { ascending: true })
