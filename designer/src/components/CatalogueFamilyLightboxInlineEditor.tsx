@@ -1,9 +1,11 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 
 import { REFERENCE_IMAGES_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
+import { Dropdown } from './Dropdown';
 
 interface CatalogueFamilyLightboxInlineEditorProps {
+  existingFlows: string[];
   existingGroups: string[];
   flowDraft: string;
   groupDraft: string;
@@ -67,6 +69,7 @@ export function buildLightboxDraftVariant(
 }
 
 export function CatalogueFamilyLightboxInlineEditor({
+  existingFlows,
   existingGroups,
   flowDraft,
   groupDraft,
@@ -94,6 +97,28 @@ export function CatalogueFamilyLightboxInlineEditor({
 }: CatalogueFamilyLightboxInlineEditorProps) {
   const referenceInputRef = useRef<HTMLInputElement>(null);
 
+  // Merge the current draft into the option list so a freshly-typed value
+  // renders as the selected label, not as the placeholder.
+  const groupOptions = useMemo(() => {
+    const all = new Set(existingGroups);
+    if (groupDraft.trim()) all.add(groupDraft.trim());
+    return [...all].sort().map((name) => ({ value: name, label: name }));
+  }, [existingGroups, groupDraft]);
+
+  const flowOptions = useMemo(() => {
+    const all = new Set(existingFlows);
+    if (flowDraft.trim()) all.add(flowDraft.trim());
+    return [...all].sort().map((name) => ({ value: name, label: name }));
+  }, [existingFlows, flowDraft]);
+
+  const webPresetOptions = useMemo(
+    () => webPresets.map((preset) => ({
+      value: preset.key,
+      label: `${preset.label} (${preset.width}px)`,
+    })),
+    [webPresets],
+  );
+
   return (
     <div className="catalogue-lightbox-inline-editor">
       <div className="catalogue-list-inline-editor__head">
@@ -105,70 +130,89 @@ export function CatalogueFamilyLightboxInlineEditor({
           <span>Screenshot name</span>
           <input value={nameDraft} onChange={(event) => onNameChange(event.target.value)} />
         </label>
-        <label className="catalogue-list-inline-editor__field">
+
+        <div className="catalogue-list-inline-editor__field">
           <span>Group</span>
-          {existingGroups.length > 0 && (
-            <select
-              value={existingGroups.includes(groupDraft) ? groupDraft : ''}
-              onChange={(event) => onGroupChange(event.target.value)}
-            >
-              <option value="">Select existing group...</option>
-              {existingGroups.map((group) => (
-                <option key={group} value={group}>
-                  {group}
-                </option>
-              ))}
-            </select>
-          )}
-          <input
-            value={groupDraft}
-            placeholder="Type a new group..."
-            onChange={(event) => onGroupChange(event.target.value)}
+          <Dropdown
+            options={groupOptions}
+            value={groupDraft.trim() || null}
+            onChange={(value) => onGroupChange(value ?? '')}
+            placeholder="Select or create…"
+            searchable
+            searchPlaceholder="Search or type to create…"
+            creatable
+            className="catalogue-list-inline-editor__dropdown"
           />
-        </label>
-        <label className="catalogue-list-inline-editor__field">
+        </div>
+
+        <div className="catalogue-list-inline-editor__field">
           <span>Flow</span>
-          <input value={flowDraft} onChange={(event) => onFlowChange(event.target.value)} />
-        </label>
-        <label className="catalogue-list-inline-editor__field">
-          <span>Theme</span>
-          <select value={themeDraft || ''} onChange={(event) => onThemeChange((event.target.value || null) as 'light' | 'dark' | null)}>
-            <option value="">Select theme</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </label>
-        <label className="catalogue-list-inline-editor__field">
-          <span>Platform</span>
-          <select value={platformDraft || ''} onChange={(event) => onPlatformChange((event.target.value || null) as 'mobile' | 'web' | null)}>
-            <option value="">Select platform</option>
-            <option value="web">Web</option>
-            <option value="mobile">Mobile</option>
-          </select>
-        </label>
+          <Dropdown
+            options={flowOptions}
+            value={flowDraft.trim() || null}
+            onChange={(value) => onFlowChange(value ?? '')}
+            placeholder="Select or create…"
+            searchable
+            searchPlaceholder="Search or type to create…"
+            creatable
+            className="catalogue-list-inline-editor__dropdown"
+          />
+        </div>
+
+        <div className="catalogue-list-inline-editor__row-2col">
+          <div className="catalogue-list-inline-editor__field">
+            <span>Theme</span>
+            <SegmentedControl
+              value={themeDraft}
+              onChange={onThemeChange}
+              options={[
+                { value: 'light', label: 'Light' },
+                { value: 'dark', label: 'Dark' },
+              ]}
+            />
+          </div>
+          <div className="catalogue-list-inline-editor__field">
+            <span>Platform</span>
+            <SegmentedControl
+              value={platformDraft}
+              onChange={onPlatformChange}
+              options={[
+                { value: 'web', label: 'Web' },
+                { value: 'mobile', label: 'Mobile' },
+              ]}
+            />
+          </div>
+        </div>
+
         {platformDraft === 'web' && (
-          <label className="catalogue-list-inline-editor__field">
+          <div className="catalogue-list-inline-editor__field">
             <span>Web preset</span>
-            <select value={webPresetDraft || ''} onChange={(event) => onWebPresetChange(event.target.value || null)}>
-              <option value="">Select preset</option>
-              {webPresets.map((preset) => (
-                <option key={preset.key} value={preset.key}>
-                  {preset.label} ({preset.width}px)
-                </option>
-              ))}
-            </select>
-          </label>
+            <Dropdown
+              options={webPresetOptions}
+              value={webPresetDraft}
+              onChange={onWebPresetChange}
+              placeholder="Select preset"
+              searchable
+              searchPlaceholder="Search presets…"
+              className="catalogue-list-inline-editor__dropdown"
+            />
+          </div>
         )}
+
         {platformDraft === 'mobile' && (
-          <label className="catalogue-list-inline-editor__field">
+          <div className="catalogue-list-inline-editor__field">
             <span>Mobile OS</span>
-            <select value={mobileOsDraft || ''} onChange={(event) => onMobileOsChange((event.target.value || null) as MobileOs | null)}>
-              <option value="">Select OS</option>
-              <option value="ios">iOS</option>
-              <option value="android">Android</option>
-            </select>
-          </label>
+            <SegmentedControl
+              value={mobileOsDraft}
+              onChange={onMobileOsChange}
+              options={[
+                { value: 'ios', label: 'iOS' },
+                { value: 'android', label: 'Android' },
+              ]}
+            />
+          </div>
         )}
+
         {REFERENCE_IMAGES_ENABLED && (
           <label className="catalogue-list-inline-editor__field catalogue-list-inline-editor__field--full">
             <span>Reference image</span>
@@ -219,6 +263,44 @@ export function CatalogueFamilyLightboxInlineEditor({
           Cancel
         </button>
       </div>
+    </div>
+  );
+}
+
+// Local segmented control. 1-tap selection for 2-option fields (Theme,
+// Platform, Mobile OS). The "×" button clears the selection back to null,
+// matching the old "Select theme" / "Select platform" placeholder semantics.
+interface SegmentedControlProps<T extends string> {
+  value: T | null;
+  onChange: (value: T | null) => void;
+  options: { value: T; label: string }[];
+}
+
+function SegmentedControl<T extends string>({ value, onChange, options }: SegmentedControlProps<T>) {
+  return (
+    <div className="catalogue-segmented-control" role="radiogroup">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          className={`catalogue-segmented-control__btn${value === option.value ? ' is-active' : ''}`}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+      <button
+        type="button"
+        className="catalogue-segmented-control__clear"
+        onClick={() => onChange(null)}
+        disabled={value === null}
+        aria-label="Clear selection"
+        title="Clear selection"
+      >
+        ×
+      </button>
     </div>
   );
 }

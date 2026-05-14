@@ -974,6 +974,7 @@ export function Catalogue({
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
           canEdit={!isGuest}
           existingAnnotationLabels={annotationLabels}
+          existingFlows={allFlows}
           existingGroups={allGroups}
           family={previewFamily}
           flowName={previewFamily.flow_label}
