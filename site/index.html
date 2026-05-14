@@ -319,6 +319,10 @@
               <summary>Is this free?</summary>
               <p>Yes. AgentUX Catalogue is open source. You need a Supabase project for the database and storage backend.</p>
             </details>
+            <details class="faq-item">
+              <summary>Who can see what's in my catalogue?</summary>
+              <p>Only team members you invite. The catalogue is gated behind a per-email passcode — admins mint passcodes from <strong>Settings → Team → Members</strong> and share them through a secure channel. Row-level security on the database means even direct API access requires a real session, so nobody can scrape the catalogue with just the URL. Public share links (<code>/share/...</code>) stay anonymous on purpose so you can send specific flows to outside reviewers without giving them edit access.</p>
+            </details>
           </div>
         </section>
       </main>
