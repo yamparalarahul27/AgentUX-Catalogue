@@ -143,6 +143,55 @@
   text-transform: uppercase;
 }
 
+// Logout row: main "Logout" button + a small kebab to reveal the
+// rarely-used "Logout everywhere" action. The kebab keeps the
+// destructive global option behind one extra click so it doesn't get
+// fat-fingered.
+.catalogue-header-menu__logout-row {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.catalogue-header-menu__logout-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.catalogue-header-menu__logout-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.08);
+    color: #fca5a5;
+  }
+
+  &.is-open {
+    border-color: rgba(239, 68, 68, 0.42);
+    background: rgba(239, 68, 68, 0.14);
+    color: #fca5a5;
+  }
+}
+
+// Nested item appears below the logout row when kebab is open — visually
+// indented so it reads as a sub-action of the main Logout button.
+.catalogue-header-menu__item--nested {
+  margin-left: 22px;
+  font-size: 12.5px;
+}
+
 .catalogue-header-menu__meta {
   display: flex;
   flex-direction: column;
