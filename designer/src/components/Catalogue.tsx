@@ -696,6 +696,16 @@ export function Catalogue({
               currentUserEmail={user.email ?? ''}
               onRenameGroupKey={handleRenameGroupKey}
               onTrashRestored={loadData}
+              onSelectFlow={(flow) => {
+                setFilterFlow([flow]);
+                setFilterGroup([]);
+                setActiveSection('catalogue');
+              }}
+              onSelectGroup={(group) => {
+                setFilterGroup([group]);
+                setFilterFlow([]);
+                setActiveSection('catalogue');
+              }}
             />
           </div>
         </main>

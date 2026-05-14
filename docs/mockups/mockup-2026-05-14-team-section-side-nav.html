@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Team section side nav — Before / After</title>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --surface: #18181b;
+    --field-bg: #0f1014;
+    --border: #27272a;
+    --border-soft: #303038;
+    --border-hover: #41414c;
+    --text: #f4f4f5;
+    --muted: #8a8a94;
+    --dim: #6a6a72;
+    --accent: #6366f1;
+    --accent-soft: rgba(99, 102, 241, 0.12);
+    --accent-soft-hover: rgba(99, 102, 241, 0.18);
+    --success: #4ade80;
+    --warning: #facc15;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1340px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  .page-sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 32px;
+  }
+
+  .feedback {
+    margin: 0 0 32px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+
+  .feedback h2 {
+    font-size: 13px;
+    margin: 0 0 12px;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .feedback ol {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .feedback ol li {
+    margin-bottom: 8px;
+  }
+
+  .feedback ol li strong { color: var(--text); }
+
+  .stage-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+  }
+
+  .stage-label--after { color: var(--success); }
+
+  /* ────────── Shared team-section shell ────────── */
+
+  .team {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    background: linear-gradient(180deg, rgba(24, 24, 27, 0.96), rgba(17, 17, 19, 0.96));
+    margin-bottom: 40px;
+  }
+
+  /* ─── BEFORE: horizontal subtabs ─── */
+
+  .team__sub-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+
+  .team__sub-tab {
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: inherit;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .team__sub-tab:hover { color: var(--text); }
+  .team__sub-tab.is-active { background: var(--accent); color: #fff; }
+
+  /* ─── AFTER: side nav layout ─── */
+
+  .team-shell {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 18px;
+    min-height: 360px;
+  }
+
+  .team-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(17, 17, 19, 0.6);
+    align-self: start;
+  }
+
+  .team-nav__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+  }
+
+  .team-nav__item:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text);
+  }
+
+  .team-nav__item.is-active {
+    background: var(--accent-soft);
+    color: var(--text);
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .team-nav__item svg {
+    flex-shrink: 0;
+    color: currentColor;
+  }
+
+  .team-nav__count {
+    margin-left: auto;
+    color: var(--dim);
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 999px;
+    padding: 1px 7px;
+    min-width: 22px;
+    text-align: center;
+  }
+
+  .team-nav__item.is-active .team-nav__count {
+    color: var(--text);
+    background: rgba(99, 102, 241, 0.25);
+  }
+
+  /* Content panel */
+  .team-panel {
+    min-width: 0;
+  }
+
+  .team-panel__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .team-panel__head h3 {
+    font-size: 15px;
+    margin: 0;
+  }
+
+  .team-panel__head p {
+    color: var(--muted);
+    font-size: 12px;
+    margin: 4px 0 0;
+  }
+
+  /* ────────── Flow / group list rows ────────── */
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(17, 17, 19, 0.6);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .row:hover {
+    border-color: var(--border-hover);
+    background: rgba(99, 102, 241, 0.05);
+  }
+
+  .row__icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.1);
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .row__icon-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* The current small icon — keep for the BEFORE column */
+  .row__icon-wrap--small {
+    width: 14px;
+    height: 14px;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  .row__name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row__count {
+    color: var(--muted);
+    font-size: 12px;
+    margin-right: 8px;
+  }
+
+  .row__cta {
+    color: var(--dim);
+    font-size: 11px;
+    transition: color 0.15s;
+  }
+
+  .row:hover .row__cta { color: var(--accent); }
+
+  /* ────────── Toast ────────── */
+
+  .toast-host {
+    position: relative;
+  }
+
+  .toast {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+    color: var(--text);
+    font-size: 13px;
+    animation: toastIn 0.25s ease-out;
+  }
+
+  .toast--success { border-color: rgba(74, 222, 128, 0.4); }
+  .toast--success svg { color: var(--success); }
+
+  .toast--floating {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 10;
+  }
+
+  @keyframes toastIn {
+    from { transform: translateY(6px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* The current inline note — keep for the BEFORE column */
+  .inline-note {
+    margin-bottom: 12px;
+    padding: 9px 12px;
+    background: rgba(99, 102, 241, 0.07);
+    border: 1px solid rgba(99, 102, 241, 0.22);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12.5px;
+  }
+
+  /* ────────── Icon proposal table ────────── */
+
+  .icon-proposals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .icon-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: rgba(17, 17, 19, 0.6);
+  }
+
+  .icon-card__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .icon-card__head svg { color: var(--accent); }
+
+  .icon-card__head strong {
+    font-size: 13px;
+  }
+
+  .icon-card__alts {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .icon-card__alts code {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+  }
+
+  /* Notes */
+  .notes {
+    margin-top: 24px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+
+  .notes h3 { font-size: 14px; margin: 0 0 10px; }
+
+  .notes ul {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .notes ul li strong { color: var(--text); }
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1 class="page-title">CatalogueTeamSection — Side nav + clickable flows + bigger icons + toasts</h1>
+    <p class="page-sub">Four feedback items rolled into one redesign of the Team section.</p>
+
+    <div class="feedback">
+      <h2>Feedback being addressed</h2>
+      <ol>
+        <li><strong>Side navigation</strong> for the 6 subtabs (Upload Analytics, Flows, Groups, Trash, Flags, Members) with Lucide icons.</li>
+        <li><strong>Click-to-filter:</strong> clicking a Flow or Group row activates the toolbar filter and switches back to the main catalogue, scoped to that flow/group.</li>
+        <li><strong>2.5x bigger group icons</strong> in the Groups list (currently <code>iconSize=14</code> → <code>iconSize=36</code>, rendered inside a tinted square so smaller icons don't look orphaned).</li>
+        <li><strong>Save messages become toasts</strong> — slide in, auto-dismiss after a couple of seconds instead of staying inline above the content.</li>
+      </ol>
+    </div>
+
+    <!-- ═══════════════ BEFORE ═══════════════ -->
+    <p class="stage-label">Before — current layout</p>
+    <div class="team">
+      <div class="team__sub-tabs">
+        <button class="team__sub-tab">Upload Analytics</button>
+        <button class="team__sub-tab is-active">Flows</button>
+        <button class="team__sub-tab">Groups</button>
+        <button class="team__sub-tab">Trash</button>
+        <button class="team__sub-tab">Flags</button>
+        <button class="team__sub-tab">Members</button>
+      </div>
+      <p style="color: var(--muted); font-size: 13px; margin: 0 0 14px;">All flows from uploaded screenshots. 14 flows tracked.</p>
+
+      <div class="inline-note">Group appearance saved. ← currently lives inline above the list</div>
+
+      <div class="row" style="cursor:default;">
+        <div class="row__icon-wrap row__icon-wrap--small">
+          <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f0b90b'/%3E%3Cpath d='M30 35l10-10 10 10-10 10z M55 60l10-10 10 10-10 10z M55 35l10-10 10 10-10 10z M30 60l10-10 10 10-10 10z M42 50l8-8 8 8-8 8z' fill='%231e2026'/%3E%3C/svg%3E" alt="" />
+        </div>
+        <span class="row__name">Onboarding</span>
+        <span class="row__count">147 screens</span>
+      </div>
+      <div class="row" style="cursor:default;">
+        <div class="row__icon-wrap row__icon-wrap--small">
+          <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23ffd60a'/%3E%3Ctext x='50' y='65' font-size='50' font-family='Arial' text-anchor='middle' fill='%23000'%3EB%3C/text%3E%3C/svg%3E" alt="" />
+        </div>
+        <span class="row__name">Checkout</span>
+        <span class="row__count">82 screens</span>
+      </div>
+      <div class="row" style="cursor:default;">
+        <div class="row__icon-wrap row__icon-wrap--small">
+          <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2300ffb9'/%3E%3C/svg%3E" alt="" />
+        </div>
+        <span class="row__name">Login</span>
+        <span class="row__count">63 screens</span>
+      </div>
+
+      <p style="color: var(--warning); font-size:12px; margin: 18px 0 0;">⚠ Subtabs eat horizontal space at the top. Rows are inert. Group icons (14px) feel small in a 36px-tall row.</p>
+    </div>
+
+    <!-- ═══════════════ AFTER ═══════════════ -->
+    <p class="stage-label stage-label--after">After — proposed</p>
+    <div class="team toast-host">
+
+      <div class="team-shell">
+
+        <!-- Side nav -->
+        <nav class="team-nav">
+          <button class="team-nav__item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M11 16V8"/><path d="M15 16v-3"/><path d="M19 16V6"/></svg>
+            <span>Upload Analytics</span>
+          </button>
+          <button class="team-nav__item is-active">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="9" y="15" width="6" height="6" rx="1"/><path d="M6 9v3a2 2 0 0 0 2 2h4"/><path d="M18 9v3a2 2 0 0 1-2 2h-4"/></svg>
+            <span>Flows</span>
+            <span class="team-nav__count">14</span>
+          </button>
+          <button class="team-nav__item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span>Groups</span>
+            <span class="team-nav__count">32</span>
+          </button>
+          <button class="team-nav__item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            <span>Trash</span>
+            <span class="team-nav__count">8</span>
+          </button>
+          <button class="team-nav__item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span>Flags</span>
+          </button>
+          <button class="team-nav__item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Members</span>
+          </button>
+        </nav>
+
+        <!-- Content panel -->
+        <div class="team-panel">
+          <div class="team-panel__head">
+            <div>
+              <h3>Flows</h3>
+              <p>14 flows tracked. Click a flow to filter the catalogue.</p>
+            </div>
+          </div>
+
+          <!-- Clickable flow rows with bigger icons -->
+          <div class="row">
+            <div class="row__icon-wrap">
+              <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f0b90b'/%3E%3Cpath d='M30 35l10-10 10 10-10 10z M55 60l10-10 10 10-10 10z M55 35l10-10 10 10-10 10z M30 60l10-10 10 10-10 10z M42 50l8-8 8 8-8 8z' fill='%231e2026'/%3E%3C/svg%3E" alt="" />
+            </div>
+            <span class="row__name">Onboarding</span>
+            <span class="row__count">147 screens</span>
+            <span class="row__cta">View →</span>
+          </div>
+          <div class="row">
+            <div class="row__icon-wrap">
+              <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23ffd60a'/%3E%3Ctext x='50' y='65' font-size='50' font-family='Arial' text-anchor='middle' fill='%23000'%3EB%3C/text%3E%3C/svg%3E" alt="" />
+            </div>
+            <span class="row__name">Checkout</span>
+            <span class="row__count">82 screens</span>
+            <span class="row__cta">View →</span>
+          </div>
+          <div class="row">
+            <div class="row__icon-wrap">
+              <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2300ffb9'/%3E%3C/svg%3E" alt="" />
+            </div>
+            <span class="row__name">Login</span>
+            <span class="row__count">63 screens</span>
+            <span class="row__cta">View →</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Floating toast (live demo of #4) -->
+      <div class="toast toast--success toast--floating">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Group appearance saved
+      </div>
+    </div>
+
+    <!-- ─── Lucide icon proposals ─── -->
+    <div class="notes">
+      <h3>Lucide icon picks</h3>
+      <p style="color: var(--muted); font-size:13px; margin: 0 0 4px;">First pick is what's shown above; alternates listed in case any feels wrong.</p>
+
+      <div class="icon-proposals">
+        <div class="icon-card">
+          <div class="icon-card__head">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M11 16V8"/><path d="M15 16v-3"/><path d="M19 16V6"/></svg>
+            <strong>Upload Analytics</strong>
+          </div>
+          <div class="icon-card__alts">Pick: <code>BarChart3</code><br>Alt: <code>Activity</code>, <code>TrendingUp</code></div>
+        </div>
+
+        <div class="icon-card">
+          <div class="icon-card__head">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="9" y="15" width="6" height="6" rx="1"/><path d="M6 9v3a2 2 0 0 0 2 2h4"/><path d="M18 9v3a2 2 0 0 1-2 2h-4"/></svg>
+            <strong>Flows</strong>
+          </div>
+          <div class="icon-card__alts">Pick: <code>Workflow</code><br>Alt: <code>Route</code>, <code>GitBranch</code></div>
+        </div>
+
+        <div class="icon-card">
+          <div class="icon-card__head">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <strong>Groups</strong>
+          </div>
+          <div class="icon-card__alts">Pick: <code>LayoutGrid</code><br>Alt: <code>FolderTree</code>, <code>Boxes</code></div>
+        </div>
+
+        <div class="icon-card">
+          <div class="icon-card__head">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            <strong>Trash</strong>
+          </div>
+          <div class="icon-card__alts">Pick: <code>Trash2</code><br>Alt: <code>Archive</code></div>
+        </div>
+
+        <div class="icon-card">
+          <div class="icon-card__head">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <strong>Flags</strong>
+          </div>
+          <div class="icon-card__alts">Pick: <code>Flag</code><br>Alt: <code>ToggleLeft</code>, <code>SlidersHorizontal</code></div>
+        </div>
+
+        <div class="icon-card">
+          <div class="icon-card__head">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <strong>Members</strong>
+          </div>
+          <div class="icon-card__alts">Pick: <code>Users</code><br>Alt: <code>UserCog</code>, <code>UsersRound</code></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Implementation notes ─── -->
+    <div class="notes">
+      <h3>What changes in code</h3>
+      <ul>
+        <li><strong>Layout:</strong> <code>.catalogue-team</code> becomes a 2-col grid (200px nav + 1fr content) on viewports ≥ 768px. Below that, the nav collapses to a horizontal scrollable row of icon+label chips, or icon-only chips on the narrowest viewports.</li>
+        <li><strong>Subtab buttons:</strong> existing 6 buttons keep their <code>setSubTab</code> wiring; just re-rendered as <code>.team-nav__item</code> with a Lucide icon + label + optional count badge (Flows/Groups/Trash have counts already available in state).</li>
+        <li><strong>Click-to-filter:</strong> each row in Flows / Groups list gets an <code>onClick</code> that calls a new <code>onSelectFlow(flow)</code> / <code>onSelectGroup(group)</code> prop. Parent (<code>Catalogue.tsx</code>) wires it to <code>setFilterFlow([flow])</code> + <code>setActiveSection('catalogue')</code>. Existing keyboard nav (Esc to back out) keeps working.</li>
+        <li><strong>Group icons 2.5x:</strong> in the Groups list, render <code>&lt;CatalogueGroupLabel iconSize=36&gt;</code> inside a 36×36 tinted square wrapper. Falls back to a centered first letter when no uploaded icon. Other surfaces (toolbar chips, lightbox crumbs) keep the existing small size — only the Team Groups list changes.</li>
+        <li><strong>Toasts:</strong> replace the inline <code>.catalogue-team__group-note</code> with the existing <code>&lt;Toast&gt;</code> component (already used in Catalogue.tsx). State stays as <code>groupSaveMessage</code> but gets cleared after 3s via a <code>useEffect</code> + <code>setTimeout</code>. Position: bottom-right of the page.</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>

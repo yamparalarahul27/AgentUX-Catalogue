@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pencil, Search } from 'lucide-react';
+import {
+  BarChart3,
+  ChevronRight,
+  Flag,
+  LayoutGrid,
+  Pencil,
+  Search,
+  Trash2,
+  Users,
+  Workflow,
+} from 'lucide-react';
 
 import { getScreenshotFlowLabel } from '../lib/catalogue-families';
 import {
@@ -25,6 +35,7 @@ import { CatalogueMembersSection } from './CatalogueMembersSection';
 import { CatalogueTrashSection } from './CatalogueTrashSection';
 import { ConfirmModal } from './ConfirmModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
+import { Toast } from './Toast';
 
 type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash' | 'flags' | 'members';
 
@@ -44,6 +55,12 @@ interface CatalogueTeamSectionProps {
   // Trash subtab calls this after a successful restore so the parent
   // catalogue can refetch and the restored card reappears immediately.
   onTrashRestored?: () => void;
+  // Clicking a flow/group row in the checklists hands the value to the
+  // parent so it can set the toolbar filter and swap back to the main
+  // catalogue view. The parent clears other filters to ensure the user
+  // lands on a focused result set.
+  onSelectFlow?: (flow: string) => void;
+  onSelectGroup?: (group: string) => void;
 }
 
 interface FlowChecklistItem {
@@ -115,7 +132,15 @@ function buildGroupChecklist(screenshots: ScreenshotNode[]): GroupChecklistItem[
   return [...counts.values()].sort((left, right) => left.group.localeCompare(right.group));
 }
 
-export function CatalogueTeamSection({ projects, screenshots, currentUserEmail, onRenameGroupKey, onTrashRestored }: CatalogueTeamSectionProps) {
+export function CatalogueTeamSection({
+  projects,
+  screenshots,
+  currentUserEmail,
+  onRenameGroupKey,
+  onTrashRestored,
+  onSelectFlow,
+  onSelectGroup,
+}: CatalogueTeamSectionProps) {
   const [subTab, setSubTab] = useState<TeamSubTab>(TEAM_UPLOAD_ANALYTICS_ENABLED ? 'analytics' : 'flows');
   // The project picker has been removed — single-project workflow. Default
   // to the first project's id (or null if none) so per-project appearance
@@ -404,40 +429,81 @@ export function CatalogueTeamSection({ projects, screenshots, currentUserEmail, 
     setGroupSaveMessage('Uploaded icon removed.');
   }
 
+  const subSections: { id: TeamSubTab; label: string; icon: typeof BarChart3; count?: number; description: string }[] = [
+    ...(TEAM_UPLOAD_ANALYTICS_ENABLED
+      ? [{
+          id: 'analytics' as TeamSubTab,
+          label: 'Upload Analytics',
+          icon: BarChart3,
+          description: 'Date-wise screenshot uploads grouped in IST with Web and Mobile split.',
+        }]
+      : []),
+    {
+      id: 'flows',
+      label: 'Flows',
+      icon: Workflow,
+      count: flowChecklist.length,
+      description: `All flows from uploaded screenshots. ${flowChecklist.length} flow${flowChecklist.length !== 1 ? 's' : ''} tracked. Click a flow to filter the catalogue.`,
+    },
+    {
+      id: 'groups',
+      label: 'Groups',
+      icon: LayoutGrid,
+      count: groupChecklist.length,
+      description: `All groups used in uploaded screenshots. ${groupChecklist.length} group${groupChecklist.length !== 1 ? 's' : ''} found. Click a group to filter the catalogue.`,
+    },
+    {
+      id: 'trash',
+      label: 'Trash',
+      icon: Trash2,
+      description: 'Deleted screenshots from the last 15 days. Auto-purged after that.',
+    },
+    {
+      id: 'flags',
+      label: 'Flags',
+      icon: Flag,
+      description: 'Compile-time feature flags from feature-flags.ts. Read-only — flip a constant + redeploy to change.',
+    },
+    {
+      id: 'members',
+      label: 'Members',
+      icon: Users,
+      description: 'Mint, rotate, disable, or remove member passcodes. All actions require the admin passcode.',
+    },
+  ];
+
+  const activeSection = subSections.find((section) => section.id === subTab) ?? subSections[0];
+
   return (
     <section className="catalogue-team">
-      <div className="catalogue-team__head">
-        <div className="catalogue-team__copy">
-          <div className="catalogue-team__sub-tabs">
-            {TEAM_UPLOAD_ANALYTICS_ENABLED && (
-              <button type="button" className={`catalogue-team__sub-tab ${subTab === 'analytics' ? 'is-active' : ''}`} onClick={() => setSubTab('analytics')}>
-                Upload Analytics
+      <div className="catalogue-team__layout">
+        <nav className="catalogue-team__nav" aria-label="Team section">
+          {subSections.map((section) => {
+            const Icon = section.icon;
+            const isActive = section.id === subTab;
+            return (
+              <button
+                key={section.id}
+                type="button"
+                className={`catalogue-team__nav-item${isActive ? ' is-active' : ''}`}
+                onClick={() => setSubTab(section.id)}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <Icon size={16} aria-hidden="true" />
+                <span className="catalogue-team__nav-label">{section.label}</span>
+                {typeof section.count === 'number' && (
+                  <span className="catalogue-team__nav-count">{section.count}</span>
+                )}
               </button>
-            )}
-            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'flows' ? 'is-active' : ''}`} onClick={() => setSubTab('flows')}>
-              Flows
-            </button>
-            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'groups' ? 'is-active' : ''}`} onClick={() => setSubTab('groups')}>
-              Groups
-            </button>
-            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'trash' ? 'is-active' : ''}`} onClick={() => setSubTab('trash')}>
-              Trash
-            </button>
-            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'flags' ? 'is-active' : ''}`} onClick={() => setSubTab('flags')}>
-              Flags
-            </button>
-            <button type="button" className={`catalogue-team__sub-tab ${subTab === 'members' ? 'is-active' : ''}`} onClick={() => setSubTab('members')}>
-              Members
-            </button>
-          </div>
-          {TEAM_UPLOAD_ANALYTICS_ENABLED && subTab === 'analytics' && <p>Date-wise screenshot uploads grouped in IST with Web and Mobile split.</p>}
-          {subTab === 'flows' && <p>All flows from uploaded screenshots. {flowChecklist.length} flow{flowChecklist.length !== 1 ? 's' : ''} tracked.</p>}
-          {subTab === 'groups' && <p>All groups used in uploaded screenshots. {groupChecklist.length} group{groupChecklist.length !== 1 ? 's' : ''} found.</p>}
-          {subTab === 'trash' && <p>Deleted screenshots from the last 15 days. Auto-purged after that.</p>}
-          {subTab === 'flags' && <p>Compile-time feature flags from feature-flags.ts. Read-only — flip a constant + redeploy to change.</p>}
-          {subTab === 'members' && <p>Mint, rotate, disable, or remove member passcodes. All actions require the admin passcode.</p>}
-        </div>
-      </div>
+            );
+          })}
+        </nav>
+
+        <div className="catalogue-team__panel">
+          <header className="catalogue-team__panel-head">
+            <h3>{activeSection.label}</h3>
+            <p>{activeSection.description}</p>
+          </header>
 
       {TEAM_UPLOAD_ANALYTICS_ENABLED && subTab === 'analytics' && (
         <>
@@ -473,10 +539,17 @@ export function CatalogueTeamSection({ projects, screenshots, currentUserEmail, 
           ) : (
             <div className="catalogue-team__checklist">
               {flowChecklist.map((item) => (
-                <div key={item.flow} className="catalogue-team__checklist-item">
+                <button
+                  key={item.flow}
+                  type="button"
+                  className="catalogue-team__checklist-item catalogue-team__checklist-item--clickable"
+                  onClick={() => onSelectFlow?.(item.flow)}
+                  disabled={!onSelectFlow}
+                >
                   <span className="catalogue-team__checklist-flow">{item.flow}</span>
                   <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
-                </div>
+                  {onSelectFlow && <ChevronRight size={14} className="catalogue-team__checklist-cta" aria-hidden="true" />}
+                </button>
               ))}
             </div>
           )}
@@ -486,11 +559,6 @@ export function CatalogueTeamSection({ projects, screenshots, currentUserEmail, 
       {subTab === 'groups' && (
         <>
           {!projectId && <div className="catalogue-team__group-note">No project selected. Group edits apply to all projects.</div>}
-          {groupSaveMessage && (
-            <div className="catalogue-team__group-note">
-              {groupSaveMessage}
-            </div>
-          )}
 
           {groupChecklist.length > 0 && (
             <div className="catalogue-team__filterbar">
@@ -562,41 +630,61 @@ export function CatalogueTeamSection({ projects, screenshots, currentUserEmail, 
             <div className="catalogue-team__empty">No groups match the current filters.</div>
           ) : (
             <div className="catalogue-team__checklist">
-              {filteredGroupChecklist.map((item) => (
-                <div key={item.group.toLowerCase()} className="catalogue-team__checklist-item catalogue-team__checklist-item--group">
-                  <div className="catalogue-team__group-meta">
-                    <CatalogueGroupLabel
-                      className="catalogue-team__checklist-flow"
-                      group={item.group}
-                      projectId={projectId}
-                    />
-                    <button
-                      type="button"
-                      className="catalogue-team__group-edit-btn"
-                      onClick={() => beginGroupEdit(item.group)}
-                      title="Edit group"
-                      aria-label="Edit group"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                  </div>
-                  <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
-                  {(item.category || item.region) && (
-                    <div className="catalogue-team__checklist-tags">
-                      {item.category && (
-                        <span className={`catalogue-team__checklist-tag catalogue-team__checklist-tag--${item.category}`}>
-                          {item.category.toUpperCase()}
-                        </span>
-                      )}
-                      {item.region && (
-                        <span className={`catalogue-team__checklist-tag catalogue-team__checklist-tag--${item.region}`}>
-                          {item.region === 'india' ? 'India' : 'Global'}
-                        </span>
-                      )}
+              {filteredGroupChecklist.map((item) => {
+                const handleRowActivate = () => onSelectGroup?.(item.group);
+                return (
+                  <div
+                    key={item.group.toLowerCase()}
+                    className={`catalogue-team__checklist-item catalogue-team__checklist-item--group${onSelectGroup ? ' catalogue-team__checklist-item--clickable' : ''}`}
+                    role={onSelectGroup ? 'button' : undefined}
+                    tabIndex={onSelectGroup ? 0 : undefined}
+                    onClick={onSelectGroup ? handleRowActivate : undefined}
+                    onKeyDown={onSelectGroup ? (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleRowActivate();
+                      }
+                    } : undefined}
+                  >
+                    <div className="catalogue-team__group-meta">
+                      <CatalogueGroupLabel
+                        className="catalogue-team__checklist-flow"
+                        group={item.group}
+                        projectId={projectId}
+                        iconSize={36}
+                      />
+                      <button
+                        type="button"
+                        className="catalogue-team__group-edit-btn"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          beginGroupEdit(item.group);
+                        }}
+                        title="Edit group"
+                        aria-label="Edit group"
+                      >
+                        <Pencil size={14} />
+                      </button>
                     </div>
-                  )}
-                </div>
-              ))}
+                    <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
+                    {(item.category || item.region) && (
+                      <div className="catalogue-team__checklist-tags">
+                        {item.category && (
+                          <span className={`catalogue-team__checklist-tag catalogue-team__checklist-tag--${item.category}`}>
+                            {item.category.toUpperCase()}
+                          </span>
+                        )}
+                        {item.region && (
+                          <span className={`catalogue-team__checklist-tag catalogue-team__checklist-tag--${item.region}`}>
+                            {item.region === 'india' ? 'India' : 'Global'}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {onSelectGroup && <ChevronRight size={14} className="catalogue-team__checklist-cta" aria-hidden="true" />}
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
@@ -635,6 +723,9 @@ export function CatalogueTeamSection({ projects, screenshots, currentUserEmail, 
         />
       )}
 
+        </div>
+      </div>
+
       {renameConfirm && (
         <ConfirmModal
           title="Rename group?"
@@ -648,6 +739,15 @@ export function CatalogueTeamSection({ projects, screenshots, currentUserEmail, 
           danger={false}
           onConfirm={() => { void performRenameAndSave(); }}
           onCancel={() => setRenameConfirm(null)}
+        />
+      )}
+
+      {groupSaveMessage && (
+        <Toast
+          message={groupSaveMessage}
+          type="success"
+          onClose={() => setGroupSaveMessage(null)}
+          duration={3000}
         />
       )}
     </section>
