@@ -3,6 +3,7 @@ import {
   BarChart3,
   ChevronRight,
   Flag,
+  Images,
   LayoutGrid,
   Pencil,
   Search,
@@ -161,6 +162,7 @@ export function CatalogueTeamSection({
   const [groupSearch, setGroupSearch] = useState('');
   const [groupTypeFilter, setGroupTypeFilter] = useState<GroupTypeFilter>('all');
   const [groupRegionFilter, setGroupRegionFilter] = useState<GroupRegionFilter>('all');
+  const [flowSearch, setFlowSearch] = useState('');
 
   const scopedScreenshots = useMemo(
     () => (projectId ? screenshots.filter((screenshot) => screenshot.project_id === projectId) : screenshots),
@@ -174,6 +176,12 @@ export function CatalogueTeamSection({
 
   const flowChecklist = useMemo(() => buildFlowChecklist(scopedScreenshots), [scopedScreenshots]);
   const groupChecklist = useMemo(() => buildGroupChecklist(scopedScreenshots), [scopedScreenshots]);
+
+  const filteredFlowChecklist = useMemo(() => {
+    const query = flowSearch.trim().toLowerCase();
+    if (!query) return flowChecklist;
+    return flowChecklist.filter((item) => item.flow.toLowerCase().includes(query));
+  }, [flowChecklist, flowSearch]);
 
   const enrichedGroupChecklist = useMemo<EnrichedGroupItem[]>(
     () => groupChecklist.map((item) => {
@@ -534,11 +542,28 @@ export function CatalogueTeamSection({
 
       {subTab === 'flows' && (
         <>
+          {flowChecklist.length > 0 && (
+            <div className="catalogue-team__filterbar">
+              <label className="catalogue-team__search">
+                <Search size={14} aria-hidden="true" />
+                <input
+                  type="text"
+                  value={flowSearch}
+                  onChange={(event) => setFlowSearch(event.target.value)}
+                  placeholder="Search flows…"
+                  aria-label="Search flows"
+                />
+              </label>
+            </div>
+          )}
+
           {flowChecklist.length === 0 ? (
             <div className="catalogue-team__empty">No flows found. Upload screenshots with flow labels to populate this list.</div>
+          ) : filteredFlowChecklist.length === 0 ? (
+            <div className="catalogue-team__empty">No flows match the search.</div>
           ) : (
             <div className="catalogue-team__checklist">
-              {flowChecklist.map((item) => (
+              {filteredFlowChecklist.map((item) => (
                 <button
                   key={item.flow}
                   type="button"
@@ -547,7 +572,10 @@ export function CatalogueTeamSection({
                   disabled={!onSelectFlow}
                 >
                   <span className="catalogue-team__checklist-flow">{item.flow}</span>
-                  <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
+                  <span className="catalogue-team__checklist-count" aria-label={`${item.count} screenshot${item.count !== 1 ? 's' : ''}`}>
+                    <Images size={13} aria-hidden="true" />
+                    {item.count}
+                  </span>
                   {onSelectFlow && <ChevronRight size={14} className="catalogue-team__checklist-cta" aria-hidden="true" />}
                 </button>
               ))}
@@ -666,7 +694,10 @@ export function CatalogueTeamSection({
                         <Pencil size={14} />
                       </button>
                     </div>
-                    <span className="catalogue-team__checklist-count">{item.count} screenshot{item.count !== 1 ? 's' : ''}</span>
+                    <span className="catalogue-team__checklist-count" aria-label={`${item.count} screenshot${item.count !== 1 ? 's' : ''}`}>
+                      <Images size={13} aria-hidden="true" />
+                      {item.count}
+                    </span>
                     {(item.category || item.region) && (
                       <div className="catalogue-team__checklist-tags">
                         {item.category && (
