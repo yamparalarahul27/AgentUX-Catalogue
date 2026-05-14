@@ -64,5 +64,18 @@
       "Read(**/config/database.yml)",
       "Read(**/config/credentials.json)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $CLAUDE_PROJECT_DIR/.claude/hooks/scan-secrets.js"
+          }
+        ]
+      }
+    ]
   }
 }
