@@ -27,6 +27,7 @@ interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
   canEdit?: boolean;
   existingAnnotationLabels?: string[];
+  existingFlows: string[];
   existingGroups: string[];
   family: CatalogueFamilyView;
   flowName: string | null;
@@ -100,6 +101,7 @@ export function CatalogueFamilyLightbox({
   activeVariantKey,
   canEdit = true,
   existingAnnotationLabels = [],
+  existingFlows,
   existingGroups,
   family,
   flowName,
@@ -740,6 +742,7 @@ export function CatalogueFamilyLightbox({
                 hideCatalogueActions={showLabelTab}
                 isBookmarked={Boolean(screenshot && bookmarkedIds?.has(screenshot.id))}
                 onToggleBookmark={onToggleBookmark && screenshot ? () => onToggleBookmark(screenshot.id) : undefined}
+                existingFlows={existingFlows}
                 existingGroups={existingGroups}
                 flowDraft={flowDraft}
                 groupDraft={groupDraft}

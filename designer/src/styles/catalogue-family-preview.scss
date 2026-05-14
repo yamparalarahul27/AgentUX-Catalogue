@@ -311,6 +311,97 @@
   flex-wrap: wrap;
 }
 
+// Theme + Platform share one row inside the lightbox grid. Mobile OS /
+// Web preset stay on their own rows below (only render when Platform
+// is set, so there's no empty slot). Single column on narrow viewports.
+.catalogue-list-inline-editor__row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Group / Flow / Web preset dropdowns inside the inline editor. Override
+// the default Dropdown trigger so it visually matches the surrounding
+// text inputs (same padding, border, radius, font-size).
+.catalogue-list-inline-editor__dropdown {
+  width: 100%;
+
+  .dropdown__trigger {
+    width: 100%;
+    background: #0f1014;
+    border: 1px solid #303038;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+// Segmented control. Used for Theme, Platform, Mobile OS.
+.catalogue-segmented-control {
+  display: inline-flex;
+  align-items: stretch;
+  width: 100%;
+  background: #0f1014;
+  border: 1px solid #303038;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.catalogue-segmented-control__btn {
+  flex: 1;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #8a8a94;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 6px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  min-width: 0;
+
+  &:hover {
+    color: #f4f4f5;
+  }
+
+  &.is-active {
+    background: #6366f1;
+    color: #fff;
+  }
+}
+
+.catalogue-segmented-control__clear {
+  flex: 0 0 auto;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #8a8a94;
+  font-size: 16px;
+  line-height: 1;
+  font-family: inherit;
+  padding: 4px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover:not(:disabled) {
+    color: #f4f4f5;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
 .catalogue-family-lightbox__action {
   display: inline-flex;
   align-items: center;

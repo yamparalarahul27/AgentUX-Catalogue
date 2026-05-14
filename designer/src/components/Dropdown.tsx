@@ -21,6 +21,11 @@ interface DropdownPropsSingle extends DropdownPropsBase {
   multiple?: false;
   value: string | null;
   onChange: (value: string | null) => void;
+  // When true, a "+ Create '<query>'" item appears below the matched results
+  // whenever the search query doesn't match any existing option exactly.
+  // Clicking it fires onChange with the raw query string. Use for free-form
+  // taxonomies (group, flow) where users can introduce a new value inline.
+  creatable?: boolean;
 }
 
 interface DropdownPropsMulti extends DropdownPropsBase {
@@ -182,8 +187,21 @@ export function Dropdown(props: DropdownProps) {
               </button>
             )
           )}
-          {searchable && visibleOptions.length === 0 && searchQuery.trim() && (
+          {searchable && visibleOptions.length === 0 && searchQuery.trim() && !(props as DropdownPropsSingle).creatable && (
             <div className="dropdown__empty">No matches</div>
+          )}
+          {searchable && !isMulti && (props as DropdownPropsSingle).creatable && searchQuery.trim() &&
+            !options.some((o) => o.label.toLowerCase() === searchQuery.trim().toLowerCase()) && (
+            <button
+              type="button"
+              className="dropdown__item dropdown__item--create"
+              onClick={() => {
+                (props as DropdownPropsSingle).onChange(searchQuery.trim());
+                close();
+              }}
+            >
+              <span className="dropdown__item-main">+ Create "{searchQuery.trim()}"</span>
+            </button>
           )}
           {visibleOptions.map((o) => {
             const isSelected = isMulti
