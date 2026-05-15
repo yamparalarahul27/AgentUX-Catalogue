@@ -11,6 +11,7 @@ interface CatalogueFamilyLightboxActionsProps {
   existingGroups: string[];
   flowDraft: string;
   groupDraft: string;
+  suggestedGroup?: string | null;
   isInlineEditing: boolean;
   isSavingInline: boolean;
   hasReference: boolean;
@@ -51,6 +52,7 @@ export function CatalogueFamilyLightboxActions({
   existingGroups,
   flowDraft,
   groupDraft,
+  suggestedGroup,
   hasReference,
   isInlineEditing,
   isSavingInline,
@@ -133,6 +135,7 @@ export function CatalogueFamilyLightboxActions({
           existingGroups={existingGroups}
           flowDraft={flowDraft}
           groupDraft={groupDraft}
+          suggestedGroup={suggestedGroup}
           hasReference={hasReference}
           isSaving={isSavingInline}
           mobileOsDraft={mobileOsDraft}

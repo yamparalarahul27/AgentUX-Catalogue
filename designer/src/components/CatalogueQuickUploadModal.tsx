@@ -29,6 +29,8 @@ interface CatalogueQuickUploadModalProps {
   quickUploadGroup: string;
   quickUploadProjectGroups: string[];
   quickUploadQueue: QuickUploadQueuePreviewItem[];
+  isMarketingRole: boolean;
+  quickUploadSuggestedGroup: string;
   uploading: boolean;
   platform: 'web' | 'mobile' | null;
   theme: 'light' | 'dark' | null;
@@ -44,6 +46,7 @@ interface CatalogueQuickUploadModalProps {
   onQuickUploadProjectChange: (value: string | null) => void;
   onQuickUploadFilesSelected: (files: File[], context?: FolderDropContext) => void;
   onQuickUploadGroupChange: (value: string) => void;
+  onQuickUploadSuggestedGroupChange: (value: string) => void;
   onQuickUploadRemoveQueuedFile: (id: string) => void;
   onQuickUploadClearQueue: () => void;
   onQuickUploadUploadAll: () => void;
@@ -70,6 +73,8 @@ function QuickUploadContent({
   quickUploadGroup,
   quickUploadProjectGroups,
   quickUploadQueue,
+  isMarketingRole,
+  quickUploadSuggestedGroup,
   uploading,
   platform,
   theme,
@@ -84,6 +89,7 @@ function QuickUploadContent({
   onQuickUploadFlowLabelChange,
   onQuickUploadFilesSelected,
   onQuickUploadGroupChange,
+  onQuickUploadSuggestedGroupChange,
   onQuickUploadRemoveQueuedFile,
   onQuickUploadClearQueue,
   onQuickUploadUploadAll,
@@ -111,6 +117,8 @@ function QuickUploadContent({
         quickUploadGroup={quickUploadGroup}
         quickUploadProjectGroups={quickUploadProjectGroups}
         quickUploadQueue={quickUploadQueue}
+        isMarketingRole={isMarketingRole}
+        quickUploadSuggestedGroup={quickUploadSuggestedGroup}
         platform={platform}
         theme={theme}
         webPresetKey={webPresetKey}
@@ -123,6 +131,7 @@ function QuickUploadContent({
         onQuickUploadFlowLabelChange={onQuickUploadFlowLabelChange}
         onQuickUploadFilesSelected={onQuickUploadFilesSelected}
         onQuickUploadGroupChange={onQuickUploadGroupChange}
+        onQuickUploadSuggestedGroupChange={onQuickUploadSuggestedGroupChange}
         onQuickUploadRemoveQueuedFile={onQuickUploadRemoveQueuedFile}
         onQuickUploadClearQueue={onQuickUploadClearQueue}
         onQuickUploadUploadAll={onQuickUploadUploadAll}

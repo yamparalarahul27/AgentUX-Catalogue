@@ -746,6 +746,7 @@ export function CatalogueFamilyLightbox({
                 existingGroups={existingGroups}
                 flowDraft={flowDraft}
                 groupDraft={groupDraft}
+                suggestedGroup={screenshot?.suggested_group ?? null}
                 isInlineEditing={isInlineEditing}
                 isSavingInline={isSavingInline}
                 mobileOsDraft={mobileOsDraft}

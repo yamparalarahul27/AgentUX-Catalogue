@@ -3,7 +3,8 @@ import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
 import { useBookmarks } from '../hooks/use-bookmarks';
 import { useIsAdmin } from '../lib/auth-passcode';
-import { useCapability } from '../hooks/use-role-capabilities';
+import { useCapability, useMyRole } from '../hooks/use-role-capabilities';
+import { MARKETING_BUCKET_GROUP } from '../lib/marketing-bucket';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
@@ -344,6 +345,8 @@ export function Catalogue({
   const canUpload = useCapability('upload');
   const canShare = useCapability('share');
   const canLabelingStudio = useCapability('labeling_studio');
+  const myRole = useMyRole();
+  const isMarketingRole = myRole === 'marketing';
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
@@ -439,6 +442,16 @@ export function Catalogue({
     userId: user.id,
     webPresets,
   });
+  // Marketing role's Quick Upload group is locked to the Marketing Bucket
+  // constant — pin the underlying state so the upload payload matches
+  // what the locked-pill UI shows. Depends on the value (not the whole
+  // `upload` object) so this doesn't loop on every render.
+  useEffect(() => {
+    if (isMarketingRole && upload.quickUploadGroup !== MARKETING_BUCKET_GROUP) {
+      upload.setQuickUploadGroup(MARKETING_BUCKET_GROUP);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMarketingRole, upload.quickUploadGroup]);
   const isAnyModalOpen = Boolean(
     upload.showUpload ||
     showSettings ||
@@ -909,6 +922,8 @@ export function Catalogue({
                   quickUploadGroup={upload.quickUploadGroup}
                   quickUploadProjectGroups={upload.quickUploadProjectGroups}
                   quickUploadQueue={upload.quickUploadQueuePreview}
+                  isMarketingRole={isMarketingRole}
+                  quickUploadSuggestedGroup={upload.quickUploadSuggestedGroup}
                   uploading={upload.uploading}
                   platform={upload.quickUploadPlatform}
                   theme={upload.quickUploadTheme}
@@ -924,6 +939,7 @@ export function Catalogue({
                   onQuickUploadFilesSelected={upload.handleQuickUploadQueueAdd}
                   onQuickUploadFlowLabelChange={upload.setQuickUploadFlowLabel}
                   onQuickUploadGroupChange={upload.setQuickUploadGroup}
+                  onQuickUploadSuggestedGroupChange={upload.setQuickUploadSuggestedGroup}
                   onQuickUploadProjectChange={upload.handleQuickUploadProjectChange}
                   onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
                   onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}

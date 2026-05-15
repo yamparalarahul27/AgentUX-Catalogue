@@ -92,6 +92,7 @@ export interface ScreenshotNode {
   thumb_hash?: string | null;
   uploader_user_id?: string | null;
   uploader_email?: string | null;
+  suggested_group?: string | null;
   created_at?: string;
   deleted_at?: string | null;
   deleted_by_email?: string | null;

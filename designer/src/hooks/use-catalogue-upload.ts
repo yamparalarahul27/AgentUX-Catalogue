@@ -75,6 +75,10 @@ export function useCatalogueUpload({
   const [quickUploadQueue, setQuickUploadQueue] = useState<QuickUploadQueueItem[]>([]);
   const quickUploadQueueRef = useRef<QuickUploadQueueItem[]>([]);
   const [quickUploadGroup, setQuickUploadGroup] = useState('');
+  // Marketing role hints at which catalogue group a screenshot should
+  // ultimately live in. Persisted to screenshots.suggested_group; Admin
+  // sees it in the lightbox when reviewing the Marketing Bucket.
+  const [quickUploadSuggestedGroup, setQuickUploadSuggestedGroup] = useState('');
   const [quickUploadFlowLabel, setQuickUploadFlowLabel] = useState('');
   const [quickUploadPlatform, setQuickUploadPlatform] = useState<'web' | 'mobile' | null>('web');
   const [quickUploadTheme, setQuickUploadTheme] = useState<'light' | 'dark' | null>('dark');
@@ -419,6 +423,7 @@ export function useCatalogueUpload({
     batch: {
       projectId: string;
       group: string;
+      suggestedGroup: string;
       flowLabel: string;
       platform: 'web' | 'mobile' | null;
       theme: 'light' | 'dark' | null;
@@ -456,6 +461,7 @@ export function useCatalogueUpload({
         reference_url: null,
         reference_storage_path: null,
         reference_label: null,
+        suggested_group: batch.suggestedGroup || null,
       },
       uploader: { userEmail, userId },
     });
@@ -496,6 +502,7 @@ export function useCatalogueUpload({
     const batch = {
       projectId,
       group: batchGroup,
+      suggestedGroup: quickUploadSuggestedGroup.trim(),
       flowLabel: batchFlowLabel,
       platform: quickUploadPlatform,
       theme: quickUploadTheme,
@@ -610,6 +617,7 @@ export function useCatalogueUpload({
     seedQuickUploadFromFiltersIfFirstOpen,
     quickUploadFlowLabel,
     quickUploadGroup,
+    quickUploadSuggestedGroup,
     quickUploadMobileOs,
     quickUploadPlatform,
     quickUploadProjectGroups,
@@ -649,6 +657,7 @@ export function useCatalogueUpload({
     setUploadWebPresetKey,
     setQuickUploadFlowLabel,
     setQuickUploadGroup,
+    setQuickUploadSuggestedGroup,
     setQuickUploadMobileOs,
     setQuickUploadPlatform,
     setQuickUploadTheme,

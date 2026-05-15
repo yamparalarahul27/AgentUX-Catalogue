@@ -13,6 +13,11 @@ interface CatalogueFamilyLightboxInlineEditorProps {
   existingGroups: string[];
   flowDraft: string;
   groupDraft: string;
+  // Hint string set by the Marketing uploader at upload time —
+  // suggests which catalogue group this screenshot should ultimately
+  // live in. Rendered as a banner above the Group dropdown so Admin
+  // sees it when reviewing the Marketing Bucket.
+  suggestedGroup?: string | null;
   hasReference: boolean;
   isSaving: boolean;
   mobileOsDraft: MobileOs | null;
@@ -77,6 +82,7 @@ export function CatalogueFamilyLightboxInlineEditor({
   existingGroups,
   flowDraft,
   groupDraft,
+  suggestedGroup,
   hasReference,
   isSaving,
   mobileOsDraft,
@@ -137,6 +143,11 @@ export function CatalogueFamilyLightboxInlineEditor({
 
         <div className="catalogue-list-inline-editor__field">
           <span>Group</span>
+          {suggestedGroup && (
+            <div className="catalogue-list-inline-editor__hint" role="note">
+              Marketing suggested: <strong>{suggestedGroup}</strong>
+            </div>
+          )}
           <Dropdown
             options={groupOptions}
             value={groupDraft.trim() || null}
