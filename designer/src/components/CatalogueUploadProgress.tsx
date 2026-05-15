@@ -38,14 +38,19 @@ export function CatalogueUploadProgress({ items, onDismiss, onRetryFailed }: Pro
       for (const id of justUploaded) next.add(id);
       return next;
     });
-    const timer = window.setTimeout(() => {
+    // No effect cleanup: the timer must fire even when `items` changes
+    // again before 380ms elapses (e.g., another upload starts/completes).
+    // Returning a cleanup would clearTimeout this batch's removal, leaving
+    // the IDs stuck in `leavingIds` — `visibleItems` would keep rendering
+    // width-0 items whose 56px thumb height holds the ribbon (and card)
+    // at full height long after everything finished.
+    window.setTimeout(() => {
       setLeavingIds((previous) => {
         const next = new Set(previous);
         for (const id of justUploaded) next.delete(id);
         return next;
       });
     }, ITEM_LEAVE_MS);
-    return () => window.clearTimeout(timer);
   }, [items]);
 
   const counts = useMemo(() => {
