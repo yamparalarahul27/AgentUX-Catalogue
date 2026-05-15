@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Upload, X } from 'lucide-react';
+import { ChevronRight, LayoutGrid, Upload, X } from 'lucide-react';
 
 import type {
   CatalogueGroupCategory,
@@ -105,12 +105,13 @@ export function GroupAppearanceEditModal({
         </div>
 
         <div className="group-edit-body">
-          <div className="group-edit-preview">
-            <div className="group-edit-preview-icon">
-              {iconUrlDraft ? <img src={iconUrlDraft} alt="" aria-hidden="true" /> : <ImagePlus size={24} />}
-            </div>
-            <span className="group-edit-preview-label">{labelDraft.trim() || group}</span>
-          </div>
+          <GroupPreview
+            label={labelDraft.trim() || group}
+            iconUrl={iconUrlDraft}
+            hasUploadedIcon={hasUploadedIcon}
+            onRemoveUploadedIcon={onRemoveUploadedIcon}
+            removeDisabled={isUploading || isSaving}
+          />
 
           <label className="group-edit-field">
             <span>Display name</span>
@@ -150,17 +151,6 @@ export function GroupAppearanceEditModal({
               }}
             />
           </div>
-
-          {hasUploadedIcon && (
-            <button
-              type="button"
-              className="btn-secondary group-edit-remove"
-              disabled={isUploading || isSaving}
-              onClick={onRemoveUploadedIcon}
-            >
-              Remove uploaded icon
-            </button>
-          )}
 
           <div className="group-edit-field">
             <span>Type</span>
@@ -219,6 +209,71 @@ export function GroupAppearanceEditModal({
           >
             {isSaving ? 'Saving...' : 'Save'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Three-context preview — shows the icon + name as it'll render in the
+// chip strip (small), in the Team groups list / catalogue card (medium),
+// and in the lightbox breadcrumb (text-with-tiny-icon). Helps spot when
+// an uploaded icon works at 36px but not at 14px. The × overlay on the
+// largest preview removes the uploaded icon and only renders when one
+// is present.
+interface GroupPreviewProps {
+  label: string;
+  iconUrl: string;
+  hasUploadedIcon: boolean;
+  removeDisabled: boolean;
+  onRemoveUploadedIcon: () => void;
+}
+
+function GroupPreview({ label, iconUrl, hasUploadedIcon, removeDisabled, onRemoveUploadedIcon }: GroupPreviewProps) {
+  const fallback = <LayoutGrid size={14} aria-hidden="true" />;
+  const fallbackMedium = <LayoutGrid size={20} aria-hidden="true" />;
+
+  return (
+    <div className="group-edit-preview">
+      <span className="group-edit-preview__label">How it'll appear</span>
+
+      <div className="group-edit-preview__row">
+        <span className="group-edit-preview__row-name">Card</span>
+        <div className="group-edit-preview__card">
+          <div className="group-edit-preview__card-icon">
+            {iconUrl ? <img src={iconUrl} alt="" aria-hidden="true" /> : fallbackMedium}
+            {hasUploadedIcon && (
+              <button
+                type="button"
+                className="group-edit-preview__remove"
+                onClick={onRemoveUploadedIcon}
+                disabled={removeDisabled}
+                title="Remove uploaded icon"
+                aria-label="Remove uploaded icon"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+          <span className="group-edit-preview__card-text">{label}</span>
+        </div>
+      </div>
+
+      <div className="group-edit-preview__row">
+        <span className="group-edit-preview__row-name">Chip</span>
+        <div className="group-edit-preview__chip">
+          {iconUrl ? <img src={iconUrl} alt="" aria-hidden="true" /> : fallback}
+          <span>{label}</span>
+        </div>
+      </div>
+
+      <div className="group-edit-preview__row">
+        <span className="group-edit-preview__row-name">Lightbox</span>
+        <div className="group-edit-preview__breadcrumb">
+          {iconUrl ? <img src={iconUrl} alt="" aria-hidden="true" /> : fallback}
+          <span>{label}</span>
+          <ChevronRight size={12} aria-hidden="true" />
+          <span className="group-edit-preview__breadcrumb-dim">Onboarding</span>
         </div>
       </div>
     </div>

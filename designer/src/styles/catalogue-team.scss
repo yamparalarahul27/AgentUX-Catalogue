@@ -663,39 +663,161 @@
   overflow-y: auto;
 }
 
+// Three-context preview: shows the icon + label as it'll render in the
+// Card (medium), Chip (small), and Lightbox breadcrumb. Lets the user
+// pick an icon that works at all sizes. The × on the Card preview's
+// icon clears the uploaded asset (replaces the old "Remove uploaded
+// icon" full-row button).
 .group-edit-preview {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(63, 63, 70, 0.6);
   border-radius: 10px;
 }
 
-.group-edit-preview-icon {
-  width: 40px;
-  height: 40px;
+.group-edit-preview__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.group-edit-preview__row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+}
+
+.group-edit-preview__row-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6a6a72;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+// Card variant — 36×36 icon, label to the right. Matches the Team
+// Groups list look introduced in PR #88.
+.group-edit-preview__card {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.group-edit-preview__card-icon {
+  position: relative;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
+  background: rgba(99, 102, 241, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  color: #a1a1aa;
+  color: #8a8a94;
   flex-shrink: 0;
 
   img {
-    width: 100%;
-    height: 100%;
+    width: 36px;
+    height: 36px;
     object-fit: contain;
     border-radius: 8px;
   }
 }
 
-.group-edit-preview-label {
+.group-edit-preview__remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #18181b;
+  border: 1px solid #303038;
+  color: #f4f4f5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+
+  &:hover:not(:disabled) {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.group-edit-preview__card-text {
   font-size: 13px;
   color: #f4f4f5;
   font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Chip variant — small 14px icon + label, pill-shaped.
+.group-edit-preview__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(63, 63, 70, 0.7);
+  font-size: 12px;
+  color: #d4d4d8;
+
+  img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    border-radius: 3px;
+  }
+
+  svg {
+    color: #8a8a94;
+  }
+}
+
+// Lightbox breadcrumb variant — tiny icon + label + dim next-crumb.
+.group-edit-preview__breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #d4d4d8;
+
+  img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    border-radius: 3px;
+  }
+
+  svg {
+    color: #6a6a72;
+    flex-shrink: 0;
+  }
+}
+
+.group-edit-preview__breadcrumb-dim {
+  color: #6a6a72;
 }
 
 .group-edit-field {
@@ -737,10 +859,6 @@
     background: rgba(99, 102, 241, 0.08);
     color: #f4f4f5;
   }
-}
-
-.group-edit-remove {
-  align-self: flex-start;
 }
 
 .group-edit-segmented {

@@ -378,6 +378,20 @@
   }
 }
 
+// Icon-only mode: every option rendered as a Lucide icon. Center the
+// glyph, give each button a fixed square footprint so the row reads as
+// a tight toggle group.
+.catalogue-segmented-control--icon-only .catalogue-segmented-control__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 0;
+}
+
+.catalogue-segmented-control--icon-only .catalogue-segmented-control__btn svg {
+  flex-shrink: 0;
+}
+
 .catalogue-segmented-control__clear {
   flex: 0 0 auto;
   appearance: none;
