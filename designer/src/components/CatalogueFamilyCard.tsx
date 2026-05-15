@@ -24,6 +24,10 @@ interface CatalogueFamilyCardProps {
   onToggleSelect: (familyId: string) => void;
   bookmarkedIds?: Set<string>;
   onToggleBookmark?: (screenshotId: string) => void;
+  // Capability + ownership gate. RLS already blocks delete attempts the
+  // caller isn't entitled to; this prop just hides the affordance to
+  // avoid showing a button that silently fails.
+  canDelete: boolean;
 }
 
 export function CatalogueFamilyCard({
@@ -40,6 +44,7 @@ export function CatalogueFamilyCard({
   onToggleSelect,
   bookmarkedIds,
   onToggleBookmark,
+  canDelete,
 }: CatalogueFamilyCardProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -180,15 +185,17 @@ export function CatalogueFamilyCard({
                 />
               </button>
             )}
-            <button
-              type="button"
-              className="catalogue-card-action catalogue-card-action-danger"
-              title="Delete screenshot"
-              aria-label="Delete screenshot"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              <Trash2 size={14} />
-            </button>
+            {canDelete && (
+              <button
+                type="button"
+                className="catalogue-card-action catalogue-card-action-danger"
+                title="Delete screenshot"
+                aria-label="Delete screenshot"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
           </div>
 
           <input

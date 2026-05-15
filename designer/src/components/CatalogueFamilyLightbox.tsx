@@ -25,7 +25,14 @@ import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib
 import { ConfirmModal } from './ConfirmModal';
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
+  // Non-guest gate (existing). Drives ensureCanEdit() and existing
+  // permission checks for comments/annotations/etc.
   canEdit?: boolean;
+  // Capability + ownership gates for the metadata-edit and delete
+  // buttons in the bottom action bar. RLS already enforces; these
+  // just hide affordances the caller can't act on.
+  canEditMetadata?: boolean;
+  canDelete?: boolean;
   existingAnnotationLabels?: string[];
   existingFlows: string[];
   existingGroups: string[];
@@ -100,6 +107,8 @@ function summarizeAnnotationActivity(annotations: LightboxAnnotation[]): { count
 export function CatalogueFamilyLightbox({
   activeVariantKey,
   canEdit = true,
+  canEditMetadata = true,
+  canDelete = true,
   existingAnnotationLabels = [],
   existingFlows,
   existingGroups,
@@ -747,6 +756,8 @@ export function CatalogueFamilyLightbox({
                 flowDraft={flowDraft}
                 groupDraft={groupDraft}
                 suggestedGroup={screenshot?.suggested_group ?? null}
+                canEdit={canEditMetadata}
+                canDelete={canDelete}
                 isInlineEditing={isInlineEditing}
                 isSavingInline={isSavingInline}
                 mobileOsDraft={mobileOsDraft}
