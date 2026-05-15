@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js';
 import type { WebPreset } from '../types';
 import { useBookmarks } from '../hooks/use-bookmarks';
 import { useIsAdmin } from '../lib/auth-passcode';
+import { useCapability } from '../hooks/use-role-capabilities';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
@@ -337,6 +338,12 @@ export function Catalogue({
   // we never flash admin chrome to a non-admin during the initial fetch.
   const isAdminResult = useIsAdmin();
   const canAdmin = isAdminResult === true;
+  // Capability gates. useIsAdmin still drives Members/Flags visibility for
+  // PR A0 (the legacy admins table works); these new gates control the
+  // affordances that non-admin roles also have or don't have.
+  const canUpload = useCapability('upload');
+  const canShare = useCapability('share');
+  const canLabelingStudio = useCapability('labeling_studio');
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
@@ -666,6 +673,7 @@ export function Catalogue({
       <CatalogueHeader
         activeSection={activeSection}
         canAdmin={canAdmin}
+        canLabelingStudio={canLabelingStudio}
         onOpenSettings={() => setShowSettings(true)}
         onSectionChange={setActiveSection}
         userEmail={user.email ?? null}
@@ -709,7 +717,7 @@ export function Catalogue({
             />
           </div>
         </main>
-      ) : activeSection === 'studio' && canAdmin && LABELING_STUDIO_ENABLED ? (
+      ) : activeSection === 'studio' && canLabelingStudio && LABELING_STUDIO_ENABLED ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueLabelingStudio
@@ -796,7 +804,7 @@ export function Catalogue({
                 onFilterUxPatternChange={setFilterUxPattern}
                 onFilterWebPresetChange={setFilterWebPreset}
                 onGridDensityChange={setGridDensity}
-                onQuickUploadClick={() => {
+                onQuickUploadClick={canUpload ? () => {
                   guardAction(() => {
                     upload.seedQuickUploadFromFiltersIfFirstOpen({
                       filterFlow,
@@ -808,7 +816,7 @@ export function Catalogue({
                     });
                     upload.setShowQuickUpload(true);
                   });
-                }}
+                } : undefined}
                 quickUploadOpen={upload.showQuickUpload}
                 quickUploadQueueCount={upload.quickUploadQueuePreview.length}
                 quickUploadIsUploading={upload.uploading}
@@ -837,7 +845,7 @@ export function Catalogue({
                   }
                   setBookmarkFilterOn(true);
                 }}
-                onOpenShare={isGuest ? undefined : () => setShowShareModal(true)}
+                onOpenShare={canShare && !isGuest ? () => setShowShareModal(true) : undefined}
                 onOpenSearch={() => setShowSearchModal(true)}
               />
 

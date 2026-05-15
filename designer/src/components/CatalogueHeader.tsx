@@ -24,6 +24,7 @@ type CatalogueSection =
 interface CatalogueHeaderProps {
   activeSection: CatalogueSection;
   canAdmin: boolean;
+  canLabelingStudio: boolean;
   onOpenSettings: () => void;
   onSectionChange: (section: CatalogueSection) => void;
   userEmail: string | null;
@@ -42,6 +43,7 @@ function usernameOf(email: string): string {
 export function CatalogueHeader({
   activeSection,
   canAdmin,
+  canLabelingStudio,
   onOpenSettings,
   onSectionChange,
   userEmail,
@@ -56,8 +58,11 @@ export function CatalogueHeader({
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLButtonElement>(null);
   const viewportWidth = useViewportWidth();
+  // Studio entry: open to anyone with the labeling_studio capability (admins
+  // and ResearcherAI), not just admins. The viewport gate stays — the Studio
+  // is a desktop-only surface.
   const showStudioEntry =
-    canAdmin && LABELING_STUDIO_ENABLED && viewportWidth >= LABELING_STUDIO_MIN_VIEWPORT_PX;
+    canLabelingStudio && LABELING_STUDIO_ENABLED && viewportWidth >= LABELING_STUDIO_MIN_VIEWPORT_PX;
 
   useEffect(() => {
     if (!menuOpen) return;

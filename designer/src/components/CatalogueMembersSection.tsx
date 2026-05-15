@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Copy, Lock, MoreHorizontal, Power, RotateCw, Trash2 } from 'lucide-react';
 
 import { callAdmin, type AdminAction, type MemberRow } from '../lib/auth-passcode';
+import { KNOWN_ROLES, roleNameFor, type RoleId } from '../lib/role-capabilities';
 import { ConfirmModal } from './ConfirmModal';
 
 // Members admin panel.
@@ -114,10 +115,14 @@ export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSe
     return { ok: true, passcode: result.data?.passcode };
   }
 
-  async function handleAdd(email: string) {
+  async function handleAdd(email: string, role: RoleId) {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return;
-    const result = await runAction('mint', { email: trimmed }, `Passcode created for ${trimmed}`);
+    const result = await runAction(
+      'mint',
+      { email: trimmed, role },
+      `Passcode created for ${trimmed}`,
+    );
     setShowAdd(false);
     if (result.ok && result.passcode) {
       setRevealed({ email: trimmed, passcode: result.passcode, reason: 'mint' });
@@ -157,6 +162,15 @@ export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSe
   async function handleResetLockout(member: MemberRow) {
     setOpenKebab(null);
     await runAction('reset_lockout', { email: member.email }, `Lockout cleared for ${member.email}`);
+  }
+
+  async function handleSetRole(member: MemberRow, role: RoleId) {
+    if (member.role === role) return;
+    await runAction(
+      'set_member_role',
+      { email: member.email, role },
+      `${member.email} → ${roleNameFor(role)}`,
+    );
   }
 
   // ──────────────────────────────────────────────────────────
@@ -212,6 +226,7 @@ export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSe
           <thead>
             <tr>
               <th>Email</th>
+              <th>Role</th>
               <th>Status</th>
               <th>Last seen</th>
               <th className="catalogue-members__actions-col">Actions</th>
@@ -224,7 +239,9 @@ export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSe
                 <tr key={member.email}>
                   <td>
                     <span className="catalogue-members__email">{member.email}</span>
-                    {member.is_admin && <span className="catalogue-members__admin-tag">admin</span>}
+                  </td>
+                  <td>
+                    <RoleDropdown member={member} onChange={(role) => handleSetRole(member, role)} />
                   </td>
                   <td>
                     <StatusPill member={member} />
@@ -303,9 +320,10 @@ export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSe
             <li key={member.email} className="catalogue-members__card">
               <div className="catalogue-members__card-head">
                 <span className="catalogue-members__email">{member.email}</span>
-                {member.is_admin && <span className="catalogue-members__admin-tag">admin</span>}
               </div>
               <div className="catalogue-members__card-meta">
+                <RoleDropdown member={member} onChange={(role) => handleSetRole(member, role)} />
+                <span className="catalogue-members__card-dot">·</span>
                 <StatusPill member={member} />
                 <span className="catalogue-members__card-dot">·</span>
                 <span>Last seen {formatLastSeen(member.last_login_at)}</span>
@@ -388,11 +406,12 @@ function StatusPill({ member }: { member: MemberRow }) {
 
 interface AddMemberModalProps {
   onCancel: () => void;
-  onSubmit: (email: string) => void;
+  onSubmit: (email: string, role: RoleId) => void;
 }
 
 function AddMemberModal({ onCancel, onSubmit }: AddMemberModalProps) {
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState<RoleId>('researcher');
   return (
     <div className="confirm-overlay" onClick={onCancel}>
       <div className="confirm-modal catalogue-members__modal" onClick={(event) => event.stopPropagation()}>
@@ -400,7 +419,7 @@ function AddMemberModal({ onCancel, onSubmit }: AddMemberModalProps) {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            onSubmit(email);
+            onSubmit(email, role);
           }}
         >
           <label className="catalogue-members__modal-label">
@@ -414,6 +433,18 @@ function AddMemberModal({ onCancel, onSubmit }: AddMemberModalProps) {
               placeholder="name@team.com"
               required
             />
+          </label>
+          <label className="catalogue-members__modal-label">
+            Role
+            <select
+              className="auth-input"
+              value={role}
+              onChange={(event) => setRole(event.target.value as RoleId)}
+            >
+              {KNOWN_ROLES.map((option) => (
+                <option key={option.id} value={option.id}>{option.name}</option>
+              ))}
+            </select>
           </label>
           <div className="confirm-actions">
             <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>
@@ -471,10 +502,34 @@ function RevealPasscodeModal({ data, onClose }: RevealPasscodeModalProps) {
 // helpers
 // ────────────────────────────────────────────────────────────────────
 
+function RoleDropdown({
+  member,
+  onChange,
+}: {
+  member: MemberRow;
+  onChange: (role: RoleId) => void;
+}) {
+  return (
+    <select
+      className="catalogue-members__role-select"
+      value={member.role}
+      onChange={(event) => onChange(event.target.value as RoleId)}
+      aria-label={`Role for ${member.email}`}
+    >
+      {KNOWN_ROLES.map((option) => (
+        <option key={option.id} value={option.id}>{option.name}</option>
+      ))}
+    </select>
+  );
+}
+
 function adminErrorMessage(code: string): string {
   switch (code) {
     case 'unauthorized':    return 'Wrong admin passcode.';
     case 'already_exists':  return 'A member with that email already exists.';
+    case 'bad_role':        return 'That role does not exist.';
+    case 'not_found':       return 'That member does not exist.';
+    case 'last_admin':      return 'Cannot demote the last admin — promote another member to admin first.';
     case 'network':         return "Couldn't reach the server. Try again.";
     default:                return 'Something went wrong. Try again.';
   }
