@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bookmark, ChevronDown, LogIn } from 'lucide-react';
+import {
+  Bookmark,
+  ChevronDown,
+  LogIn,
+  LogOut,
+  MonitorCog,
+  MoreHorizontal,
+  Settings,
+  Tags,
+} from 'lucide-react';
 
 import agentuxLogo from '../assets/agentux-logo.svg';
 import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
@@ -43,6 +52,7 @@ export function CatalogueHeader({
   onToggleMyBookmarks,
 }: CatalogueHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoutMoreOpen, setLogoutMoreOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLButtonElement>(null);
   const viewportWidth = useViewportWidth();
@@ -95,12 +105,20 @@ export function CatalogueHeader({
   function handleLogout() {
     onLogout();
     setMenuOpen(false);
+    setLogoutMoreOpen(false);
   }
 
   function handleLogoutEverywhere() {
     onLogoutEverywhere();
     setMenuOpen(false);
+    setLogoutMoreOpen(false);
   }
+
+  // Reset the inline "Logout everywhere" sub-menu whenever the parent
+  // account menu closes so it doesn't auto-expand next time.
+  useEffect(() => {
+    if (!menuOpen) setLogoutMoreOpen(false);
+  }, [menuOpen]);
 
   return (
     <header className="catalogue-header catalogue-header--centered">
@@ -187,18 +205,25 @@ export function CatalogueHeader({
 
           <div className="catalogue-header-menu__divider" role="presentation" />
 
-          <button type="button" className="catalogue-header-menu__item" role="menuitem" onClick={openSettings}>
-            Web Breakpoints Settings
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--row"
+            role="menuitem"
+            onClick={openSettings}
+          >
+            <MonitorCog size={14} aria-hidden="true" />
+            <span>Web Breakpoints Settings</span>
           </button>
 
           {canAdmin && (
             <button
               type="button"
-              className={`catalogue-header-menu__item ${activeSection === 'team' ? 'is-active' : ''}`}
+              className={`catalogue-header-menu__item catalogue-header-menu__item--row ${activeSection === 'team' ? 'is-active' : ''}`}
               role="menuitem"
               onClick={() => openSection('team')}
             >
-              Settings
+              <Settings size={14} aria-hidden="true" />
+              <span>Settings</span>
             </button>
           )}
 
@@ -209,6 +234,7 @@ export function CatalogueHeader({
               role="menuitem"
               onClick={() => openSection('studio')}
             >
+              <Tags size={14} aria-hidden="true" />
               <span>Labelling Studio</span>
               <span className="catalogue-header-menu__tag">For AI</span>
             </button>
@@ -216,22 +242,39 @@ export function CatalogueHeader({
 
           <div className="catalogue-header-menu__divider" role="presentation" />
 
-          <button
-            type="button"
-            className="catalogue-header-menu__item catalogue-header-menu__item--danger"
-            role="menuitem"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
-          <button
-            type="button"
-            className="catalogue-header-menu__item catalogue-header-menu__item--danger"
-            role="menuitem"
-            onClick={handleLogoutEverywhere}
-          >
-            Logout everywhere
-          </button>
+          <div className="catalogue-header-menu__logout-row">
+            <button
+              type="button"
+              className="catalogue-header-menu__item catalogue-header-menu__item--row catalogue-header-menu__item--danger catalogue-header-menu__logout-main"
+              role="menuitem"
+              onClick={handleLogout}
+            >
+              <LogOut size={14} aria-hidden="true" />
+              <span>Logout</span>
+            </button>
+            <button
+              type="button"
+              className={`catalogue-header-menu__logout-more${logoutMoreOpen ? ' is-open' : ''}`}
+              aria-label="More logout options"
+              aria-expanded={logoutMoreOpen}
+              aria-haspopup="menu"
+              onClick={() => setLogoutMoreOpen((previous) => !previous)}
+            >
+              <MoreHorizontal size={14} aria-hidden="true" />
+            </button>
+          </div>
+
+          {logoutMoreOpen && (
+            <button
+              type="button"
+              className="catalogue-header-menu__item catalogue-header-menu__item--row catalogue-header-menu__item--danger catalogue-header-menu__item--nested"
+              role="menuitem"
+              onClick={handleLogoutEverywhere}
+            >
+              <LogOut size={14} aria-hidden="true" />
+              <span>Logout everywhere</span>
+            </button>
+          )}
         </div>
       )}
     </header>
