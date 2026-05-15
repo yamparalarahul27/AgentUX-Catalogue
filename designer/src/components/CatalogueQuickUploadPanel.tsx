@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, X } from 'lucide-react';
+import { Eye, Monitor, Moon, Smartphone, Sun, X } from 'lucide-react';
 
+import androidLogo from '../assets/android-logo.svg';
+import appleLogo from '../assets/apple-logo.svg';
 import { buildConventionName } from '../lib/naming';
 import { UploadZone, type FolderDropContext } from './UploadZone';
 
@@ -196,79 +198,91 @@ export function CatalogueQuickUploadPanel({
           )}
         </div>
 
-        <div className="catalogue-upload-row">
-          <div className="catalogue-upload-row__col">
-            <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Group</label>
-            <div className="catalogue-flow-combobox" ref={groupComboboxRef}>
-              <input
-                className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
-                type="text"
-                placeholder="Search or add group (blank = use filename)"
-                value={quickUploadGroup}
-                onChange={(event) => {
-                  onQuickUploadGroupChange(event.target.value);
-                  setGroupMenuOpen(true);
-                }}
-                onFocus={() => setGroupMenuOpen(true)}
-                autoComplete="off"
-              />
-              {groupMenuOpen && (filteredGroupOptions.matches.length > 0 || quickUploadGroup.trim()) && (
-                <div className="catalogue-flow-combobox__menu" role="listbox">
-                  {filteredGroupOptions.matches.map((group) => (
-                    <button
-                      key={group}
-                      type="button"
-                      role="option"
-                      aria-selected={group === quickUploadGroup}
-                      className={`catalogue-flow-combobox__item ${group === quickUploadGroup ? 'is-active' : ''}`}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => {
-                        onQuickUploadGroupChange(group);
-                        setGroupMenuOpen(false);
-                      }}
-                    >
-                      {group}
-                    </button>
-                  ))}
-                  {quickUploadGroup.trim() && !filteredGroupOptions.exactMatch && (
-                    <div className="catalogue-flow-combobox__hint">
-                      Press Enter or click outside to use new group “{quickUploadGroup.trim()}”
-                    </div>
-                  )}
+        <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Group</label>
+        <div className="catalogue-flow-combobox" ref={groupComboboxRef}>
+          <input
+            className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
+            type="text"
+            placeholder="Search or add group (blank = use filename)"
+            value={quickUploadGroup}
+            onChange={(event) => {
+              onQuickUploadGroupChange(event.target.value);
+              setGroupMenuOpen(true);
+            }}
+            onFocus={() => setGroupMenuOpen(true)}
+            autoComplete="off"
+          />
+          {groupMenuOpen && (filteredGroupOptions.matches.length > 0 || quickUploadGroup.trim()) && (
+            <div className="catalogue-flow-combobox__menu" role="listbox">
+              {filteredGroupOptions.matches.map((group) => (
+                <button
+                  key={group}
+                  type="button"
+                  role="option"
+                  aria-selected={group === quickUploadGroup}
+                  className={`catalogue-flow-combobox__item ${group === quickUploadGroup ? 'is-active' : ''}`}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    onQuickUploadGroupChange(group);
+                    setGroupMenuOpen(false);
+                  }}
+                >
+                  {group}
+                </button>
+              ))}
+              {quickUploadGroup.trim() && !filteredGroupOptions.exactMatch && (
+                <div className="catalogue-flow-combobox__hint">
+                  Press Enter or click outside to use new group “{quickUploadGroup.trim()}”
                 </div>
               )}
             </div>
-          </div>
-
-          <div className="catalogue-upload-row__col catalogue-upload-row__col--theme">
-            <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Theme</label>
-            <div className="catalogue-upload-groups">
-              {(['light', 'dark'] as const).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={`catalogue-upload-group-chip ${theme === item ? 'active' : ''}`}
-                  onClick={() => onThemeChange(theme === item ? null : item)}
-                >
-                  {item === 'light' ? 'Light' : 'Dark'}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
 
-        <label className="catalogue-upload-label">Platform</label>
-        <div className="catalogue-upload-groups">
-          {(['web', 'mobile'] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`catalogue-upload-group-chip ${platform === item ? 'active' : ''}`}
-              onClick={() => onPlatformChange(platform === item ? null : item)}
-            >
-              {item === 'web' ? 'Web' : 'Mobile'}
-            </button>
-          ))}
+        <div className="catalogue-upload-row">
+          <div className="catalogue-upload-row__col">
+            <label className="catalogue-upload-label">Theme</label>
+            <div className="catalogue-upload-groups">
+              {(['light', 'dark'] as const).map((item) => {
+                const label = item === 'light' ? 'Light' : 'Dark';
+                const Icon = item === 'light' ? Sun : Moon;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`catalogue-upload-group-chip catalogue-upload-group-chip--icon ${theme === item ? 'active' : ''}`}
+                    onClick={() => onThemeChange(theme === item ? null : item)}
+                    aria-label={label}
+                    title={label}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="catalogue-upload-row__col">
+            <label className="catalogue-upload-label">Platform</label>
+            <div className="catalogue-upload-groups">
+              {(['web', 'mobile'] as const).map((item) => {
+                const label = item === 'web' ? 'Web' : 'Mobile';
+                const Icon = item === 'web' ? Monitor : Smartphone;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`catalogue-upload-group-chip catalogue-upload-group-chip--icon ${platform === item ? 'active' : ''}`}
+                    onClick={() => onPlatformChange(platform === item ? null : item)}
+                    aria-label={label}
+                    title={label}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {platform === 'web' && (
@@ -294,16 +308,22 @@ export function CatalogueQuickUploadPanel({
           <>
             <label className="catalogue-upload-label">Mobile OS</label>
             <div className="catalogue-upload-groups">
-              {(['ios', 'android'] as const).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={`catalogue-upload-group-chip ${mobileOs === item ? 'active' : ''}`}
-                  onClick={() => onMobileOsChange(mobileOs === item ? null : item)}
-                >
-                  {item === 'ios' ? 'iOS' : 'Android'}
-                </button>
-              ))}
+              {(['ios', 'android'] as const).map((item) => {
+                const label = item === 'ios' ? 'iOS' : 'Android';
+                const src = item === 'ios' ? appleLogo : androidLogo;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    className={`catalogue-upload-group-chip catalogue-upload-group-chip--icon ${mobileOs === item ? 'active' : ''}`}
+                    onClick={() => onMobileOsChange(mobileOs === item ? null : item)}
+                    aria-label={label}
+                    title={label}
+                  >
+                    <img src={src} alt="" aria-hidden="true" width={16} height={16} />
+                  </button>
+                );
+              })}
             </div>
           </>
         )}
