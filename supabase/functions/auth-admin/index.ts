@@ -2,10 +2,10 @@
 //
 // Admin operations behind the INVITE_ADMIN_PASSCODE env secret.
 // Runs with service role privileges — every action mutates
-// public.user_passcodes / public.admins and never trusts client input
-// beyond the constant-time-compared admin passcode.
+// public.user_passcodes / public.admins / public.roles and never trusts
+// client input beyond the constant-time-compared admin passcode.
 //
-// Actions (POST body: { admin_passcode, action, payload }):
+// Member actions (POST body: { admin_passcode, action, payload }):
 //   - list             → { members: MemberRow[] }
 //   - mint             { email, role? }          → { passcode (plaintext, once) }
 //   - rotate           { email }                 → { passcode (plaintext, once) }
@@ -14,6 +14,12 @@
 //   - force_logout     { email }                 → { ok: true }
 //   - reset_lockout    { email }                 → { ok: true }
 //   - set_member_role  { email, role }           → { ok: true }
+//
+// Role actions (PR A1):
+//   - list_roles       → { roles: RoleRow[] }
+//   - create_role      { id, name, description?, capabilities[] }  → { ok: true }
+//   - update_role      { id, name?, description?, capabilities[]? } → { ok: true }
+//   - delete_role      { id }                    → { ok: true }
 //
 // Companion code:
 //   - supabase/migrations/20260513_auth_passcodes.sql
@@ -69,7 +75,11 @@ type Action =
   | 'delete'
   | 'force_logout'
   | 'reset_lockout'
-  | 'set_member_role';
+  | 'set_member_role'
+  | 'list_roles'
+  | 'create_role'
+  | 'update_role'
+  | 'delete_role';
 
 interface MemberRow {
   email: string;
@@ -80,6 +90,15 @@ interface MemberRow {
   locked_until: string | null;
   role: string;
   is_admin: boolean;
+}
+
+interface RoleRow {
+  id: string;
+  name: string;
+  description: string | null;
+  is_system: boolean;
+  capabilities: string[];
+  member_count: number;
 }
 
 serve(async (req) => {
@@ -106,6 +125,10 @@ serve(async (req) => {
     case 'force_logout':     return handleForceLogout(body.payload);
     case 'reset_lockout':    return handleResetLockout(body.payload);
     case 'set_member_role':  return handleSetMemberRole(body.payload);
+    case 'list_roles':       return handleListRoles();
+    case 'create_role':      return handleCreateRole(body.payload);
+    case 'update_role':      return handleUpdateRole(body.payload);
+    case 'delete_role':      return handleDeleteRole(body.payload);
     default:                 return json({ error: 'bad_action' }, 400);
   }
 });
@@ -318,6 +341,161 @@ async function handleSetMemberRole(payload: any) {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// list_roles — every role with its capabilities + member count.
+// Used by the Roles admin panel (PR A1).
+// ────────────────────────────────────────────────────────────────────
+async function handleListRoles() {
+  const [rolesResult, capsResult, membersResult] = await Promise.all([
+    supabase.from('roles').select('id, name, description, is_system').order('id'),
+    supabase.from('role_capabilities').select('role_id, capability'),
+    supabase.from('user_passcodes').select('role'),
+  ]);
+
+  if (rolesResult.error) return json({ error: 'list_failed', detail: rolesResult.error.message }, 500);
+
+  const capsByRole = new Map<string, string[]>();
+  for (const row of capsResult.data ?? []) {
+    const list = capsByRole.get(row.role_id) ?? [];
+    list.push(row.capability);
+    capsByRole.set(row.role_id, list);
+  }
+
+  const memberCounts = new Map<string, number>();
+  for (const row of membersResult.data ?? []) {
+    memberCounts.set(row.role, (memberCounts.get(row.role) ?? 0) + 1);
+  }
+
+  const roles: RoleRow[] = (rolesResult.data ?? []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    description: r.description,
+    is_system: r.is_system,
+    capabilities: capsByRole.get(r.id) ?? [],
+    member_count: memberCounts.get(r.id) ?? 0,
+  }));
+
+  return json({ roles });
+}
+
+// ────────────────────────────────────────────────────────────────────
+// create_role — admin defines a new custom role.
+//
+// Validates id format (lowercase letters / digits / underscores, max 32)
+// so custom ids round-trip cleanly through URLs and code. The roles
+// table allows arbitrary text but a normalised id avoids surprise.
+// ────────────────────────────────────────────────────────────────────
+async function handleCreateRole(payload: any) {
+  const id          = normaliseRoleId(payload?.id);
+  const name        = normaliseRoleName(payload?.name);
+  const description = normaliseRoleDescription(payload?.description);
+  const capabilities = normaliseCapabilityList(payload?.capabilities);
+
+  if (!id || !name) return json({ error: 'bad_request' }, 400);
+
+  const { data: existing } = await supabase
+    .from('roles')
+    .select('id')
+    .eq('id', id)
+    .maybeSingle();
+  if (existing) return json({ error: 'already_exists' }, 409);
+
+  const { error: insertError } = await supabase
+    .from('roles')
+    .insert({ id, name, description, is_system: false, requires_approval: false });
+  if (insertError) return json({ error: 'insert_failed', detail: insertError.message }, 500);
+
+  if (capabilities.length > 0) {
+    const rows = capabilities.map((capability) => ({ role_id: id, capability }));
+    const { error: capsError } = await supabase.from('role_capabilities').insert(rows);
+    if (capsError) {
+      // Roll back the role insert so admin doesn't see a half-created role.
+      await supabase.from('roles').delete().eq('id', id);
+      return json({ error: 'insert_failed', detail: capsError.message }, 500);
+    }
+  }
+
+  return json({ ok: true });
+}
+
+// ────────────────────────────────────────────────────────────────────
+// update_role — edit name / description / capabilities.
+//
+// Capability replacement is delete-then-insert (no transaction wrapper
+// — Supabase JS doesn't expose them; the window of inconsistency is
+// tiny and idempotent re-saves recover).
+//
+// Refuses to edit the Admin role (is_system = true). The 'admin' role
+// must always exist with every capability — otherwise nobody can
+// recover from a misconfiguration without direct DB access.
+// ────────────────────────────────────────────────────────────────────
+async function handleUpdateRole(payload: any) {
+  const id = normaliseRoleId(payload?.id);
+  if (!id) return json({ error: 'bad_request' }, 400);
+
+  const { data: existing, error: lookupError } = await supabase
+    .from('roles')
+    .select('id, is_system')
+    .eq('id', id)
+    .maybeSingle();
+  if (lookupError) return json({ error: 'lookup_failed', detail: lookupError.message }, 500);
+  if (!existing)  return json({ error: 'not_found' }, 404);
+  if (existing.is_system) return json({ error: 'system_role' }, 403);
+
+  const patch: Record<string, unknown> = {};
+  if (typeof payload?.name === 'string')        patch.name        = normaliseRoleName(payload.name);
+  if (typeof payload?.description === 'string') patch.description = normaliseRoleDescription(payload.description);
+  if (!patch.name && payload?.name !== undefined) return json({ error: 'bad_request' }, 400);
+
+  if (Object.keys(patch).length > 0) {
+    const { error: updateError } = await supabase.from('roles').update(patch).eq('id', id);
+    if (updateError) return json({ error: 'update_failed', detail: updateError.message }, 500);
+  }
+
+  if (Array.isArray(payload?.capabilities)) {
+    const capabilities = normaliseCapabilityList(payload.capabilities);
+    const { error: deleteError } = await supabase.from('role_capabilities').delete().eq('role_id', id);
+    if (deleteError) return json({ error: 'update_failed', detail: deleteError.message }, 500);
+    if (capabilities.length > 0) {
+      const rows = capabilities.map((capability) => ({ role_id: id, capability }));
+      const { error: insertError } = await supabase.from('role_capabilities').insert(rows);
+      if (insertError) return json({ error: 'update_failed', detail: insertError.message }, 500);
+    }
+  }
+
+  return json({ ok: true });
+}
+
+// ────────────────────────────────────────────────────────────────────
+// delete_role — refuses if any member uses it (must reassign first)
+// and refuses for system roles (admin).
+// ────────────────────────────────────────────────────────────────────
+async function handleDeleteRole(payload: any) {
+  const id = normaliseRoleId(payload?.id);
+  if (!id) return json({ error: 'bad_request' }, 400);
+
+  const { data: existing } = await supabase
+    .from('roles')
+    .select('id, is_system')
+    .eq('id', id)
+    .maybeSingle();
+  if (!existing)  return json({ error: 'not_found' }, 404);
+  if (existing.is_system) return json({ error: 'system_role' }, 403);
+
+  const { count } = await supabase
+    .from('user_passcodes')
+    .select('email', { count: 'exact', head: true })
+    .eq('role', id);
+  if ((count ?? 0) > 0) {
+    return json({ error: 'role_in_use', member_count: count }, 409);
+  }
+
+  // role_capabilities cascades via FK on delete.
+  const { error } = await supabase.from('roles').delete().eq('id', id);
+  if (error) return json({ error: 'delete_failed', detail: error.message }, 500);
+  return json({ ok: true });
+}
+
+// ────────────────────────────────────────────────────────────────────
 // helpers
 // ────────────────────────────────────────────────────────────────────
 async function forceLogoutByEmail(email: string) {
@@ -333,6 +511,41 @@ async function roleExists(roleId: string): Promise<boolean> {
     .eq('id', roleId)
     .maybeSingle();
   return Boolean(data);
+}
+
+function normaliseRoleId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim().toLowerCase();
+  // Lowercase letters, digits, underscores. 2-32 chars. No leading digit.
+  if (!/^[a-z_][a-z0-9_]{1,31}$/.test(cleaned)) return null;
+  return cleaned;
+}
+
+function normaliseRoleName(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  if (cleaned.length === 0 || cleaned.length > 64) return null;
+  return cleaned;
+}
+
+function normaliseRoleDescription(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  if (cleaned.length === 0) return null;
+  if (cleaned.length > 256) return cleaned.slice(0, 256);
+  return cleaned;
+}
+
+function normaliseCapabilityList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  // De-dupe + filter non-strings + cap each at 64 chars defensively.
+  const set = new Set<string>();
+  for (const item of value) {
+    if (typeof item === 'string' && item.length > 0 && item.length <= 64) {
+      set.add(item);
+    }
+  }
+  return [...set];
 }
 
 function generatePasscode(): string {
