@@ -51,6 +51,15 @@ export function usePasteToUpload({ enabled, onPaste }: Args) {
       if (event.altKey) return;
       if (isEditableTarget(event.target)) return;
 
+      // preventDefault BEFORE the async clipboard.read so the browser
+      // does not also fire the native `paste` event. Without this, any
+      // mounted UploadZone (e.g., the open Quick Upload modal) would
+      // re-handle the same paste via its own window-level paste
+      // listener — both pathways inserting into the queue with
+      // different file names (`pasted-…png` here vs `image.png` from
+      // clipboardData.items[].getAsFile()) and bypassing the dedupe.
+      event.preventDefault();
+
       let items: ClipboardItem[];
       try {
         items = await navigator.clipboard.read();
