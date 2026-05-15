@@ -637,13 +637,15 @@
     right: 12px;
     transform: none;
     width: auto;
-    justify-content: space-between;
     gap: 10px;
   }
 
-  .catalogue-bulk-actions {
-    flex-wrap: wrap;
-    justify-content: flex-end;
+  // Left grows so the actions group and × close button are pushed to the
+  // right edge — replaces the prior `justify-content: space-between`
+  // which produced ugly even spacing once close moved out of `.catalogue-bulk-actions`.
+  .catalogue-bulk-left {
+    flex: 1;
+    min-width: 0;
   }
 }
 
@@ -681,12 +683,30 @@
     margin-right: 8px;
   }
 
+  // Phone layout: two stacked rows. Row 1 = [count ......... ×]. Row 2 =
+  // four icon-only action buttons stretched evenly across the bar with
+  // big tap targets. Labels swap to aria-label / title.
   .catalogue-bulk-bar {
     padding: 12px;
+    flex-wrap: wrap;
+    row-gap: 10px;
   }
 
   .catalogue-bulk-actions {
+    flex-basis: 100%;
+    order: 1;
     padding-left: 0;
     border-left: 0;
+    gap: 6px;
+
+    .catalogue-bulk-btn {
+      flex: 1;
+      justify-content: center;
+      padding: 10px 0;
+    }
+  }
+
+  .catalogue-bulk-btn__label {
+    display: none;
   }
 }

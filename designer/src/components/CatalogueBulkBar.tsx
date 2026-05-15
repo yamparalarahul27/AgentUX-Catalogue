@@ -28,6 +28,7 @@ export function CatalogueBulkBar({
   }
 
   const allSelected = selectedVisibleCount === filteredFamiliesCount && filteredFamiliesCount > 0;
+  const countLabel = `${selectedCount} ${selectedCount === 1 ? 'family' : 'families'} selected`;
 
   return (
     <div className="catalogue-bulk-bar">
@@ -35,30 +36,31 @@ export function CatalogueBulkBar({
         <button type="button" className="catalogue-bulk-check" onClick={onSelectAllVisible}>
           {allSelected ? <CheckSquare size={14} /> : <MinusSquare size={14} />}
         </button>
-        <span className="catalogue-bulk-count">{selectedCount} families selected</span>
+        <span className="catalogue-bulk-count">{countLabel}</span>
       </div>
 
       <div className="catalogue-bulk-actions">
-        <button type="button" className="catalogue-bulk-btn" onClick={onOpenBulkRename}>
+        <button type="button" className="catalogue-bulk-btn" onClick={onOpenBulkRename} aria-label="Rename" title="Rename">
           <Pencil size={14} />
-          Rename
+          <span className="catalogue-bulk-btn__label">Rename</span>
         </button>
-        <button type="button" className="catalogue-bulk-btn" onClick={onOpenGroupDialog}>
+        <button type="button" className="catalogue-bulk-btn" onClick={onOpenGroupDialog} aria-label="Change group" title="Change group">
           <FolderInput size={14} />
-          Change Group
+          <span className="catalogue-bulk-btn__label">Change Group</span>
         </button>
-        <button type="button" className="catalogue-bulk-btn" onClick={onOpenFlowDialog}>
+        <button type="button" className="catalogue-bulk-btn" onClick={onOpenFlowDialog} aria-label="Change flow" title="Change flow">
           <TrendingUp size={14} />
-          Change Flow
+          <span className="catalogue-bulk-btn__label">Change Flow</span>
         </button>
-        <button type="button" className="catalogue-bulk-btn catalogue-bulk-btn-danger" onClick={onOpenDeleteConfirm}>
+        <button type="button" className="catalogue-bulk-btn catalogue-bulk-btn-danger" onClick={onOpenDeleteConfirm} aria-label="Delete" title="Delete">
           <Trash2 size={14} />
-          Delete
-        </button>
-        <button type="button" className="catalogue-bulk-btn-close" onClick={onClearSelection}>
-          <X size={16} />
+          <span className="catalogue-bulk-btn__label">Delete</span>
         </button>
       </div>
+
+      <button type="button" className="catalogue-bulk-btn-close" onClick={onClearSelection} aria-label="Clear selection" title="Clear selection">
+        <X size={16} />
+      </button>
     </div>
   );
 }
