@@ -401,3 +401,156 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 1500;
 }
+
+// ─── Roles panel (PR A1) ─────────────────────────────────────
+
+.catalogue-roles__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.catalogue-roles__row {
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #111113;
+}
+
+.catalogue-roles__row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.catalogue-roles__row-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.catalogue-roles__name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.catalogue-roles__system-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(161, 161, 170, 0.16);
+  color: #a1a1aa;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.catalogue-roles__count {
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.catalogue-roles__row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.catalogue-roles__system-hint {
+  font-size: 12px;
+  color: #71717a;
+  font-style: italic;
+}
+
+.catalogue-roles__description {
+  margin: 8px 0 12px;
+  color: #a1a1aa;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.catalogue-roles__cap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.catalogue-roles__cap {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  border: 1px solid #27272a;
+  background: transparent;
+  color: #52525b;
+
+  &.is-on {
+    border-color: rgba(99, 102, 241, 0.45);
+    background: rgba(99, 102, 241, 0.14);
+    color: #c7d2fe;
+  }
+}
+
+.catalogue-roles__modal {
+  max-width: 540px;
+}
+
+.catalogue-roles__fieldset {
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 10px 14px 12px;
+  margin: 4px 0 14px;
+
+  legend {
+    padding: 0 6px;
+    font-size: 12px;
+    color: #a1a1aa;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+.catalogue-roles__cap-edit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.catalogue-roles__cap-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #e4e4e7;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    accent-color: #6366f1;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.catalogue-roles__hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: #71717a;
+}

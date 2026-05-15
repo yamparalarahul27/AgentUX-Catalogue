@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Pencil,
   Search,
+  Shield,
   Trash2,
   Users,
   Workflow,
@@ -31,6 +32,7 @@ import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/ca
 import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
 import type { Project, ScreenshotNode } from '../types';
 import { CatalogueFlagsSection } from './CatalogueFlagsSection';
+import { CatalogueRolesSection } from './CatalogueRolesSection';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueMembersSection } from './CatalogueMembersSection';
 import { CatalogueTrashSection } from './CatalogueTrashSection';
@@ -38,7 +40,7 @@ import { ConfirmModal } from './ConfirmModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 import { Toast } from './Toast';
 
-type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash' | 'flags' | 'members';
+type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash' | 'flags' | 'members' | 'roles';
 
 interface CatalogueTeamSectionProps {
   projects: Project[];
@@ -478,6 +480,12 @@ export function CatalogueTeamSection({
       icon: Users,
       description: 'Mint, rotate, disable, or remove member passcodes. All actions require the admin passcode.',
     },
+    {
+      id: 'roles',
+      label: 'Roles',
+      icon: Shield,
+      description: 'Manage roles + their capabilities. Create custom roles, toggle what each role can do.',
+    },
   ];
 
   const activeSection = subSections.find((section) => section.id === subTab) ?? subSections[0];
@@ -731,6 +739,10 @@ export function CatalogueTeamSection({
 
       {subTab === 'members' && (
         <CatalogueMembersSection currentUserEmail={currentUserEmail} />
+      )}
+
+      {subTab === 'roles' && (
+        <CatalogueRolesSection />
       )}
 
       {editingGroupKey && (

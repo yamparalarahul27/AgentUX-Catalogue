@@ -85,7 +85,11 @@ export type AdminAction =
   | 'delete'
   | 'force_logout'
   | 'reset_lockout'
-  | 'set_member_role';
+  | 'set_member_role'
+  | 'list_roles'
+  | 'create_role'
+  | 'update_role'
+  | 'delete_role';
 
 export type AdminErrorCode =
   | 'unauthorized'
@@ -93,12 +97,23 @@ export type AdminErrorCode =
   | 'bad_role'
   | 'not_found'
   | 'last_admin'
+  | 'system_role'
+  | 'role_in_use'
   | 'network'
   | 'unknown';
 
+export interface RoleAdminRow {
+  id: string;
+  name: string;
+  description: string | null;
+  is_system: boolean;
+  capabilities: string[];
+  member_count: number;
+}
+
 export type AdminResult<T> =
   | { ok: true; data: T }
-  | { ok: false; code: AdminErrorCode; message?: string };
+  | { ok: false; code: AdminErrorCode; message?: string; member_count?: number };
 
 export async function callAdmin<T>(
   adminPasscode: string,
@@ -126,9 +141,15 @@ export async function callAdmin<T>(
     if (body?.error === 'bad_role') return { ok: false, code: 'bad_role' };
     return { ok: false, code: 'unknown', message: body?.detail ?? body?.error };
   }
+  if (res.status === 403) {
+    const body = await res.json().catch(() => null);
+    if (body?.error === 'system_role') return { ok: false, code: 'system_role' };
+    return { ok: false, code: 'unknown', message: body?.detail ?? body?.error };
+  }
   if (res.status === 409) {
     const body = await res.json().catch(() => null);
-    if (body?.error === 'last_admin') return { ok: false, code: 'last_admin' };
+    if (body?.error === 'last_admin')  return { ok: false, code: 'last_admin' };
+    if (body?.error === 'role_in_use') return { ok: false, code: 'role_in_use', member_count: body.member_count };
     return { ok: false, code: 'already_exists' };
   }
   if (!res.ok) {
