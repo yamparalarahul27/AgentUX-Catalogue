@@ -616,6 +616,26 @@
   margin-top: 8px;
 }
 
+// Marketing-role lock pill: replaces the editable group combobox when
+// the uploader's role is `marketing`. Visual cue that the group is
+// fixed (Marketing Bucket) and the suggestion field below is how they
+// hint where the screenshot should ultimately land.
+.catalogue-upload-group-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px dashed #3f3f46;
+  border-radius: 8px;
+  background: rgba(63, 63, 70, 0.18);
+  color: #a1a1aa;
+  font-size: 13px;
+  margin-bottom: 8px;
+
+  svg { color: #71717a; }
+  span { color: #e4e4e7; font-weight: 500; }
+}
+
 .catalogue-upload-groups {
   display: flex;
   flex-wrap: wrap;

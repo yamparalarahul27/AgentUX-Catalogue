@@ -595,6 +595,25 @@
   grid-column: 1 / -1;
 }
 
+// Hint banner — surfaces the Marketing uploader's suggested catalogue
+// group above the Group dropdown. Only renders when suggested_group
+// is populated on the screenshot (Marketing role uploads).
+.catalogue-list-inline-editor__hint {
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #c7d2fe;
+  font-size: 11.5px;
+  line-height: 1.4;
+
+  strong {
+    color: #e0e7ff;
+    font-weight: 600;
+  }
+}
+
 .catalogue-list-inline-editor__chips {
   display: flex;
   flex-wrap: wrap;
