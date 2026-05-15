@@ -6,16 +6,18 @@
 // beyond the constant-time-compared admin passcode.
 //
 // Actions (POST body: { admin_passcode, action, payload }):
-//   - list           → { members: MemberRow[] }
-//   - mint           { email }                 → { passcode (plaintext, once) }
-//   - rotate         { email }                 → { passcode (plaintext, once) }
-//   - toggle         { email, enabled: bool }  → { ok: true }
-//   - delete         { email }                 → { ok: true }
-//   - force_logout   { email }                 → { ok: true }
-//   - reset_lockout  { email }                 → { ok: true }
+//   - list             → { members: MemberRow[] }
+//   - mint             { email, role? }          → { passcode (plaintext, once) }
+//   - rotate           { email }                 → { passcode (plaintext, once) }
+//   - toggle           { email, enabled: bool }  → { ok: true }
+//   - delete           { email }                 → { ok: true }
+//   - force_logout     { email }                 → { ok: true }
+//   - reset_lockout    { email }                 → { ok: true }
+//   - set_member_role  { email, role }           → { ok: true }
 //
 // Companion code:
 //   - supabase/migrations/20260513_auth_passcodes.sql
+//   - supabase/migrations/20260515_roles_and_capabilities.sql
 //   - supabase/functions/auth-login/index.ts
 //   - docs/security-auth-passcode-and-members.md  (§6)
 
@@ -66,7 +68,8 @@ type Action =
   | 'toggle'
   | 'delete'
   | 'force_logout'
-  | 'reset_lockout';
+  | 'reset_lockout'
+  | 'set_member_role';
 
 interface MemberRow {
   email: string;
@@ -75,6 +78,7 @@ interface MemberRow {
   last_login_at: string | null;
   failed_count: number;
   locked_until: string | null;
+  role: string;
   is_admin: boolean;
 }
 
@@ -94,33 +98,34 @@ serve(async (req) => {
   }
 
   switch (body.action) {
-    case 'list':           return handleList();
-    case 'mint':           return handleMint(body.payload);
-    case 'rotate':         return handleRotate(body.payload);
-    case 'toggle':         return handleToggle(body.payload);
-    case 'delete':         return handleDelete(body.payload);
-    case 'force_logout':   return handleForceLogout(body.payload);
-    case 'reset_lockout':  return handleResetLockout(body.payload);
-    default:               return json({ error: 'bad_action' }, 400);
+    case 'list':             return handleList();
+    case 'mint':             return handleMint(body.payload);
+    case 'rotate':           return handleRotate(body.payload);
+    case 'toggle':           return handleToggle(body.payload);
+    case 'delete':           return handleDelete(body.payload);
+    case 'force_logout':     return handleForceLogout(body.payload);
+    case 'reset_lockout':    return handleResetLockout(body.payload);
+    case 'set_member_role':  return handleSetMemberRole(body.payload);
+    default:                 return json({ error: 'bad_action' }, 400);
   }
 });
 
 // ────────────────────────────────────────────────────────────────────
-// list — every member, with admin flag joined in.
+// list — every member, with their role. is_admin is derived from role
+// for backward-compat with the existing client-side useIsAdmin hook
+// (which reads the legacy `admins` table). Once that hook migrates to
+// read from role, is_admin can be dropped.
 // ────────────────────────────────────────────────────────────────────
 async function handleList() {
   const { data: passcodes, error } = await supabase
     .from('user_passcodes')
-    .select('email, enabled, created_at, last_login_at, failed_count, locked_until')
+    .select('email, enabled, role, created_at, last_login_at, failed_count, locked_until')
     .order('created_at', { ascending: true });
   if (error) return json({ error: 'list_failed', detail: error.message }, 500);
 
-  const { data: adminRows } = await supabase.from('admins').select('email');
-  const adminSet = new Set((adminRows ?? []).map((r) => r.email));
-
   const members: MemberRow[] = (passcodes ?? []).map((p) => ({
     ...p,
-    is_admin: adminSet.has(p.email),
+    is_admin: p.role === 'admin',
   }));
   return json({ members });
 }
@@ -128,10 +133,19 @@ async function handleList() {
 // ────────────────────────────────────────────────────────────────────
 // mint — create a new member with a fresh passcode. Returns the
 // plaintext passcode exactly once. Server only stores the hash.
+//
+// payload.role is optional — defaults to 'researcher' (the column's
+// own default). If 'admin' is requested, the admins row is also
+// inserted so the legacy useIsAdmin hook works for that user.
 // ────────────────────────────────────────────────────────────────────
 async function handleMint(payload: any) {
   const email = normaliseEmail(payload?.email);
   if (!email) return json({ error: 'bad_request' }, 400);
+
+  const requestedRole = typeof payload?.role === 'string' ? payload.role : null;
+  if (requestedRole !== null && !(await roleExists(requestedRole))) {
+    return json({ error: 'bad_role' }, 400);
+  }
 
   const { data: existing } = await supabase
     .from('user_passcodes')
@@ -143,12 +157,20 @@ async function handleMint(payload: any) {
   const plaintext = generatePasscode();
   const passcodeHash = await hash(plaintext);
 
-  const { error } = await supabase.from('user_passcodes').insert({
+  const insertRow: Record<string, unknown> = {
     email,
     passcode_hash: passcodeHash,
     enabled: true,
-  });
+  };
+  if (requestedRole) insertRow.role = requestedRole;
+
+  const { error } = await supabase.from('user_passcodes').insert(insertRow);
   if (error) return json({ error: 'insert_failed', detail: error.message }, 500);
+
+  // Keep the legacy admins table in sync for useIsAdmin compat.
+  if (requestedRole === 'admin') {
+    await supabase.from('admins').upsert({ email });
+  }
 
   return json({ passcode: plaintext });
 }
@@ -239,12 +261,78 @@ async function handleResetLockout(payload: any) {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// set_member_role — change the role on an existing member.
+//
+// Refuses to demote the last remaining enabled admin (recovery from
+// "no admins exist" requires direct DB access). Mirrors the change
+// into the legacy admins table so the existing useIsAdmin hook stays
+// consistent.
+// ────────────────────────────────────────────────────────────────────
+async function handleSetMemberRole(payload: any) {
+  const email = normaliseEmail(payload?.email);
+  const role = typeof payload?.role === 'string' ? payload.role : null;
+  if (!email || !role) return json({ error: 'bad_request' }, 400);
+
+  if (!(await roleExists(role))) {
+    return json({ error: 'bad_role' }, 400);
+  }
+
+  const { data: target, error: lookupError } = await supabase
+    .from('user_passcodes')
+    .select('role')
+    .eq('email', email)
+    .maybeSingle();
+  if (lookupError) return json({ error: 'lookup_failed', detail: lookupError.message }, 500);
+  if (!target) return json({ error: 'not_found' }, 404);
+
+  if (target.role === role) {
+    return json({ ok: true }); // no-op
+  }
+
+  // Refuse to demote the last enabled admin.
+  if (target.role === 'admin' && role !== 'admin') {
+    const { count } = await supabase
+      .from('user_passcodes')
+      .select('email', { count: 'exact', head: true })
+      .eq('role', 'admin')
+      .eq('enabled', true);
+    if ((count ?? 0) <= 1) {
+      return json({ error: 'last_admin' }, 409);
+    }
+  }
+
+  const { error } = await supabase
+    .from('user_passcodes')
+    .update({ role })
+    .eq('email', email);
+  if (error) return json({ error: 'update_failed', detail: error.message }, 500);
+
+  // Sync the legacy admins table so useIsAdmin stays correct.
+  if (role === 'admin') {
+    await supabase.from('admins').upsert({ email });
+  } else if (target.role === 'admin') {
+    await supabase.from('admins').delete().eq('email', email);
+  }
+
+  return json({ ok: true });
+}
+
+// ────────────────────────────────────────────────────────────────────
 // helpers
 // ────────────────────────────────────────────────────────────────────
 async function forceLogoutByEmail(email: string) {
   const { data: userRes } = await supabase.auth.admin.listUsers();
   const user = userRes?.users?.find((u) => u.email === email);
   if (user) await supabase.auth.admin.signOut(user.id, 'global');
+}
+
+async function roleExists(roleId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('roles')
+    .select('id')
+    .eq('id', roleId)
+    .maybeSingle();
+  return Boolean(data);
 }
 
 function generatePasscode(): string {
