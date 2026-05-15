@@ -89,6 +89,40 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- May 15, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">May 15, 2026</span>
+            <span class="changelog-title">Role System, Marketing Bucket &amp; Capability-aware UI</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li><strong>Per-role capability system</strong> — every member now holds a <strong>role</strong> (Admin, Researcher, ResearcherAI, Marketing, QA), and every role holds a set of capability strings (<code>upload</code>, <code>delete_own</code>, <code>delete_any</code>, <code>edit_metadata</code>, <code>share</code>, <code>labeling_studio</code>, <code>manage_members</code>, <code>manage_flags</code>). Capabilities are enforced server-side via RLS — only <code>delete_any</code> can soft-delete others' uploads; <code>delete_own</code> + ownership match (<code>uploader_email = me</code>) lets owners delete their own; <code>edit_metadata</code> is the cross-team metadata-edit gate. Two SECURITY DEFINER helper functions (<code>current_member_role</code>, <code>current_member_has_capability</code>) keep the policies tight.</li>
+              <li><strong>Members panel role dropdown</strong> — a new Role column with a per-row dropdown for assigning + changing roles. The Add Member modal also picks the role at mint time. Last-admin demotion is blocked server-side (<code>409 last_admin</code>) so you can't accidentally lock yourself out of the admin panel.</li>
+              <li><strong>Roles admin panel</strong> — new <strong>Settings → Team → Roles</strong> sub-tab. List view shows every role with its current capabilities (as chips) and member count. Edit modal flips capabilities via a checkbox grid; the Save button surfaces the blast radius ("Save (affects 3 members)") before committing. <strong>Custom roles</strong> are first-class: create with a lowercase id, name, description, capability set; delete unused ones. Admin (the only system role) shows a "cannot edit" hint and no action buttons.</li>
+              <li><strong>Marketing Bucket</strong> — lightweight workflow for the Marketing role. Their Quick Upload locks the <strong>Group</strong> selector to a hardcoded <em>Marketing Bucket</em> group and exposes a "Suggested catalogue group (optional)" free-text input. When an Admin opens one of these uploads in the lightbox, the suggested group appears as a hint above the Group dropdown — promote it to the catalogue by editing the group via the existing dropdown. No new actions, no new tables, no approval queue. (The approval-workflow design is parked for future content types that genuinely need vetting.)</li>
+              <li><strong>UI affordances gate by capability</strong> — Quick Upload hidden when the caller lacks <code>upload</code>; Share hidden without <code>share</code>; Labeling Studio nav opens to anyone with <code>labeling_studio</code> (ResearcherAI now reaches Studio without being admin). Delete and Edit buttons on cards and in the lightbox hide entirely when the caller can't act on that specific family — RLS still enforces server-side, this just stops showing buttons that would silently fail.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li><strong>Upload progress card now shrinks correctly</strong> after uploads complete. The leave-animation effect was cancelling its own removal timer whenever a new item changed state, so completed items stayed stuck in the ribbon at width 0 but full height — holding the card at full height long after everything finished. Drop the cleanup return so the timer always fires.</li>
+              <li><strong>Mobile bulk action bar redesigned</strong> — the previous layout stacked the four action buttons one-per-row, eating ~280px of vertical space. New phone layout: row 1 = count + close, row 2 = four icon-only action buttons stretched evenly across the bar with big tap targets and labels swapped for <code>aria-label</code> / <code>title</code>. Tablet keeps icon+text inline; desktop unchanged. Also fixes the "1 families selected" grammar.</li>
+              <li><strong>Soft-delete toast is role-aware.</strong> Admin still sees "Moved to Trash. Recoverable for 15 days." Non-admin roles see "Deleted." instead — accurate for them since the Trash view currently lives inside the admin-only Settings section.</li>
+              <li><strong>The legacy <code>admins</code> table mirrors role changes automatically.</strong> Promoting a member to the Admin role inserts the matching row; demoting deletes it. Keeps the existing <code>useIsAdmin</code> hook working unchanged while the role column becomes the source of truth.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li><strong>Delete UI no longer silently fails.</strong> Clicking Delete on a screenshot you didn't own previously optimistically removed the card and showed a "Moved to Trash" toast — but the underlying UPDATE was rejected by RLS (0 rows updated, no error). On refresh the card came back. The handler now <code>.select('id')</code>s the updated rows and restores local state if zero come back, with a clear "You don't have permission to delete this" toast.</li>
+              <li><strong>Marketing role ownership tracking was pointed at the wrong column.</strong> The initial role-system migration accidentally added a duplicate <code>uploaded_by</code> column on <code>screenshots</code>, while the existing <code>uploader_email</code> column was the one being populated by every insert via the existing helper. The three ownership-dependent RLS policies (insert with check, update own, delete own) pointed at the duplicate. A reconciliation migration drops the duplicate and re-creates the policies keyed on <code>uploader_email</code> — same security model, no client changes required.</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- May 13 – 14, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">
