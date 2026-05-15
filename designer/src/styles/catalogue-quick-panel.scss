@@ -27,10 +27,19 @@
   width: 400px;
   flex-shrink: 0;
   position: sticky;
-  top: var(--catalogue-toolbar-h, 72px);
-  max-height: calc(100dvh - var(--catalogue-toolbar-h, 72px));
+  // Toolbar height + 4px breathing room so the panel doesn't hug the
+  // toolbar edge.
+  top: calc(var(--catalogue-toolbar-h, 72px) + 4px);
+  // Trim the max-height by top inset + bottom inset so the rounded
+  // corners aren't clipped at the viewport edge.
+  max-height: calc(100dvh - var(--catalogue-toolbar-h, 72px) - 8px);
+  // top right bottom left — 8px on the left so the panel breathes
+  // from the catalogue grid; 4px elsewhere to keep the panel tight to
+  // the viewport edge.
+  margin: 4px 4px 4px 8px;
   overflow-y: auto;
-  border-left: 1px solid #27272a;
+  border: 1px solid #27272a;
+  border-radius: 14px;
   background: #111113;
   animation: quickPanelSlideIn 0.22s ease;
 }

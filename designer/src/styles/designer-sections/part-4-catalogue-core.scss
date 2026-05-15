@@ -662,6 +662,22 @@
     background: rgba($accent, 0.12);
     color: $accent;
   }
+
+  // Icon-only variant: square-ish pill with tighter padding. The icon
+  // is sized 16px so the visual footprint matches a normal chip's
+  // height. Image-based icons (Apple, Android SVGs) get explicit
+  // dimensions to avoid layout jumps before the asset loads.
+  &--icon {
+    padding: 6px 10px;
+    min-width: 36px;
+    justify-content: center;
+
+    img {
+      display: block;
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 .catalogue-upload-group-new {

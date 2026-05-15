@@ -1,12 +1,12 @@
-import type { ComponentType } from 'react';
+import type { ReactNode } from 'react';
 import { useMemo, useRef } from 'react';
-import { Apple, Bot, Monitor, Moon, Smartphone, Sun } from 'lucide-react';
+import { Monitor, Moon, Smartphone, Sun } from 'lucide-react';
 
+import androidLogo from '../assets/android-logo.svg';
+import appleLogo from '../assets/apple-logo.svg';
 import { REFERENCE_IMAGES_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 import { Dropdown } from './Dropdown';
-
-type LucideIcon = ComponentType<{ size?: number; 'aria-hidden'?: boolean }>;
 
 interface CatalogueFamilyLightboxInlineEditorProps {
   existingFlows: string[];
@@ -170,8 +170,8 @@ export function CatalogueFamilyLightboxInlineEditor({
               value={themeDraft}
               onChange={onThemeChange}
               options={[
-                { value: 'light', label: 'Light', icon: Sun },
-                { value: 'dark', label: 'Dark', icon: Moon },
+                { value: 'light', label: 'Light', iconNode: <Sun size={16} aria-hidden /> },
+                { value: 'dark', label: 'Dark', iconNode: <Moon size={16} aria-hidden /> },
               ]}
             />
           </div>
@@ -181,8 +181,8 @@ export function CatalogueFamilyLightboxInlineEditor({
               value={platformDraft}
               onChange={onPlatformChange}
               options={[
-                { value: 'web', label: 'Web', icon: Monitor },
-                { value: 'mobile', label: 'Mobile', icon: Smartphone },
+                { value: 'web', label: 'Web', iconNode: <Monitor size={16} aria-hidden /> },
+                { value: 'mobile', label: 'Mobile', iconNode: <Smartphone size={16} aria-hidden /> },
               ]}
             />
           </div>
@@ -210,8 +210,8 @@ export function CatalogueFamilyLightboxInlineEditor({
               value={mobileOsDraft}
               onChange={onMobileOsChange}
               options={[
-                { value: 'ios', label: 'iOS', icon: Apple },
-                { value: 'android', label: 'Android', icon: Bot },
+                { value: 'ios', label: 'iOS', iconNode: <img src={appleLogo} alt="" aria-hidden width={16} height={16} /> },
+                { value: 'android', label: 'Android', iconNode: <img src={androidLogo} alt="" aria-hidden width={16} height={16} /> },
               ]}
             />
           </div>
@@ -274,38 +274,37 @@ export function CatalogueFamilyLightboxInlineEditor({
 // Local segmented control. 1-tap selection for 2-option fields (Theme,
 // Platform, Mobile OS). The "×" button clears the selection back to null,
 // matching the old "Select theme" / "Select platform" placeholder semantics.
-// When `icon` is set on an option, the button renders icon-only with the
-// label exposed via aria-label + title for accessibility.
+// When `iconNode` is set on an option, the button renders icon-only
+// with the label exposed via aria-label + title. iconNode accepts any
+// ReactNode so callers can pass Lucide components or <img> tags for
+// brand SVGs (Apple, Android).
 interface SegmentedControlProps<T extends string> {
   value: T | null;
   onChange: (value: T | null) => void;
-  options: { value: T; label: string; icon?: LucideIcon }[];
+  options: { value: T; label: string; iconNode?: ReactNode }[];
 }
 
 function SegmentedControl<T extends string>({ value, onChange, options }: SegmentedControlProps<T>) {
-  const isIconOnly = options.every((option) => option.icon);
+  const isIconOnly = options.every((option) => option.iconNode);
   return (
     <div
       className={`catalogue-segmented-control${isIconOnly ? ' catalogue-segmented-control--icon-only' : ''}`}
       role="radiogroup"
     >
-      {options.map((option) => {
-        const Icon = option.icon;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={value === option.value}
-            aria-label={Icon ? option.label : undefined}
-            title={Icon ? option.label : undefined}
-            className={`catalogue-segmented-control__btn${value === option.value ? ' is-active' : ''}`}
-            onClick={() => onChange(option.value)}
-          >
-            {Icon ? <Icon size={16} aria-hidden /> : option.label}
-          </button>
-        );
-      })}
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          aria-label={option.iconNode ? option.label : undefined}
+          title={option.iconNode ? option.label : undefined}
+          className={`catalogue-segmented-control__btn${value === option.value ? ' is-active' : ''}`}
+          onClick={() => onChange(option.value)}
+        >
+          {option.iconNode ?? option.label}
+        </button>
+      ))}
       <button
         type="button"
         className="catalogue-segmented-control__clear"
