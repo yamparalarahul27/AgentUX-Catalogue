@@ -60,7 +60,7 @@ interface CatalogueToolbarProps {
   onFilterUxPatternChange?: (value: string[]) => void;
   onFilterWebPresetChange: (value: string | null) => void;
   onQuickUploadAll?: () => void;
-  onQuickUploadClick: () => void;
+  onQuickUploadClick?: () => void;
   onSortByChange: (value: CatalogueSortOption) => void;
   onViewByChange: (value: CatalogueViewBy) => void;
   onViewModeChange: (value: CatalogueViewMode) => void;
@@ -498,7 +498,7 @@ export function CatalogueToolbar({
               cross-fade in place over an invisible sizer that holds the
               widest possible width (matches the 200-file drag-drop cap),
               so the button never snaps width between states. */}
-          {(() => {
+          {onQuickUploadClick && (() => {
             const isOpen = quickUploadOpen;
             const isUploading = quickUploadIsUploading;
             const queueCount = quickUploadQueueCount;
@@ -549,14 +549,16 @@ export function CatalogueToolbar({
             <Search size={16} strokeWidth={2.5} />
             {searchQuery && <span className="catalogue-toolbar-pill__dot" />}
           </button>
-          <button
-            type="button"
-            className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only"
-            onClick={onQuickUploadClick}
-            title="Quick upload"
-          >
-            <Plus size={18} strokeWidth={2.5} />
-          </button>
+          {onQuickUploadClick && (
+            <button
+              type="button"
+              className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only"
+              onClick={onQuickUploadClick}
+              title="Quick upload"
+            >
+              <Plus size={18} strokeWidth={2.5} />
+            </button>
+          )}
         </div>
       </div>
 
