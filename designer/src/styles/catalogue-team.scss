@@ -47,31 +47,118 @@
   background: linear-gradient(180deg, rgba(24, 24, 27, 0.96) 0%, rgba(17, 17, 19, 0.96) 100%);
 }
 
-.catalogue-team__head {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-end;
-  flex-wrap: wrap;
+// Side-nav layout: 200px left rail + content panel on the right. Below
+// 768px we collapse to a stacked layout where the nav becomes a
+// horizontal scrollable strip of icon+label chips.
+.catalogue-team__layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 18px;
+  min-height: 0;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
-.catalogue-team__copy {
+.catalogue-team__nav {
   display: flex;
   flex-direction: column;
-  flex: 1 1 520px;
-  gap: 6px;
-  min-width: 0;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  background: rgba(15, 15, 16, 0.6);
+  align-self: start;
 
-  h2 {
-    font-size: 20px;
-    color: #fafafa;
+  @media (max-width: 768px) {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 4px;
+    gap: 4px;
+    align-self: stretch;
+  }
+}
+
+.catalogue-team__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #8a8a94;
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: #f4f4f5;
+  }
+
+  &.is-active {
+    background: rgba(99, 102, 241, 0.12);
+    color: #f4f4f5;
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  @media (max-width: 768px) {
+    width: auto;
+    flex: 0 0 auto;
+  }
+}
+
+.catalogue-team__nav-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogue-team__nav-count {
+  margin-left: auto;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+  padding: 1px 7px;
+  min-width: 22px;
+  text-align: center;
+  color: #6a6a72;
+
+  .catalogue-team__nav-item.is-active & {
+    background: rgba(99, 102, 241, 0.25);
+    color: #f4f4f5;
+  }
+}
+
+.catalogue-team__panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.catalogue-team__panel-head {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #27272a;
+
+  h3 {
     margin: 0;
+    font-size: 15px;
+    color: #fafafa;
   }
 
   p {
-    margin: 0;
-    color: #a1a1aa;
-    font-size: 13px;
+    margin: 4px 0 0;
+    color: #8a8a94;
+    font-size: 12.5px;
   }
 }
 
@@ -134,43 +221,6 @@
   }
 }
 
-.catalogue-team__sub-tabs {
-  display: flex;
-  gap: 4px;
-  width: 100%;
-  padding: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  background: rgba(15, 15, 16, 0.7);
-  margin-bottom: 4px;
-}
-
-.catalogue-team__sub-tab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1 1 0;
-  min-width: 0;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #71717a;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  padding: 7px 14px;
-  text-align: center;
-  transition: color 0.15s, background 0.15s;
-
-  &:hover { color: #d4d4d8; }
-
-  &.is-active {
-    color: #fafafa;
-    background: rgba(99, 102, 241, 0.22);
-  }
-}
-
 .catalogue-team__checklist {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -186,16 +236,70 @@
   border: 1px solid rgba(63, 63, 70, 0.8);
   border-radius: 12px;
   background: rgba(17, 17, 19, 0.9);
-  transition: background 0.12s;
+  transition: background 0.12s, border-color 0.12s;
   min-height: 62px;
 
   &:hover { background: rgba(99, 102, 241, 0.06); }
+}
+
+// Used for Flow rows (<button>) and Group rows (clickable <div>). Resets
+// native button styling and adds the hover affordance.
+.catalogue-team__checklist-item--clickable {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.45);
+    background: rgba(99, 102, 241, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.75;
+  }
+}
+
+.catalogue-team__checklist-cta {
+  color: #6a6a72;
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.15s;
+
+  .catalogue-team__checklist-item--clickable:hover & {
+    color: #6366f1;
+    transform: translateX(2px);
+  }
 }
 
 .catalogue-team__checklist-item--group {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
+  position: relative;
+
+  // Bumped group icon (CatalogueGroupLabel renders inline-styled img at
+  // iconSize=36 px). Wrap it visually with a tinted rounded background
+  // so smaller / non-square uploaded icons read as a coherent avatar.
+  .catalogue-team__checklist-flow img {
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 8px;
+  }
+
+  // Push the chevron CTA to bottom-right so it doesn't crowd the
+  // group name + edit pencil row.
+  .catalogue-team__checklist-cta {
+    position: absolute;
+    bottom: 14px;
+    right: 18px;
+  }
 }
 
 .catalogue-team__group-meta {
