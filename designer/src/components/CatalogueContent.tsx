@@ -55,6 +55,9 @@ interface CatalogueContentProps {
   webPresets: { key: string; label: string; width: number }[];
   bookmarkedIds: Set<string>;
   onToggleBookmark: (screenshotId: string) => void;
+  // Hide the card delete affordance when the caller lacks permission
+  // for this specific family (delete_any, or delete_own + ownership).
+  canDeleteFamily: (family: CatalogueFamilyView) => boolean;
 }
 
 export function CatalogueContent({
@@ -94,6 +97,7 @@ export function CatalogueContent({
   webPresets,
   bookmarkedIds,
   onToggleBookmark,
+  canDeleteFamily,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
     searchQuery ||
@@ -206,6 +210,7 @@ export function CatalogueContent({
                   onToggleSelect={onToggleSelect}
                   bookmarkedIds={bookmarkedIds}
                   onToggleBookmark={onToggleBookmark}
+                  canDelete={canDeleteFamily(family)}
                 />
               ))}
             </div>

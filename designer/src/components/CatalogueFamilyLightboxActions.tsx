@@ -13,6 +13,10 @@ interface CatalogueFamilyLightboxActionsProps {
   groupDraft: string;
   suggestedGroup?: string | null;
   isInlineEditing: boolean;
+  // Capability + ownership gates. RLS enforces server-side; these
+  // just hide affordances the caller can't act on.
+  canEdit: boolean;
+  canDelete: boolean;
   isSavingInline: boolean;
   hasReference: boolean;
   mobileOsDraft: MobileOs | null;
@@ -84,13 +88,17 @@ export function CatalogueFamilyLightboxActions({
   onThemeChange,
   onToggleInlineEdit,
   onWebPresetChange,
+  canEdit,
+  canDelete,
 }: CatalogueFamilyLightboxActionsProps) {
   return (
     <div className="catalogue-family-lightbox__summary" style={{ borderTop: 0, borderRadius: '0 0 16px 16px' }}>
       <div className="catalogue-lightbox-icon-bar">
-        <button type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
-          <Pencil size={15} />
-        </button>
+        {canEdit && (
+          <button type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
+            <Pencil size={15} />
+          </button>
+        )}
         {REUPLOAD_ENABLED && (
           <button type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} title="Reupload">
             <RefreshCw size={15} />
@@ -123,9 +131,11 @@ export function CatalogueFamilyLightboxActions({
               <MapPin size={15} />
               {annotationsCount > 0 && <span className="catalogue-lightbox-icon-badge">{annotationsCount}</span>}
             </button>
-            <button type="button" className="catalogue-lightbox-icon-btn is-danger" onClick={onDelete} title="Delete">
-              <Trash2 size={15} />
-            </button>
+            {canDelete && (
+              <button type="button" className="catalogue-lightbox-icon-btn is-danger" onClick={onDelete} title="Delete">
+                <Trash2 size={15} />
+              </button>
+            )}
           </>
         )}
       </div>

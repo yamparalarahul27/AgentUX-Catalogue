@@ -27,6 +27,11 @@ interface UseCatalogueFamilyActionsArgs {
   userEmail?: string | null;
   userId: string;
   webPresets: { key: string }[];
+  // Drives the soft-delete success toast wording. When true ("Moved to
+  // Trash. Recoverable for 15 days."), the caller can reach the Trash
+  // section to restore. When false ("Deleted."), they can't — currently
+  // only Admins reach Trash, so non-admin roles see the simpler message.
+  canSeeTrash?: boolean;
 }
 
 function sameVariantIdentity(left: ScreenshotNode, right: ScreenshotNode): boolean {
@@ -64,6 +69,7 @@ export function useCatalogueFamilyActions({
   userEmail,
   userId,
   webPresets,
+  canSeeTrash = true,
 }: UseCatalogueFamilyActionsArgs) {
   const setFamilyScreenshotsPatch = useCallback((familyId: string, patch: Partial<ScreenshotNode>) => {
     setScreenshots((previous) => previous.map((screenshot) => (
@@ -373,22 +379,52 @@ export function useCatalogueFamilyActions({
     const familyScreenshots = screenshots.filter((screenshot) => getScreenshotFamilyId(screenshot) === id);
     const screenshotIds = familyScreenshots.map((screenshot) => screenshot.id);
 
-    if (screenshotIds.length > 0) {
-      await supabase
-        .from('screenshots')
-        .update({
-          deleted_at: new Date().toISOString(),
-          deleted_by_email: userEmail || null,
-        })
-        .in('id', screenshotIds);
+    if (screenshotIds.length === 0) return;
+
+    // Server-side soft-delete. .select() returns the rows that actually
+    // updated — under RLS, a caller without `delete_any` who tries to
+    // delete a screenshot they don't own gets back zero rows (no error,
+    // no exception). The previous version blindly removed the family
+    // from local state and showed a "Moved to Trash" toast in that case,
+    // creating the silent-fail-then-reappear-on-refresh bug.
+    const { data: updatedRows, error } = await supabase
+      .from('screenshots')
+      .update({
+        deleted_at: new Date().toISOString(),
+        deleted_by_email: userEmail || null,
+      })
+      .in('id', screenshotIds)
+      .select('id');
+
+    if (error) {
+      setToast({ message: `Couldn't delete: ${error.message}`, type: 'error' });
+      return;
+    }
+
+    const updatedCount = updatedRows?.length ?? 0;
+    if (updatedCount === 0) {
+      setToast({
+        message: "You don't have permission to delete this — refresh and try again.",
+        type: 'error',
+      });
+      return;
     }
 
     // Screen_families rows stay put; the UI filters them out by their
     // screenshot count (a family with zero live screenshots doesn't render).
     setScreenshots((previous) => previous.filter((screenshot) => getScreenshotFamilyId(screenshot) !== id));
     onFamilyDeleted?.(id);
-    setToast({ message: 'Moved to Trash. Recoverable for 15 days.', type: 'success' });
-  }, [onFamilyDeleted, screenshots, setScreenshots, setToast, userEmail]);
+
+    // Different toast wording based on whether the caller can reach the
+    // Trash section to restore. Admin gets the "Moved to Trash" copy;
+    // non-admin roles get a simpler "Deleted." since the Trash UI is
+    // currently admin-only (see parked_delete_ui_gating_and_trash.md
+    // for the C2 option of giving non-admins their own Trash view).
+    const message = canSeeTrash
+      ? 'Moved to Trash. Recoverable for 15 days.'
+      : 'Deleted.';
+    setToast({ message, type: 'success' });
+  }, [canSeeTrash, onFamilyDeleted, screenshots, setScreenshots, setToast, userEmail]);
 
   // Trash → Restore: clears deleted_at on every screenshot in the family.
   // The screenshots reappear in the catalogue once their rows refetch.

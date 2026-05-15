@@ -17,6 +17,7 @@ import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
 import { buildCatalogueFamilies, CATALOGUE_FLOW_LABEL_KEY } from '../lib/catalogue-families';
+import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
   readCatalogueGroupAppearanceMap,
@@ -345,8 +346,30 @@ export function Catalogue({
   const canUpload = useCapability('upload');
   const canShare = useCapability('share');
   const canLabelingStudio = useCapability('labeling_studio');
+  const canDeleteAny = useCapability('delete_any');
+  const canDeleteOwn = useCapability('delete_own');
+  const canEditMetadata = useCapability('edit_metadata');
   const myRole = useMyRole();
   const isMarketingRole = myRole === 'marketing';
+  // Ownership-aware predicates. Family-level checks require every
+  // variant to match (RLS is per-row, so a mixed-ownership family would
+  // delete partially — hide the affordance entirely to avoid that UX).
+  const myEmailLower = user.email?.toLowerCase() ?? null;
+  const canDeleteFamily = useCallback((family: CatalogueFamilyView) => {
+    if (canDeleteAny) return true;
+    if (!canDeleteOwn || !myEmailLower) return false;
+    return family.variants.every(
+      (variant) => variant.screenshot.uploader_email?.toLowerCase() === myEmailLower,
+    );
+  }, [canDeleteAny, canDeleteOwn, myEmailLower]);
+  const canEditFamily = useCallback((family: CatalogueFamilyView) => {
+    if (canEditMetadata) return true;
+    // Path A: owner-edits are allowed via the delete_own RLS policy.
+    if (!canDeleteOwn || !myEmailLower) return false;
+    return family.variants.every(
+      (variant) => variant.screenshot.uploader_email?.toLowerCase() === myEmailLower,
+    );
+  }, [canEditMetadata, canDeleteOwn, myEmailLower]);
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
@@ -431,6 +454,10 @@ export function Catalogue({
     userEmail: user.email,
     userId: user.id,
     webPresets,
+    // Trash today is only reachable via Settings → Team, which is
+    // admin-only — so non-admins can't restore. Show the simpler
+    // "Deleted." toast for them instead of the "Moved to Trash" copy.
+    canSeeTrash: canAdmin,
   });
   const upload = useCatalogueUpload({
     allFamilies,
@@ -888,6 +915,7 @@ export function Catalogue({
                     onChangeFamilyGroup={handleGuestAwareChangeFamilyGroup}
                     onCommentCountChange={handleCommentCountChange}
                     onDeleteFamily={handleGuestAwareDeleteFamily}
+                    canDeleteFamily={canDeleteFamily}
                     onOpenPreview={openPreview}
                     onRequireAuth={() => setShowAuthPrompt(true)}
                     onRenameFamily={handleGuestAwareRenameFamily}
@@ -1007,6 +1035,8 @@ export function Catalogue({
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
           canEdit={!isGuest}
+          canEditMetadata={canEditFamily(previewFamily)}
+          canDelete={canDeleteFamily(previewFamily)}
           existingAnnotationLabels={annotationLabels}
           existingFlows={allFlows}
           existingGroups={allGroups}
