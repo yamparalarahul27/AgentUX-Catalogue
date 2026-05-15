@@ -70,14 +70,21 @@
   border: 1px solid #27272a;
   border-radius: 12px;
   background: rgba(15, 15, 16, 0.6);
-  align-self: start;
+  align-self: stretch;
+  position: sticky;
+  top: 16px;
+  // Keep the nav full-height to match the content panel — feels more
+  // like a real left sidebar. min-height covers the case where the
+  // panel content is shorter than the nav (e.g., Flags subtab).
+  min-height: calc(100vh - 200px);
 
   @media (max-width: 768px) {
     flex-direction: row;
     overflow-x: auto;
     padding: 4px;
     gap: 4px;
-    align-self: stretch;
+    position: static;
+    min-height: 0;
   }
 }
 
@@ -320,10 +327,18 @@
 }
 
 .catalogue-team__checklist-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: #71717a;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
+
+  svg {
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
 }
 
 .catalogue-team__group-edit-btn {
