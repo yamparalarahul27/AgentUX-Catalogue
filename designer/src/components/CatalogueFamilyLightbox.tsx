@@ -69,6 +69,10 @@ interface CatalogueFamilyLightboxProps {
   webPresets: WebPreset[];
   bookmarkedIds?: Set<string>;
   onToggleBookmark?: (screenshotId: string) => void;
+  // Single-screenshot share — parent builds the URL + copies to
+  // clipboard + shows a toast. Optional so guest contexts (or any
+  // surface that wants to suppress sharing) can omit it.
+  onShareLink?: (screenshotId: string) => void;
 }
 type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string };
 type LightboxPanel = 'label' | 'comments' | 'annotations';
@@ -139,6 +143,7 @@ export function CatalogueFamilyLightbox({
   webPresets,
   bookmarkedIds,
   onToggleBookmark,
+  onShareLink,
 }: CatalogueFamilyLightboxProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
@@ -751,6 +756,7 @@ export function CatalogueFamilyLightbox({
                 hideCatalogueActions={showLabelTab}
                 isBookmarked={Boolean(screenshot && bookmarkedIds?.has(screenshot.id))}
                 onToggleBookmark={onToggleBookmark && screenshot ? () => onToggleBookmark(screenshot.id) : undefined}
+                onShareLink={onShareLink && screenshot ? () => onShareLink(screenshot.id) : undefined}
                 existingFlows={existingFlows}
                 existingGroups={existingGroups}
                 flowDraft={flowDraft}

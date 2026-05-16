@@ -55,6 +55,8 @@ interface CatalogueContentProps {
   webPresets: { key: string; label: string; width: number }[];
   bookmarkedIds: Set<string>;
   onToggleBookmark: (screenshotId: string) => void;
+  // Card-overlay share — copies a single-screenshot share URL.
+  onShareLink: (screenshotId: string) => void;
   // Hide the card delete affordance when the caller lacks permission
   // for this specific family (delete_any, or delete_own + ownership).
   canDeleteFamily: (family: CatalogueFamilyView) => boolean;
@@ -97,6 +99,7 @@ export function CatalogueContent({
   webPresets,
   bookmarkedIds,
   onToggleBookmark,
+  onShareLink,
   canDeleteFamily,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
@@ -210,6 +213,7 @@ export function CatalogueContent({
                   onToggleSelect={onToggleSelect}
                   bookmarkedIds={bookmarkedIds}
                   onToggleBookmark={onToggleBookmark}
+                  onShareLink={onShareLink}
                   canDelete={canDeleteFamily(family)}
                 />
               ))}

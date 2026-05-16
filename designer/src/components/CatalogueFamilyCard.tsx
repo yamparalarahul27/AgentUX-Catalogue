@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, Check, MapPin, Monitor, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
+import { Bookmark, Check, Link2, MapPin, Monitor, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
@@ -24,6 +24,9 @@ interface CatalogueFamilyCardProps {
   onToggleSelect: (familyId: string) => void;
   bookmarkedIds?: Set<string>;
   onToggleBookmark?: (screenshotId: string) => void;
+  // Single-screenshot share — parent copies the link + shows a toast.
+  // Optional so callers that don't want sharing (none today) can omit.
+  onShareLink?: (screenshotId: string) => void;
   // Capability + ownership gate. RLS already blocks delete attempts the
   // caller isn't entitled to; this prop just hides the affordance to
   // avoid showing a button that silently fails.
@@ -44,6 +47,7 @@ export function CatalogueFamilyCard({
   onToggleSelect,
   bookmarkedIds,
   onToggleBookmark,
+  onShareLink,
   canDelete,
 }: CatalogueFamilyCardProps) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -183,6 +187,17 @@ export function CatalogueFamilyCard({
                   size={14}
                   fill={bookmarkedIds?.has(screenshot.id) ? 'currentColor' : 'none'}
                 />
+              </button>
+            )}
+            {onShareLink && screenshot && (
+              <button
+                type="button"
+                className="catalogue-card-action"
+                title="Copy share link to this screenshot"
+                aria-label="Copy share link to this screenshot"
+                onClick={() => onShareLink(screenshot.id)}
+              >
+                <Link2 size={14} />
               </button>
             )}
             {canDelete && (

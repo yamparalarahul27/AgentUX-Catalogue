@@ -5,6 +5,7 @@ import { useBookmarks } from '../hooks/use-bookmarks';
 import { useIsAdmin } from '../lib/auth-passcode';
 import { useCapability, useMyRole } from '../hooks/use-role-capabilities';
 import { MARKETING_BUCKET_GROUP } from '../lib/marketing-bucket';
+import { copySingleScreenshotShareLink } from '../lib/copy-single-share-link';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
@@ -479,6 +480,19 @@ export function Catalogue({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMarketingRole, upload.quickUploadGroup]);
+
+  // Single-screenshot share — copy URL to clipboard + toast. Wired to
+  // the lightbox icon-bar button and the card hover overlay.
+  const handleShareSingleScreenshot = useCallback((screenshotId: string) => {
+    void copySingleScreenshotShareLink(screenshotId, { by: user.email ?? null }).then((result) => {
+      setToast(
+        result.ok
+          ? { message: 'Link copied', type: 'success' }
+          : { message: 'Could not copy — copy from the address bar instead.', type: 'error' },
+      );
+    });
+  }, [setToast, user.email]);
+
   const isAnyModalOpen = Boolean(
     upload.showUpload ||
     showSettings ||
@@ -940,6 +954,7 @@ export function Catalogue({
                         }
                       });
                     }}
+                    onShareLink={handleShareSingleScreenshot}
                   />
                 </div>
                 <CatalogueQuickUploadModal
@@ -1084,6 +1099,7 @@ export function Catalogue({
               }
             });
           }}
+          onShareLink={handleShareSingleScreenshot}
         />
       )}
       {bulkAction === 'group' && (
