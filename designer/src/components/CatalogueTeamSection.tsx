@@ -100,14 +100,6 @@ const REGION_FILTER_OPTIONS: { label: string; value: GroupRegionFilter }[] = [
   { label: 'Untagged', value: 'untagged' },
 ];
 
-function isGroupTypeFilter(value: string | null): value is GroupTypeFilter {
-  return value === 'all' || value === 'cex' || value === 'dex' || value === 'untagged';
-}
-
-function isGroupRegionFilter(value: string | null): value is GroupRegionFilter {
-  return value === 'all' || value === 'india' || value === 'global' || value === 'untagged';
-}
-
 function buildFlowChecklist(screenshots: ScreenshotNode[]): FlowChecklistItem[] {
   const counts = new Map<string, number>();
   for (const screenshot of screenshots) {
@@ -173,10 +165,12 @@ export function CatalogueTeamSection({
   const [groupRegionFilter, setGroupRegionFilter] = useState<GroupRegionFilter>('all');
   const [flowSearch, setFlowSearch] = useState('');
 
-  const scopedScreenshots = useMemo(
-    () => (projectId ? screenshots.filter((screenshot) => screenshot.project_id === projectId) : screenshots),
-    [projectId, screenshots],
-  );
+  // Settings → Team panels (Analytics, Flows, Groups) span every project
+  // the user has access to, matching the catalogue chip strip + filter
+  // dropdown which also use `fullScopeScreenshots` without project scoping.
+  // The earlier `projects[0]?.id` scope silently hid groups (e.g. Allinx,
+  // Bvox) that lived in any project other than the first.
+  const scopedScreenshots = screenshots;
 
   const rows = useMemo(
     () => buildTeamUploadAnalyticsRows(scopedScreenshots, null),
@@ -241,40 +235,6 @@ export function CatalogueTeamSection({
 
     void ensureCatalogueGroupAppearanceLoadedForProjects(projects.map((project) => project.id));
   }, [projectId, projects]);
-
-  // Hydrate filter state from URL on mount and on back/forward navigation.
-  // Only applied when the Groups subtab is showing; values for the other
-  // subtabs do not pollute the params (we strip them on write).
-  useEffect(() => {
-    function readFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      const query = params.get('q') ?? '';
-      const type = params.get('type');
-      const region = params.get('region');
-      setGroupSearch(query);
-      setGroupTypeFilter(isGroupTypeFilter(type) ? type : 'all');
-      setGroupRegionFilter(isGroupRegionFilter(region) ? region : 'all');
-    }
-    readFromUrl();
-    window.addEventListener('popstate', readFromUrl);
-    return () => window.removeEventListener('popstate', readFromUrl);
-  }, []);
-
-  // Mirror filter state to the URL. Uses replaceState so search-input
-  // keystrokes don't pile up in browser history.
-  useEffect(() => {
-    if (subTab !== 'groups') return;
-    const params = new URLSearchParams(window.location.search);
-    if (groupSearch.trim()) params.set('q', groupSearch.trim());
-    else params.delete('q');
-    if (groupTypeFilter !== 'all') params.set('type', groupTypeFilter);
-    else params.delete('type');
-    if (groupRegionFilter !== 'all') params.set('region', groupRegionFilter);
-    else params.delete('region');
-    const next = params.toString();
-    const url = next ? `${window.location.pathname}?${next}` : window.location.pathname;
-    window.history.replaceState({}, '', url);
-  }, [groupRegionFilter, groupSearch, groupTypeFilter, subTab]);
 
   function clearGroupFilters() {
     setGroupSearch('');
