@@ -323,6 +323,10 @@
               <summary>Who can see what's in my catalogue?</summary>
               <p>Only team members you invite. The catalogue is gated behind a per-email passcode — admins mint passcodes from <strong>Settings → Team → Members</strong> and share them through a secure channel. Row-level security on the database means even direct API access requires a real session, so nobody can scrape the catalogue with just the URL. Public share links (<code>/share/...</code>) stay anonymous on purpose so you can send specific flows to outside reviewers without giving them edit access.</p>
             </details>
+            <details class="faq-item">
+              <summary>Can different team members have different access?</summary>
+              <p>Yes — every member holds a <strong>role</strong>, and roles map to capabilities like <em>upload</em>, <em>delete own / any</em>, <em>edit metadata</em>, <em>share</em>, <em>labelling studio</em>, and admin reach. The five seeded roles (Admin, Researcher, ResearcherAI, Marketing, QA) cover most teams; admins can also create <strong>custom roles</strong> and toggle capabilities per role from <strong>Settings → Team → Roles</strong>. The Marketing role gets a dedicated <strong>Marketing Bucket</strong> — their uploads land in one group with a free-text "suggested catalogue group" hint, and admins promote items into the main catalogue by editing the group on each screenshot. RLS enforces every capability server-side, so the UI gates are mirrored at the database.</p>
+            </details>
           </div>
         </section>
       </main>
