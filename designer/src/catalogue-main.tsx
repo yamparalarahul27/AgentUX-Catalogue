@@ -30,6 +30,7 @@ import './styles/catalogue-drop-overlay.scss';
 import './styles/catalogue-upload-progress.scss';
 import './styles/catalogue-share.scss';
 import './styles/catalogue-search-modal.scss';
+import './styles/editable-title.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -11,6 +11,11 @@ interface CatalogueStackViewProps {
   onOpenPreview: (familyId: string) => void;
   onToggleGroupSelect: (familyIds: string[]) => void;
   onToggleSelect: (familyId: string) => void;
+  // Click-to-edit on the stack card title. Gated per-family by the
+  // caller (capability + ownership) via canEditFamily; the rename
+  // handler is the same one used by the gallery view + card.
+  onRenameFamily?: (familyId: string, name: string) => Promise<void>;
+  canEditFamily?: (family: CatalogueFamilyView) => boolean;
 }
 
 export function CatalogueStackView({
@@ -20,6 +25,8 @@ export function CatalogueStackView({
   onOpenPreview,
   onToggleGroupSelect,
   onToggleSelect,
+  onRenameFamily,
+  canEditFamily,
 }: CatalogueStackViewProps) {
   return (
     <div className="catalogue-stack">
@@ -56,6 +63,8 @@ export function CatalogueStackView({
                   isSelected={selected.has(family.id)}
                   onOpenPreview={onOpenPreview}
                   onToggleSelect={onToggleSelect}
+                  onRenameFamily={onRenameFamily}
+                  canEditTitle={canEditFamily ? canEditFamily(family) : true}
                 />
               ))}
             </div>

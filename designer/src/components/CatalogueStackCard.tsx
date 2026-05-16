@@ -7,6 +7,7 @@ import { formatDateTime, type LightboxAnnotation } from '../lib/catalogue-lightb
 import { fetchAnnotationsForScreenshot } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { EditableTitle } from './EditableTitle';
 
 type ScreenshotComment = {
   id: string;
@@ -23,6 +24,10 @@ interface CatalogueStackCardProps {
   isSelected: boolean;
   onOpenPreview: (familyId: string) => void;
   onToggleSelect: (familyId: string) => void;
+  // Optional inline rename via the title. Omit to render a static
+  // title (e.g., when the caller lacks edit permission).
+  onRenameFamily?: (familyId: string, name: string) => Promise<void>;
+  canEditTitle?: boolean;
 }
 
 export function CatalogueStackCard({
@@ -31,6 +36,8 @@ export function CatalogueStackCard({
   isSelected,
   onOpenPreview,
   onToggleSelect,
+  onRenameFamily,
+  canEditTitle = true,
 }: CatalogueStackCardProps) {
   const activeVariant = useMemo(
     () => getActiveFamilyVariant(family, activeVariantKey),
@@ -147,7 +154,13 @@ export function CatalogueStackCard({
       <div className="catalogue-stack__panel">
         <div className="catalogue-stack__panel-header">
           <div className="catalogue-stack__title-row">
-            <h3 className="catalogue-stack__title" title={family.name}>{family.name}</h3>
+            <EditableTitle
+              as="h3"
+              className="catalogue-stack__title"
+              value={family.name}
+              canEdit={canEditTitle && Boolean(onRenameFamily)}
+              onSave={(next) => onRenameFamily ? onRenameFamily(family.id, next) : undefined}
+            />
           </div>
           <div className="catalogue-stack__meta-row">
             {family.group && (

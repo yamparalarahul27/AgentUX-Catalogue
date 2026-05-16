@@ -931,6 +931,7 @@ export function Catalogue({
                     onCommentCountChange={handleCommentCountChange}
                     onDeleteFamily={handleGuestAwareDeleteFamily}
                     canDeleteFamily={canDeleteFamily}
+                    canEditFamily={canEditFamily}
                     onOpenPreview={openPreview}
                     onRequireAuth={() => setShowAuthPrompt(true)}
                     onRenameFamily={handleGuestAwareRenameFamily}
