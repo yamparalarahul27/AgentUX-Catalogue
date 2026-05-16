@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Copy, Lock, MoreHorizontal, Power, RotateCw, Trash2 } from 'lucide-react';
 
 import { callAdmin, type AdminAction, type MemberRow } from '../lib/auth-passcode';
@@ -20,6 +20,11 @@ import { ConfirmModal } from './ConfirmModal';
 
 interface CatalogueMembersSectionProps {
   currentUserEmail: string;
+  // Admin passcode + rebound callback come from the shared
+  // useAdminUnlock state in CatalogueTeamSection. The unlock screen
+  // is rendered by the parent before this component mounts.
+  adminPasscode: string;
+  onUnauthorized: () => void;
 }
 
 interface RevealedPasscode {
@@ -28,15 +33,7 @@ interface RevealedPasscode {
   reason: 'mint' | 'rotate';
 }
 
-export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSectionProps) {
-  // Admin passcode held in React state only — never localStorage. Refresh
-  // = re-enter. The Edge Function re-validates on every action so this
-  // is purely a UX cache, not a security boundary.
-  const [adminPasscode, setAdminPasscode] = useState('');
-  const [unlocked, setUnlocked] = useState(false);
-  const [unlockError, setUnlockError] = useState<string | null>(null);
-  const [unlocking, setUnlocking] = useState(false);
-
+export function CatalogueMembersSection({ currentUserEmail, adminPasscode, onUnauthorized }: CatalogueMembersSectionProps) {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
@@ -68,37 +65,26 @@ export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSe
     return () => window.clearTimeout(id);
   }, [toast]);
 
-  async function refreshList(passcode: string) {
+  const refreshList = useCallback(async () => {
     setLoadingList(true);
     setListError(null);
-    const result = await callAdmin<{ members: MemberRow[] }>(passcode, 'list');
+    const result = await callAdmin<{ members: MemberRow[] }>(adminPasscode, 'list');
     setLoadingList(false);
     if (!result.ok) {
       setListError(adminErrorMessage(result.code));
-      if (result.code === 'unauthorized') {
-        // Bad passcode — drop back to unlock.
-        setUnlocked(false);
-        setUnlockError('Wrong admin passcode.');
-      }
+      // Stale or wrong passcode — bubble up so the shared unlock state
+      // drops back to the unlock screen across both panels.
+      if (result.code === 'unauthorized') onUnauthorized();
       return;
     }
     setMembers(result.data.members);
-  }
+  }, [adminPasscode, onUnauthorized]);
 
-  async function handleUnlock(event: React.FormEvent) {
-    event.preventDefault();
-    if (!adminPasscode.trim()) return;
-    setUnlocking(true);
-    setUnlockError(null);
-    const result = await callAdmin<{ members: MemberRow[] }>(adminPasscode, 'list');
-    setUnlocking(false);
-    if (!result.ok) {
-      setUnlockError(adminErrorMessage(result.code));
-      return;
-    }
-    setUnlocked(true);
-    setMembers(result.data.members);
-  }
+  // Mount: load the list. Re-run if the parent ever swaps the passcode
+  // (e.g., admin re-unlocks after a stale-rebound).
+  useEffect(() => {
+    void refreshList();
+  }, [refreshList]);
 
   async function runAction(
     action: AdminAction,
@@ -108,10 +94,11 @@ export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSe
     const result = await callAdmin<{ passcode?: string }>(adminPasscode, action, payload);
     if (!result.ok) {
       setToast(adminErrorMessage(result.code));
+      if (result.code === 'unauthorized') onUnauthorized();
       return { ok: false };
     }
     setToast(successMessage);
-    await refreshList(adminPasscode);
+    await refreshList();
     return { ok: true, passcode: result.data?.passcode };
   }
 
@@ -172,40 +159,6 @@ export function CatalogueMembersSection({ currentUserEmail }: CatalogueMembersSe
       `${member.email} → ${roleNameFor(role)}`,
     );
   }
-
-  // ──────────────────────────────────────────────────────────
-  // Unlock state
-  // ──────────────────────────────────────────────────────────
-
-  if (!unlocked) {
-    return (
-      <div className="catalogue-members">
-        <div className="catalogue-members__unlock">
-          <h3>Members</h3>
-          <p>Enter the admin passcode to manage members.</p>
-          <form onSubmit={handleUnlock} className="catalogue-members__unlock-form">
-            <input
-              className="auth-input"
-              type="password"
-              placeholder="Admin passcode"
-              value={adminPasscode}
-              onChange={(event) => setAdminPasscode(event.target.value)}
-              autoFocus
-              disabled={unlocking}
-            />
-            {unlockError && <p className="auth-error">{unlockError}</p>}
-            <button className="auth-btn auth-btn-primary" type="submit" disabled={unlocking}>
-              {unlocking ? 'Unlocking…' : 'Unlock'}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // ──────────────────────────────────────────────────────────
-  // Unlocked — table
-  // ──────────────────────────────────────────────────────────
 
   return (
     <div className="catalogue-members">

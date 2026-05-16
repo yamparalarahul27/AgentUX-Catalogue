@@ -31,8 +31,10 @@ import type {
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
 import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
 import type { Project, ScreenshotNode } from '../types';
+import { AdminUnlockScreen } from './AdminUnlockScreen';
 import { CatalogueFlagsSection } from './CatalogueFlagsSection';
 import { CatalogueRolesSection } from './CatalogueRolesSection';
+import { useAdminUnlock } from '../hooks/use-admin-unlock';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueMembersSection } from './CatalogueMembersSection';
 import { CatalogueTrashSection } from './CatalogueTrashSection';
@@ -145,6 +147,11 @@ export function CatalogueTeamSection({
   onSelectGroup,
 }: CatalogueTeamSectionProps) {
   const [subTab, setSubTab] = useState<TeamSubTab>(TEAM_UPLOAD_ANALYTICS_ENABLED ? 'analytics' : 'flows');
+  // Shared admin-passcode unlock state — Members + Roles both read from
+  // here, so unlocking once in either sub-tab unlocks the other for the
+  // tab session (persisted to sessionStorage). Stale-passcode rebound is
+  // wired via clearUnlock as onUnauthorized on the children.
+  const { adminPasscode, unlocked: adminUnlocked, unlock: handleAdminUnlock, clearUnlock: handleAdminUnauthorized } = useAdminUnlock();
   // The project picker has been removed — single-project workflow. Default
   // to the first project's id (or null if none) so per-project appearance
   // logic still works. Multi-project filtering is no longer surfaced.
@@ -738,11 +745,30 @@ export function CatalogueTeamSection({
       )}
 
       {subTab === 'members' && (
-        <CatalogueMembersSection currentUserEmail={currentUserEmail} />
+        adminUnlocked
+          ? <CatalogueMembersSection
+              currentUserEmail={currentUserEmail}
+              adminPasscode={adminPasscode}
+              onUnauthorized={handleAdminUnauthorized}
+            />
+          : <AdminUnlockScreen
+              title="Members"
+              description="Enter the admin passcode to manage members."
+              onUnlock={handleAdminUnlock}
+            />
       )}
 
       {subTab === 'roles' && (
-        <CatalogueRolesSection />
+        adminUnlocked
+          ? <CatalogueRolesSection
+              adminPasscode={adminPasscode}
+              onUnauthorized={handleAdminUnauthorized}
+            />
+          : <AdminUnlockScreen
+              title="Roles"
+              description="Enter the admin passcode to manage roles + capabilities."
+              onUnlock={handleAdminUnlock}
+            />
       )}
 
       {editingGroupKey && (
