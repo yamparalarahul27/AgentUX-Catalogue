@@ -60,6 +60,8 @@ import { useLabelingStudioTotals } from '../hooks/use-labeling-studio-totals';
 import type { ScreenshotLabel } from '../lib/labeling/types';
 import { deriveLabelFilterValues } from '../lib/labeling/derive-filter-values';
 import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
+import { CatalogueMagnifiedDock } from './CatalogueMagnifiedDock';
+import { useViewportWidth } from '../hooks/use-viewport-width';
 import { CatalogueToolbar } from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
@@ -347,6 +349,10 @@ export function Catalogue({
   const canUpload = useCapability('upload');
   const canShare = useCapability('share');
   const canLabelingStudio = useCapability('labeling_studio');
+  const viewportWidth = useViewportWidth();
+  // Magnified dock replaces the chip strip on desktop; the strip
+  // still renders on mobile (<768px) where the dock would be cramped.
+  const isMobileViewport = viewportWidth < 768;
   const canDeleteAny = useCapability('delete_any');
   const canDeleteOwn = useCapability('delete_own');
   const canEditMetadata = useCapability('edit_metadata');
@@ -812,7 +818,14 @@ export function Catalogue({
         <main className={`catalogue-main${gridDensity !== 'auto' ? ` catalogue-main--density-${gridDensity}` : ''}`}>
           <div className="catalogue-shell">
             <div className="catalogue-body">
-              {CATALOGUE_CHIP_STRIP_ENABLED && (
+              {/* CatalogueGroupChipStrip — hidden on desktop in favour
+                  of CatalogueMagnifiedDock (rendered at the bottom of
+                  this component below). Stays on mobile (<768px) where
+                  the dock's cursor-proximity magnification has no
+                  equivalent touch interaction.
+                  See docs/mockups/catalogue-magnified-dock-2026-05-16.html
+                  for the dock spec. */}
+              {CATALOGUE_CHIP_STRIP_ENABLED && isMobileViewport && (
                 <CatalogueGroupChipStrip
                   stats={groupStats}
                   appearanceMap={appearanceMap}
@@ -1164,6 +1177,18 @@ export function Catalogue({
         onRenameFamily={handleRenameFamily}
       />
       {dragActive && <CatalogueDropOverlay />}
+      {/* Bottom-fixed magnified dock — desktop only. Mobile uses the
+          top chip strip rendered above (gated by isMobileViewport). */}
+      {CATALOGUE_CHIP_STRIP_ENABLED && !isMobileViewport && activeSection === 'catalogue' && (
+        <CatalogueMagnifiedDock
+          stats={groupStats}
+          appearanceMap={appearanceMap}
+          projectId={appearanceProjectId}
+          activeGroupKey={activeChipGroupKey}
+          sortMode={groupSortMode}
+          onSelectGroup={handleSelectChipGroup}
+        />
+      )}
       <CatalogueUploadProgress
         items={upload.uploadProgress}
         onDismiss={upload.dismissUploadProgress}

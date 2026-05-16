@@ -53,7 +53,7 @@ export function deriveGroupStats(screenshots: ScreenshotLike[]): CatalogueGroupS
 
 export type CatalogueGroupSortMode = 'recent' | 'alpha' | 'count';
 
-export const DEFAULT_GROUP_SORT_MODE: CatalogueGroupSortMode = 'recent';
+export const DEFAULT_GROUP_SORT_MODE: CatalogueGroupSortMode = 'alpha';
 
 const GROUP_SORT_KEY = 'catalogue:group-sort-mode';
 
