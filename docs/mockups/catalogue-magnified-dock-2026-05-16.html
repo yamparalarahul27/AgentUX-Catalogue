@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Catalogue magnified dock — v12 (staggered batch swap)</title>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --surface: #18181b;
+    --line: #27272a;
+    --text: #e4e4e7;
+    --muted: #a1a1aa;
+    --accent: #6366f1;
+    --accent-soft: rgba(99, 102, 241, 0.18);
+    --dock-bg: rgba(24, 24, 27, 0.85);
+    --dock-border: rgba(63, 63, 70, 0.7);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+
+  .chrome {
+    position: fixed; top: 0; left: 0; right: 0; height: 64px;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; padding: 0 24px; gap: 12px; z-index: 10;
+  }
+  .chrome__logo { width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, #6366f1, #a855f7); }
+  .chrome__title { font-weight: 600; font-size: 14px; }
+  .chrome__pill { margin-left: auto; padding: 6px 12px;
+    border: 1px solid var(--line); border-radius: 999px;
+    font-size: 12px; color: var(--muted); }
+
+  .grid-wrap { padding: 96px 24px 220px; max-width: 1280px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .tile { aspect-ratio: 9/13;
+    background: linear-gradient(180deg, #1c1c20, #16161a);
+    border: 1px solid var(--line); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #3f3f46; font-size: 12px; }
+
+  .dock-region {
+    position: fixed;
+    left: 50%; bottom: 24px;
+    transform: translateX(-50%);
+    z-index: 50;
+    padding-top: 80px;
+    max-width: calc(100vw - 48px);
+  }
+
+  .dock {
+    --size: 32px;
+    --gap: 10px;
+    display: flex;
+    align-items: flex-end;
+    gap: var(--gap);
+    padding: 10px 14px;
+    background: var(--dock-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--dock-border);
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    overflow: visible;
+    position: relative;
+  }
+
+  .dock-page {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--gap);
+  }
+
+  .chip {
+    width: var(--size);
+    height: var(--size);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #2a2a30, #1a1a1f);
+    border: 1px solid rgba(63, 63, 70, 0.6);
+    color: #e4e4e7;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transform-origin: center bottom;
+    transform: translate3d(var(--nudge, 0), 0, 0) scale(var(--mag, 1));
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), border-color 120ms ease-out;
+    will-change: transform;
+    flex-shrink: 0;
+    user-select: none;
+    position: relative;
+  }
+  .dock:not(.is-paging) .chip:hover { border-color: rgba(99, 102, 241, 0.55); }
+
+  .chip.is-active {
+    background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+    border-color: rgba(165, 180, 252, 0.6);
+    color: #fff;
+  }
+  .chip.is-active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: #a5b4fc;
+  }
+
+  /* ── Staggered chip entry on batch swap ──────────────────
+     Each chip in the new page gets a --stagger-idx set by JS.
+     CSS multiplies that by --stagger-step to compute its
+     animation-delay so the chips cascade in instead of moving
+     as a single block.
+     - fill-mode: backwards keeps the chip invisible during its
+       delay (otherwise it would flash visible before its turn).
+     - After the animation finishes, the chip's transform
+       reverts to the variable-driven rule above, so the
+       magnification math takes over again. */
+  .dock-page[data-swap="next"] .chip {
+    animation: chip-stagger-from-right 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--stagger-idx, 0) * var(--stagger-step, 15ms));
+  }
+  .dock-page[data-swap="prev"] .chip {
+    animation: chip-stagger-from-left 260ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--stagger-idx, 0) * var(--stagger-step, 15ms));
+  }
+  @keyframes chip-stagger-from-right {
+    from { opacity: 0; transform: translate3d(40px, 0, 0) scale(0.85); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+  @keyframes chip-stagger-from-left {
+    from { opacity: 0; transform: translate3d(-40px, 0, 0) scale(0.85); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  .dock-tooltip {
+    position: fixed;
+    z-index: 100;
+    background: rgba(15, 15, 16, 0.96);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 12.5px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translate(-50%, -100%) translateY(-4px);
+    transition: opacity 160ms ease-out, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .dock-tooltip.is-visible { opacity: 1; }
+  .dock-tooltip__count { color: var(--muted); margin-left: 4px; }
+
+  .dock-divider { width: 1px; height: 28px; background: var(--line);
+    margin: 0 6px 4px; align-self: center; }
+  .dock-control {
+    width: 30px; height: 30px;
+    border-radius: 8px; background: transparent;
+    border: 1px solid transparent; color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+    font-family: inherit;
+    font-size: 14px;
+    align-self: center;
+  }
+  .dock-control:hover { background: rgba(255,255,255,0.05); color: var(--text); border-color: var(--line); }
+  .dock-control:disabled { opacity: 0.3; cursor: not-allowed; }
+  .dock-control:disabled:hover { background: transparent; border-color: transparent; color: var(--muted); }
+
+  .dock-mobile-note {
+    background: rgba(24,24,27,0.95);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px 12px;
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+    max-width: 280px;
+  }
+
+  .note {
+    position: fixed; bottom: 220px; left: 24px;
+    max-width: 380px; padding: 14px 16px;
+    background: rgba(15,15,16,0.85);
+    border: 1px solid var(--line); border-radius: 12px;
+    backdrop-filter: blur(8px);
+    color: var(--muted); font-size: 12.5px; line-height: 1.55; z-index: 60;
+  }
+  .note strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 13px; }
+  .note ul { margin: 6px 0 0; padding-left: 16px; }
+  .note li { margin-top: 2px; }
+  .note kbd {
+    display: inline-block; padding: 1px 6px;
+    background: rgba(255,255,255,0.06); border: 1px solid var(--line);
+    border-radius: 4px; font-size: 11px; font-family: inherit;
+  }
+
+  .viewport-meter {
+    position: fixed;
+    top: 80px; left: 24px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 11.5px;
+    color: var(--muted);
+    z-index: 20;
+    font-family: monospace;
+  }
+  .viewport-meter b { color: var(--text); }
+
+  .toolbar {
+    position: fixed; top: 80px; right: 24px;
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--surface); z-index: 20;
+    font-size: 11.5px; color: var(--muted);
+  }
+  .toolbar__row { display: flex; gap: 4px; align-items: center; }
+  .toolbar__label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; margin-right: 6px; min-width: 76px; }
+  .toolbar button {
+    border: none; background: transparent;
+    color: var(--muted); padding: 5px 10px;
+    font-size: 11.5px; border-radius: 6px; cursor: pointer; font-family: inherit;
+  }
+  .toolbar button.is-active { background: var(--accent-soft); color: #c7d2fe; }
+</style>
+</head>
+<body>
+
+<header class="chrome">
+  <div class="chrome__logo"></div>
+  <div class="chrome__title">AgentUX Catalogue</div>
+  <div class="chrome__pill">200 screens · Recent</div>
+</header>
+
+<div class="viewport-meter" id="viewportMeter">vw <b>0</b> · dockMax <b>0</b> · page <b>0</b></div>
+
+<div class="toolbar">
+  <div class="toolbar__row">
+    <span class="toolbar__label">Chip size</span>
+    <button data-size="28">28</button>
+    <button data-size="32" class="is-active">32</button>
+    <button data-size="36">36</button>
+  </div>
+  <div class="toolbar__row">
+    <span class="toolbar__label">Max page</span>
+    <button data-maxpage="20">20</button>
+    <button data-maxpage="25" class="is-active">25</button>
+    <button data-maxpage="30">30</button>
+  </div>
+  <div class="toolbar__row">
+    <span class="toolbar__label">Groups</span>
+    <button data-count="12">12</button>
+    <button data-count="40">40</button>
+    <button data-count="80" class="is-active">80</button>
+  </div>
+  <div class="toolbar__row">
+    <span class="toolbar__label">State</span>
+    <button data-state="resting" class="is-active">Resting</button>
+    <button data-state="active">+Active</button>
+  </div>
+</div>
+
+<main class="grid-wrap"><div class="grid" id="grid"></div></main>
+
+<aside class="note">
+  <strong>v13 — slower, more deliberate cascade</strong>
+  <ul>
+    <li><strong>Cascade total ~1200ms</strong> (vs 300ms in v12) — visible wave</li>
+    <li><strong>Per-chip step capped at 80ms</strong> — small batches don't get sluggish gaps</li>
+    <li><strong>Settle bumped to 1500ms</strong> to cover the longest cascade + per-chip duration</li>
+    <li>Try <kbd>←</kbd> / <kbd>→</kbd> to flip pages and feel the longer wave</li>
+  </ul>
+</aside>
+
+<div class="dock-region" id="dockRegion">
+  <div class="dock" id="dock"></div>
+</div>
+
+<div class="dock-tooltip" id="dockTooltip"></div>
+
+<script>
+  const SCALE = 2.0;
+  const DISTANCE = 110;
+  const NUDGE = 32;
+  const SETTLE_MS = 1500;
+  const MOBILE_BREAKPOINT = 768;
+  const DOCK_HARD_MAX = 1400;
+  const DOCK_RESERVED_WIDTH = 28 + 30 + 30 + 13 + 30 + 24;
+  // Stagger step — total cascade ~1200ms (1.2s). Per-chip step capped
+  // at 80ms so small batches (e.g., 12 chips) don't get huge per-chip
+  // gaps when divided into the total.
+  const MAX_STAGGER_TOTAL_MS = 1200;
+  const STAGGER_STEP_FALLBACK_MS = 80;
+
+  const SEED = [
+    ['binance','Binance','B','#f0b90b',142],
+    ['bybit','Bybit','B','#f7a600',88],
+    ['okx','OKX','O','#3499fd',67],
+    ['aggr','Aggr.watch','A','#74e0a7',42],
+    ['cb','Coinbase','C','#0052ff',95],
+    ['kraken','Kraken','K','#5d40c4',31],
+    ['apex','Apex','A','#facc15',76],
+    ['mexc','MEXC','M','#00b897',23],
+    ['htx','HTX','H','#0d9bd6',19],
+    ['bitget','Bitget','B','#00f7c4',54],
+    ['kucoin','KuCoin','K','#01bd7d',38],
+    ['phantom','Phantom','P','#ab9ff2',12],
+  ];
+  const SUFFIX = ['2','3','X','Y','Z','α','β','δ','ε','ζ'];
+  const ALL = SEED.map((r) => ({ id: r[0], label: r[1], letter: r[2], color: r[3], count: r[4] }));
+  let _i = 0;
+  while (ALL.length < 80) {
+    const s = SEED[_i % SEED.length];
+    const sx = SUFFIX[Math.floor(_i / SEED.length) % SUFFIX.length];
+    ALL.push({ id: `${s[0]}-${sx}-${_i}`, label: `${s[1]} ${sx}`, letter: s[2], color: s[3], count: Math.floor(s[4] * (0.4 + Math.random() * 0.9)) });
+    _i++;
+  }
+
+  let chipSize = 32;
+  let maxPageSize = 25;
+  let groupCount = 80;
+  let pageSize = 25;
+  let currentPage = 0;
+  let activeGroupId = null;
+  let mouseLeft = -Infinity;
+  let pendingFrame = null;
+  let isPaging = false;
+  let settleTimer = null;
+
+  const grid = document.getElementById('grid');
+  for (let i = 0; i < 12; i++) {
+    const t = document.createElement('div');
+    t.className = 'tile'; t.textContent = 'screenshot';
+    grid.appendChild(t);
+  }
+
+  const dock = document.getElementById('dock');
+  const dockRegion = document.getElementById('dockRegion');
+  const tooltip = document.getElementById('dockTooltip');
+  const viewportMeter = document.getElementById('viewportMeter');
+
+  function visibleGroups() { return ALL.slice(0, groupCount); }
+  function pageCount() { return Math.max(1, Math.ceil(visibleGroups().length / pageSize)); }
+  function groupsOnPage(p) {
+    const start = p * pageSize;
+    return visibleGroups().slice(start, start + pageSize);
+  }
+  function pageOfGroup(id) {
+    const idx = visibleGroups().findIndex((g) => g.id === id);
+    return idx < 0 ? 0 : Math.floor(idx / pageSize);
+  }
+
+  function computePageSize() {
+    const vw = window.innerWidth;
+    if (vw < MOBILE_BREAKPOINT) return 0;
+    const dockMax = Math.min(DOCK_HARD_MAX, vw - 48);
+    const chipsArea = dockMax - DOCK_RESERVED_WIDTH;
+    const perChip = chipSize + 10;
+    const fits = Math.max(1, Math.floor(chipsArea / perChip));
+    return Math.min(maxPageSize, fits);
+  }
+
+  function preservePageAcrossResize(oldPageSize) {
+    if (activeGroupId) {
+      currentPage = pageOfGroup(activeGroupId);
+      return;
+    }
+    const firstVisibleIdx = currentPage * oldPageSize;
+    currentPage = Math.floor(firstVisibleIdx / pageSize);
+  }
+
+  function renderDock(swap) {
+    dock.style.setProperty('--size', `${chipSize}px`);
+    dock.innerHTML = '';
+
+    if (pageSize === 0) {
+      const note = document.createElement('div');
+      note.className = 'dock-mobile-note';
+      note.textContent = 'Dock hides below 768px — real app falls back to the existing top chip strip on mobile.';
+      dock.appendChild(note);
+      hideTooltip();
+      return;
+    }
+
+    const total = pageCount();
+    if (total > 1) {
+      const prev = makeControl('‹', 'Previous page', () => goToPage(currentPage - 1, 'prev'));
+      prev.disabled = currentPage === 0;
+      dock.appendChild(prev);
+    }
+    const page = document.createElement('div');
+    page.className = 'dock-page';
+    if (swap) page.dataset.swap = swap;
+
+    const pageChips = groupsOnPage(currentPage);
+    // Stagger step adapts so total cascade caps at MAX_STAGGER_TOTAL_MS.
+    const staggerStep = Math.min(
+      STAGGER_STEP_FALLBACK_MS,
+      Math.max(6, Math.floor(MAX_STAGGER_TOTAL_MS / Math.max(1, pageChips.length - 1)))
+    );
+    page.style.setProperty('--stagger-step', `${staggerStep}ms`);
+
+    pageChips.forEach((group, idx) => {
+      const chip = document.createElement('button');
+      chip.className = 'chip' + (group.id === activeGroupId ? ' is-active' : '');
+      chip.dataset.id = group.id;
+      chip.dataset.label = group.label;
+      chip.dataset.count = group.count;
+      chip.style.background = group.id === activeGroupId
+        ? undefined
+        : `linear-gradient(135deg, ${group.color}cc, ${group.color}80)`;
+      chip.textContent = group.letter;
+      // Stagger index: for next, left-to-right (idx); for prev,
+      // right-to-left so the rightmost chip enters first.
+      const staggerIdx = swap === 'prev' ? (pageChips.length - 1 - idx) : idx;
+      chip.style.setProperty('--stagger-idx', String(staggerIdx));
+      chip.addEventListener('click', () => {
+        if (isPaging) return;
+        activeGroupId = activeGroupId === group.id ? null : group.id;
+        renderDock();
+      });
+      page.appendChild(chip);
+    });
+    dock.appendChild(page);
+    if (total > 1) {
+      const next = makeControl('›', 'Next page', () => goToPage(currentPage + 1, 'next'));
+      next.disabled = currentPage >= total - 1;
+      dock.appendChild(next);
+    }
+    const divider = document.createElement('div');
+    divider.className = 'dock-divider';
+    dock.appendChild(divider);
+    dock.appendChild(makeControl('⇅', 'Sort'));
+    scheduleMagnification();
+  }
+
+  function makeControl(label, title, onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'dock-control';
+    btn.title = title;
+    btn.textContent = label;
+    if (onClick) btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function goToPage(next, direction) {
+    const total = pageCount();
+    if (next < 0 || next >= total) return;
+    currentPage = next;
+    isPaging = true;
+    dock.classList.add('is-paging');
+    hideTooltip();
+    if (settleTimer) clearTimeout(settleTimer);
+    settleTimer = window.setTimeout(() => {
+      isPaging = false;
+      dock.classList.remove('is-paging');
+      scheduleMagnification();
+    }, SETTLE_MS);
+    renderDock(direction);
+  }
+
+  function scheduleMagnification() {
+    if (pendingFrame) return;
+    pendingFrame = requestAnimationFrame(() => {
+      pendingFrame = null;
+      applyMagnification();
+    });
+  }
+
+  function applyMagnification() {
+    const chips = [...dock.querySelectorAll('.chip')];
+    if (chips.length === 0) { hideTooltip(); return; }
+    if (mouseLeft === -Infinity || isPaging) {
+      chips.forEach((chip) => {
+        chip.style.setProperty('--mag', '1');
+        chip.style.setProperty('--nudge', '0px');
+      });
+      hideTooltip();
+      return;
+    }
+    let focusedChip = null;
+    let focusedDist = Infinity;
+    chips.forEach((chip) => {
+      const chipRect = chip.getBoundingClientRect();
+      const dockRect = dock.getBoundingClientRect();
+      const chipCenter = (chipRect.left - dockRect.left) + chipRect.width / 2;
+      const d = mouseLeft - chipCenter;
+      const absD = Math.abs(d);
+      let scale;
+      if (absD >= DISTANCE) scale = 1;
+      else                  scale = 1 + (SCALE - 1) * (1 - absD / DISTANCE);
+      let nudge;
+      if (absD >= DISTANCE) nudge = Math.sign(d) * -NUDGE;
+      else                  nudge = (-d / DISTANCE) * NUDGE * scale;
+      chip.style.setProperty('--mag', String(scale));
+      chip.style.setProperty('--nudge', `${nudge}px`);
+      if (absD < focusedDist) {
+        focusedDist = absD;
+        focusedChip = chip;
+      }
+    });
+    if (focusedChip && focusedDist < DISTANCE * 0.4) {
+      showTooltip(focusedChip);
+    } else {
+      hideTooltip();
+    }
+  }
+
+  function showTooltip(chip) {
+    const rect = chip.getBoundingClientRect();
+    tooltip.innerHTML = `<span>${chip.dataset.label}</span><span class="dock-tooltip__count">· ${chip.dataset.count}</span>`;
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.top = `${rect.top}px`;
+    tooltip.classList.add('is-visible');
+  }
+  function hideTooltip() { tooltip.classList.remove('is-visible'); }
+
+  dockRegion.addEventListener('mousemove', (e) => {
+    const rect = dock.getBoundingClientRect();
+    mouseLeft = e.clientX - rect.left;
+    scheduleMagnification();
+  });
+  dockRegion.addEventListener('mouseleave', () => {
+    mouseLeft = -Infinity;
+    scheduleMagnification();
+  });
+
+  let dockHovered = false;
+  dockRegion.addEventListener('mouseenter', () => { dockHovered = true; });
+  dockRegion.addEventListener('mouseleave', () => { dockHovered = false; });
+  document.addEventListener('keydown', (e) => {
+    if (!dockHovered || pageSize === 0) return;
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); goToPage(currentPage - 1, 'prev'); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); goToPage(currentPage + 1, 'next'); }
+  });
+
+  function bindGroup(sel, attr, apply) {
+    document.querySelectorAll(sel).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll(sel).forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        apply(btn.dataset[attr]);
+      });
+    });
+  }
+  bindGroup('[data-size]', 'size', (v) => { chipSize = parseInt(v, 10); recomputeAndRender(); });
+  bindGroup('[data-maxpage]', 'maxpage', (v) => { maxPageSize = parseInt(v, 10); recomputeAndRender(); });
+  bindGroup('[data-count]', 'count', (v) => { groupCount = parseInt(v, 10); currentPage = 0; recomputeAndRender(); });
+  bindGroup('[data-state]', 'state', (v) => {
+    activeGroupId = v === 'active' ? 'aggr' : null;
+    if (activeGroupId) currentPage = pageOfGroup(activeGroupId);
+    renderDock();
+  });
+
+  function recomputeAndRender() {
+    const oldPageSize = pageSize;
+    pageSize = computePageSize();
+    if (pageSize !== oldPageSize) {
+      preservePageAcrossResize(oldPageSize || 1);
+    }
+    updateViewportMeter();
+    renderDock();
+  }
+
+  function updateViewportMeter() {
+    const vw = window.innerWidth;
+    const dockMax = Math.min(DOCK_HARD_MAX, vw - 48);
+    viewportMeter.innerHTML = `vw <b>${vw}</b> · dockMax <b>${dockMax}</b> · page <b>${pageSize || 'hidden'}</b>`;
+  }
+
+  window.addEventListener('resize', recomputeAndRender);
+  recomputeAndRender();
+</script>
+
+</body>
+</html>
