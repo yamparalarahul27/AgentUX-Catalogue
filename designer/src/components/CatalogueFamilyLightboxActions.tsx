@@ -1,4 +1,4 @@
-import { Bookmark, Crop, MapPin, MessageCircle, Pencil, RefreshCw, Trash2 } from 'lucide-react';
+import { Bookmark, Crop, Link2, MapPin, MessageCircle, Pencil, RefreshCw, Trash2 } from 'lucide-react';
 
 import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
@@ -31,6 +31,10 @@ interface CatalogueFamilyLightboxActionsProps {
   hideCatalogueActions?: boolean;
   isBookmarked?: boolean;
   onToggleBookmark?: () => void;
+  // Single-screenshot share. Optional — if omitted, the Share icon
+  // isn't rendered (e.g., when the lightbox shows a non-shareable
+  // surface like the Labelling Studio context).
+  onShareLink?: () => void;
   onDelete: () => void;
   onFlowChange: (value: string) => void;
   onGroupChange: (value: string) => void;
@@ -72,6 +76,7 @@ export function CatalogueFamilyLightboxActions({
   hideCatalogueActions = false,
   isBookmarked,
   onToggleBookmark,
+  onShareLink,
   onDelete,
   onFlowChange,
   onGroupChange,
@@ -118,6 +123,17 @@ export function CatalogueFamilyLightboxActions({
             aria-pressed={Boolean(isBookmarked)}
           >
             <Bookmark size={15} fill={isBookmarked ? 'currentColor' : 'none'} />
+          </button>
+        )}
+        {!hideCatalogueActions && onShareLink && (
+          <button
+            type="button"
+            className="catalogue-lightbox-icon-btn"
+            onClick={onShareLink}
+            title="Copy share link to this screenshot"
+            aria-label="Copy share link to this screenshot"
+          >
+            <Link2 size={15} />
           </button>
         )}
         <span className="catalogue-lightbox-icon-bar__spacer" />

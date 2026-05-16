@@ -115,6 +115,7 @@ export function CatalogueShareModal({
   async function handleCopy() {
     if (!canShare || !group || !flow || !platform) return;
     const url = buildShareUrl({
+      mode: 'filter',
       group,
       flow,
       platform,

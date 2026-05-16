@@ -48,6 +48,21 @@ function getLabelSummary(screenshot: ScreenshotNode): string | null {
 }
 
 async function fetchShareScreenshots(params: ShareParams): Promise<ScreenshotNode[]> {
+  if (params.mode === 'single') {
+    // Single-screenshot mode — fetch one row by id. Anon SELECT on
+    // screenshots is allowed for deleted_at = null (see PR #81 RLS).
+    const { data, error } = await supabase
+      .from('screenshots')
+      .select('*')
+      .is('deleted_at', null)
+      .eq('id', params.screenshotId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) return [];
+    const publicUrl = supabase.storage.from('screenshots').getPublicUrl(data.storage_path).data.publicUrl;
+    return [{ ...data, image_url: publicUrl } as ScreenshotNode];
+  }
+
   const flowKey = `metadata->>${CATALOGUE_FLOW_LABEL_KEY}`;
   const { data, error } = await supabase
     .from('screenshots')
@@ -65,6 +80,12 @@ async function fetchShareScreenshots(params: ShareParams): Promise<ScreenshotNod
     const publicUrl = supabase.storage.from('screenshots').getPublicUrl(row.storage_path).data.publicUrl;
     return { ...row, image_url: publicUrl } as ScreenshotNode;
   });
+}
+
+function flowLabelFromMetadata(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const raw = (metadata as Record<string, unknown>)[CATALOGUE_FLOW_LABEL_KEY];
+  return typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : null;
 }
 
 function readViewFromUrl(): ShareView {
@@ -134,10 +155,48 @@ export function SharePage() {
     if (nextView === 'list') setStep(0);
   }, []);
 
-  const title = params?.title || (params ? `${params.group} · ${params.flow}` : 'Shared view');
-  const platform = params?.platform === 'mobile' ? 'mobile' : params?.platform === 'web' ? 'web' : null;
+  // Mode-aware derivations. Single mode pulls context (title, group,
+  // flow, platform) from the fetched screenshot itself; filter mode
+  // uses the URL params.
+  const isSingleMode = params?.mode === 'single';
+  const singleScreenshot =
+    isSingleMode && state.kind === 'ready' && state.screenshots.length > 0
+      ? state.screenshots[0]
+      : null;
+
+  let title: string;
+  let groupLabel: string | null;
+  let flowLabel: string | null;
+  let platform: 'mobile' | 'web' | null;
+  if (params?.mode === 'filter') {
+    title = params.title || `${params.group} · ${params.flow}`;
+    groupLabel = params.group;
+    flowLabel = params.flow;
+    platform = params.platform;
+  } else if (singleScreenshot) {
+    title = singleScreenshot.name || 'Shared screenshot';
+    groupLabel = singleScreenshot.group ?? null;
+    flowLabel = flowLabelFromMetadata(singleScreenshot.metadata);
+    platform = singleScreenshot.platform === 'mobile' ? 'mobile'
+      : singleScreenshot.platform === 'web' ? 'web' : null;
+  } else {
+    title = isSingleMode ? 'Loading screenshot…' : 'Shared view';
+    groupLabel = null;
+    flowLabel = null;
+    platform = null;
+  }
+
   const sharer = params?.by ? params.by.split('@')[0] : null;
   const sharerCapitalized = sharer ? sharer.charAt(0).toUpperCase() + sharer.slice(1) : null;
+
+  // "See all screens" link in single mode — points to the main
+  // catalogue with the group filter pre-selected (catalogue reads
+  // `?group=` on mount). This is the authed-user path; anon visitors
+  // will hit the auth gate.
+  const seeAllScreensHref = useMemo(() => {
+    if (!isSingleMode || !groupLabel) return null;
+    return `/designer/?group=${encodeURIComponent(groupLabel)}`;
+  }, [isSingleMode, groupLabel]);
 
   const lastUpdated = useMemo<Date | null>(() => {
     if (state.kind !== 'ready' || state.screenshots.length === 0) return null;
@@ -158,7 +217,8 @@ export function SharePage() {
   }, [state]);
 
   const screenCount = state.kind === 'ready' ? state.screenshots.length : 0;
-  const showToggle = state.kind === 'ready' && screenCount > 1;
+  // Single-screenshot mode never shows the list/carousel toggle.
+  const showToggle = !isSingleMode && state.kind === 'ready' && screenCount > 1;
   const lastUpdatedRelative = lastUpdated ? formatRelativeTime(lastUpdated) : null;
   const lastUpdatedAbsolute = lastUpdated ? formatAbsoluteDateTime(lastUpdated) : null;
 
@@ -184,9 +244,9 @@ export function SharePage() {
         <section className="share-page__intro">
           <div className="share-page__intro-head">
             <h1>
-              {params?.group && (
+              {groupLabel && (
                 <CatalogueGroupLabel
-                  group={params.group}
+                  group={groupLabel}
                   iconOnly
                   iconSize={28}
                   className="share-page__title-icon"
@@ -229,10 +289,21 @@ export function SharePage() {
                   <span>{sharerCapitalized}</span>
                 </span>
               )}
-              <span className="share-page__meta-item">
-                <Images size={14} aria-hidden="true" />
-                <span>{screenCount}</span>
-              </span>
+              {/* Single mode swaps the screenshot-count chip for the
+                  group · flow context that filter mode encodes in its
+                  H1 title. */}
+              {isSingleMode ? (
+                groupLabel && flowLabel && (
+                  <span className="share-page__meta-item">
+                    <span>{groupLabel} · {flowLabel}</span>
+                  </span>
+                )
+              ) : (
+                <span className="share-page__meta-item">
+                  <Images size={14} aria-hidden="true" />
+                  <span>{screenCount}</span>
+                </span>
+              )}
               {platform && (
                 <span className="share-page__meta-item">
                   {platform === 'mobile' ? <Smartphone size={14} aria-hidden="true" /> : <Monitor size={14} aria-hidden="true" />}
@@ -260,11 +331,29 @@ export function SharePage() {
         {state.kind === 'ready' && screenCount === 0 && (
           <div className="share-page__state">
             <Inbox size={28} aria-hidden="true" />
-            <p>No screens match this share.</p>
+            <p>{isSingleMode ? 'This screenshot is no longer available.' : 'No screens match this share.'}</p>
           </div>
         )}
 
-        {state.kind === 'ready' && screenCount > 0 && view === 'list' && (
+        {/* Single-screenshot mode — hero image, no carousel chrome. */}
+        {isSingleMode && singleScreenshot && (
+          <div className="share-page__hero">
+            <div className="share-page__hero-image">
+              <ThumbHashImage
+                src={singleScreenshot.image_url ?? ''}
+                thumbHash={singleScreenshot.thumb_hash ?? null}
+                alt={singleScreenshot.name}
+              />
+            </div>
+            {seeAllScreensHref && (
+              <a className="share-page__hero-link" href={seeAllScreensHref}>
+                See all screens →
+              </a>
+            )}
+          </div>
+        )}
+
+        {!isSingleMode && state.kind === 'ready' && screenCount > 0 && view === 'list' && (
           <ol className="share-page__list">
             {carouselItems.map((item, index) => (
               <li key={item.screenshot.id} className="share-page__item">
@@ -284,7 +373,7 @@ export function SharePage() {
           </ol>
         )}
 
-        {state.kind === 'ready' && screenCount > 0 && view === 'carousel' && (
+        {!isSingleMode && state.kind === 'ready' && screenCount > 0 && view === 'carousel' && (
           <SharePageCarousel items={carouselItems} step={step} onStepChange={setStep} />
         )}
       </main>
