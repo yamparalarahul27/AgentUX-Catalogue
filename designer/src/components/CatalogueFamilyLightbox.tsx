@@ -19,6 +19,7 @@ import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions
 import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { EditableTitle } from './EditableTitle';
 import { LabelEditor } from './labeling/LabelEditor';
 import { AI_LABELING_PROMPT } from '../lib/labeling/ai-prompt';
 import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib/feature-flags';
@@ -590,7 +591,13 @@ export function CatalogueFamilyLightbox({
     <div className="catalogue-lightbox" onClick={onClose}>
       <div className="catalogue-lightbox-header" onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-name-wrap">
-          <span className="catalogue-lightbox-name">{family.name}</span>
+          <EditableTitle
+            as="span"
+            className="catalogue-lightbox-name"
+            value={family.name}
+            canEdit={canEditMetadata}
+            onSave={(next) => onRenameFamily(family.id, next)}
+          />
         </div>
         {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={family.project_id} /></span>}
         {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}

@@ -7,6 +7,7 @@ import type { MobileOs, WebPreset } from '../types';
 import { CatalogueGalleryFeedbackPanel } from './CatalogueGalleryFeedbackPanel';
 import { CatalogueGalleryInlineEditor, type CatalogueGalleryInlineDraft } from './CatalogueGalleryInlineEditor';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { EditableTitle } from './EditableTitle';
 
 interface CatalogueGalleryViewProps {
   activeVariantKeys: Record<string, string>;
@@ -594,7 +595,13 @@ export function CatalogueGalleryView({
       <aside className="catalogue-gallery-meta catalogue-gallery-meta--family">
         <div className="catalogue-gallery-meta-head catalogue-gallery-meta-head--stack">
           <div className="catalogue-gallery-meta-copy">
-            <h3 className="catalogue-gallery-title">{family.name}</h3>
+            <EditableTitle
+              as="h3"
+              className="catalogue-gallery-title"
+              value={family.name}
+              canEdit={canEdit}
+              onSave={(next) => onRenameFamily(family.id, next)}
+            />
             <p className="catalogue-gallery-subtitle">
               <CatalogueGroupLabel group={family.group} projectId={family.project_id} />
             </p>

@@ -60,6 +60,9 @@ interface CatalogueContentProps {
   // Hide the card delete affordance when the caller lacks permission
   // for this specific family (delete_any, or delete_own + ownership).
   canDeleteFamily: (family: CatalogueFamilyView) => boolean;
+  // Gate the click-to-edit on the stack card title (and the gallery
+  // view title, which uses the same predicate via canEdit below).
+  canEditFamily: (family: CatalogueFamilyView) => boolean;
 }
 
 export function CatalogueContent({
@@ -101,6 +104,7 @@ export function CatalogueContent({
   onToggleBookmark,
   onShareLink,
   canDeleteFamily,
+  canEditFamily,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
     searchQuery ||
@@ -138,6 +142,8 @@ export function CatalogueContent({
           onOpenPreview={onOpenPreview}
           onToggleGroupSelect={onToggleGroupSelect}
           onToggleSelect={onToggleSelect}
+          onRenameFamily={onRenameFamily}
+          canEditFamily={canEditFamily}
         />
         <CatalogueScrollSentinel hasMore={hasMore} loadingMore={loadingMore} onLoadMore={onLoadMore} />
       </>
