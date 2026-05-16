@@ -1,0 +1,157 @@
+// ---- Welcome modal ----
+//
+// One-shot first-login moment. Hero handwriting from Tegaki loops between
+// English (Caveat) and Hindi (Tillana). Backlog for Kannada/Malayalam/Telugu
+// lives in docs/welcome-modal-fonts-backlog.md.
+
+.welcome-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+  animation: welcome-modal-backdrop-in 200ms ease-out;
+}
+
+.welcome-modal__card {
+  position: relative;
+  width: min(520px, 100%);
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  padding: 56px 40px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  animation: welcome-modal-card-in 280ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.welcome-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #71717a;
+  font-size: 22px;
+  line-height: 1;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: #f4f4f5;
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+// Hero handwriting. Tegaki renders into a child element; its font-size
+// inherits from here. min-height holds the layout still across the
+// width-varying glyphs of EN vs HI so the modal doesn't reflow per swap.
+.welcome-modal__handwriting {
+  font-size: 72px;
+  line-height: 1.1;
+  color: #fafafa;
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // Matches FADE_MS in WelcomeModal.tsx. Keep in sync if the JS value changes.
+  transition: opacity 350ms ease;
+  opacity: 1;
+
+  &--fading {
+    opacity: 0;
+  }
+}
+
+.welcome-modal__subtitle {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #a1a1aa;
+  text-align: center;
+  max-width: 380px;
+
+  a {
+    color: #a5b4fc;
+    text-decoration: none;
+    transition: color 0.15s;
+
+    &:hover {
+      color: #c7d2fe;
+      text-decoration: underline;
+    }
+  }
+}
+
+.welcome-modal__cta {
+  margin-top: 4px;
+  padding: 10px 22px;
+  background: #6366f1;
+  color: #fafafa;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, transform 0.1s;
+
+  &:hover  { background: #4f46e5; }
+  &:active { transform: scale(0.98); }
+  &:focus-visible {
+    outline: 2px solid #a5b4fc;
+    outline-offset: 2px;
+  }
+}
+
+@keyframes welcome-modal-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes welcome-modal-card-in {
+  from { transform: translateY(12px) scale(0.96); opacity: 0; }
+  to   { transform: translateY(0) scale(1);       opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .welcome-modal__card {
+    padding: 48px 24px 28px;
+    gap: 22px;
+  }
+
+  .welcome-modal__handwriting {
+    font-size: 56px;
+    min-height: 68px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-modal__backdrop,
+  .welcome-modal__card {
+    animation: none;
+  }
+
+  .welcome-modal__handwriting {
+    transition: none;
+  }
+}
