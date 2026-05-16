@@ -20,6 +20,7 @@ import {
 import { parseShareUrl, type ShareParams } from '../lib/share-url';
 import { supabase } from '../lib/supabase';
 import type { ScreenshotNode } from '../types';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { SharePageCarousel, type SharePageCarouselItem } from './SharePageCarousel';
 import { ThumbHashImage } from './ThumbHashImage';
 
@@ -67,8 +68,11 @@ async function fetchShareScreenshots(params: ShareParams): Promise<ScreenshotNod
 }
 
 function readViewFromUrl(): ShareView {
-  if (typeof window === 'undefined') return 'list';
-  return new URLSearchParams(window.location.search).get('view') === 'carousel' ? 'carousel' : 'list';
+  // Carousel is the default share-view; `?view=list` is the opt-out.
+  // (Previously the default was 'list' and `?view=carousel` opted in;
+  // flipped on 2026-05-16 — see parked_share_page_polish memory.)
+  if (typeof window === 'undefined') return 'carousel';
+  return new URLSearchParams(window.location.search).get('view') === 'list' ? 'list' : 'carousel';
 }
 
 function readStepFromUrl(): number {
@@ -81,7 +85,9 @@ function readStepFromUrl(): number {
 function writeUrl(view: ShareView, step: number) {
   if (typeof window === 'undefined') return;
   const params = new URLSearchParams(window.location.search);
-  if (view === 'carousel') params.set('view', 'carousel');
+  // Carousel is the default — keep URLs clean by writing `?view=list`
+  // only when the user opts out. Step is carousel-only.
+  if (view === 'list') params.set('view', 'list');
   else params.delete('view');
   if (view === 'carousel' && step > 0) params.set('step', String(step + 1));
   else params.delete('step');
@@ -177,7 +183,17 @@ export function SharePage() {
       <main className="share-page__main">
         <section className="share-page__intro">
           <div className="share-page__intro-head">
-            <h1>{title}</h1>
+            <h1>
+              {params?.group && (
+                <CatalogueGroupLabel
+                  group={params.group}
+                  iconOnly
+                  iconSize={28}
+                  className="share-page__title-icon"
+                />
+              )}
+              <span>{title}</span>
+            </h1>
             {showToggle && (
               <div className="share-page__view-toggle" role="radiogroup" aria-label="View mode">
                 <button

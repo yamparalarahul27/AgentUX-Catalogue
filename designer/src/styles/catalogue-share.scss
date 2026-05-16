@@ -172,7 +172,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 24px;
+  // Tightened from 24px → 16px so screenshots take more of the viewport.
+  // Mobile already lives at 16px elsewhere.
+  padding: 18px 16px;
   border-bottom: 1px solid #27272a;
 
   &--centered {
@@ -216,10 +218,13 @@
 
 .share-page__main {
   flex: 1;
-  max-width: 1280px;
+  // Bumped from 1280 → 1440 so screenshots have more room at wider
+  // viewports. Paired with the carousel-center bump below.
+  max-width: 1440px;
   width: 100%;
   margin: 0 auto;
-  padding: 48px 24px 64px;
+  // L/R tightened from 24px → 16px. Top/bottom unchanged.
+  padding: 48px 16px 64px;
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -245,7 +250,16 @@
     color: #fafafa;
     flex: 1;
     min-width: 0;
+    // Group icon sits inline before the title text — flex layout keeps
+    // them aligned to the baseline-ish midline with a small gap.
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
+}
+
+.share-page__title-icon {
+  flex-shrink: 0;
 }
 
 .share-page__view-toggle {
@@ -417,7 +431,9 @@
 .share-page__carousel-center {
   flex: 0 1 auto;
   width: 100%;
-  max-width: 720px;
+  // Bumped from 720 → 960 so the focused screenshot takes more of the
+  // viewport on wider screens.
+  max-width: 960px;
   border: 1px solid #27272a;
   border-radius: 14px;
   overflow: hidden;
@@ -580,7 +596,8 @@
 
 .share-page__footer {
   border-top: 1px solid #27272a;
-  padding: 20px 24px;
+  // L/R tightened from 24px → 16px to match top + main.
+  padding: 20px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -649,3 +666,7 @@
     grid-template-columns: 1fr;
   }
 }
+
+// (Removed: a previous iteration tightened side paddings to 8px above
+// 1440px. User feedback on 2026-05-16 — 16px feels right at every
+// width. Left this comment so the next person doesn't re-introduce it.)
