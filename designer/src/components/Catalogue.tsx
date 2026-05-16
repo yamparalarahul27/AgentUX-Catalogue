@@ -545,8 +545,9 @@ export function Catalogue({
     },
   });
 
-  // Cmd+K (or Ctrl+K) / Option+Space opens the categorised search modal.
-  // Restricted to the catalogue section so it doesn't fire on other tabs.
+  // Cmd+K (or Ctrl+K) / Option+Space / `/` opens the categorised search
+  // modal. Restricted to the catalogue section so it doesn't fire on
+  // other tabs.
   useCatalogueSearchShortcut({
     enabled: activeSection === 'catalogue',
     onOpen: () => setShowSearchModal(true),
