@@ -460,7 +460,7 @@ export function CatalogueToolbar({
               type="button"
               className="catalogue-toolbar-search catalogue-toolbar--desktop-only"
               onClick={onOpenSearch}
-              title="Search catalogue (⌘K)"
+              title="Search catalogue (⌘K or /)"
               aria-label="Search catalogue"
             >
               <Search size={16} />
