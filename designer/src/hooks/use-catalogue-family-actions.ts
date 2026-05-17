@@ -139,7 +139,6 @@ export function useCatalogueFamilyActions({
   // project. Caller passes the full list of casings so a single UPDATE
   // sweeps every variant. Returns the count of rows updated.
   const handleRenameGroupKey = useCallback(async (
-    projectId: string,
     oldNames: string[],
     newName: string,
   ): Promise<{ ok: boolean; updatedCount: number; error?: string }> => {
@@ -153,10 +152,13 @@ export function useCatalogueFamilyActions({
       return { ok: true, updatedCount: 0 };
     }
 
+    // Rename applies cross-project — every screenshot with a matching group
+    // name (case-sensitive against `sources`) gets the new name regardless of
+    // which project it lives in. RLS gates this to screenshots the caller can
+    // edit via the `edit_metadata` capability.
     const { data, error } = await supabase
       .from('screenshots')
       .update({ group: trimmedNew })
-      .eq('project_id', projectId)
       .in('group', sources)
       .select('id');
 

@@ -53,7 +53,6 @@ interface CatalogueTeamSectionProps {
   // any of `oldNames`. The Team checklist groups by lowercase canonical,
   // so the source list catches all DB variants under one click.
   onRenameGroupKey?: (
-    projectId: string,
     oldNames: string[],
     newName: string,
   ) => Promise<{ ok: boolean; updatedCount: number; error?: string }>;
@@ -286,30 +285,26 @@ export function CatalogueTeamSection({
 
   // Save handler. If the editor's name draft differs from the original
   // canonical key (case-insensitive), surface a confirm dialog before
-  // doing the project-wide rename + appearance save. The rename catches
-  // every DB casing under that canonical (e.g. "Coinbase" + "coinbase").
+  // doing the cross-project rename + appearance save. The rename catches
+  // every DB casing under that canonical (e.g. "Coinbase" + "coinbase")
+  // across every project the user has access to.
   async function saveGroupAppearance(group: string) {
     setGroupSaveMessage(null);
     const trimmedDraft = groupLabelDraft.trim();
     const canonical = group.toLowerCase();
     const isRename = Boolean(onRenameGroupKey)
-      && projectId !== null
       && trimmedDraft.length > 0
       && trimmedDraft.toLowerCase() !== canonical;
 
     if (isRename) {
       const sourceCasings = [...new Set(
         screenshots
-          .filter((screenshot) => (
-            screenshot.project_id === projectId
-            && (screenshot.group ?? '').toLowerCase() === canonical
-          ))
+          .filter((screenshot) => (screenshot.group ?? '').toLowerCase() === canonical)
           .map((screenshot) => screenshot.group ?? '')
           .filter(Boolean),
       )];
       const sourceCount = screenshots.filter((screenshot) => (
-        screenshot.project_id === projectId
-        && (screenshot.group ?? '').toLowerCase() === canonical
+        (screenshot.group ?? '').toLowerCase() === canonical
       )).length;
       setRenameConfirm({ group, newName: trimmedDraft, count: sourceCount, sourceCasings });
       return;
@@ -330,11 +325,11 @@ export function CatalogueTeamSection({
   }
 
   async function performRenameAndSave() {
-    if (!renameConfirm || !onRenameGroupKey || !projectId) return;
+    if (!renameConfirm || !onRenameGroupKey) return;
     const { group, newName, sourceCasings } = renameConfirm;
     setIsSavingGroupAppearance(true);
     try {
-      const renameResult = await onRenameGroupKey(projectId, sourceCasings, newName);
+      const renameResult = await onRenameGroupKey(sourceCasings, newName);
       if (!renameResult.ok) {
         setGroupSaveMessage(renameResult.error || 'Rename failed');
         return;
