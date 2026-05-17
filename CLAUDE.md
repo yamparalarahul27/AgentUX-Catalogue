@@ -23,6 +23,8 @@ Why: silent visual decisions burn time. ASCII forces a shared mental model befor
 
 **4. Goal-driven execution.** Transform tasks into verifiable goals. "Add validation" → "write tests for invalid inputs, then make them pass." "Fix the bug" → "write a test that reproduces it, then make it pass." Loop until verified.
 
+**5. Verify before asserting.** Never reference a field, column, function, file, env var, or capability without first confirming it exists (grep / Read / schema lookup). Don't pattern-match from "a project like this usually has X" — check what *this* project actually has. If a name surfaces from memory or guesswork, treat it as a hypothesis and verify before mentioning it in a question, recommendation, or design. Saying "we have `foo_count` already" when no such field exists wastes a turn and degrades trust.
+
 These bias toward caution over speed. For trivial tasks, use judgment.
 
 ## Project conventions

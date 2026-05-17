@@ -57,11 +57,8 @@ interface SortConfig {
 
 function sortConfigFor(sortBy: CatalogueSortOption): SortConfig {
   switch (sortBy) {
-    case 'date-asc':
-      return { column: 'created_at', ascending: true };
     case 'name-asc':
       return { column: 'name', ascending: true };
-    case 'date-desc':
     case 'date-desc-global':
     default:
       return { column: 'created_at', ascending: false };
@@ -78,9 +75,8 @@ interface UseCatalogueDataArgs {
  * Cursor-paginated catalogue data hook with server-side filtering + sort + search.
  *
  * Sort options map to cursor columns:
- *   date-desc / date-desc-global → (created_at DESC, id DESC)
- *   date-asc                      → (created_at ASC, id ASC)
- *   name-asc                      → (name ASC, id ASC)
+ *   date-desc-global → (created_at DESC, id DESC)
+ *   name-asc         → (name ASC, id ASC)
  *
  * Filters are applied as Supabase query predicates. Search is ilike on
  * name + file_name (requires pg_trgm indexes — see SQL migration).
