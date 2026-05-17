@@ -435,10 +435,8 @@ export function CatalogueToolbar({
               value={sortBy}
               placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
               options={[
-                { value: 'date-desc-global', label: 'Date: Latest (All groups)' },
-                { value: 'date-desc', label: 'Date: Latest' },
-                { value: 'date-asc', label: 'Date: Oldest' },
-                { value: 'name-asc', label: 'Name: A-Z' },
+                { value: 'date-desc-global', label: 'Latest' },
+                { value: 'name-asc', label: 'Group View' },
               ]}
               onChange={(value) => onSortByChange((value || 'date-desc-global') as CatalogueSortOption)}
               disabled={isSortLocked}

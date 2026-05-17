@@ -34,13 +34,13 @@
   position: sticky;
   top: 0;
   z-index: 120;
-  margin-bottom: 24px;
+  margin-bottom: 4px;
   background: linear-gradient(180deg, rgba(15, 15, 16, 0.96) 0%, rgba(15, 15, 16, 0.92) 70%, rgba(15, 15, 16, 0) 100%);
   backdrop-filter: blur(18px);
 }
 
 .catalogue-toolbar {
-  padding: 18px 0 14px;
+  padding: 12px 0;
 }
 
 .catalogue-filter-toggle {
@@ -70,7 +70,7 @@
 
   // Each filter dropdown holds its natural width and overflows the wrapper
   // instead of compressing.
-  > * {
+  >* {
     flex-shrink: 0;
   }
 
@@ -455,7 +455,10 @@
     border-radius: 12px;
     background: #15151a;
 
-    svg { flex-shrink: 0; color: #71717a; }
+    svg {
+      flex-shrink: 0;
+      color: #71717a;
+    }
 
     input {
       flex: 1;
@@ -467,7 +470,9 @@
       font-family: inherit;
       outline: none;
 
-      &::placeholder { color: #52525b; }
+      &::placeholder {
+        color: #52525b;
+      }
     }
   }
 
