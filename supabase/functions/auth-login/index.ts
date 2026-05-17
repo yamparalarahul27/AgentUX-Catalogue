@@ -94,7 +94,10 @@ serve(async (req) => {
     return json({ error: 'invalid_credentials' }, 401);
   }
 
-  // Success: reset counters and stamp the login.
+  // Success: reset counters and stamp the login. Capture the pre-update
+  // value of last_login_at before we overwrite it — the client uses this
+  // to gate the welcome modal (shown once, on the very first login).
+  const wasFirstLogin = row.last_login_at === null;
   await supabase
     .from('user_passcodes')
     .update({
@@ -135,6 +138,7 @@ serve(async (req) => {
     refresh_token: sessionData.session.refresh_token,
     expires_in: sessionData.session.expires_in,
     expires_at: sessionData.session.expires_at,
+    is_first_login: wasFirstLogin,
   });
 });
 

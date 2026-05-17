@@ -32,6 +32,7 @@ import './styles/catalogue-share.scss';
 import './styles/catalogue-search-modal.scss';
 import './styles/editable-title.scss';
 import './styles/catalogue-magnified-dock.scss';
+import './styles/welcome-modal.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

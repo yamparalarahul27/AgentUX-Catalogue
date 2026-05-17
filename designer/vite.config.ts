@@ -30,6 +30,19 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
+  // Tegaki's font bundles use `import fontUrl from './foo.ttf' with { type: 'url' }`,
+  // which Vite's pre-bundler (esbuild) doesn't emit alongside the JS — the
+  // runtime fetch 404s. Excluding tegaki keeps font URLs resolving via Vite's
+  // normal asset pipeline. But that also makes Vite miss the dynamic
+  // `import('harfbuzzjs/hb.js')` inside tegaki's source — harfbuzzjs is plain
+  // CJS (`module.exports = …`), so without pre-bundling the ESM default is
+  // undefined and shaper-harfbuzz crashes with "hbMod.default is not a function".
+  // Explicitly including the two harfbuzzjs subpaths forces Vite to pre-bundle
+  // (CJS → ESM) those without re-pre-bundling tegaki itself.
+  optimizeDeps: {
+    exclude: ['tegaki'],
+    include: ['harfbuzzjs/hb.js', 'harfbuzzjs/hbjs.js'],
+  },
   build: {
     outDir: '../site/designer',
     emptyOutDir: true,

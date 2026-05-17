@@ -18,9 +18,14 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 export type RedeemResult =
-  | { ok: true }
+  | { ok: true; isFirstLogin: boolean }
   | { ok: false; code: 'invalid_credentials' | 'disabled' | 'network' | 'unknown' }
   | { ok: false; code: 'locked'; retryAfter: string };
+
+// sessionStorage key the WelcomeModal reads on mount. Set here (during
+// redemption) and cleared by the modal so it survives the gate flip from
+// PasscodeLogin → Catalogue but doesn't replay on subsequent renders.
+export const WELCOME_FLAG = 'agentux:welcome-pending';
 
 export async function redeemPasscode(email: string, passcode: string): Promise<RedeemResult> {
   let res: Response;
@@ -59,7 +64,17 @@ export async function redeemPasscode(email: string, passcode: string): Promise<R
   });
   if (error) return { ok: false, code: 'unknown' };
 
-  return { ok: true };
+  const isFirstLogin = Boolean(body.is_first_login);
+  if (isFirstLogin) {
+    try {
+      window.sessionStorage.setItem(WELCOME_FLAG, '1');
+    } catch {
+      // Private-mode / disabled storage — silently skip. Worst case the
+      // user doesn't see the welcome modal, which is harmless.
+    }
+  }
+
+  return { ok: true, isFirstLogin };
 }
 
 // ────────────────────────────────────────────────────────────────────

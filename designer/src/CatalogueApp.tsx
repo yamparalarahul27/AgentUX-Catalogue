@@ -4,6 +4,7 @@ import { useAuth } from './lib/useAuth';
 import { Catalogue } from './components/Catalogue';
 import { PasscodeLogin } from './components/PasscodeLogin';
 import { SharePage } from './components/SharePage';
+import { WelcomeModal } from './components/WelcomeModal';
 import { isSharePath } from './lib/share-url';
 
 export function CatalogueApp() {
@@ -31,6 +32,7 @@ export function CatalogueApp() {
   return (
     <>
       <Catalogue user={user} onLogout={logout} onLogoutEverywhere={logoutEverywhere} />
+      <WelcomeModal />
       {import.meta.env.DEV && <Agentation />}
     </>
   );
