@@ -6,13 +6,16 @@
 // a sessionStorage flag (WELCOME_FLAG) that this component reads on mount.
 //
 // The handwriting loops through GREETINGS, one word at a time. English
-// uses bundled Caveat; Hindi uses bundled Tillana (Devanagari needs the
-// harfbuzz shaper for conjuncts like "स्व" — registered once globally).
+// uses bundled Caveat; Hindi uses bundled Tillana. Kannada, Malayalam, and
+// Telugu use bundles generated via the Tegaki web tool and dropped in
+// designer/src/assets/tegaki-fonts/. All non-Latin scripts need the
+// harfbuzz shaper for conjuncts (e.g. "स्व", "ಸ್ವ", "സ്വ") — registered
+// once globally.
 //
 // Companion code:
 //   - supabase/functions/auth-login/index.ts    (server-side flag)
 //   - designer/src/lib/auth-passcode.ts         (WELCOME_FLAG, setter)
-//   - docs/welcome-modal-fonts-backlog.md       (Kannada/Malayalam/Telugu)
+//   - designer/src/assets/tegaki-fonts/*        (generated font bundles)
 
 import { useEffect, useState } from 'react';
 
@@ -22,16 +25,20 @@ import { TegakiEngine } from 'tegaki/core';
 import harfbuzzShaper from 'tegaki/shaper-harfbuzz';
 import caveat from 'tegaki/fonts/caveat';
 import tillana from 'tegaki/fonts/tillana';
+import balooTamma2 from '../assets/tegaki-fonts/baloo-tamma-2/bundle';
+import balooChettan2 from '../assets/tegaki-fonts/baloo-chettan-2/bundle';
+import mandali from '../assets/tegaki-fonts/mandali/bundle';
 
 import { WELCOME_FLAG } from '../lib/auth-passcode';
 
 const HOLD_MS = 1500;
 const FADE_MS = 350;
 
-// Tillana (Devanagari) needs harfbuzz so "स्व" forms a half-form conjunct
-// glyph instead of three loose codepoints. Register once globally — the
-// shaper is lazy-loaded behind a wasm boundary, so the first non-Latin
-// word in the rotation may re-shape after the wasm resolves.
+// All non-Latin greetings need harfbuzz so conjuncts (स्व / ಸ್ವ / സ്വ)
+// render as joined glyphs instead of loose codepoints. Register once
+// globally — the shaper is lazy-loaded behind a wasm boundary, so the
+// first non-Latin word in the rotation may re-shape after the wasm
+// resolves.
 let shaperRegistered = false;
 function ensureShaperRegistered() {
   if (shaperRegistered) return;
@@ -51,12 +58,12 @@ interface Greeting {
 // widening — the runtime shape is what the renderer expects.
 const asBundle = (b: unknown) => b as TegakiBundle;
 
-// TODO: see docs/welcome-modal-fonts-backlog.md — generate Tegaki bundles
-// for Baloo Tamma 2 (Kannada), Baloo Chettan 2 (Malayalam), and Mandali
-// (Telugu) via https://gkurt.com/tegaki/generator/, then add them here.
 const GREETINGS: Greeting[] = [
-  { text: 'Welcome', font: asBundle(caveat),  lang: 'en' },
-  { text: 'स्वागत',   font: asBundle(tillana), lang: 'hi' },
+  { text: 'Welcome',  font: asBundle(caveat),         lang: 'en' },
+  { text: 'ಸ್ವಾಗತ',    font: asBundle(balooTamma2),    lang: 'kn' },
+  { text: 'സ്വാഗതം', font: asBundle(balooChettan2),  lang: 'ml' },
+  { text: 'స్వాగతం', font: asBundle(mandali),        lang: 'te' },
+  { text: 'स्वागत',    font: asBundle(tillana),        lang: 'hi' },
 ];
 
 export function WelcomeModal() {
