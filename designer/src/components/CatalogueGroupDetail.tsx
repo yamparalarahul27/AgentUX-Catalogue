@@ -1,0 +1,357 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { ArrowLeft, ChevronLeft, ChevronRight, ImageIcon, LayoutGrid, Monitor, Share2, Smartphone, X } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+
+import {
+  ensureCatalogueGroupAppearanceLoaded,
+  readCatalogueGroupAppearanceMap,
+  resolveCatalogueGroupAppearance,
+  subscribeCatalogueGroupAppearance,
+} from '../lib/catalogue-group-appearance';
+import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
+import type { ScreenshotNode } from '../types';
+import { CatalogueHeader } from './CatalogueHeader';
+import { ThumbHashImage } from './ThumbHashImage';
+
+type Platform = 'mobile' | 'web';
+
+interface CatalogueGroupDetailProps {
+  user: User;
+  onLogout: () => void;
+  onLogoutEverywhere: () => void;
+}
+
+function parseTimestamp(value?: string | null): number {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function normalizeGroupKey(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function formatTypeMeta(category: string | null, region: string | null): string | null {
+  const parts: string[] = [];
+  if (category) parts.push(category.toUpperCase());
+  if (region) parts.push(region === 'india' ? 'India' : 'Global');
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: CatalogueGroupDetailProps) {
+  const params = useParams<{ groupKey: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const { screenshots } = useCatalogueFullScope();
+  const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
+  const [shareToast, setShareToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    void ensureCatalogueGroupAppearanceLoaded(null);
+    return subscribeCatalogueGroupAppearance(() => {
+      setAppearanceMap(readCatalogueGroupAppearanceMap());
+    });
+  }, []);
+
+  // Resolve the actual group identity. The URL key is a normalized (lowercase)
+  // slug; find the matching real group name from the data so we render the
+  // catalogue's actual capitalization ("Binance") rather than the slug.
+  const urlKey = (params.groupKey ?? '').toLowerCase();
+  const groupScreenshots = useMemo(
+    () => screenshots.filter((shot) => normalizeGroupKey(shot.group ?? '') === urlKey),
+    [screenshots, urlKey],
+  );
+
+  const groupName = useMemo(() => {
+    const sample = groupScreenshots.find((s) => s.group);
+    return sample?.group ?? urlKey;
+  }, [groupScreenshots, urlKey]);
+
+  const appearance = useMemo(
+    () => resolveCatalogueGroupAppearance(appearanceMap, groupName, null),
+    [appearanceMap, groupName],
+  );
+  const label = appearance.label || groupName;
+  const typeMeta = formatTypeMeta(appearance.category, appearance.region);
+
+  const hasMobile = useMemo(() => groupScreenshots.some((s) => s.platform === 'mobile'), [groupScreenshots]);
+  const hasWeb = useMemo(() => groupScreenshots.some((s) => s.platform === 'web'), [groupScreenshots]);
+
+  // Default tab: mobile if any mobile exists, else web. If neither, mobile (empty grid).
+  const [activeTab, setActiveTab] = useState<Platform>('mobile');
+  useEffect(() => {
+    if (hasMobile) setActiveTab('mobile');
+    else if (hasWeb) setActiveTab('web');
+  }, [hasMobile, hasWeb]);
+
+  const tabbedScreenshots = useMemo(() => {
+    const list = groupScreenshots.filter((s) => s.platform === activeTab);
+    return [...list].sort((a, b) => parseTimestamp(b.created_at) - parseTimestamp(a.created_at));
+  }, [groupScreenshots, activeTab]);
+
+  const totalScreenshotCount = groupScreenshots.length;
+
+  // Deep-link: ?shot=<id> auto-opens the lightweight preview overlay.
+  const previewId = searchParams.get('shot');
+  const previewIndex = useMemo(() => {
+    if (!previewId) return -1;
+    return tabbedScreenshots.findIndex((s) => s.id === previewId);
+  }, [previewId, tabbedScreenshots]);
+
+  // If the deep-linked screenshot is on the other platform tab, auto-switch.
+  useEffect(() => {
+    if (!previewId) return;
+    const found = groupScreenshots.find((s) => s.id === previewId);
+    if (!found || !found.platform) return;
+    if (found.platform === 'mobile' && activeTab !== 'mobile' && hasMobile) setActiveTab('mobile');
+    else if (found.platform === 'web' && activeTab !== 'web' && hasWeb) setActiveTab('web');
+    // intentionally omit activeTab from deps — switching is a one-shot reaction
+    // to a new previewId, not a continuous reconciliation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewId, groupScreenshots, hasMobile, hasWeb]);
+
+  const openPreview = useCallback((shot: ScreenshotNode) => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set('shot', shot.id);
+      return next;
+    });
+  }, [setSearchParams]);
+
+  const closePreview = useCallback(() => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.delete('shot');
+      return next;
+    });
+  }, [setSearchParams]);
+
+  const navigatePreview = useCallback((direction: -1 | 1) => {
+    if (previewIndex < 0) return;
+    const nextIndex = (previewIndex + direction + tabbedScreenshots.length) % tabbedScreenshots.length;
+    const nextShot = tabbedScreenshots[nextIndex];
+    if (nextShot) openPreview(nextShot);
+  }, [previewIndex, tabbedScreenshots, openPreview]);
+
+  // Esc + arrow keys while preview is open.
+  useEffect(() => {
+    if (previewIndex < 0) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') closePreview();
+      else if (event.key === 'ArrowLeft') navigatePreview(-1);
+      else if (event.key === 'ArrowRight') navigatePreview(1);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [previewIndex, closePreview, navigatePreview]);
+
+  function handleShare() {
+    const url = window.location.origin + '/designer/g/' + urlKey;
+    navigator.clipboard.writeText(url).then(
+      () => setShareToast('Link copied'),
+      () => setShareToast('Could not copy'),
+    );
+    window.setTimeout(() => setShareToast(null), 1800);
+  }
+
+  function handleBack() {
+    navigate('/');
+  }
+
+  const previewShot = previewIndex >= 0 ? tabbedScreenshots[previewIndex] : null;
+
+  return (
+    <div className="catalogue-page">
+      <CatalogueHeader
+        activeSection="catalogue"
+        canAdmin={false}
+        canLabelingStudio={false}
+        onOpenSettings={() => { /* no-op on detail page */ }}
+        onSectionChange={(section) => {
+          // Sections only mean anything in the main catalogue — go back home,
+          // the section state will reset to its default there.
+          if (section === 'catalogue') navigate('/');
+          else navigate('/');
+        }}
+        userEmail={user.email ?? null}
+        onSignIn={() => { /* signed in already on this route */ }}
+        onLogout={onLogout}
+        onLogoutEverywhere={onLogoutEverywhere}
+        myBookmarksActive={false}
+        onToggleMyBookmarks={() => { /* no-op on detail page */ }}
+      />
+
+      <main className="catalogue-main catalogue-group-detail">
+        <button type="button" className="catalogue-group-detail__back" onClick={handleBack}>
+          <ArrowLeft size={14} aria-hidden="true" />
+          Back to catalogue
+        </button>
+
+        <header className="catalogue-group-detail__header">
+          <div className="catalogue-group-detail__icon">
+            {appearance.iconUrl ? (
+              <img src={appearance.iconUrl} alt="" aria-hidden="true" />
+            ) : (
+              <LayoutGrid size={40} aria-hidden="true" />
+            )}
+          </div>
+
+          <div className="catalogue-group-detail__heading">
+            <h1 className="catalogue-group-detail__name">{label}</h1>
+
+            <div className="catalogue-group-detail__meta">
+              <div className="catalogue-group-detail__meta-col">
+                <span className="catalogue-group-detail__meta-label">Platform</span>
+                <span className="catalogue-group-detail__meta-value">
+                  {hasWeb && hasMobile ? 'Web · Mobile' : hasWeb ? 'Web' : hasMobile ? 'Mobile' : '—'}
+                </span>
+              </div>
+              <div className="catalogue-group-detail__meta-col">
+                <span className="catalogue-group-detail__meta-label">Screens</span>
+                <span className="catalogue-group-detail__meta-value">{totalScreenshotCount}</span>
+              </div>
+              {typeMeta && (
+                <div className="catalogue-group-detail__meta-col">
+                  <span className="catalogue-group-detail__meta-label">Type</span>
+                  <span className="catalogue-group-detail__meta-value">{typeMeta}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="catalogue-group-detail__actions">
+              <button type="button" className="btn-secondary" onClick={handleShare}>
+                <Share2 size={14} aria-hidden="true" />
+                Share
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="catalogue-group-detail__divider" />
+
+        {(hasMobile || hasWeb) && (
+          <div className="catalogue-group-detail__subnav">
+            <div className="catalogue-group-detail__tabs" role="tablist" aria-label="Platform">
+              {hasMobile && (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'mobile'}
+                  className={`catalogue-group-detail__tab${activeTab === 'mobile' ? ' is-active' : ''}`}
+                  onClick={() => setActiveTab('mobile')}
+                  aria-label="Mobile"
+                >
+                  <Smartphone size={16} aria-hidden="true" />
+                </button>
+              )}
+              {hasWeb && (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'web'}
+                  className={`catalogue-group-detail__tab${activeTab === 'web' ? ' is-active' : ''}`}
+                  onClick={() => setActiveTab('web')}
+                  aria-label="Web"
+                >
+                  <Monitor size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+            <span className="catalogue-group-detail__subnav-count">
+              {tabbedScreenshots.length} {tabbedScreenshots.length === 1 ? 'screen' : 'screens'}
+            </span>
+          </div>
+        )}
+
+        {tabbedScreenshots.length > 0 ? (
+          <div
+            className={`catalogue-group-detail__grid catalogue-group-detail__grid--${activeTab}`}
+          >
+            {tabbedScreenshots.map((shot) => (
+              <button
+                type="button"
+                key={shot.id}
+                className="catalogue-group-detail__thumb"
+                onClick={() => openPreview(shot)}
+                aria-label={shot.name || 'Screenshot'}
+              >
+                {shot.image_url ? (
+                  <ThumbHashImage
+                    src={shot.image_url}
+                    thumbHash={shot.thumb_hash ?? null}
+                    alt={shot.name || ''}
+                  />
+                ) : (
+                  <span className="catalogue-group-detail__thumb-empty">
+                    <ImageIcon size={20} aria-hidden="true" />
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="catalogue-group-detail__empty">
+            No {activeTab === 'mobile' ? 'mobile' : 'web'} screenshots in this group yet.
+          </div>
+        )}
+
+        {shareToast && (
+          <div className="catalogue-group-detail__toast" role="status">{shareToast}</div>
+        )}
+      </main>
+
+      {previewShot && (
+        <div
+          className="catalogue-group-detail__preview"
+          role="dialog"
+          aria-modal="true"
+          aria-label={previewShot.name || 'Screenshot preview'}
+          onClick={closePreview}
+        >
+          <button
+            type="button"
+            className="catalogue-group-detail__preview-close"
+            onClick={closePreview}
+            aria-label="Close preview"
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+          {tabbedScreenshots.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="catalogue-group-detail__preview-nav is-prev"
+                onClick={(event) => { event.stopPropagation(); navigatePreview(-1); }}
+                aria-label="Previous screenshot"
+              >
+                <ChevronLeft size={28} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="catalogue-group-detail__preview-nav is-next"
+                onClick={(event) => { event.stopPropagation(); navigatePreview(1); }}
+                aria-label="Next screenshot"
+              >
+                <ChevronRight size={28} aria-hidden="true" />
+              </button>
+            </>
+          )}
+          <div className="catalogue-group-detail__preview-frame" onClick={(event) => event.stopPropagation()}>
+            {previewShot.image_url && (
+              <img
+                src={previewShot.image_url}
+                alt={previewShot.name || ''}
+                draggable={false}
+              />
+            )}
+            {previewShot.name && (
+              <div className="catalogue-group-detail__preview-caption">{previewShot.name}</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

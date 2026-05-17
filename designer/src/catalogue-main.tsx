@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import { CatalogueApp } from './CatalogueApp';
 import './styles/designer.scss';
 import './styles/catalogue-sidebar.scss';
@@ -33,10 +34,13 @@ import './styles/catalogue-share.scss';
 import './styles/catalogue-search-modal.scss';
 import './styles/editable-title.scss';
 import './styles/catalogue-magnified-dock.scss';
+import './styles/catalogue-group-detail.scss';
 import './styles/welcome-modal.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <CatalogueApp />
+    <BrowserRouter basename="/designer">
+      <CatalogueApp />
+    </BrowserRouter>
   </React.StrictMode>,
 );

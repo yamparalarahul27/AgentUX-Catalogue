@@ -1,7 +1,9 @@
 import { Agentation } from 'agentation';
+import { Route, Routes } from 'react-router-dom';
 
 import { useAuth } from './lib/useAuth';
 import { Catalogue } from './components/Catalogue';
+import { CatalogueGroupDetail } from './components/CatalogueGroupDetail';
 import { PasscodeLogin } from './components/PasscodeLogin';
 import { SharePage } from './components/SharePage';
 import { WelcomeModal } from './components/WelcomeModal';
@@ -31,7 +33,28 @@ export function CatalogueApp() {
 
   return (
     <>
-      <Catalogue user={user} onLogout={logout} onLogoutEverywhere={logoutEverywhere} />
+      <Routes>
+        <Route
+          path="/"
+          element={(
+            <Catalogue
+              user={user}
+              onLogout={logout}
+              onLogoutEverywhere={logoutEverywhere}
+            />
+          )}
+        />
+        <Route
+          path="/g/:groupKey"
+          element={(
+            <CatalogueGroupDetail
+              user={user}
+              onLogout={logout}
+              onLogoutEverywhere={logoutEverywhere}
+            />
+          )}
+        />
+      </Routes>
       <WelcomeModal />
       {import.meta.env.DEV && <Agentation />}
     </>

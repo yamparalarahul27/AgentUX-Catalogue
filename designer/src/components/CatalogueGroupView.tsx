@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, LayoutGrid, Monitor, Smartphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import { CATALOGUE_FLOW_LABEL_KEY } from '../lib/catalogue-families';
 import {
@@ -7,6 +8,7 @@ import {
   readCatalogueGroupAppearanceMap,
   resolveCatalogueGroupAppearance,
   subscribeCatalogueGroupAppearance,
+  type CatalogueGroupAppearanceMap,
 } from '../lib/catalogue-group-appearance';
 import type { ScreenshotNode } from '../types';
 import { ThumbHashImage } from './ThumbHashImage';
@@ -35,7 +37,6 @@ const HERO_ROTATION_CAP = 6;
 
 interface GroupSummary {
   key: string;
-  heroScreenshot: ScreenshotNode;
   recentScreenshots: ScreenshotNode[];
   screenshotCount: number;
   hasMoreThanCap: boolean;
@@ -113,7 +114,6 @@ function summarizeGroups(screenshots: ScreenshotNode[]): GroupSummary[] {
     }
     summaries.push({
       key,
-      heroScreenshot: sorted[0],
       recentScreenshots: sorted.slice(0, HERO_ROTATION_CAP),
       screenshotCount: shots.length,
       hasMoreThanCap: shots.length > HERO_ROTATION_CAP,
@@ -124,8 +124,8 @@ function summarizeGroups(screenshots: ScreenshotNode[]): GroupSummary[] {
   // fresh activity at the top. Ties (or groups whose hero has no created_at)
   // fall back to alphabetical so order stays stable across renders.
   return summaries.sort((a, b) => {
-    const aTs = parseTimestamp(a.heroScreenshot.created_at);
-    const bTs = parseTimestamp(b.heroScreenshot.created_at);
+    const aTs = parseTimestamp(a.recentScreenshots[0]?.created_at);
+    const bTs = parseTimestamp(b.recentScreenshots[0]?.created_at);
     if (aTs !== bTs) return bTs - aTs;
     return a.key.localeCompare(b.key);
   });
@@ -136,6 +136,12 @@ function formatTypeMeta(category: string | null, region: string | null): string 
   if (category) parts.push(category.toUpperCase());
   if (region) parts.push(region === 'india' ? 'India' : 'Global');
   return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+function groupRoute(key: string, shotId?: string): string {
+  const slug = key.trim().toLowerCase();
+  const url = `/g/${encodeURIComponent(slug)}`;
+  return shotId ? `${url}?shot=${encodeURIComponent(shotId)}` : url;
 }
 
 export function CatalogueGroupView({
@@ -185,77 +191,139 @@ export function CatalogueGroupView({
 
   return (
     <div className="catalogue-group-view">
-      {summaries.map((summary) => {
-        const appearance = resolveCatalogueGroupAppearance(appearanceMap, summary.key, null);
-        const label = appearance.label || summary.key;
-        const typeMeta = formatTypeMeta(appearance.category, appearance.region);
-        const heroIsMobile = summary.heroScreenshot.platform !== 'web';
-        const platformsTitle = summary.platforms.web && summary.platforms.mobile
-          ? 'Available on web and mobile'
-          : summary.platforms.web
-            ? 'Web only'
-            : summary.platforms.mobile
-              ? 'Mobile only'
-              : null;
-
-        return (
-          <article key={summary.key} className="catalogue-group-cell">
-            <div className="catalogue-group-card">
-              {(summary.platforms.web || summary.platforms.mobile) && (
-                <div className="catalogue-group-card__platforms" title={platformsTitle ?? undefined}>
-                  {summary.platforms.web && <Monitor size={14} aria-hidden="true" />}
-                  {summary.platforms.mobile && <Smartphone size={14} aria-hidden="true" />}
-                </div>
-              )}
-
-              <div className="catalogue-group-card__count">{summary.screenshotCount}</div>
-
-              <div className={`catalogue-group-card__hero${heroIsMobile ? ' is-mobile' : ' is-web'}`}>
-                {summary.heroScreenshot.image_url ? (
-                  <ThumbHashImage
-                    src={summary.heroScreenshot.image_url}
-                    thumbHash={summary.heroScreenshot.thumb_hash ?? null}
-                    alt={label}
-                  />
-                ) : (
-                  <div className="catalogue-group-card__hero-empty">No preview</div>
-                )}
-              </div>
-
-              <button
-                type="button"
-                className="catalogue-group-card__nav is-prev"
-                aria-label="Previous screenshot"
-                tabIndex={-1}
-              >
-                <ChevronLeft size={16} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                className="catalogue-group-card__nav is-next"
-                aria-label="Next screenshot"
-                tabIndex={-1}
-              >
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="catalogue-group-card__footer">
-              <div className="catalogue-group-card__icon">
-                {appearance.iconUrl ? (
-                  <img src={appearance.iconUrl} alt="" aria-hidden="true" />
-                ) : (
-                  <LayoutGrid size={20} aria-hidden="true" />
-                )}
-              </div>
-              <div className="catalogue-group-card__text">
-                <div className="catalogue-group-card__name">{label}</div>
-                {typeMeta && <div className="catalogue-group-card__meta">{typeMeta}</div>}
-              </div>
-            </div>
-          </article>
-        );
-      })}
+      {summaries.map((summary) => (
+        <CatalogueGroupCard
+          key={summary.key}
+          summary={summary}
+          appearanceMap={appearanceMap}
+        />
+      ))}
     </div>
+  );
+}
+
+interface CardProps {
+  summary: GroupSummary;
+  appearanceMap: CatalogueGroupAppearanceMap;
+}
+
+function CatalogueGroupCard({ summary, appearanceMap }: CardProps) {
+  const navigate = useNavigate();
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  const appearance = useMemo(
+    () => resolveCatalogueGroupAppearance(appearanceMap, summary.key, null),
+    [appearanceMap, summary.key],
+  );
+  const label = appearance.label || summary.key;
+  const typeMeta = formatTypeMeta(appearance.category, appearance.region);
+
+  const heroScreenshot = summary.recentScreenshots[heroIndex] ?? summary.recentScreenshots[0];
+  const heroIsMobile = heroScreenshot?.platform !== 'web';
+  const platformsTitle = summary.platforms.web && summary.platforms.mobile
+    ? 'Available on web and mobile'
+    : summary.platforms.web
+      ? 'Web only'
+      : summary.platforms.mobile
+        ? 'Mobile only'
+        : null;
+
+  const rotationLength = summary.recentScreenshots.length;
+  const canCycle = rotationLength > 1;
+
+  function cycle(direction: -1 | 1) {
+    if (!canCycle) return;
+    setHeroIndex((current) => (current + direction + rotationLength) % rotationLength);
+  }
+
+  function openDetail() {
+    navigate(groupRoute(summary.key));
+  }
+
+  function openDetailWithShot(event: React.MouseEvent) {
+    event.stopPropagation();
+    if (!heroScreenshot) {
+      openDetail();
+      return;
+    }
+    navigate(groupRoute(summary.key, heroScreenshot.id));
+  }
+
+  return (
+    <article className="catalogue-group-cell">
+      <div
+        className="catalogue-group-card"
+        role="button"
+        tabIndex={0}
+        onClick={openDetail}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openDetail();
+          }
+        }}
+      >
+        {(summary.platforms.web || summary.platforms.mobile) && (
+          <div className="catalogue-group-card__platforms" title={platformsTitle ?? undefined}>
+            {summary.platforms.web && <Monitor size={14} aria-hidden="true" />}
+            {summary.platforms.mobile && <Smartphone size={14} aria-hidden="true" />}
+          </div>
+        )}
+
+        <div className="catalogue-group-card__count">{summary.screenshotCount}</div>
+
+        <div
+          className={`catalogue-group-card__hero${heroIsMobile ? ' is-mobile' : ' is-web'}`}
+          onClick={openDetailWithShot}
+          role="presentation"
+        >
+          {heroScreenshot?.image_url ? (
+            <ThumbHashImage
+              key={heroScreenshot.id}
+              src={heroScreenshot.image_url}
+              thumbHash={heroScreenshot.thumb_hash ?? null}
+              alt={label}
+            />
+          ) : (
+            <div className="catalogue-group-card__hero-empty">No preview</div>
+          )}
+        </div>
+
+        {canCycle && (
+          <>
+            <button
+              type="button"
+              className="catalogue-group-card__nav is-prev"
+              aria-label="Previous screenshot"
+              onClick={(event) => { event.stopPropagation(); cycle(-1); }}
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="catalogue-group-card__nav is-next"
+              aria-label="Next screenshot"
+              onClick={(event) => { event.stopPropagation(); cycle(1); }}
+            >
+              <ChevronRight size={16} aria-hidden="true" />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="catalogue-group-card__footer">
+        <div className="catalogue-group-card__icon">
+          {appearance.iconUrl ? (
+            <img src={appearance.iconUrl} alt="" aria-hidden="true" />
+          ) : (
+            <LayoutGrid size={20} aria-hidden="true" />
+          )}
+        </div>
+        <div className="catalogue-group-card__text">
+          <div className="catalogue-group-card__name">{label}</div>
+          {typeMeta && <div className="catalogue-group-card__meta">{typeMeta}</div>}
+        </div>
+      </div>
+    </article>
   );
 }
