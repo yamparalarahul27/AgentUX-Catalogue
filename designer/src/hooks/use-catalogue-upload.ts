@@ -97,13 +97,16 @@ export function useCatalogueUpload({
     return { [CATALOGUE_FLOW_LABEL_KEY]: label };
   }
 
+  // Project_id is still required by the DB schema as NOT NULL, so writes
+  // (handled elsewhere in this hook) keep defaulting to projects[0]. The
+  // group suggestion list, however, spans every project the user has access
+  // to — same data set the chip strip and catalogue grid already render
+  // from — so quick-upload suggestions match what the user actually sees.
   const defaultProjectId = projects[0]?.id ?? null;
-  const effectiveUploadProjectId = uploadProjectId ?? defaultProjectId;
 
   const uploadProjectGroups = useMemo(() => {
-    const families = allFamilies.filter((family) => family.project_id === effectiveUploadProjectId);
-    return [...new Set(families.map((family) => family.group).filter(Boolean))] as string[];
-  }, [allFamilies, effectiveUploadProjectId]);
+    return [...new Set(allFamilies.map((family) => family.group).filter(Boolean))] as string[];
+  }, [allFamilies]);
 
   const quickUploadProjectGroups = useMemo(() => {
     const source = fullScopeScreenshots && fullScopeScreenshots.length > 0
