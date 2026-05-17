@@ -123,15 +123,19 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  cursor: default;
-  pointer-events: none;
+  cursor: pointer;
   opacity: 0;
   transform: translateY(-50%);
-  transition: opacity 160ms ease-out;
+  transition: opacity 160ms ease-out, background 0.15s, border-color 0.15s;
   z-index: 2;
 
   &.is-prev { left: 16px; }
   &.is-next { right: 16px; }
+
+  &:hover {
+    background: rgba(24, 24, 27, 0.95);
+    border-color: rgba(99, 102, 241, 0.55);
+  }
 
   svg {
     display: block;
@@ -140,6 +144,16 @@
 
 .catalogue-group-card:hover .catalogue-group-card__nav {
   opacity: 1;
+}
+
+// Card is now interactive — give it a cursor + subtle focus ring.
+.catalogue-group-card {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.6);
+    outline-offset: 2px;
+  }
 }
 
 // ── footer (outside the card, on the catalogue canvas) ─────────────

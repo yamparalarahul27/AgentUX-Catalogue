@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Group detail — mockup</title>
+<style>
+  :root {
+    --bg: #000;
+    --card-bg: #141416;
+    --text: #f4f4f5;
+    --text-dim: #8a8a93;
+    --text-faint: #5a5a63;
+    --border: #2a2a2f;
+    --accent: #f4f4f5;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 32px 80px;
+  }
+
+  /* ============================ header ============================ */
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 8px;
+    margin-left: -8px;
+    margin-bottom: 32px;
+    border-radius: 8px;
+  }
+  .back:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+  .header {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    align-items: start;
+    margin-bottom: 36px;
+  }
+  .group-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 22px;
+    background: #f3ba2f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .group-icon svg { width: 56px; height: 56px; }
+
+  .header-main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 6px;
+  }
+  .group-name {
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 56px;
+    margin-top: 4px;
+  }
+  .meta-col { display: flex; flex-direction: column; gap: 4px; }
+  .meta-label {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .meta-value {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .platform-chips { display: inline-flex; gap: 6px; align-items: center; }
+  .platform-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .platform-chip svg { width: 13px; height: 13px; }
+  .platform-sep { color: var(--text-faint); }
+
+  .actions { display: flex; gap: 10px; margin-top: 4px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+  }
+  .btn-primary {
+    background: var(--text);
+    color: #000;
+    border-color: var(--text);
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn:hover { background: rgba(255,255,255,0.04); }
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+  .btn svg { width: 14px; height: 14px; }
+
+  /* ============================ sub-nav ============================ */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0 28px;
+  }
+  .subnav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .sort-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .sort-pill:hover { background: rgba(255,255,255,0.04); }
+  .tabs {
+    display: flex;
+    gap: 28px;
+  }
+  .tab {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 0;
+    position: relative;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); }
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--text);
+    border-radius: 1px;
+  }
+  .tab.disabled {
+    color: var(--text-faint);
+    cursor: not-allowed;
+  }
+  .tab.disabled:hover { color: var(--text-faint); }
+  .tab-coming-soon {
+    font-size: 10px;
+    color: var(--text-faint);
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 2px 5px;
+    margin-left: 6px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+  .subnav-spacer { flex: 1; }
+  .count-label {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .count-label strong { color: var(--text); font-weight: 600; }
+
+  /* ============================ grid ============================ */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .thumb {
+    aspect-ratio: 9 / 19.5;
+    background: #1a1a1d;
+    border-radius: 18px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s;
+    display: flex;
+    flex-direction: column;
+  }
+  .thumb:hover { transform: translateY(-2px); }
+  .thumb-platform {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .thumb-platform svg { width: 11px; height: 11px; color: var(--text); }
+
+  /* Web aspect thumbs */
+  .thumb.is-web {
+    aspect-ratio: 16 / 10;
+    border-radius: 12px;
+  }
+
+  /* placeholder content per thumb — purely for the mockup */
+  .ph-mobile {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #0c0c10 0%, #18181d 100%);
+    display: flex;
+    flex-direction: column;
+    color: #cfcfd6;
+    font-size: 9px;
+    padding: 10px 8px;
+  }
+  .ph-statusbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 8px;
+  }
+  .ph-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .ph-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 8px;
+    color: var(--text-dim);
+  }
+  .ph-row strong { color: var(--text); font-weight: 600; }
+  .ph-yellow { color: #f3ba2f; }
+
+  .ph-web {
+    width: 100%;
+    height: 100%;
+    background: #0c0c10;
+    display: grid;
+    grid-template-columns: 1fr 80px;
+    color: #cfcfd6;
+    font-size: 8px;
+  }
+  .ph-web-chart {
+    background: linear-gradient(180deg, rgba(243,186,47,0.08) 0%, transparent 60%);
+    position: relative;
+    padding: 8px;
+  }
+  .ph-web-chart::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 12px;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+  }
+  .ph-web-tickers {
+    border-left: 1px solid rgba(255,255,255,0.04);
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ph-web-ticker {
+    display: flex;
+    justify-content: space-between;
+    font-size: 7px;
+  }
+  .ph-price {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .ph-pct { color: #ef5350; font-size: 8px; margin-top: 2px; }
+
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <button class="back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to catalogue
+  </button>
+
+  <!-- ============================ HEADER ============================ -->
+  <div class="header">
+    <div class="group-icon">
+      <!-- Binance logo (simplified) -->
+      <svg viewBox="0 0 126 126" fill="#000">
+        <path d="M38.7 53.7l24.3-24.3 24.3 24.3L101.5 39.6 63 1 24.5 39.6l14.2 14.1zM1 63l14.2-14.2L29.4 63 15.2 77.2 1 63zm37.7 9.3l24.3 24.3 24.3-24.3 14.2 14.1L63 125 24.5 86.5l-.1-.1 14.3-14.1zM96.6 63l14.2-14.2L125 63l-14.2 14.2L96.6 63zm-19-.1L63 48.4 52.1 59.3l-1.3 1.3-2.6 2.6 14.2 14.2L77.6 63l-.1-.1z"/>
+      </svg>
+    </div>
+
+    <div class="header-main">
+      <h1 class="group-name">Binance</h1>
+
+      <div class="meta-row">
+        <div class="meta-col">
+          <span class="meta-label">Platform</span>
+          <span class="meta-value">
+            <span class="platform-chips">
+              <span class="platform-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Web
+              </span>
+              <span class="platform-sep">·</span>
+              <span class="platform-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                Mobile
+              </span>
+            </span>
+          </span>
+        </div>
+
+        <div class="meta-col">
+          <span class="meta-label">Screens</span>
+          <span class="meta-value">124</span>
+        </div>
+
+        <div class="meta-col">
+          <span class="meta-label">Type</span>
+          <span class="meta-value">CEX · Global</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
+        <button class="btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+        <button class="btn btn-icon" title="More">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ============================ SUB-NAV ============================ -->
+  <div class="subnav">
+    <button class="sort-pill">
+      Latest
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+
+    <div class="tabs">
+      <button class="tab active">Screens</button>
+      <button class="tab disabled">Flows <span class="tab-coming-soon">soon</span></button>
+    </div>
+
+    <div class="subnav-spacer"></div>
+
+    <span class="count-label">Showing <strong>124</strong> screens</span>
+  </div>
+
+  <!-- ============================ GRID ============================ -->
+  <div class="grid">
+    <!-- mobile -->
+    <div class="thumb">
+      <div class="thumb-platform" title="Mobile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/></svg>
+      </div>
+      <div class="ph-mobile">
+        <div class="ph-statusbar"><span>9:41</span><span>●●●</span></div>
+        <div class="ph-title">Exchange</div>
+        <div class="ph-row"><span>BTC/USDT</span><strong>122,900</strong></div>
+        <div class="ph-row"><span>ETH/USDT</span><strong>3,910</strong></div>
+        <div class="ph-row"><span>BNB/USDT</span><strong>625</strong></div>
+        <div class="ph-row"><span>SOL/USDT</span><strong>178</strong></div>
+        <div class="ph-row"><span>XRP/USDT</span><strong>2.34</strong></div>
+      </div>
+    </div>
+
+    <div class="thumb">
+      <div class="thumb-platform"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/></svg></div>
+      <div class="ph-mobile">
+        <div class="ph-statusbar"><span>9:41</span><span>●●●</span></div>
+        <div class="ph-title">Portfolio</div>
+        <div class="ph-row"><span>Total</span><strong class="ph-yellow">$13,490</strong></div>
+        <div class="ph-row"><span>PNL 24h</span><strong>+0.83%</strong></div>
+        <div class="ph-row"><span>Spot</span><span>$8,120</span></div>
+        <div class="ph-row"><span>Earn</span><span>$3,420</span></div>
+        <div class="ph-row"><span>Funding</span><span>$1,950</span></div>
+      </div>
+    </div>
+
+    <div class="thumb">
+      <div class="thumb-platform"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/></svg></div>
+      <div class="ph-mobile">
+        <div class="ph-statusbar"><span>9:41</span><span>●●●</span></div>
+        <div class="ph-title">Opportunity</div>
+        <div class="ph-row"><span>Today's Market</span><span>↗︎</span></div>
+        <div class="ph-row"><span>Fear & Greed</span><strong>28</strong></div>
+        <div class="ph-row"><span>BTC Valuation</span><strong>0.83</strong></div>
+        <div class="ph-row"><span>ETF Net Flow</span><span>+421M</span></div>
+        <div class="ph-row"><span>Coin Radar</span><span>›</span></div>
+      </div>
+    </div>
+
+    <!-- web -->
+    <div class="thumb is-web">
+      <div class="thumb-platform"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg></div>
+      <div class="ph-web">
+        <div class="ph-web-chart">
+          <div class="ph-price">122,900.01</div>
+          <div class="ph-pct">−1.23%</div>
+        </div>
+        <div class="ph-web-tickers">
+          <div class="ph-web-ticker"><span>BTC</span><strong>122,900</strong></div>
+          <div class="ph-web-ticker"><span>ETH</span><strong>3,910</strong></div>
+          <div class="ph-web-ticker"><span>BNB</span><strong>625</strong></div>
+          <div class="ph-web-ticker"><span>SOL</span><strong>178</strong></div>
+          <div class="ph-web-ticker"><span>XRP</span><strong>2.34</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="thumb">
+      <div class="thumb-platform"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/></svg></div>
+      <div class="ph-mobile">
+        <div class="ph-statusbar"><span>9:41</span><span>●●●</span></div>
+        <div class="ph-title">Following</div>
+        <div class="ph-row"><span>Zain_Global</span><span>● LIVE</span></div>
+        <div class="ph-row"><span>Hua BNB</span><span>3h</span></div>
+        <div class="ph-row"><span>Shakir Fay</span><span>5h</span></div>
+        <div class="ph-row"><span>Faruk Abu</span><span>9h</span></div>
+        <div class="ph-row"><span>CeM BNB</span><span>1d</span></div>
+      </div>
+    </div>
+
+    <div class="thumb">
+      <div class="thumb-platform"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/></svg></div>
+      <div class="ph-mobile">
+        <div class="ph-statusbar"><span>9:41</span><span>●●●</span></div>
+        <div class="ph-title">Earn</div>
+        <div class="ph-row"><span>USDT</span><strong class="ph-yellow">20.00% APR</strong></div>
+        <div class="ph-row"><span>BNB</span><span>5.10% APR</span></div>
+        <div class="ph-row"><span>ETH</span><span>3.80% APR</span></div>
+        <div class="ph-row"><span>BTC</span><span>1.20% APR</span></div>
+        <div class="ph-row"><span>DOT</span><span>14.50% APR</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
