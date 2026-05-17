@@ -603,7 +603,7 @@ export function CatalogueGalleryView({
               onSave={(next) => onRenameFamily(family.id, next)}
             />
             <p className="catalogue-gallery-subtitle">
-              <CatalogueGroupLabel group={family.group} projectId={family.project_id} />
+              <CatalogueGroupLabel group={family.group} projectId={null} />
             </p>
           </div>
           <span className="catalogue-gallery-flow">

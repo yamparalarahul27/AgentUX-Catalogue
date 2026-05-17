@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId } from '../lib/catalogue-families';
 import { supabase } from '../lib/supabase';
-import type { MobileOs, Project, ScreenFamily, ScreenshotNode } from '../types';
+import type { MobileOs, ScreenFamily, ScreenshotNode } from '../types';
 import { useCatalogueImageActions } from './use-catalogue-image-actions';
 
 interface ToastState {
@@ -13,14 +13,11 @@ interface ToastState {
 
 interface UseCatalogueFamilyActionsArgs {
   familyById: Record<string, CatalogueFamilyView>;
-  filterProject: string | null;
   flowMap: Record<string, string>;
   onFamilyDeleted?: (familyId: string) => void;
-  projects: Project[];
   screenFamilies: ScreenFamily[];
   screenshots: ScreenshotNode[];
   setFullScopeScreenshots?: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
-  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   setScreenFamilies: React.Dispatch<React.SetStateAction<ScreenFamily[]>>;
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
@@ -55,14 +52,11 @@ function sameVariantIdentity(left: ScreenshotNode, right: ScreenshotNode): boole
 
 export function useCatalogueFamilyActions({
   familyById,
-  filterProject,
   flowMap,
   onFamilyDeleted,
-  projects,
   screenFamilies,
   screenshots,
   setFullScopeScreenshots,
-  setProjects,
   setScreenFamilies,
   setScreenshots,
   setToast,
@@ -117,22 +111,6 @@ export function useCatalogueFamilyActions({
     setToast,
     userId,
   });
-
-  const handlePrimaryGroupChange = useCallback(async (group: string | null) => {
-    if (!filterProject) return;
-    await supabase.from('projects').update({ primary_group: group }).eq('id', filterProject);
-    setProjects((previous) => previous.map((project) => (
-      project.id === filterProject ? { ...project, primary_group: group } : project
-    )));
-  }, [filterProject, setProjects]);
-
-  const handleVsGroupsChange = useCallback(async (groups: string[]) => {
-    if (!filterProject) return;
-    await supabase.from('projects').update({ vs_groups: groups }).eq('id', filterProject);
-    setProjects((previous) => previous.map((project) => (
-      project.id === filterProject ? { ...project, vs_groups: groups } : project
-    )));
-  }, [filterProject, setProjects]);
 
   // Rename every screenshot's `group` value across all the supplied raw
   // casings (e.g. ["Coinbase", "coinbase"]) to `newName` within the
@@ -456,20 +434,17 @@ export function useCatalogueFamilyActions({
   }, [familyById, flowMap, setToast, syncFamilyPatch]);
 
   return {
-    currentProject: projects.find((project) => project.id === filterProject) ?? null,
     handleAnnotationStateChange,
     handleAssignFlow,
     handleChangeFamilyGroup,
     handleCommentCountChange,
     handleDeleteFamily,
-    handlePrimaryGroupChange,
     handleRenameFamily,
     handleRenameGroupKey,
     handleRestoreFamily,
     handleSetFlowLabel,
     handleUpdateVariantDetails,
     handleVariantPlatformChange,
-    handleVsGroupsChange,
     ...imageActions,
   };
 }

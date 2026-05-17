@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { Flow, Project, ScreenFamily, ScreenshotNode } from '../types';
+import type { Flow, ScreenFamily, ScreenshotNode } from '../types';
 import { fetchAnnotationActivity, fetchScreenshotIdsWithAnnotationLabels } from '../lib/screenshot-annotations';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import { supabase } from '../lib/supabase';
@@ -69,7 +69,6 @@ function sortConfigFor(sortBy: CatalogueSortOption): SortConfig {
 }
 
 interface UseCatalogueDataArgs {
-  activeProjectId: string | null;
   filters: CatalogueQueryFilters;
   sortBy: CatalogueSortOption;
   searchQuery: string;
@@ -86,18 +85,16 @@ interface UseCatalogueDataArgs {
  * Filters are applied as Supabase query predicates. Search is ilike on
  * name + file_name (requires pg_trgm indexes — see SQL migration).
  *
- * Any change to activeProjectId, filters, sortBy, or searchQuery resets
- * pagination and refetches page 1.
+ * Any change to filters, sortBy, or searchQuery resets pagination and
+ * refetches page 1.
  *
  * Counts (comments, versions) are hydrated per-page.
  */
 export function useCatalogueData({
-  activeProjectId,
   filters,
   sortBy,
   searchQuery,
 }: UseCatalogueDataArgs) {
-  const [projects, setProjects] = useState<Project[]>([]);
   const [flows, setFlows] = useState<Flow[]>([]);
   const [screenFamilies, setScreenFamilies] = useState<ScreenFamily[]>([]);
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
@@ -188,24 +185,20 @@ export function useCatalogueData({
    */
   const fetchScreenshotsPage = useCallback(
     async (
-      projectIds: string[],
       cursor: PaginationCursor | null,
     ): Promise<ScreenshotNode[]> => {
-      if (projectIds.length === 0) return [];
-
       // Annotation label filter resolves to a set of screenshot ids via RPC
       // (the labels live in screenshot_annotations, not screenshots).
       let annotationMatchedIds: string[] | null = null;
       if (filters.annotation.length > 0) {
-        annotationMatchedIds = await fetchScreenshotIdsWithAnnotationLabels(projectIds, filters.annotation);
+        annotationMatchedIds = await fetchScreenshotIdsWithAnnotationLabels(filters.annotation);
         if (annotationMatchedIds.length === 0) return [];
       }
 
       let query = supabase
         .from('screenshots')
         .select('*')
-        .is('deleted_at', null)
-        .in('project_id', projectIds);
+        .is('deleted_at', null);
 
       if (annotationMatchedIds) {
         query = query.in('id', annotationMatchedIds);
@@ -314,31 +307,9 @@ export function useCatalogueData({
     cursorRef.current = null;
 
     try {
-      const { data: projectData } = await supabase
-        .from('projects')
-        .select('*')
-        .order('updated_at', { ascending: false });
-
-      if (loadVersionRef.current !== loadVersion) return;
-
-      if (!projectData || projectData.length === 0) {
-        setProjects([]);
-        setScreenFamilies([]);
-        setScreenshots([]);
-        setFlows([]);
-        setHasMore(false);
-        return;
-      }
-
-      setProjects(projectData);
-
-      const scopedProjectIds = activeProjectId
-        ? [activeProjectId]
-        : projectData.map((project) => project.id);
-
       const [flowRes, familyRes] = await Promise.all([
-        supabase.from('flows').select('*').in('project_id', scopedProjectIds).order('created_at'),
-        supabase.from('screen_families').select('*').in('project_id', scopedProjectIds).order('created_at'),
+        supabase.from('flows').select('*').order('created_at'),
+        supabase.from('screen_families').select('*').order('created_at'),
       ]);
 
       if (loadVersionRef.current !== loadVersion) return;
@@ -347,7 +318,7 @@ export function useCatalogueData({
       setFlows(flowRes.data ?? []);
       setScreenFamilies(loadedFamilies);
 
-      const firstPage = await fetchScreenshotsPage(scopedProjectIds, null);
+      const firstPage = await fetchScreenshotsPage(null);
 
       if (loadVersionRef.current !== loadVersion) return;
 
@@ -368,7 +339,7 @@ export function useCatalogueData({
         setLoading(false);
       }
     }
-  }, [activeProjectId, fetchScreenshotsPage, hydrateActivity, sortConfig.column]);
+  }, [fetchScreenshotsPage, hydrateActivity, sortConfig.column]);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current) return;
@@ -380,15 +351,7 @@ export function useCatalogueData({
     setLoadingMore(true);
 
     try {
-      const scopedProjectIds = activeProjectId
-        ? [activeProjectId]
-        : projects.map((project) => project.id);
-      if (scopedProjectIds.length === 0) return;
-
-      const nextPage = await fetchScreenshotsPage(
-        scopedProjectIds,
-        cursorRef.current,
-      );
+      const nextPage = await fetchScreenshotsPage(cursorRef.current);
       if (loadVersionRef.current !== loadVersion) return;
 
       if (nextPage.length === 0) {
@@ -417,11 +380,9 @@ export function useCatalogueData({
       }
     }
   }, [
-    activeProjectId,
     fetchScreenshotsPage,
     hasMore,
     hydrateActivity,
-    projects,
     sortConfig.column,
   ]);
 
@@ -429,11 +390,6 @@ export function useCatalogueData({
   useEffect(() => {
     void loadInitial();
   }, [loadInitial]);
-
-  const projectMap = useMemo(() => {
-    const entries = projects.map((project) => [project.id, project.name] as const);
-    return Object.fromEntries(entries);
-  }, [projects]);
 
   const flowMap = useMemo(() => {
     const entries = flows.map((flow) => [flow.id, flow.name] as const);
@@ -453,13 +409,10 @@ export function useCatalogueData({
     loadMore,
     loading,
     loadingMore,
-    projectMap,
-    projects,
     screenFamilies,
     screenFamilyMap,
     screenshots,
     setFlows,
-    setProjects,
     setScreenFamilies,
     setScreenshots,
   };

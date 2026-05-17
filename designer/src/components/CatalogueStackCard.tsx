@@ -165,7 +165,7 @@ export function CatalogueStackCard({
           <div className="catalogue-stack__meta-row">
             {family.group && (
               <span className="catalogue-stack__chip">
-                <CatalogueGroupLabel group={family.group} projectId={family.project_id} />
+                <CatalogueGroupLabel group={family.group} projectId={null} />
               </span>
             )}
             {family.flow_label && (

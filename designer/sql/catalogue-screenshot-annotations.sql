@@ -82,8 +82,12 @@ where coalesce(entry ->> 'text', '') <> ''
 on conflict (id) do nothing;
 
 -- RPC: return distinct screenshot ids that have any annotation whose text
--- (case-insensitive) matches one of the supplied labels, scoped to the given
--- project ids. Used by the toolbar's annotation multi-select filter.
+-- (case-insensitive) matches one of the supplied labels. Used by the toolbar's
+-- annotation multi-select filter.
+--
+-- `project_ids` parameter is retained for backwards-compatibility with
+-- deployed clients but is ignored — project scoping was removed in migration
+-- 20260517_remove_project_scoping.
 create or replace function public.screenshots_with_annotation_labels(
   project_ids uuid[],
   labels text[]
@@ -95,8 +99,7 @@ as $$
   select distinct sa.screenshot_id
   from public.screenshot_annotations sa
   join public.screenshots s on s.id = sa.screenshot_id
-  where s.project_id = any(project_ids)
-    and lower(sa.text) = any(labels);
+  where lower(sa.text) = any(labels);
 $$;
 
 -- Optional cleanup — run only after verifying the new table is in use and the

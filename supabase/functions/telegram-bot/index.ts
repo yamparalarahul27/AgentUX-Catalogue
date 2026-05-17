@@ -172,21 +172,8 @@ async function downloadTelegramFile(
 
 // --- Upload logic ---
 
-async function getDefaultProject(
-  supabase: ReturnType<typeof createClient>,
-): Promise<{ id: string } | null> {
-  const { data } = await supabase
-    .from("projects")
-    .select("id")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .single();
-  return data;
-}
-
 async function generateName(
   supabase: ReturnType<typeof createClient>,
-  projectId: string,
 ): Promise<string> {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -198,7 +185,6 @@ async function generateName(
   const { count } = await supabase
     .from("screenshots")
     .select("id", { count: "exact", head: true })
-    .eq("project_id", projectId)
     .eq("group", UPLOAD_GROUP)
     .gte("created_at", startOfDay);
 
@@ -217,18 +203,13 @@ async function handlePhoto(
   const { buffer, fileName } = await downloadTelegramFile(fileId);
   const finalFileName = originalFileName || fileName;
 
-  // 2. Get default project
-  const project = await getDefaultProject(supabase);
-  if (!project) {
-    await sendReply(chatId, "No project found. Create a project in the catalogue first.");
-    return;
-  }
+  // 2. Generate name
+  const name = await generateName(supabase);
 
-  // 3. Generate name
-  const name = await generateName(supabase, project.id);
-
-  // 4. Upload to storage
-  const storagePath = `telegram-bot/${project.id}/${Date.now()}-${finalFileName}`;
+  // 3. Upload to storage. project_id was dropped from the schema in
+  // migration 20260517_remove_project_scoping; path now uses a fixed
+  // `all-projects` prefix matching the main app's storage convention.
+  const storagePath = `telegram-bot/all-projects/${Date.now()}-${finalFileName}`;
   const { error: uploadError } = await supabase.storage
     .from("screenshots")
     .upload(storagePath, buffer, {
@@ -241,11 +222,10 @@ async function handlePhoto(
     return;
   }
 
-  // 5. Insert screenshot row
+  // 4. Insert screenshot row
   const { error: insertError } = await supabase
     .from("screenshots")
     .insert({
-      project_id: project.id,
       name,
       file_name: finalFileName,
       storage_path: storagePath,

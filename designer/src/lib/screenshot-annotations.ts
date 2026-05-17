@@ -128,12 +128,10 @@ export async function fetchAnnotationActivity(screenshotIds: string[]): Promise<
   return { counts, lastAddedAt };
 }
 
-export async function fetchAnnotationLabelsForProjects(projectIds: string[]): Promise<string[]> {
-  if (projectIds.length === 0) return [];
+export async function fetchAnnotationLabels(): Promise<string[]> {
   const { data, error } = await supabase
     .from('screenshot_annotations')
-    .select('text, screenshots!inner(project_id)')
-    .in('screenshots.project_id', projectIds);
+    .select('text');
   if (error || !data) return [];
   const seen = new Map<string, string>();
   for (const row of data as { text: string }[]) {
@@ -146,14 +144,16 @@ export async function fetchAnnotationLabelsForProjects(projectIds: string[]): Pr
 }
 
 export async function fetchScreenshotIdsWithAnnotationLabels(
-  projectIds: string[],
   labels: string[],
 ): Promise<string[]> {
-  if (projectIds.length === 0 || labels.length === 0) return [];
+  if (labels.length === 0) return [];
   const lowered = labels.map((label) => label.trim().toLowerCase()).filter(Boolean);
   if (lowered.length === 0) return [];
+  // RPC still accepts a project_ids parameter for deploy-window backwards
+  // compatibility (see migration 20260517_remove_project_scoping). Passing
+  // an empty array — the function ignores it.
   const { data, error } = await supabase.rpc('screenshots_with_annotation_labels', {
-    project_ids: projectIds,
+    project_ids: [],
     labels: lowered,
   });
   if (error || !data) return [];

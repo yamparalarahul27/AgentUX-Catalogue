@@ -132,22 +132,18 @@ export function Catalogue({
     loading,
     loadingMore,
     loadMore,
-    projects,
     screenFamilies,
     screenshots,
-    setProjects,
     setScreenFamilies,
     setScreenshots,
   } = useCatalogueData({
-    activeProjectId: null,
     filters,
     sortBy,
     searchQuery: searchQueryDebounced,
   });
 
   const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
-  const primaryGroup = projects[0]?.primary_group ?? null;
-  // Data is pre-scoped + pre-filtered by useCatalogueData
+  // Data is pre-filtered by useCatalogueData
   const scopedScreenshots = screenshots;
   const scopedScreenFamilies = screenFamilies;
   const {
@@ -157,7 +153,6 @@ export function Catalogue({
     screenshots: fullScopeScreenshots,
     setScreenshots: setFullScopeScreenshots,
   } = useCatalogueFullScope({
-    projects,
     includeCommentedScreenshots: viewBy === 'comments-added',
     includeAnnotatedScreenshots: viewBy === 'annotations-added',
   });
@@ -178,7 +173,6 @@ export function Catalogue({
   // stay in sync. URL is the source of truth for shareable links.
   const [groupSortMode, setGroupSortMode] = useState<CatalogueGroupSortMode>(loadGroupSortMode);
   const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
-  const appearanceProjectId = projects[0]?.id ?? null;
 
   useEffect(() => {
     if (!CATALOGUE_CHIP_STRIP_ENABLED) return;
@@ -206,8 +200,8 @@ export function Catalogue({
 
   useEffect(() => {
     if (!CATALOGUE_CHIP_STRIP_ENABLED) return;
-    void ensureCatalogueGroupAppearanceLoaded(appearanceProjectId);
-  }, [appearanceProjectId]);
+    void ensureCatalogueGroupAppearanceLoaded(null);
+  }, [null]);
 
   useEffect(() => {
     persistGroupSortMode(groupSortMode);
@@ -230,10 +224,10 @@ export function Catalogue({
     const ordered = sortGroups(
       groupStats,
       groupSortMode,
-      (key) => resolveCatalogueGroupAppearance(appearanceMap, key, appearanceProjectId).label || key,
+      (key) => resolveCatalogueGroupAppearance(appearanceMap, key, null).label || key,
     );
     return ordered.map((item) => item.groupKey);
-  }, [appearanceMap, appearanceProjectId, groupSortMode, groupStats]);
+  }, [appearanceMap, null, groupSortMode, groupStats]);
 
   function handleSelectChipGroup(canonicalKey: string | null) {
     if (!canonicalKey) {
@@ -396,8 +390,7 @@ export function Catalogue({
     return map;
   }, [allFamilies]);
   const [studioLabelOverrides, setStudioLabelOverrides] = useState<Map<string, ScreenshotLabel>>(new Map());
-  const studioProjectIds = useMemo(() => projects.map((project) => project.id), [projects]);
-  const studioTotals = useLabelingStudioTotals(studioProjectIds);
+  const studioTotals = useLabelingStudioTotals();
   const handleStudioLabelPersisted = useCallback((screenshotId: string, label: ScreenshotLabel) => {
     setStudioLabelOverrides((previous) => {
       const next = new Map(previous);
@@ -433,7 +426,6 @@ export function Catalogue({
     handleUpdateVariantDetails,
   } = useCatalogueFamilyActions({
     familyById,
-    filterProject: projects[0]?.id ?? null,
     flowMap,
     onFamilyDeleted: (familyId) => {
       setPreviewFamilyId((previous) => {
@@ -450,11 +442,9 @@ export function Catalogue({
         return next;
       });
     },
-    projects,
     screenFamilies: scopedScreenFamilies,
     screenshots: scopedScreenshots,
     setFullScopeScreenshots,
-    setProjects,
     setScreenFamilies,
     setScreenshots,
     setToast,
@@ -469,7 +459,6 @@ export function Catalogue({
   const upload = useCatalogueUpload({
     allFamilies,
     fullScopeScreenshots,
-    projects,
     setScreenshots,
     setToast,
     userEmail: user.email || null,
@@ -760,7 +749,6 @@ export function Catalogue({
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueTeamSection
-              projects={projects}
               screenshots={fullScopeScreenshots}
               currentUserEmail={user.email ?? ''}
               onRenameGroupKey={handleRenameGroupKey}
@@ -829,7 +817,7 @@ export function Catalogue({
                 <CatalogueGroupChipStrip
                   stats={groupStats}
                   appearanceMap={appearanceMap}
-                  projectId={appearanceProjectId}
+                  projectId={null}
                   activeGroupKey={activeChipGroupKey}
                   sortMode={groupSortMode}
                   recencyHours={CATALOGUE_CHIP_RECENCY_HOURS}
@@ -976,7 +964,7 @@ export function Catalogue({
                   flowLabel={upload.quickUploadFlowLabel}
                   isOpen={upload.showQuickUpload}
                   projectId={upload.quickUploadProjectId}
-                  projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+                  projects={[]}
                   quickUploadGroup={upload.quickUploadGroup}
                   quickUploadProjectGroups={upload.quickUploadProjectGroups}
                   quickUploadQueue={upload.quickUploadQueuePreview}
@@ -1016,7 +1004,7 @@ export function Catalogue({
         platform={upload.uploadPlatform}
         projectGroups={upload.uploadProjectGroups}
         projectId={upload.uploadProjectId}
-        projects={projects.map((project) => ({ id: project.id, name: project.name }))}
+        projects={[]}
         referenceLabel={upload.uploadRefLabel}
         referencePreview={upload.uploadRefPreview}
         theme={upload.uploadTheme}
@@ -1119,7 +1107,7 @@ export function Catalogue({
       {bulkAction === 'group' && (
         <CatalogueBulkGroupDialog
           allGroups={allGroups}
-          primaryGroup={primaryGroup}
+          primaryGroup={null}
           selectedCount={selected.size}
           value={bulkGroupValue}
           onValueChange={setBulkGroupValue}
@@ -1183,7 +1171,7 @@ export function Catalogue({
         <CatalogueMagnifiedDock
           stats={groupStats}
           appearanceMap={appearanceMap}
-          projectId={appearanceProjectId}
+          projectId={null}
           activeGroupKey={activeChipGroupKey}
           sortMode={groupSortMode}
           onSelectGroup={handleSelectChipGroup}
@@ -1209,7 +1197,6 @@ export function Catalogue({
         onClose={() => setShowSearchModal(false)}
         screenshots={fullScopeScreenshots}
         appearanceMap={appearanceMap}
-        appearanceProjectId={appearanceProjectId}
         onSelectGroup={(group) => {
           setFilterGroup([group]);
           setFilterFlow([]);

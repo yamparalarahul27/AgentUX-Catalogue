@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '../lib/supabase';
 import type { LabelStatus } from '../lib/labeling/types';
@@ -20,8 +20,7 @@ const ZERO_TOTALS: StudioTotals = {
 // Unlabelled is derived: total − (draft + needs_review + verified). This catches
 // both screenshots with an explicit 'unlabeled' status and those with no
 // metadata.label at all.
-export function useLabelingStudioTotals(projectIds: string[]) {
-  const projectIdsKey = useMemo(() => [...projectIds].sort().join(','), [projectIds]);
+export function useLabelingStudioTotals() {
   const [totals, setTotals] = useState<StudioTotals>(ZERO_TOTALS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,21 +31,16 @@ export function useLabelingStudioTotals(projectIds: string[]) {
   }, []);
 
   useEffect(() => {
-    const ids = projectIdsKey ? projectIdsKey.split(',') : [];
-    if (ids.length === 0) {
-      setTotals(ZERO_TOTALS);
-      return;
-    }
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
       const path = 'metadata->label->review->>label_status';
       const [totalRes, draftRes, needsRes, verifiedRes] = await Promise.all([
-        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).in('project_id', ids),
-        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).in('project_id', ids).eq(path, 'draft'),
-        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).in('project_id', ids).eq(path, 'needs_review'),
-        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).in('project_id', ids).eq(path, 'verified'),
+        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).eq(path, 'draft'),
+        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).eq(path, 'needs_review'),
+        supabase.from('screenshots').select('id', { count: 'exact', head: true }).is('deleted_at', null).eq(path, 'verified'),
       ]);
       if (cancelled) return;
       const firstError = totalRes.error || draftRes.error || needsRes.error || verifiedRes.error;
@@ -68,7 +62,7 @@ export function useLabelingStudioTotals(projectIds: string[]) {
     return () => {
       cancelled = true;
     };
-  }, [projectIdsKey, refetchTick]);
+  }, [refetchTick]);
 
   return { totals, loading, error, refetch };
 }

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import type { Project, ScreenshotNode } from '../types';
-import { fetchAnnotationLabelsForProjects } from '../lib/screenshot-annotations';
+import type { ScreenshotNode } from '../types';
+import { fetchAnnotationLabels } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 
 const SCREENSHOT_PAGE_SIZE = 1000;
@@ -9,7 +9,6 @@ const COMMENT_SCREENSHOT_CHUNK_SIZE = 200;
 
 interface ScopeScreenshotRow {
   id: string;
-  project_id: string;
   group: string | null;
   platform: 'web' | 'mobile' | null;
   theme: 'light' | 'dark' | null;
@@ -31,7 +30,6 @@ interface ScopeScreenshotRow {
 }
 
 interface UseCatalogueFullScopeArgs {
-  projects: Project[];
   includeCommentedScreenshots?: boolean;
   includeAnnotatedScreenshots?: boolean;
 }
@@ -43,7 +41,6 @@ function toScopeScreenshot(row: ScopeScreenshotRow): ScreenshotNode {
     : undefined;
   return {
     id: row.id,
-    project_id: row.project_id,
     flow_id: null,
     screen_family_id: null,
     name: row.name ?? '',
@@ -77,10 +74,9 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
 }
 
 export function useCatalogueFullScope({
-  projects,
   includeCommentedScreenshots = false,
   includeAnnotatedScreenshots = false,
-}: UseCatalogueFullScopeArgs) {
+}: UseCatalogueFullScopeArgs = {}) {
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [commentedScreenshotIds, setCommentedScreenshotIds] = useState<Set<string>>(new Set());
   const [annotatedScreenshotIds, setAnnotatedScreenshotIds] = useState<Set<string>>(new Set());
@@ -88,23 +84,9 @@ export function useCatalogueFullScope({
   const [loading, setLoading] = useState(false);
   const loadVersionRef = useRef(0);
 
-  const projectIds = useMemo(
-    () => [...new Set(projects.map((project) => project.id))].sort(),
-    [projects],
-  );
-
   useEffect(() => {
     const loadVersion = loadVersionRef.current + 1;
     loadVersionRef.current = loadVersion;
-
-    if (projectIds.length === 0) {
-      setScreenshots([]);
-      setCommentedScreenshotIds(new Set());
-      setAnnotatedScreenshotIds(new Set());
-      setAnnotationLabels([]);
-      setLoading(false);
-      return;
-    }
 
     async function loadScope() {
       setLoading(true);
@@ -115,9 +97,8 @@ export function useCatalogueFullScope({
       while (true) {
         const { data, error } = await supabase
           .from('screenshots')
-          .select('id,project_id,group,platform,theme,web_preset_key,mobile_os,metadata,created_at,uploader_email,name,file_name,storage_path')
+          .select('id,group,platform,theme,web_preset_key,mobile_os,metadata,created_at,uploader_email,name,file_name,storage_path')
           .is('deleted_at', null)
-          .in('project_id', projectIds)
           .order('id', { ascending: true })
           .range(from, from + SCREENSHOT_PAGE_SIZE - 1);
 
@@ -173,7 +154,7 @@ export function useCatalogueFullScope({
         setAnnotatedScreenshotIds(new Set());
       }
 
-      const labels = await fetchAnnotationLabelsForProjects(projectIds);
+      const labels = await fetchAnnotationLabels();
       if (loadVersionRef.current !== loadVersion) return;
       setAnnotationLabels(labels);
 
@@ -189,7 +170,7 @@ export function useCatalogueFullScope({
         setLoading(false);
       }
     });
-  }, [includeAnnotatedScreenshots, includeCommentedScreenshots, projectIds]);
+  }, [includeAnnotatedScreenshots, includeCommentedScreenshots]);
 
   return {
     annotatedScreenshotIds,

@@ -8,7 +8,7 @@ import { buildConventionName, parseScreenshotName } from '../lib/naming';
 import { insertScreenshotWithUploader } from '../lib/screenshot-write';
 import { supabase } from '../lib/supabase';
 import { generateThumbHash } from '../lib/thumbhash';
-import type { MobileOs, Project, ScreenshotNode, WebPreset } from '../types';
+import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 
 interface ToastState {
   message: string;
@@ -38,7 +38,6 @@ export interface UploadProgressItem {
 interface UseCatalogueUploadArgs {
   allFamilies: CatalogueFamilyView[];
   fullScopeScreenshots?: ScreenshotNode[];
-  projects: Project[];
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
   userEmail?: string | null;
@@ -49,7 +48,6 @@ interface UseCatalogueUploadArgs {
 export function useCatalogueUpload({
   allFamilies,
   fullScopeScreenshots,
-  projects,
   setScreenshots,
   setToast,
   userEmail,
@@ -96,13 +94,6 @@ export function useCatalogueUpload({
     if (!label) return {};
     return { [CATALOGUE_FLOW_LABEL_KEY]: label };
   }
-
-  // Project_id is still required by the DB schema as NOT NULL, so writes
-  // (handled elsewhere in this hook) keep defaulting to projects[0]. The
-  // group suggestion list, however, spans every project the user has access
-  // to — same data set the chip strip and catalogue grid already render
-  // from — so quick-upload suggestions match what the user actually sees.
-  const defaultProjectId = projects[0]?.id ?? null;
 
   const uploadProjectGroups = useMemo(() => {
     return [...new Set(allFamilies.map((family) => family.group).filter(Boolean))] as string[];
@@ -168,16 +159,6 @@ export function useCatalogueUpload({
       setQuickUploadMobileOs(null);
     }
   }, [quickUploadMobileOs, quickUploadPlatform, quickUploadWebPresetKey, webPresets]);
-
-  useEffect(() => {
-    if (!showUpload || uploadProjectId || !defaultProjectId) return;
-    setUploadProjectId(defaultProjectId);
-  }, [defaultProjectId, showUpload, uploadProjectId]);
-
-  useEffect(() => {
-    if (!showQuickUpload || quickUploadProjectId || !defaultProjectId) return;
-    setQuickUploadProjectId(defaultProjectId);
-  }, [defaultProjectId, quickUploadProjectId, showQuickUpload]);
 
   function updateActiveVariant(familyId: string, variantKey: string) {
     setActiveVariantKeys((previous) => ({ ...previous, [familyId]: variantKey }));
@@ -301,14 +282,14 @@ export function useCatalogueUpload({
     });
   }
 
-  async function uploadReference(projectId: string) {
+  async function uploadReference() {
     if (!uploadRefFile) {
       return { referenceLabel: uploadRefLabel.trim() || null, referenceStoragePath: null, referenceUrl: null };
     }
 
     const compressed = await compressImage(uploadRefFile);
     const safeName = uploadRefFile.name.replace(/\s+/g, '-');
-    const storagePath = `${userId}/${projectId}/references/${Date.now()}-${safeName}`;
+    const storagePath = `${userId}/all-projects/references/${Date.now()}-${safeName}`;
     const { error } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
 
     if (error) {
@@ -324,11 +305,6 @@ export function useCatalogueUpload({
   }
 
   async function handleFilesSelected(files: File[]) {
-    const projectId = uploadProjectId ?? defaultProjectId;
-    if (!projectId) {
-      setToast({ message: 'Create a project before uploading screenshots', type: 'error' });
-      return;
-    }
     if (!uploadPlatform || !uploadTheme) return;
     const screenshotName = uploadNewFamilyName.trim();
     const screenshotGroup = uploadNewFamilyGroup.trim();
@@ -340,7 +316,7 @@ export function useCatalogueUpload({
 
     setUploading(true);
 
-    const reference = await uploadReference(projectId);
+    const reference = await uploadReference();
     const inserted: ScreenshotNode[] = [];
     let failedCount = 0;
 
@@ -350,7 +326,7 @@ export function useCatalogueUpload({
         const thumbHash = await generateThumbHash(compressed).catch(() => null);
         const parsed = parseScreenshotName(file.name);
         const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-        const storagePath = `${userId}/${projectId}/${safeName}`;
+        const storagePath = `${userId}/all-projects/${safeName}`;
         const { error: uploadError } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
 
         if (uploadError) {
@@ -361,7 +337,6 @@ export function useCatalogueUpload({
         const { data, error } = await insertScreenshotWithUploader({
           supabase,
           payload: {
-            project_id: projectId,
             flow_id: null,
             screen_family_id: null,
             name: screenshotName,
@@ -424,7 +399,6 @@ export function useCatalogueUpload({
   async function uploadOneQuickItem(
     item: QuickUploadQueueItem,
     batch: {
-      projectId: string;
       group: string;
       suggestedGroup: string;
       flowLabel: string;
@@ -440,7 +414,7 @@ export function useCatalogueUpload({
     const flowMetadata = flowLabel ? { [CATALOGUE_FLOW_LABEL_KEY]: flowLabel } : {};
     const compressed = await compressImage(file);
     const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-    const storagePath = `${userId}/${batch.projectId}/${safeName}`;
+    const storagePath = `${userId}/all-projects/${safeName}`;
     const { error: uploadError } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
     if (uploadError) throw uploadError;
 
@@ -448,7 +422,6 @@ export function useCatalogueUpload({
     const { data, error } = await insertScreenshotWithUploader({
       supabase,
       payload: {
-        project_id: batch.projectId,
         flow_id: null,
         screen_family_id: null,
         name: buildConventionName(parsed.sequence, flowLabel || parsed.group, parsed.name),
@@ -483,13 +456,8 @@ export function useCatalogueUpload({
   }
 
   async function handleQuickUploadUploadAll(retryQueue?: QuickUploadQueueItem[]) {
-    const projectId = quickUploadProjectId ?? defaultProjectId;
     const sourceQueue = retryQueue ?? quickUploadQueue;
     if (sourceQueue.length === 0) {
-      return [] as ScreenshotNode[];
-    }
-    if (!projectId) {
-      setToast({ message: 'Create a project before uploading screenshots', type: 'error' });
       return [] as ScreenshotNode[];
     }
 
@@ -503,7 +471,6 @@ export function useCatalogueUpload({
     }
 
     const batch = {
-      projectId,
       group: batchGroup,
       suggestedGroup: quickUploadSuggestedGroup.trim(),
       flowLabel: batchFlowLabel,

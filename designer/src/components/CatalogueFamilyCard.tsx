@@ -275,7 +275,7 @@ export function CatalogueFamilyCard({
               <CatalogueGroupLabel
                 className="catalogue-family-card__group"
                 group={family.group}
-                projectId={family.project_id}
+                projectId={null}
               />
             </div>
             <div className="catalogue-card-meta-right">
