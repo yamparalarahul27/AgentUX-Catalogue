@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catalogue — Group View mockup</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --canvas: #0e0e10;
+      --card-bg: #1a1a1f;
+      --card-border: rgba(63, 63, 70, 0.55);
+      --text: #fafafa;
+      --text-dim: #a1a1aa;
+      --text-faint: #71717a;
+      --indigo-300: #a5b4fc;
+      --indigo-500: #6366f1;
+      --indigo-600: #4f46e5;
+    }
+
+    body {
+      background: var(--canvas);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-feature-settings: 'ss01';
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      padding: 48px 32px 96px;
+    }
+
+    /* ── Page header ─────────────────────────────────────────────── */
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 40px;
+    }
+
+    /* ── Grid ────────────────────────────────────────────────────── */
+    .group-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 40px 32px;
+      max-width: 1440px;
+    }
+
+    /* ── Group cell (card + footer) ─────────────────────────────── */
+    .group-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── Card ────────────────────────────────────────────────────── */
+    .group-card {
+      position: relative;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 14px;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 160ms ease-out;
+    }
+    .group-card:hover {
+      border-color: rgba(99, 102, 241, 0.45);
+    }
+
+    /* Platform icons — top-left of card */
+    .platforms {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(15, 15, 16, 0.78);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(63, 63, 70, 0.7);
+      border-radius: 999px;
+      padding: 5px 10px;
+      z-index: 3;
+    }
+    .platforms svg {
+      width: 14px;
+      height: 14px;
+      stroke: #e4e4e7;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Hero — screenshot. The screenshot fits inside this box via
+       object-fit: contain so the whole frame is visible regardless of
+       whether it's a tall mobile shot or wide web shot. Letterbox
+       background matches the card so the contain-fit looks intentional. */
+    .hero {
+      position: relative;
+      width: calc(100% - 32px);
+      height: calc(100% - 32px);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0a0a0c;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Side navigation arrows — appear on card hover */
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(63, 63, 70, 0.7);
+      background: rgba(15, 15, 16, 0.85);
+      backdrop-filter: blur(8px);
+      color: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 160ms ease-out, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 2;
+      padding: 0;
+    }
+    .nav-arrow svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .nav-arrow:hover {
+      background: rgba(24, 24, 27, 0.95);
+      border-color: rgba(99, 102, 241, 0.55);
+    }
+    .nav-arrow.prev { left: 16px; }
+    .nav-arrow.next { right: 16px; }
+    .group-card:hover .nav-arrow {
+      opacity: 1;
+    }
+    .group-card:hover .nav-arrow.prev { transform: translateY(-50%) translateX(0); }
+    .group-card:hover .nav-arrow.next { transform: translateY(-50%) translateX(0); }
+
+    /* Tiny pagination dots inside the card (optional flourish) */
+    .pagination {
+      position: absolute;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      display: inline-flex;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 160ms ease-out;
+      z-index: 2;
+    }
+    .pagination .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(250, 250, 250, 0.4);
+    }
+    .pagination .dot.active {
+      background: var(--indigo-300);
+    }
+    .group-card:hover .pagination { opacity: 1; }
+
+    /* ── Footer row (OUTSIDE the card, on the canvas) ───────────── */
+    .footer {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 2px;
+    }
+    .footer__icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      flex-shrink: 0;
+      object-fit: cover;
+      background: #18181b;
+      border: 1px solid rgba(63, 63, 70, 0.45);
+    }
+    .footer__text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .footer__name {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .footer__meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .footer__meta .sep {
+      color: var(--text-faint);
+    }
+
+    /* ── Card variations for the grid demo ──────────────────────── */
+    /* Each placeholder is shaped like a real screenshot — mobile uses
+       phone aspect, web uses desktop aspect — so the surrounding
+       .hero letterbox renders the same way it will in production. */
+    .placeholder-mobile {
+      aspect-ratio: 9 / 19.5;
+      max-height: 100%;
+    }
+    .placeholder-web {
+      aspect-ratio: 16 / 10;
+      max-width: 100%;
+    }
+
+    .placeholder-binance {
+      background:
+        linear-gradient(180deg, #181818 0%, #0d0d0d 100%);
+      color: #f0b90b;             /* Binance yellow */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 12px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: 0;
+      border-radius: 10px;
+    }
+    .placeholder-binance .ph-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .placeholder-binance .ph-balance {
+      color: #fff;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .placeholder-binance .ph-balance-amount {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 8px;
+    }
+    .placeholder-binance .ph-balance-fiat {
+      color: #707070;
+      font-size: 10px;
+      margin-top: 2px;
+    }
+    .placeholder-binance .ph-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-top: 12px;
+    }
+    .placeholder-binance .ph-action {
+      background: #1f1f1f;
+      border-radius: 6px;
+      padding: 7px 2px;
+      font-size: 8px;
+      color: #e4e4e7;
+      text-align: center;
+    }
+    .placeholder-binance .ph-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid #1f1f1f;
+      font-size: 10px;
+    }
+    .placeholder-binance .ph-row span:last-child { color: #f0b90b; }
+    .placeholder-binance .ph-section-title {
+      color: #707070;
+      font-size: 8px;
+      margin-top: 10px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Card 2 — Carbon-style placeholder */
+    .placeholder-carbon {
+      background: linear-gradient(180deg, #1a1f2e 0%, #0a0e1a 100%);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 14px;
+      border-radius: 10px;
+    }
+    .placeholder-carbon .ph-title {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .placeholder-carbon .ph-sub {
+      color: #94a3b8;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    /* Card 3 — Bybit-style placeholder (web-aspect screenshot) */
+    .placeholder-bybit {
+      background: linear-gradient(135deg, #1a1a1a 0%, #050505 100%);
+      display: flex;
+      flex-direction: column;
+      padding: 14px 18px;
+      border-radius: 8px;
+    }
+    .placeholder-bybit .ph-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      color: #71717a;
+    }
+    .placeholder-bybit .ph-logo {
+      color: #f7a600;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.04em;
+    }
+    .placeholder-bybit .ph-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .placeholder-bybit .ph-chart {
+      background: #0a0a0a;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f7a600;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .placeholder-bybit .ph-side {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .placeholder-bybit .ph-side-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #a1a1aa;
+      padding: 4px 0;
+    }
+
+    /* Subtle screenshot counter (top-right) */
+    .count-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(15, 15, 16, 0.78);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(63, 63, 70, 0.7);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: #e4e4e7;
+      z-index: 3;
+    }
+
+  </style>
+</head>
+<body>
+  <h1 class="page-title">Group View</h1>
+  <p class="page-subtitle">Each group as a card. Hover to peek through recent screenshots.</p>
+
+  <div class="group-grid">
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- BINANCE (the requested example)                            -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <article class="group-cell">
+      <div class="group-card">
+        <!-- Platform icons (web + mobile, top-left) -->
+        <div class="platforms" title="Available on web and mobile">
+          <!-- Monitor (web) -->
+          <svg viewBox="0 0 24 24" aria-label="Web"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <!-- Smartphone (mobile) -->
+          <svg viewBox="0 0 24 24" aria-label="Mobile"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </div>
+
+        <!-- Screenshot count (top-right) -->
+        <div class="count-badge">47</div>
+
+        <!-- Hero — letterbox container; the placeholder inside is shaped
+             like a real mobile screenshot (9:19.5). In production this will
+             be an <img> with object-fit: contain. -->
+        <div class="hero">
+          <div class="placeholder-mobile placeholder-binance">
+          <div class="ph-header">
+            <span>9:41</span>
+            <span>📶 📡 ⚡</span>
+          </div>
+          <div>
+            <div class="ph-balance">Estimated Balance</div>
+            <div class="ph-balance-amount">$ 12,847.20</div>
+            <div class="ph-balance-fiat">≈ ₹ 1,069,432.18</div>
+            <div class="ph-actions">
+              <div class="ph-action">Deposit</div>
+              <div class="ph-action">Withdraw</div>
+              <div class="ph-action">Cash In</div>
+              <div class="ph-action">Transfer</div>
+            </div>
+            <div class="ph-section-title">Hot Markets</div>
+            <div class="ph-row"><span>BTC/USDT</span><span>+1.24%</span></div>
+            <div class="ph-row"><span>ETH/USDT</span><span>+0.82%</span></div>
+            <div class="ph-row"><span>SOL/USDT</span><span>+3.07%</span></div>
+          </div>
+          </div>
+        </div>
+
+        <!-- Hover navigation arrows -->
+        <button class="nav-arrow prev" aria-label="Previous screenshot">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="nav-arrow next" aria-label="Next screenshot">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <!-- Pagination dots (visible on hover) -->
+        <div class="pagination">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+
+      <!-- Footer row (OUTSIDE card, on canvas) -->
+      <div class="footer">
+        <img class="footer__icon"
+             src="https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/binance/1775565464784-binance.png"
+             alt="Binance icon"
+             onerror="this.style.display='none'" />
+        <div class="footer__text">
+          <div class="footer__name">Binance</div>
+          <div class="footer__meta">
+            <span>CEX</span>
+            <span class="sep">·</span>
+            <span>Global</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- Carbon (mobile-only example)                                -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <article class="group-cell">
+      <div class="group-card">
+        <div class="platforms" title="Mobile only">
+          <svg viewBox="0 0 24 24" aria-label="Mobile"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </div>
+        <div class="count-badge">12</div>
+
+        <div class="hero">
+          <div class="placeholder-mobile placeholder-carbon">
+            <div class="ph-header">
+              <span style="color: #94a3b8; font-size: 9px;">9:41</span>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px;">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: #1a1f2e; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 18px;">🐦‍⬛</div>
+              <div class="ph-title">Hello, Alex</div>
+              <div class="ph-sub">Welcome to Carbon</div>
+              <div style="background: #6366f1; padding: 7px 14px; border-radius: 999px; font-size: 9px; color: #fff; font-weight: 500; margin-top: 10px;">Get started →</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="nav-arrow prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button class="nav-arrow next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+        <div class="pagination">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+
+      <div class="footer">
+        <img class="footer__icon"
+             src="https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/carbon/1777717810515-carbon.png"
+             alt="Carbon icon"
+             onerror="this.style.display='none'" />
+        <div class="footer__text">
+          <div class="footer__name">Carbon</div>
+          <div class="footer__meta">
+            <span>DEX</span>
+            <span class="sep">·</span>
+            <span>Global</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <!-- Bybit (web-only example, to show single icon variant)       -->
+    <!-- ─────────────────────────────────────────────────────────── -->
+    <article class="group-cell">
+      <div class="group-card">
+        <div class="platforms" title="Web only">
+          <svg viewBox="0 0 24 24" aria-label="Web"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="count-badge">23</div>
+
+        <div class="hero">
+          <div class="placeholder-web placeholder-bybit">
+            <div class="ph-topbar">
+              <div class="ph-logo">bybit</div>
+              <span>Trade · Earn · Derivatives</span>
+            </div>
+            <div class="ph-body">
+              <div class="ph-chart">BTC/USDT  +1.2%</div>
+              <div class="ph-side">
+                <div class="ph-side-row"><span>BTC</span><span>67,420</span></div>
+                <div class="ph-side-row"><span>ETH</span><span>3,840</span></div>
+                <div class="ph-side-row"><span>SOL</span><span>178.4</span></div>
+                <div class="ph-side-row"><span>BNB</span><span>612.8</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="nav-arrow prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button class="nav-arrow next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+        <div class="pagination">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+
+      <div class="footer">
+        <img class="footer__icon"
+             src="https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/bybit/1775565418486-bybit.png"
+             alt="Bybit icon"
+             onerror="this.style.display='none'" />
+        <div class="footer__text">
+          <div class="footer__name">Bybit</div>
+          <div class="footer__meta">
+            <span>CEX</span>
+            <span class="sep">·</span>
+            <span>Global</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</body>
+</html>

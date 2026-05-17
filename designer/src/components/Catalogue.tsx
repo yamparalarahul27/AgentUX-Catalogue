@@ -919,12 +919,14 @@ export function Catalogue({
                     filteredFamilies={filteredFamilies}
                     gridDensity={gridDensity}
                     groupedFamilies={groupedFamilies}
+                    fullScopeScreenshots={fullScopeScreenshots}
                     hasMore={hasMore}
                     loading={loading}
                     loadingMore={loadingMore}
                     onLoadMore={loadMore}
                     searchQuery={searchQuery}
                     selected={selected}
+                    sortBy={sortBy}
                     viewMode={viewMode}
                     onActiveVariantChange={upload.updateActiveVariant}
                     onAnnotationStateChange={handleAnnotationStateChange}

@@ -2,10 +2,13 @@ import { CheckSquare, ImageIcon, Square } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import type { GridDensity } from '../lib/catalogue-helpers';
+import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import type { ScreenshotNode } from '../types';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { CatalogueGroupView } from './CatalogueGroupView';
 import { CatalogueScrollSentinel } from './CatalogueScrollSentinel';
 import { CatalogueSkeletonList } from './CatalogueSkeletonCard';
 import { CatalogueStackView } from './CatalogueStackView';
@@ -21,12 +24,17 @@ interface CatalogueContentProps {
   filterWebPreset: string | null;
   gridDensity: GridDensity;
   groupedFamilies: Record<string, CatalogueFamilyView[]>;
+  // Full-scope, unpaginated screenshots used exclusively by Group View so it
+  // can show every group up front (the paginated `groupedFamilies` would miss
+  // groups whose first screenshot lives past the current cursor).
+  fullScopeScreenshots: ScreenshotNode[];
   hasMore: boolean;
   loading: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
   searchQuery: string;
   selected: Set<string>;
+  sortBy: CatalogueSortOption;
   viewMode: CatalogueViewMode;
   filteredFamilies: CatalogueFamilyView[];
   onActiveVariantChange: (familyId: string, variantKey: string) => void;
@@ -76,12 +84,14 @@ export function CatalogueContent({
   filterWebPreset,
   gridDensity,
   groupedFamilies,
+  fullScopeScreenshots,
   hasMore,
   loading,
   loadingMore,
   onLoadMore,
   searchQuery,
   selected,
+  sortBy,
   viewMode,
   filteredFamilies,
   onActiveVariantChange,
@@ -170,6 +180,22 @@ export function CatalogueContent({
         userEmail={userEmail}
         webPresets={webPresets}
       />
+    );
+  }
+
+  if (sortBy === 'name-asc') {
+    return (
+      <div className="catalogue-content">
+        <CatalogueGroupView
+          screenshots={fullScopeScreenshots}
+          filterFlow={filterFlow}
+          filterPlatform={filterPlatform}
+          filterTheme={filterTheme}
+          filterMobileOs={filterMobileOs}
+          filterWebPreset={filterWebPreset}
+          searchQuery={searchQuery}
+        />
+      </div>
     );
   }
 
