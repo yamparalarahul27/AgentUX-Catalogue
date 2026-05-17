@@ -23,7 +23,6 @@ interface CatalogueSearchModalProps {
   // Used to render the user-uploaded group icon when available;
   // falls back to a generic LayoutGrid Lucide when not.
   appearanceMap: CatalogueGroupAppearanceMap;
-  appearanceProjectId: string | null;
   onSelectGroup: (group: string) => void;
   onSelectFlow: (group: string, flow: string) => void;
   onSelectScreenshot: (screenshot: ScreenshotNode) => void;
@@ -41,7 +40,6 @@ export function CatalogueSearchModal({
   onClose,
   screenshots,
   appearanceMap,
-  appearanceProjectId,
   onSelectGroup,
   onSelectFlow,
   onSelectScreenshot,
@@ -198,7 +196,7 @@ export function CatalogueSearchModal({
                   </div>
                   {results.groups.map((result, index) => {
                     const flatIndex = index;
-                    const appearance = resolveCatalogueGroupAppearance(appearanceMap, result.name, appearanceProjectId);
+                    const appearance = resolveCatalogueGroupAppearance(appearanceMap, result.name, null);
                     return (
                       <button
                         key={result.id}

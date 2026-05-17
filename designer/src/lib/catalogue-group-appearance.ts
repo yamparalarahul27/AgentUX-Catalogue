@@ -19,7 +19,6 @@ interface CatalogueGroupAppearanceRow {
   group_key: string;
   icon_storage_path: string | null;
   icon_url: string | null;
-  project_id: string;
   region: string | null;
 }
 
@@ -269,12 +268,14 @@ export function upsertCatalogueGroupAppearance(
   return nextMap;
 }
 
-export async function ensureCatalogueGroupAppearanceLoaded(projectId?: string | null) {
-  const projectKey = normalizeProjectKey(projectId);
-  if (projectKey === GLOBAL_PROJECT_KEY) return;
-  if (syncedProjects.has(projectKey)) return;
+export async function ensureCatalogueGroupAppearanceLoaded(_projectId?: string | null) {
+  // project_id was dropped from catalogue_group_appearance in migration
+  // 20260517_remove_project_scoping. Appearance is now global — load all
+  // rows once into GLOBAL_PROJECT_KEY. The optional projectId parameter
+  // is retained for backwards compatibility with existing call sites.
+  if (syncedProjects.has(GLOBAL_PROJECT_KEY)) return;
 
-  const existing = inFlightLoads.get(projectKey);
+  const existing = inFlightLoads.get(GLOBAL_PROJECT_KEY);
   if (existing) {
     await existing;
     return;
@@ -283,8 +284,7 @@ export async function ensureCatalogueGroupAppearanceLoaded(projectId?: string | 
   const nextLoad = (async () => {
     const { data, error } = await supabase
       .from('catalogue_group_appearance')
-      .select('project_id, group_key, display_label, icon_url, icon_storage_path, category, region')
-      .eq('project_id', projectKey);
+      .select('group_key, display_label, icon_url, icon_storage_path, category, region');
 
     if (error || !data) return;
 
@@ -298,21 +298,21 @@ export async function ensureCatalogueGroupAppearanceLoaded(projectId?: string | 
     }
 
     const nextMap = { ...readCatalogueGroupAppearanceMap() };
-    setProjectEntries(nextMap, projectKey, entries);
+    setProjectEntries(nextMap, GLOBAL_PROJECT_KEY, entries);
     writeCatalogueGroupAppearanceMap(nextMap);
-    syncedProjects.add(projectKey);
+    syncedProjects.add(GLOBAL_PROJECT_KEY);
   })().finally(() => {
-    inFlightLoads.delete(projectKey);
+    inFlightLoads.delete(GLOBAL_PROJECT_KEY);
   });
 
-  inFlightLoads.set(projectKey, nextLoad);
+  inFlightLoads.set(GLOBAL_PROJECT_KEY, nextLoad);
   await nextLoad;
 }
 
-export async function ensureCatalogueGroupAppearanceLoadedForProjects(projectIds: string[]) {
-  const keys = normalizeProjectKeys(projectIds);
-  if (keys.length === 0) return;
-  await Promise.all(keys.map((projectKey) => ensureCatalogueGroupAppearanceLoaded(projectKey)));
+export async function ensureCatalogueGroupAppearanceLoadedForProjects(_projectIds: string[]) {
+  // Kept as a backwards-compatible alias — appearance is now global, so we
+  // just delegate to the global loader. The argument is ignored.
+  await ensureCatalogueGroupAppearanceLoaded();
 }
 
 export function subscribeCatalogueGroupAppearance(listener: () => void) {
@@ -332,72 +332,48 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
   projectIds?: string[] | null;
   region?: CatalogueGroupRegion | null;
 }) {
-  const scopedProjects = input.projectId
-    ? normalizeProjectKeys([input.projectId])
-    : normalizeProjectKeys(input.projectIds);
-
-  if (scopedProjects.length === 0) {
-    return {
-      error: 'No projects available to save group appearance.',
-      ok: false as const,
-    };
-  }
-
+  // project_id was dropped from catalogue_group_appearance in migration
+  // 20260517_remove_project_scoping. All writes now hit a single row per
+  // group_key. `projectId` / `projectIds` are accepted for caller
+  // backwards-compat but ignored.
   const groupKey = normalizeGroupKey(input.group);
+  if (!groupKey) {
+    return { error: 'Group name is required.', ok: false as const };
+  }
+
   let nextMap = readCatalogueGroupAppearanceMap();
+  nextMap = upsertCatalogueGroupAppearance(nextMap, {
+    category: input.category,
+    group: input.group,
+    iconStoragePath: input.iconStoragePath,
+    iconUrl: input.iconUrl,
+    label: input.label,
+    projectId: null,
+    region: input.region,
+  });
 
-  for (const projectKey of scopedProjects) {
-    nextMap = upsertCatalogueGroupAppearance(nextMap, {
-      category: input.category,
-      group: input.group,
-      iconStoragePath: input.iconStoragePath,
-      iconUrl: input.iconUrl,
-      label: input.label,
-      projectId: projectKey,
-      region: input.region,
-    });
-  }
+  const entry = nextMap[GLOBAL_PROJECT_KEY]?.[groupKey] || null;
 
-  if (!input.projectId) {
-    nextMap = upsertCatalogueGroupAppearance(nextMap, {
-      category: input.category,
-      group: input.group,
-      iconStoragePath: input.iconStoragePath,
-      iconUrl: input.iconUrl,
-      label: input.label,
-      projectId: null,
-      region: input.region,
-    });
-  }
+  if (entry) {
+    const { error } = await supabase
+      .from('catalogue_group_appearance')
+      .upsert({
+        category: entry.category || null,
+        display_label: entry.label || null,
+        group_key: groupKey,
+        icon_storage_path: entry.iconStoragePath || null,
+        icon_url: entry.iconUrl || null,
+        region: entry.region || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'group_key' });
 
-  for (const projectKey of scopedProjects) {
-    const projectEntries = nextMap[projectKey] || {};
-    const entry = projectEntries[groupKey] || null;
-
-    if (entry) {
-      const { error } = await supabase
-        .from('catalogue_group_appearance')
-        .upsert({
-          category: entry.category || null,
-          display_label: entry.label || null,
-          group_key: groupKey,
-          icon_storage_path: entry.iconStoragePath || null,
-          icon_url: entry.iconUrl || null,
-          project_id: projectKey,
-          region: entry.region || null,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'project_id,group_key' });
-
-      if (error) {
-        return { error: error.message, ok: false as const };
-      }
-      continue;
+    if (error) {
+      return { error: error.message, ok: false as const };
     }
-
+  } else {
     const { error } = await supabase
       .from('catalogue_group_appearance')
       .delete()
-      .eq('project_id', projectKey)
       .eq('group_key', groupKey);
 
     if (error) {
@@ -406,9 +382,7 @@ export async function saveCatalogueGroupAppearanceToSupabase(input: {
   }
 
   writeCatalogueGroupAppearanceMap(nextMap);
-  for (const projectKey of scopedProjects) {
-    syncedProjects.add(projectKey);
-  }
+  syncedProjects.add(GLOBAL_PROJECT_KEY);
   return { ok: true as const };
 }
 

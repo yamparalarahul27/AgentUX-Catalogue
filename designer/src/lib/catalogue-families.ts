@@ -15,7 +15,6 @@ export interface CatalogueFamilyView {
   group: string | null;
   flow_id: string | null;
   flow_label: string | null;
-  project_id: string;
   created_at?: string;
   isLegacy: boolean;
   variants: CatalogueVariantView[];
@@ -48,7 +47,6 @@ export function getActiveFamilyVariant(
 export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
   return {
     id: `${LEGACY_FAMILY_PREFIX}${screenshot.id}`,
-    project_id: screenshot.project_id,
     name: screenshot.name,
     group: screenshot.group,
     flow_id: screenshot.flow_id,
@@ -136,7 +134,6 @@ export function buildCatalogueFamilies(
       group: family.group ?? screenshot.group,
       flow_id: family.flow_id ?? screenshot.flow_id,
       flow_label: flowLabel,
-      project_id: family.project_id || screenshot.project_id,
       created_at: family.created_at || screenshot.created_at,
       isLegacy: family.id.startsWith(LEGACY_FAMILY_PREFIX),
       variants: [variant],

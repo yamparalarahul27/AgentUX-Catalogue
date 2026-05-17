@@ -47,7 +47,7 @@ export function CatalogueStackView({
               </button>
               <CatalogueGroupLabel
                 group={groupName}
-                projectId={families[0]?.project_id ?? null}
+                projectId={null}
                 fallback="Ungrouped"
                 iconSize={28}
               />

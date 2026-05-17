@@ -3,12 +3,11 @@ import { RotateCcw, Trash2 } from 'lucide-react';
 
 import { formatRelativeTime } from '../lib/relative-time';
 import { supabase } from '../lib/supabase';
-import type { Project, ScreenshotNode } from '../types';
+import type { ScreenshotNode } from '../types';
 import { ConfirmModal } from './ConfirmModal';
 import { ThumbHashImage } from './ThumbHashImage';
 
 interface CatalogueTrashSectionProps {
-  projects: Project[];
   onRestored?: () => void;
 }
 
@@ -38,7 +37,7 @@ function platformLabel(platform: string): string {
   return platform;
 }
 
-export function CatalogueTrashSection({ projects, onRestored }: CatalogueTrashSectionProps) {
+export function CatalogueTrashSection({ onRestored }: CatalogueTrashSectionProps) {
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,14 +46,7 @@ export function CatalogueTrashSection({ projects, onRestored }: CatalogueTrashSe
   const [showCleanConfirm, setShowCleanConfirm] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
 
-  const projectIds = useMemo(() => projects.map((project) => project.id), [projects]);
-
   useEffect(() => {
-    if (projectIds.length === 0) {
-      setScreenshots([]);
-      setLoading(false);
-      return;
-    }
     let cancelled = false;
     async function load() {
       setLoading(true);
@@ -63,7 +55,6 @@ export function CatalogueTrashSection({ projects, onRestored }: CatalogueTrashSe
       const { data, error: queryError } = await supabase
         .from('screenshots')
         .select('*')
-        .in('project_id', projectIds)
         .not('deleted_at', 'is', null)
         .gt('deleted_at', fifteenDaysAgo)
         .order('deleted_at', { ascending: false });
@@ -82,7 +73,7 @@ export function CatalogueTrashSection({ projects, onRestored }: CatalogueTrashSe
     }
     void load();
     return () => { cancelled = true; };
-  }, [projectIds]);
+  }, []);
 
   // Group screenshots into "families" — by screen_family_id when set, else by
   // screenshot id (legacy family of one). Each row in the Trash list = one family.

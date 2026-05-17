@@ -52,7 +52,7 @@ export function useCatalogueImageActions({
 
     const compressed = await compressImage(file);
     const safeName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-    const storagePath = `${userId}/${screenshot.project_id}/${safeName}`;
+    const storagePath = `${userId}/all-projects/${safeName}`;
     const { error } = await supabase.storage.from('screenshots').upload(storagePath, compressed, { upsert: true });
 
     if (error) {
@@ -106,7 +106,7 @@ export function useCatalogueImageActions({
       const thumbHash = await generateThumbHash(cropResult.file);
 
       const safeName = `cropped-${Date.now()}-${(screenshot.file_name || 'screenshot').replace(/\s+/g, '-')}`;
-      const newStoragePath = `${userId}/${screenshot.project_id}/${safeName}`;
+      const newStoragePath = `${userId}/all-projects/${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from('screenshots')
         .upload(newStoragePath, cropResult.file);
@@ -245,7 +245,7 @@ export function useCatalogueImageActions({
     if (input.file) {
       const compressed = await compressImage(input.file);
       const safeName = input.file.name.replace(/\s+/g, '-');
-      nextStoragePath = `${userId}/${screenshot.project_id}/references/${Date.now()}-${safeName}`;
+      nextStoragePath = `${userId}/all-projects/references/${Date.now()}-${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from('screenshots')
         .upload(nextStoragePath, compressed, { upsert: true });

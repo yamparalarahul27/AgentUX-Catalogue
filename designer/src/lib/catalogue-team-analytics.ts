@@ -52,12 +52,10 @@ export function formatTeamAnalyticsDate(dateKey: string) {
 
 export function buildTeamUploadAnalyticsRows(
   screenshots: ScreenshotNode[],
-  projectId: string | null,
 ): TeamUploadAnalyticsRow[] {
   const grouped = new Map<string, TeamUploadAnalyticsRow>();
 
   for (const screenshot of screenshots) {
-    if (projectId && screenshot.project_id !== projectId) continue;
     if (screenshot.platform !== 'web' && screenshot.platform !== 'mobile') continue;
 
     const dateKey = getIstDateKey(screenshot.created_at);

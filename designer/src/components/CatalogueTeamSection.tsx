@@ -16,7 +16,6 @@ import {
 import { getScreenshotFlowLabel } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
-  ensureCatalogueGroupAppearanceLoadedForProjects,
   readCatalogueGroupAppearanceMap,
   removeCatalogueGroupUploadedIconFromSupabase,
   resolveCatalogueGroupAppearance,
@@ -30,7 +29,7 @@ import type {
 } from '../lib/catalogue-group-appearance';
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
 import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
-import type { Project, ScreenshotNode } from '../types';
+import type { ScreenshotNode } from '../types';
 import { AdminUnlockScreen } from './AdminUnlockScreen';
 import { CatalogueFlagsSection } from './CatalogueFlagsSection';
 import { CatalogueRolesSection } from './CatalogueRolesSection';
@@ -45,7 +44,6 @@ import { Toast } from './Toast';
 type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash' | 'flags' | 'members' | 'roles';
 
 interface CatalogueTeamSectionProps {
-  projects: Project[];
   screenshots: ScreenshotNode[];
   currentUserEmail: string;
   // When provided, saving a group editor with a changed name will also
@@ -129,7 +127,6 @@ function buildGroupChecklist(screenshots: ScreenshotNode[]): GroupChecklistItem[
 }
 
 export function CatalogueTeamSection({
-  projects,
   screenshots,
   currentUserEmail,
   onRenameGroupKey,
@@ -143,10 +140,6 @@ export function CatalogueTeamSection({
   // tab session (persisted to sessionStorage). Stale-passcode rebound is
   // wired via clearUnlock as onUnauthorized on the children.
   const { adminPasscode, unlocked: adminUnlocked, unlock: handleAdminUnlock, clearUnlock: handleAdminUnauthorized } = useAdminUnlock();
-  // The project picker has been removed — single-project workflow. Default
-  // to the first project's id (or null if none) so per-project appearance
-  // logic still works. Multi-project filtering is no longer surfaced.
-  const projectId = projects[0]?.id ?? null;
   const [groupAppearanceMap, setGroupAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
   const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
   const [editingGroupOriginal, setEditingGroupOriginal] = useState<string>('');
@@ -172,7 +165,7 @@ export function CatalogueTeamSection({
   const scopedScreenshots = screenshots;
 
   const rows = useMemo(
-    () => buildTeamUploadAnalyticsRows(scopedScreenshots, null),
+    () => buildTeamUploadAnalyticsRows(scopedScreenshots),
     [scopedScreenshots],
   );
 
@@ -187,10 +180,10 @@ export function CatalogueTeamSection({
 
   const enrichedGroupChecklist = useMemo<EnrichedGroupItem[]>(
     () => groupChecklist.map((item) => {
-      const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, item.group, projectId);
+      const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, item.group, null);
       return { ...item, category: appearance.category, region: appearance.region };
     }),
-    [groupAppearanceMap, groupChecklist, projectId],
+    [groupAppearanceMap, groupChecklist],
   );
 
   const filteredGroupChecklist = useMemo<EnrichedGroupItem[]>(() => {
@@ -227,13 +220,8 @@ export function CatalogueTeamSection({
   }, []);
 
   useEffect(() => {
-    if (projectId) {
-      void ensureCatalogueGroupAppearanceLoaded(projectId);
-      return;
-    }
-
-    void ensureCatalogueGroupAppearanceLoadedForProjects(projects.map((project) => project.id));
-  }, [projectId, projects]);
+    void ensureCatalogueGroupAppearanceLoaded();
+  }, []);
 
   function clearGroupFilters() {
     setGroupSearch('');
@@ -242,14 +230,14 @@ export function CatalogueTeamSection({
   }
 
   function getAppearanceScope() {
-    if (projectId) {
-      return { projectId };
-    }
-    return { projectIds: projects.map((project) => project.id) };
+    // Appearance is global after migration 20260517_remove_project_scoping.
+    // Kept as a function returning {} so the spread at call sites still
+    // type-checks cleanly without a sweeping refactor.
+    return {};
   }
 
   function beginGroupEdit(group: string) {
-    const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, group, projectId);
+    const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, group, null);
     setEditingGroupKey(group.toLowerCase());
     setEditingGroupOriginal(group);
     setGroupLabelDraft(appearance.label || group);
@@ -556,8 +544,6 @@ export function CatalogueTeamSection({
 
       {subTab === 'groups' && (
         <>
-          {!projectId && <div className="catalogue-team__group-note">No project selected. Group edits apply to all projects.</div>}
-
           {groupChecklist.length > 0 && (
             <div className="catalogue-team__filterbar">
               <label className="catalogue-team__search">
@@ -648,7 +634,7 @@ export function CatalogueTeamSection({
                       <CatalogueGroupLabel
                         className="catalogue-team__checklist-flow"
                         group={item.group}
-                        projectId={projectId}
+                        projectId={null}
                         iconSize={36}
                       />
                       <button
@@ -692,7 +678,7 @@ export function CatalogueTeamSection({
       )}
 
       {subTab === 'trash' && (
-        <CatalogueTrashSection projects={projects} onRestored={onTrashRestored} />
+        <CatalogueTrashSection onRestored={onTrashRestored} />
       )}
 
       {subTab === 'flags' && (

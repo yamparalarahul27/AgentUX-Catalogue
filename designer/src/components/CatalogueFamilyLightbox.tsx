@@ -599,7 +599,7 @@ export function CatalogueFamilyLightbox({
             onSave={(next) => onRenameFamily(family.id, next)}
           />
         </div>
-        {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={family.project_id} /></span>}
+        {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={null} /></span>}
         {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
         {screenshot.theme && <span className="catalogue-lightbox-tag">{screenshot.theme}</span>}
         <button type="button" className="catalogue-lightbox-close" onClick={onClose}>
@@ -736,7 +736,7 @@ export function CatalogueFamilyLightbox({
           <div className="catalogue-family-lightbox">
             <div className="catalogue-family-lightbox__summary">
               <div className="catalogue-lightbox-meta-line">
-                {family.group && <span className="catalogue-lightbox-meta-chip" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={family.project_id} /></span>}
+                {family.group && <span className="catalogue-lightbox-meta-chip" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={null} /></span>}
                 {flowName && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--flow">{flowName}</span></>}
                 {activeVariant.label && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--variant">{activeVariant.label}</span></>}
               </div>
