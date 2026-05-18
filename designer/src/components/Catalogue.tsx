@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 import type { WebPreset } from '../types';
 import { useBookmarks } from '../hooks/use-bookmarks';
 import { useIsAdmin } from '../lib/auth-passcode';
@@ -228,6 +229,24 @@ export function Catalogue({
     );
     return ordered.map((item) => item.groupKey);
   }, [appearanceMap, null, groupSortMode, groupStats]);
+
+  const navigate = useNavigate();
+
+  // Group View redirect: when sortBy === 'name-asc' (Group View) AND a
+  // single group becomes the active filter (via toolbar dropdown, search
+  // modal pick, Team-section row click, URL hydration, etc.), jump to
+  // that group's detail page instead of leaving the Group View grid in
+  // a single-card state. Mirrors Option C from the design discussion —
+  // "narrow to one group" naturally maps to "view that group" while
+  // browsing the overview.
+  useEffect(() => {
+    if (sortBy !== 'name-asc') return;
+    if (filterGroup.length === 0) return;
+    const slug = filterGroup[0].trim().toLowerCase();
+    if (!slug) return;
+    setFilterGroup([]);
+    navigate(`/g/${encodeURIComponent(slug)}`);
+  }, [sortBy, filterGroup, navigate, setFilterGroup]);
 
   function handleSelectChipGroup(canonicalKey: string | null) {
     if (!canonicalKey) {
