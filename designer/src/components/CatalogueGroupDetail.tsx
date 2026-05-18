@@ -15,6 +15,7 @@ import { useGroupAppearanceEditor } from '../hooks/use-group-appearance-editor';
 import type { ScreenshotNode } from '../types';
 import { CatalogueGridDensity } from './CatalogueGridDensity';
 import { CatalogueHeader } from './CatalogueHeader';
+import { CatalogueNotFound } from './CatalogueNotFound';
 import { CatalogueShareModal } from './CatalogueShareModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 import { ThumbHashImage } from './ThumbHashImage';
@@ -218,6 +219,23 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
   }, [screenshots]);
 
   const previewShot = previewIndex >= 0 ? filteredScreenshots[previewIndex] : null;
+
+  // Soft-404: /g/<key> where <key> doesn't match any group in the
+  // (loaded) full-scope set. We wait until the cache has resolved
+  // (loading=false) and there's at least *some* catalogue data
+  // (screenshots.length > 0) before declaring the group missing.
+  // Without that guard, an in-flight fetch would briefly flash the
+  // NotFound page on first paint.
+  const groupMissing = !loading && screenshots.length > 0 && groupScreenshots.length === 0;
+  if (groupMissing) {
+    return (
+      <CatalogueNotFound
+        user={user}
+        onLogout={onLogout}
+        onLogoutEverywhere={onLogoutEverywhere}
+      />
+    );
+  }
 
   return (
     <div className="catalogue-page">

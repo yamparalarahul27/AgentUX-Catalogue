@@ -35,6 +35,7 @@ import './styles/catalogue-search-modal.scss';
 import './styles/editable-title.scss';
 import './styles/catalogue-magnified-dock.scss';
 import './styles/catalogue-group-detail.scss';
+import './styles/catalogue-not-found.scss';
 import './styles/welcome-modal.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

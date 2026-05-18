@@ -1,0 +1,199 @@
+// Catalogue 404 page — catch-all under BrowserRouter.
+//
+// Tone: catalogue-themed, lightly playful. The big "404" enters with a
+// stagger (each digit slides up + fades in), then the suggestions
+// cascade in below. Subtle ongoing tilt on hover for the digits.
+
+.catalogue-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  padding: 40px 32px 80px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+// ── Big 404 (Bayer-dithered canvas, à la emilkowal.ski) ────────────
+//
+// The 404 is rendered to a canvas via Bayer 8×8 ordered dithering:
+// brightness ramps top→bottom, threshold matrix decides which pixels
+// survive. Result is the classic Mac-Classic stippled-gradient look.
+// See DitheredText in CatalogueNotFound.tsx for the algorithm.
+.catalogue-not-found__number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  user-select: none;
+}
+
+.catalogue-not-found__canvas {
+  display: block;
+  // Soft entrance — opacity + slight upward translate, single sweep
+  // since the dither is one continuous canvas (no per-digit stagger).
+  opacity: 0;
+  transform: translateY(16px);
+  animation: notFoundCanvasIn 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes notFoundCanvasIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ── Headline + URL chip ─────────────────────────────────────────────
+.catalogue-not-found__title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #fafafa;
+  margin: 0 0 10px;
+  opacity: 0;
+  animation: notFoundFadeUp 540ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.42s;
+}
+
+.catalogue-not-found__path {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #18181b;
+  border: 1px solid #27272a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #d4d4d8;
+  margin: 0 0 48px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  animation: notFoundFadeUp 540ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.52s;
+}
+
+@keyframes notFoundFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ── Suggestions (orbiting semi-circle arc, icon-only) ────────────
+//
+// All icons share the same `offset-path` — a shallow semi-circle —
+// and a 22s linear infinite animation that walks `offset-distance`
+// from 0% to 100%. Each icon is given a negative `animationDelay` in
+// the JSX (sliced over the full duration) so they're pre-distributed
+// along the arc and stay visually spaced out forever.
+//
+// Fade in / fade out at the path endpoints hides the snap when each
+// icon's animation wraps back to 0%.
+.catalogue-not-found__suggestions {
+  position: relative;
+  width: 100%;
+  // Arc peak is ~64px above the baseline + 44px icon height = 108px;
+  // explicit height keeps the icons inside their own box so they can't
+  // overlap the URL chip when they reach the top of the arc.
+  height: 120px;
+  margin: 48px 0 16px;       // top gap from URL chip; Back is now above
+}
+
+.catalogue-not-found__suggestion {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;       // centre the 44×44 tile on left:50%
+  padding: 0;
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+
+  // Semi-circle path. SVG-style path with two arc segments stitched
+  // (M start, A radiusX,radiusY ... end). The Y dimension controls
+  // how high the arc rises above the baseline; tweak radiusY to
+  // flatten or steepen the smile. Wider X here gives the 7 icons
+  // breathing room along the curve.
+  offset-path: path('M -260 0 A 260 64 0 0 1 260 0');
+  offset-rotate: 0deg;       // keep icons upright, don't tilt to path tangent
+  offset-distance: 0%;
+
+  animation: arcTravel 22s linear infinite;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  will-change: offset-distance, opacity;
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.55);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.6);
+    outline-offset: 3px;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+// Per-icon arc traversal. Opacity envelope at the endpoints hides
+// the `100% → 0%` wrap so the loop looks seamless.
+@keyframes arcTravel {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-not-found__suggestion {
+    animation: none;
+    opacity: 1;
+    // Static fan-out for reduced-motion users — replace with a
+    // simple position based on the index var if you need them spread.
+  }
+}
+
+// ── Back button — sits directly below the 404 canvas ───────────────
+.catalogue-not-found__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  margin: 0 0 32px;
+  border-radius: 999px;
+  border: 1px solid #27272a;
+  background: transparent;
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  opacity: 0;
+  animation: notFoundFadeUp 540ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.35s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: #3f3f46;
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.6);
+    outline-offset: 2px;
+  }
+}

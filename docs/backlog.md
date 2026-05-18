@@ -10,7 +10,7 @@ to a memory file (for full context) or to a PR (for in-flight work).
 - New ideas go straight into **Open** with a memory file backing them.
 - Estimates are rough — sizes are 🟢 quick (≤3h), 🟡 medium (½ day), 🔵 large (full session + scoping).
 
-Last updated: 2026-05-18 — added post-login 404 (🟢), Edit/Share pill styling (🟢), in-app "What's new" (🔵). Mobbin #3 extended to "mobile = icons everywhere" beyond the strip.
+Last updated: 2026-05-18 — `/designer` page feedback: bottom-to-top fading gradient behind the "No matching screen families" empty state (🟢). Earlier today: clickable group label on catalogue card → `/g/<key>` (🟢), and group-detail header collapsing into a sticky strip on scroll (🟡). Earlier today: dimensional border shadows experiment (🟢, replace flat 1px borders with inset highlight + outer shadow, both themes). Earlier today: post-login 404 (🟢), Edit/Share pill styling (🟢), in-app "What's new" (🔵). Mobbin #3 extended to "mobile = icons everywhere" beyond the strip. Multi-select group chip stub clarified (mobile `×` chips + smooth removal, emilkowal.ski reference). Feedback modal (#11) now has a working mockup ([mockup-2026-05-18-feedback-modal.html](mockups/mockup-2026-05-18-feedback-modal.html)) — Emil Kowalski morphing pill pattern.
 
 ---
 
@@ -29,13 +29,15 @@ Last updated: 2026-05-18 — added post-login 404 (🟢), Edit/Share pill stylin
 | Rename "Bookmarks" → "Saved" + parabolic flight animation to the nav entry on save | Sidebar / micro-interaction | [Mobbin backlog #1 + #9](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Subtle hover scale/rotate on every icon-button | Polish | [Mobbin backlog #2](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Icons for Filter / Group / Flow / Group View in toolbar | Toolbar | [`parked_toolbar_filter_icons`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_toolbar_filter_icons.md) |
-| Post-login 404 page — catch-all `Route` rendering a branded NotFound + "Back to catalogue" | Routing | [`parked_post_login_404`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_post_login_404.md) |
 | Restyle Edit/Share buttons to match Figma design-system pill (needs Figma reference) | Group detail | [`parked_edit_share_pill_styling`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_edit_share_pill_styling.md) |
 | Lightbox: ESC to close + upload date "X days ago" (exact on hover) | Lightbox | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Settings: reorder tabs so Groups appears first | Settings | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Gallery: remove Reupload button | Gallery | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Combobox in lightbox: show group icons in the options | Lightbox | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Capability staleness: admin self-edit invalidates own caps; cross-session "Your role was updated · Refresh now" banner; web preset save broadcast | Auth / RBAC | [`parked_capability_staleness`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_capability_staleness.md) |
+| Dimensional border experiment — replace flat 1px borders with `inset 0 1px 0 white` + `0 1px 0 rgba(0,0,0,0.04)`; dark theme uses ~6% white inset + ~40% black outer. Trial on one surface first | Polish | [`parked_dimensional_border_shadows`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_dimensional_border_shadows.md) |
+| Catalogue card group label → group detail page (`<CatalogueGroupLabel>` inside `<CatalogueFamilyCard>` becomes a link to `/g/<key>`). Scope click handling so share-page H1 and other consumers stay non-interactive | Catalogue card | [`parked_clickable_group_label_on_card`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_clickable_group_label_on_card.md) |
+| "No matching screen families" empty state: bottom-to-top fading gradient background (theme-aware, scoped to the empty-state container) | Catalogue empty state | [`parked_empty_state_gradient_fade`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_empty_state_gradient_fade.md) |
 
 ---
 
@@ -56,6 +58,7 @@ Last updated: 2026-05-18 — added post-login 404 (🟢), Edit/Share pill stylin
 | Group View — shrunken dock when active (pill of 8 overlapping icons, click-to-expand, scroll-to-collapse) | Catalogue dock | [`parked_group_view_shrunken_dock`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_view_shrunken_dock.md) |
 | Group detail: Edit button (extract `GroupAppearanceEditModal` state into a hook / dialog) | Group detail | [`parked_group_detail_followups`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_detail_followups.md) |
 | Group detail: full `CatalogueFamilyLightbox` (annotations / comments / metadata) on preview | Group detail | [`parked_group_detail_followups`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_detail_followups.md) |
+| Group detail: header collapses into a thin sticky strip on scroll (icon + label + meta + Share/Edit stay accessible while browsing). `IntersectionObserver` + `position: sticky` | Group detail | [`parked_group_detail_sticky_strip_header`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_detail_sticky_strip_header.md) |
 
 ---
 
@@ -72,13 +75,13 @@ Last updated: 2026-05-18 — added post-login 404 (🟢), Edit/Share pill stylin
 | Search/filter overhaul — typeahead pills + filter modal + quick toggles | [Mobbin backlog #5–#7](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Text-view mode with hover-shuffling screenshot previews | [Mobbin backlog #8](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Carousel-style screenshot card (Mobbin-style, multiple shots per card) | [Mobbin backlog #10](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
-| Feedback / Bug Report modal | [Mobbin backlog #11](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
+| Feedback / Bug Report modal — Emil Kowalski morphing pill pattern, see [mockup](mockups/mockup-2026-05-18-feedback-modal.html) | [Mobbin backlog #11](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | "What's new" in-app surface — release notes / activity feed visible inside the catalogue | [`parked_whats_new_in_app`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_whats_new_in_app.md) |
 | Video section + Link section UI improvements | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Full-page loading: design quotes + "About me and my work" instead of plain spinner | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Roles / Members panel UI improvements | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Skeuomorphic physical toggle component (overlaps with `skeumorphic-ui` skill) | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
-| Multi-select chip with quick-remove | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
+| Multi-select group chip with `×` (mobile-style) + smooth removal animation | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Sort/filter ordering based on usage frequency | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Favourite groups in the chip strip | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Trigger public group view from the group strip | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |

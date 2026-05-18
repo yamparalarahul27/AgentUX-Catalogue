@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/useAuth';
 import { Catalogue } from './components/Catalogue';
 import { CatalogueGroupDetail } from './components/CatalogueGroupDetail';
+import { CatalogueNotFound } from './components/CatalogueNotFound';
 import { PasscodeLogin } from './components/PasscodeLogin';
 import { SharePage } from './components/SharePage';
 import { WelcomeModal } from './components/WelcomeModal';
@@ -48,6 +49,16 @@ export function CatalogueApp() {
           path="/g/:groupKey"
           element={(
             <CatalogueGroupDetail
+              user={user}
+              onLogout={logout}
+              onLogoutEverywhere={logoutEverywhere}
+            />
+          )}
+        />
+        <Route
+          path="*"
+          element={(
+            <CatalogueNotFound
               user={user}
               onLogout={logout}
               onLogoutEverywhere={logoutEverywhere}
