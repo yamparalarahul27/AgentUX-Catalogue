@@ -4,6 +4,7 @@ import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId } from '../lib/catalogue-families';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, ScreenFamily, ScreenshotNode } from '../types';
+import { invalidateCatalogueFullScopeCache } from './use-catalogue-full-scope';
 import { useCatalogueImageActions } from './use-catalogue-image-actions';
 
 interface ToastState {
@@ -297,6 +298,10 @@ export function useCatalogueFamilyActions({
     }
 
     setScreenshots((previous) => previous.map((item) => item.id === id ? { ...item, ...nextPatch } : item));
+    // Cross-route consumers (Group View card platforms, Group detail
+    // tab counts, etc.) read from the full-scope cache — refresh so a
+    // Web → Mobile flip propagates everywhere, not just the lightbox.
+    invalidateCatalogueFullScopeCache();
     return true;
   }, [buildNextVariant, findVariantConflict, screenshots, setScreenshots, setToast]);
 
@@ -350,6 +355,10 @@ export function useCatalogueFamilyActions({
       if (!nextMetadata) return screenshot;
       return { ...screenshot, metadata: nextMetadata };
     }));
+    // Flow filter pools (toolbar dropdown, Settings → Flows checklist,
+    // search modal flow results) all read from the full-scope cache —
+    // refresh so re-labelled flows propagate immediately.
+    invalidateCatalogueFullScopeCache();
 
     setToast({ message: normalized ? `Flow set to "${normalized}"` : 'Flow cleared', type: 'success' });
     return true;
@@ -393,6 +402,9 @@ export function useCatalogueFamilyActions({
     // Screen_families rows stay put; the UI filters them out by their
     // screenshot count (a family with zero live screenshots doesn't render).
     setScreenshots((previous) => previous.filter((screenshot) => getScreenshotFamilyId(screenshot) !== id));
+    // Refresh the cross-route full-scope cache so the chip strip /
+    // Group detail page don't keep showing the deleted screenshots.
+    invalidateCatalogueFullScopeCache();
     onFamilyDeleted?.(id);
 
     // Different toast wording based on whether the caller can reach the

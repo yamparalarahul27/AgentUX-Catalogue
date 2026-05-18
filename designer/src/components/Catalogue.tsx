@@ -11,7 +11,7 @@ import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
 import { useCatalogueFilters } from '../hooks/use-catalogue-filters';
-import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
+import { invalidateCatalogueFullScopeCache, useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
 import { useCatalogueGuestGuards } from '../hooks/use-catalogue-guest-guards';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
@@ -771,7 +771,7 @@ export function Catalogue({
               screenshots={fullScopeScreenshots}
               currentUserEmail={user.email ?? ''}
               onRenameGroupKey={handleRenameGroupKey}
-              onTrashRestored={loadData}
+              onTrashRestored={() => { loadData(); invalidateCatalogueFullScopeCache(); }}
               onSelectFlow={(flow) => {
                 setFilterFlow([flow]);
                 setFilterGroup([]);
@@ -897,7 +897,13 @@ export function Catalogue({
                 quickUploadIsUploading={upload.uploading}
                 onQuickUploadAll={() => {
                   void upload.handleQuickUploadUploadAll().then((inserted) => {
-                    if (inserted.length > 0) setSelected(new Set(inserted.map((item) => item.id)));
+                    if (inserted.length > 0) {
+                      setSelected(new Set(inserted.map((item) => item.id)));
+                      // Full-scope cache is otherwise reused across route
+                      // mounts — refresh it so the chip strip / Group detail
+                      // page pick up the new screenshots without a reload.
+                      invalidateCatalogueFullScopeCache();
+                    }
                   });
                 }}
                 onSortByChange={setSortBy}
@@ -1009,7 +1015,11 @@ export function Catalogue({
                   onQuickUploadSuggestedGroupChange={upload.setQuickUploadSuggestedGroup}
                   onQuickUploadProjectChange={upload.handleQuickUploadProjectChange}
                   onQuickUploadRemoveQueuedFile={upload.handleQuickUploadQueueRemove}
-                  onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => inserted.length > 0 && setSelected(new Set(inserted.map((item) => item.id)))); }}
+                  onQuickUploadUploadAll={() => { void upload.handleQuickUploadUploadAll().then((inserted) => {
+                    if (inserted.length === 0) return;
+                    setSelected(new Set(inserted.map((item) => item.id)));
+                    invalidateCatalogueFullScopeCache();
+                  }); }}
                 />
               </div>
             </div>

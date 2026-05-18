@@ -24,11 +24,24 @@ function notifyCacheSubscribers(data: ScreenshotNode[]) {
   for (const listener of cacheSubscribers) listener(data);
 }
 
-// Optional invalidation hook — call after an upload / delete so the
-// next mount refetches. Exposed for the upload flow to wire later.
+// Invalidate the module cache AND refetch immediately so currently-
+// mounted hook instances pick up fresh data via the subscriber
+// notification. Call after any mutation that changes the screenshot set
+// — uploads, deletes (move to Trash), restores. Without this, the chip
+// strip / Group detail page would show stale data until full reload.
 export function invalidateCatalogueFullScopeCache() {
   cachedScreenshots = null;
-  inFlightLoad = null;
+  inFlightLoad = fetchAllScreenshots()
+    .then((data) => {
+      cachedScreenshots = data;
+      inFlightLoad = null;
+      notifyCacheSubscribers(data);
+      return data;
+    })
+    .catch((err) => {
+      inFlightLoad = null;
+      throw err;
+    });
 }
 
 interface ScopeScreenshotRow {

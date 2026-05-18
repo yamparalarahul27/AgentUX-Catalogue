@@ -35,6 +35,7 @@ Last updated: 2026-05-18 — added post-login 404 (🟢), Edit/Share pill stylin
 | Settings: reorder tabs so Groups appears first | Settings | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Gallery: remove Reupload button | Gallery | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Combobox in lightbox: show group icons in the options | Lightbox | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
+| Capability staleness: admin self-edit invalidates own caps; cross-session "Your role was updated · Refresh now" banner; web preset save broadcast | Auth / RBAC | [`parked_capability_staleness`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_capability_staleness.md) |
 
 ---
 
