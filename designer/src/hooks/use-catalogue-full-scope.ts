@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { ScreenshotNode } from '../types';
 import { fetchAnnotationLabels } from '../lib/screenshot-annotations';
@@ -6,6 +6,30 @@ import { supabase } from '../lib/supabase';
 
 const SCREENSHOT_PAGE_SIZE = 1000;
 const COMMENT_SCREENSHOT_CHUNK_SIZE = 200;
+
+// Module-level cache so navigating between routes (catalogue ↔ group
+// detail page) reuses the already-loaded screenshots instead of running
+// a fresh paginated fetch on every mount. The fetch is expensive — many
+// pages, several seconds — and the data doesn't change between
+// navigations within a session.
+//
+// `cachedScreenshots` is the latest successful result; `inFlightLoad` is
+// the live promise when a fetch is in progress (so concurrent mounts
+// share one request). Subscribers receive the data when it lands.
+let cachedScreenshots: ScreenshotNode[] | null = null;
+let inFlightLoad: Promise<ScreenshotNode[]> | null = null;
+const cacheSubscribers = new Set<(screenshots: ScreenshotNode[]) => void>();
+
+function notifyCacheSubscribers(data: ScreenshotNode[]) {
+  for (const listener of cacheSubscribers) listener(data);
+}
+
+// Optional invalidation hook — call after an upload / delete so the
+// next mount refetches. Exposed for the upload flow to wire later.
+export function invalidateCatalogueFullScopeCache() {
+  cachedScreenshots = null;
+  inFlightLoad = null;
+}
 
 interface ScopeScreenshotRow {
   id: string;
@@ -73,48 +97,83 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   return chunks;
 }
 
+async function fetchAllScreenshots(): Promise<ScreenshotNode[]> {
+  const loadedRows: ScopeScreenshotRow[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('screenshots')
+      .select('id,group,platform,theme,web_preset_key,mobile_os,metadata,created_at,uploader_email,name,file_name,storage_path')
+      .is('deleted_at', null)
+      .order('id', { ascending: true })
+      .range(from, from + SCREENSHOT_PAGE_SIZE - 1);
+    if (error || !data || data.length === 0) break;
+    loadedRows.push(...(data as unknown as ScopeScreenshotRow[]));
+    if (data.length < SCREENSHOT_PAGE_SIZE) break;
+    from += data.length;
+  }
+  return loadedRows.map(toScopeScreenshot);
+}
+
 export function useCatalogueFullScope({
   includeCommentedScreenshots = false,
   includeAnnotatedScreenshots = false,
 }: UseCatalogueFullScopeArgs = {}) {
-  const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
+  // Seed from the module-level cache so re-mounts (route changes) show
+  // the already-loaded data on the first paint instead of a blank grid.
+  const [screenshots, setScreenshots] = useState<ScreenshotNode[]>(() => cachedScreenshots ?? []);
   const [commentedScreenshotIds, setCommentedScreenshotIds] = useState<Set<string>>(new Set());
   const [annotatedScreenshotIds, setAnnotatedScreenshotIds] = useState<Set<string>>(new Set());
   const [annotationLabels, setAnnotationLabels] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const loadVersionRef = useRef(0);
+  const [loading, setLoading] = useState(!cachedScreenshots);
 
   useEffect(() => {
-    const loadVersion = loadVersionRef.current + 1;
-    loadVersionRef.current = loadVersion;
+    let mounted = true;
+
+    // Subscribe so this instance picks up data from a fetch initiated by
+    // another mount of the same hook (e.g. the parent route also calling
+    // useCatalogueFullScope).
+    const onCacheUpdate = (data: ScreenshotNode[]) => {
+      if (!mounted) return;
+      setScreenshots(data);
+      setLoading(false);
+    };
+    cacheSubscribers.add(onCacheUpdate);
 
     async function loadScope() {
-      setLoading(true);
-
-      const loadedRows: ScopeScreenshotRow[] = [];
-      let from = 0;
-
-      while (true) {
-        const { data, error } = await supabase
-          .from('screenshots')
-          .select('id,group,platform,theme,web_preset_key,mobile_os,metadata,created_at,uploader_email,name,file_name,storage_path')
-          .is('deleted_at', null)
-          .order('id', { ascending: true })
-          .range(from, from + SCREENSHOT_PAGE_SIZE - 1);
-
-        if (loadVersionRef.current !== loadVersion) return;
-        if (error || !data || data.length === 0) break;
-
-        loadedRows.push(...(data as unknown as ScopeScreenshotRow[]));
-        if (data.length < SCREENSHOT_PAGE_SIZE) break;
-        from += data.length;
+      if (cachedScreenshots) {
+        setScreenshots(cachedScreenshots);
+        setLoading(false);
+      } else {
+        setLoading(true);
+        if (!inFlightLoad) {
+          inFlightLoad = fetchAllScreenshots()
+            .then((data) => {
+              cachedScreenshots = data;
+              inFlightLoad = null;
+              notifyCacheSubscribers(data);
+              return data;
+            })
+            .catch((err) => {
+              inFlightLoad = null;
+              throw err;
+            });
+        }
+        try {
+          await inFlightLoad;
+        } catch {
+          if (!mounted) return;
+          setScreenshots([]);
+          setCommentedScreenshotIds(new Set());
+          setAnnotatedScreenshotIds(new Set());
+          setAnnotationLabels([]);
+          setLoading(false);
+          return;
+        }
       }
 
-      if (loadVersionRef.current !== loadVersion) return;
-
-      const mapped = loadedRows.map(toScopeScreenshot);
-      setScreenshots(mapped);
-
+      if (!mounted) return;
+      const mapped = cachedScreenshots ?? [];
       const ids = mapped.map((screenshot) => screenshot.id);
       const idChunks = chunkArray(ids, COMMENT_SCREENSHOT_CHUNK_SIZE);
 
@@ -125,12 +184,11 @@ export function useCatalogueFullScope({
             .from('screenshot_comments')
             .select('screenshot_id')
             .in('screenshot_id', chunk);
-          if (loadVersionRef.current !== loadVersion) return;
+          if (!mounted) return;
           for (const row of data ?? []) {
             if (row.screenshot_id) nextCommentedIds.add(row.screenshot_id);
           }
         }
-        if (loadVersionRef.current !== loadVersion) return;
         setCommentedScreenshotIds(nextCommentedIds);
       } else {
         setCommentedScreenshotIds(new Set());
@@ -143,33 +201,28 @@ export function useCatalogueFullScope({
             .from('screenshot_annotations')
             .select('screenshot_id')
             .in('screenshot_id', chunk);
-          if (loadVersionRef.current !== loadVersion) return;
+          if (!mounted) return;
           for (const row of data ?? []) {
             if (row.screenshot_id) nextAnnotatedIds.add(row.screenshot_id);
           }
         }
-        if (loadVersionRef.current !== loadVersion) return;
         setAnnotatedScreenshotIds(nextAnnotatedIds);
       } else {
         setAnnotatedScreenshotIds(new Set());
       }
 
       const labels = await fetchAnnotationLabels();
-      if (loadVersionRef.current !== loadVersion) return;
+      if (!mounted) return;
       setAnnotationLabels(labels);
-
       setLoading(false);
     }
 
-    void loadScope().catch(() => {
-      if (loadVersionRef.current === loadVersion) {
-        setScreenshots([]);
-        setCommentedScreenshotIds(new Set());
-        setAnnotatedScreenshotIds(new Set());
-        setAnnotationLabels([]);
-        setLoading(false);
-      }
-    });
+    void loadScope();
+
+    return () => {
+      mounted = false;
+      cacheSubscribers.delete(onCacheUpdate);
+    };
   }, [includeAnnotatedScreenshots, includeCommentedScreenshots]);
 
   return {

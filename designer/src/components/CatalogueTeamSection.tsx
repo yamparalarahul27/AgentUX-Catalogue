@@ -17,16 +17,14 @@ import { getScreenshotFlowLabel } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
   readCatalogueGroupAppearanceMap,
-  removeCatalogueGroupUploadedIconFromSupabase,
   resolveCatalogueGroupAppearance,
-  saveCatalogueGroupAppearanceToSupabase,
   subscribeCatalogueGroupAppearance,
-  uploadCatalogueGroupIconToSupabase,
 } from '../lib/catalogue-group-appearance';
 import type {
   CatalogueGroupCategory,
   CatalogueGroupRegion,
 } from '../lib/catalogue-group-appearance';
+import { useGroupAppearanceEditor } from '../hooks/use-group-appearance-editor';
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
 import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
 import type { ScreenshotNode } from '../types';
@@ -141,17 +139,7 @@ export function CatalogueTeamSection({
   // wired via clearUnlock as onUnauthorized on the children.
   const { adminPasscode, unlocked: adminUnlocked, unlock: handleAdminUnlock, clearUnlock: handleAdminUnauthorized } = useAdminUnlock();
   const [groupAppearanceMap, setGroupAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
-  const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
-  const [editingGroupOriginal, setEditingGroupOriginal] = useState<string>('');
-  const [groupLabelDraft, setGroupLabelDraft] = useState('');
-  const [groupIconStoragePathDraft, setGroupIconStoragePathDraft] = useState('');
-  const [groupIconUrlDraft, setGroupIconUrlDraft] = useState('');
-  const [groupCategoryDraft, setGroupCategoryDraft] = useState<CatalogueGroupCategory | null>(null);
-  const [groupRegionDraft, setGroupRegionDraft] = useState<CatalogueGroupRegion | null>(null);
-  const [groupSaveMessage, setGroupSaveMessage] = useState<string | null>(null);
-  const [isSavingGroupAppearance, setIsSavingGroupAppearance] = useState(false);
-  const [isUploadingGroupIcon, setIsUploadingGroupIcon] = useState(false);
-  const [renameConfirm, setRenameConfirm] = useState<{ group: string; newName: string; count: number; sourceCasings: string[] } | null>(null);
+  const editor = useGroupAppearanceEditor({ screenshots, onRenameGroupKey });
   const [groupSearch, setGroupSearch] = useState('');
   const [groupTypeFilter, setGroupTypeFilter] = useState<GroupTypeFilter>('all');
   const [groupRegionFilter, setGroupRegionFilter] = useState<GroupRegionFilter>('all');
@@ -227,166 +215,6 @@ export function CatalogueTeamSection({
     setGroupSearch('');
     setGroupTypeFilter('all');
     setGroupRegionFilter('all');
-  }
-
-  function getAppearanceScope() {
-    // Appearance is global after migration 20260517_remove_project_scoping.
-    // Kept as a function returning {} so the spread at call sites still
-    // type-checks cleanly without a sweeping refactor.
-    return {};
-  }
-
-  function beginGroupEdit(group: string) {
-    const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, group, null);
-    setEditingGroupKey(group.toLowerCase());
-    setEditingGroupOriginal(group);
-    setGroupLabelDraft(appearance.label || group);
-    setGroupIconStoragePathDraft(appearance.iconStoragePath || '');
-    setGroupIconUrlDraft(appearance.iconUrl || '');
-    setGroupCategoryDraft(appearance.category);
-    setGroupRegionDraft(appearance.region);
-    setGroupSaveMessage(null);
-  }
-
-  function cancelGroupEdit() {
-    setEditingGroupKey(null);
-    setEditingGroupOriginal('');
-    setGroupLabelDraft('');
-    setGroupIconStoragePathDraft('');
-    setGroupIconUrlDraft('');
-    setGroupCategoryDraft(null);
-    setGroupRegionDraft(null);
-  }
-
-  async function saveAppearanceForGroup(group: string) {
-    const result = await saveCatalogueGroupAppearanceToSupabase({
-      category: groupCategoryDraft,
-      group,
-      iconStoragePath: groupIconStoragePathDraft || null,
-      iconUrl: groupIconUrlDraft || null,
-      label: groupLabelDraft,
-      region: groupRegionDraft,
-      ...getAppearanceScope(),
-    });
-    return result;
-  }
-
-  // Save handler. If the editor's name draft differs from the original
-  // canonical key (case-insensitive), surface a confirm dialog before
-  // doing the cross-project rename + appearance save. The rename catches
-  // every DB casing under that canonical (e.g. "Coinbase" + "coinbase")
-  // across every project the user has access to.
-  async function saveGroupAppearance(group: string) {
-    setGroupSaveMessage(null);
-    const trimmedDraft = groupLabelDraft.trim();
-    const canonical = group.toLowerCase();
-    const isRename = Boolean(onRenameGroupKey)
-      && trimmedDraft.length > 0
-      && trimmedDraft.toLowerCase() !== canonical;
-
-    if (isRename) {
-      const sourceCasings = [...new Set(
-        screenshots
-          .filter((screenshot) => (screenshot.group ?? '').toLowerCase() === canonical)
-          .map((screenshot) => screenshot.group ?? '')
-          .filter(Boolean),
-      )];
-      const sourceCount = screenshots.filter((screenshot) => (
-        (screenshot.group ?? '').toLowerCase() === canonical
-      )).length;
-      setRenameConfirm({ group, newName: trimmedDraft, count: sourceCount, sourceCasings });
-      return;
-    }
-
-    setIsSavingGroupAppearance(true);
-    try {
-      const result = await saveAppearanceForGroup(group);
-      if (!result.ok) {
-        setGroupSaveMessage(result.error);
-        return;
-      }
-      setGroupSaveMessage('Group appearance saved.');
-      cancelGroupEdit();
-    } finally {
-      setIsSavingGroupAppearance(false);
-    }
-  }
-
-  async function performRenameAndSave() {
-    if (!renameConfirm || !onRenameGroupKey) return;
-    const { group, newName, sourceCasings } = renameConfirm;
-    setIsSavingGroupAppearance(true);
-    try {
-      const renameResult = await onRenameGroupKey(sourceCasings, newName);
-      if (!renameResult.ok) {
-        setGroupSaveMessage(renameResult.error || 'Rename failed');
-        return;
-      }
-      // After rename, the appearance row should target the NEW key so the
-      // label sticks to the new identity.
-      const appearanceResult = await saveAppearanceForGroup(newName);
-      if (!appearanceResult.ok) {
-        setGroupSaveMessage(appearanceResult.error);
-        return;
-      }
-      const variantNote = sourceCasings.length > 1
-        ? ` (merged ${sourceCasings.length} casings: ${sourceCasings.join(', ')})`
-        : '';
-      setGroupSaveMessage(
-        `Renamed "${group}" → "${newName}". ${renameResult.updatedCount} screenshot${renameResult.updatedCount === 1 ? '' : 's'} updated${variantNote}.`,
-      );
-      setRenameConfirm(null);
-      cancelGroupEdit();
-    } finally {
-      setIsSavingGroupAppearance(false);
-    }
-  }
-
-  async function handleGroupIconUpload(group: string, file: File | null) {
-    if (!file) return;
-    setIsUploadingGroupIcon(true);
-    setGroupSaveMessage(null);
-    try {
-      const result = await uploadCatalogueGroupIconToSupabase({
-        category: groupCategoryDraft,
-        file,
-        group,
-        label: groupLabelDraft,
-        region: groupRegionDraft,
-        ...getAppearanceScope(),
-      });
-
-      if (!result.ok) {
-        setGroupSaveMessage(result.error);
-        return;
-      }
-
-      setGroupIconUrlDraft(result.iconUrl);
-      setGroupIconStoragePathDraft(result.iconStoragePath);
-      setGroupSaveMessage('Icon uploaded.');
-    } finally {
-      setIsUploadingGroupIcon(false);
-    }
-  }
-
-  async function handleRemoveUploadedIcon(group: string) {
-    setGroupSaveMessage(null);
-    const result = await removeCatalogueGroupUploadedIconFromSupabase({
-      category: groupCategoryDraft,
-      group,
-      label: groupLabelDraft,
-      region: groupRegionDraft,
-      ...getAppearanceScope(),
-    });
-
-    if (!result.ok) {
-      setGroupSaveMessage(result.error);
-      return;
-    }
-
-    setGroupIconUrlDraft('');
-    setGroupIconStoragePathDraft('');
-    setGroupSaveMessage('Uploaded icon removed.');
   }
 
   const subSections: { id: TeamSubTab; label: string; icon: typeof BarChart3; count?: number; description: string }[] = [
@@ -642,7 +470,7 @@ export function CatalogueTeamSection({
                         className="catalogue-team__group-edit-btn"
                         onClick={(event) => {
                           event.stopPropagation();
-                          beginGroupEdit(item.group);
+                          editor.beginEdit(item.group);
                         }}
                         title="Edit group"
                         aria-label="Edit group"
@@ -712,51 +540,51 @@ export function CatalogueTeamSection({
             />
       )}
 
-      {editingGroupKey && (
+      {editor.editingGroupKey && (
         <GroupAppearanceEditModal
-          group={editingGroupOriginal}
-          labelDraft={groupLabelDraft}
-          iconUrlDraft={groupIconUrlDraft}
-          categoryDraft={groupCategoryDraft}
-          regionDraft={groupRegionDraft}
-          hasUploadedIcon={Boolean(groupIconStoragePathDraft)}
-          isUploading={isUploadingGroupIcon}
-          isSaving={isSavingGroupAppearance}
-          message={groupSaveMessage}
-          onChangeLabel={setGroupLabelDraft}
-          onChangeCategory={setGroupCategoryDraft}
-          onChangeRegion={setGroupRegionDraft}
-          onPickFile={(file) => { void handleGroupIconUpload(editingGroupOriginal, file); }}
-          onRemoveUploadedIcon={() => { void handleRemoveUploadedIcon(editingGroupOriginal); }}
-          onSave={() => { void saveGroupAppearance(editingGroupOriginal); }}
-          onCancel={cancelGroupEdit}
+          group={editor.editingGroupOriginal}
+          labelDraft={editor.labelDraft}
+          iconUrlDraft={editor.iconUrlDraft}
+          categoryDraft={editor.categoryDraft}
+          regionDraft={editor.regionDraft}
+          hasUploadedIcon={editor.hasUploadedIcon}
+          isUploading={editor.isUploading}
+          isSaving={editor.isSaving}
+          message={editor.saveMessage}
+          onChangeLabel={editor.setLabelDraft}
+          onChangeCategory={editor.setCategoryDraft}
+          onChangeRegion={editor.setRegionDraft}
+          onPickFile={(file) => { void editor.handleIconUpload(file); }}
+          onRemoveUploadedIcon={() => { void editor.handleRemoveIcon(); }}
+          onSave={() => { void editor.save(); }}
+          onCancel={editor.cancelEdit}
         />
       )}
 
         </div>
       </div>
 
-      {renameConfirm && (
+      {editor.renameConfirm && (
         <ConfirmModal
           title="Rename group?"
           message={
-            renameConfirm.sourceCasings.length > 1
-              ? `Rename "${renameConfirm.group}" → "${renameConfirm.newName}" across the project. This updates the group field on ${renameConfirm.count} screenshot${renameConfirm.count === 1 ? '' : 's'} (across casings: ${renameConfirm.sourceCasings.join(', ')}) and the display label.`
-              : `Rename "${renameConfirm.group}" → "${renameConfirm.newName}" across the project. This updates the group field on ${renameConfirm.count} screenshot${renameConfirm.count === 1 ? '' : 's'} and the display label.`
+            editor.renameConfirm.sourceCasings.length > 1
+              ? `Rename "${editor.renameConfirm.group}" → "${editor.renameConfirm.newName}" across the project. This updates the group field on ${editor.renameConfirm.count} screenshot${editor.renameConfirm.count === 1 ? '' : 's'} (across casings: ${editor.renameConfirm.sourceCasings.join(', ')}) and the display label.`
+              : `Rename "${editor.renameConfirm.group}" → "${editor.renameConfirm.newName}" across the project. This updates the group field on ${editor.renameConfirm.count} screenshot${editor.renameConfirm.count === 1 ? '' : 's'} and the display label.`
           }
-          confirmLabel={`Rename "${renameConfirm.group}"`}
+          confirmLabel={`Rename "${editor.renameConfirm.group}"`}
           cancelLabel="Cancel"
           danger={false}
-          onConfirm={() => { void performRenameAndSave(); }}
-          onCancel={() => setRenameConfirm(null)}
+          onConfirm={() => { void editor.performRename(); }}
+          onCancel={editor.cancelRename}
         />
       )}
 
-      {groupSaveMessage && (
+      {editor.saveMessage && (
         <Toast
-          message={groupSaveMessage}
+          message={editor.saveMessage}
           type="success"
-          onClose={() => setGroupSaveMessage(null)}
+          onClose={() => editor.setSaveMessage(null)}
           duration={3000}
         />
       )}

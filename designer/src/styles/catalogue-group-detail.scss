@@ -156,16 +156,14 @@
 }
 
 // ── grid ───────────────────────────────────────────────────────────
+//
+// Single unified grid. Mobile and web thumbnails coexist; the tile is a
+// uniform 9:16 aspect (close to phone shape) so the grid stays tidy.
+// Web screenshots letterbox cleanly inside via object-fit: contain.
 .catalogue-group-detail__grid {
   display: grid;
   gap: 16px;
-
-  &--mobile {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  }
-  &--web {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
 .catalogue-group-detail__thumb {
@@ -179,6 +177,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 9 / 16;
   transition: border-color 0.15s, transform 0.15s;
 
   &:hover {
@@ -194,13 +193,6 @@
   }
 }
 
-.catalogue-group-detail__grid--mobile .catalogue-group-detail__thumb {
-  aspect-ratio: 9 / 19.5;
-}
-.catalogue-group-detail__grid--web .catalogue-group-detail__thumb {
-  aspect-ratio: 16 / 10;
-}
-
 .catalogue-group-detail__thumb-empty {
   color: #52525b;
   display: inline-flex;
@@ -213,6 +205,13 @@
   text-align: center;
   color: #71717a;
   font-size: 14px;
+}
+
+.catalogue-group-detail__sentinel {
+  padding: 32px 16px;
+  text-align: center;
+  color: #71717a;
+  font-size: 12px;
 }
 
 // ── share toast ────────────────────────────────────────────────────
