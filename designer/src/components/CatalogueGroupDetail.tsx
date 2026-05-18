@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { ArrowLeft, ChevronLeft, ChevronRight, ImageIcon, LayoutGrid, Monitor, Pencil, Share2, Smartphone, X } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -17,7 +17,11 @@ import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 import { ThumbHashImage } from './ThumbHashImage';
 import { Toast } from './Toast';
 
-type Platform = 'mobile' | 'web';
+type PlatformFilter = 'all' | 'mobile' | 'web';
+
+// Initial visible window; we render this many thumbs upfront and load
+// PAGE_SIZE more whenever the user scrolls within reach of the bottom.
+const PAGE_SIZE = 50;
 
 interface CatalogueGroupDetailProps {
   user: User;
@@ -87,38 +91,68 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
   const hasMobile = useMemo(() => groupScreenshots.some((s) => s.platform === 'mobile'), [groupScreenshots]);
   const hasWeb = useMemo(() => groupScreenshots.some((s) => s.platform === 'web'), [groupScreenshots]);
 
-  // Default tab: mobile if any mobile exists, else web. If neither, mobile (empty grid).
-  const [activeTab, setActiveTab] = useState<Platform>('mobile');
-  useEffect(() => {
-    if (hasMobile) setActiveTab('mobile');
-    else if (hasWeb) setActiveTab('web');
-  }, [hasMobile, hasWeb]);
+  // Tabs act as platform filters on top of a unified grid. Default 'all'
+  // shows every screenshot in the group. Mobile / Web tabs narrow it.
+  const [activeTab, setActiveTab] = useState<PlatformFilter>('all');
 
-  const tabbedScreenshots = useMemo(() => {
-    const list = groupScreenshots.filter((s) => s.platform === activeTab);
+  const filteredScreenshots = useMemo(() => {
+    const list = activeTab === 'all'
+      ? groupScreenshots
+      : groupScreenshots.filter((s) => s.platform === activeTab);
     return [...list].sort((a, b) => parseTimestamp(b.created_at) - parseTimestamp(a.created_at));
   }, [groupScreenshots, activeTab]);
 
   const totalScreenshotCount = groupScreenshots.length;
 
+  // Pagination — window of `visibleCount` rendered upfront, more loaded
+  // by IntersectionObserver as the user scrolls. Reset to PAGE_SIZE
+  // whenever the filtered set changes (different tab / new data).
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activeTab, filteredScreenshots.length]);
+
+  const visibleScreenshots = useMemo(
+    () => filteredScreenshots.slice(0, visibleCount),
+    [filteredScreenshots, visibleCount],
+  );
+  const hasMore = visibleCount < filteredScreenshots.length;
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore) return;
+    const node = sentinelRef.current;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) {
+        setVisibleCount((current) => Math.min(current + PAGE_SIZE, filteredScreenshots.length));
+      }
+    }, { rootMargin: '300px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, filteredScreenshots.length]);
+
   // Deep-link: ?shot=<id> auto-opens the lightweight preview overlay.
+  // Preview navigation cycles through the filtered (i.e. currently-
+  // visible-on-tab) set, so changing tabs while a preview is open
+  // re-scopes the prev/next cycle accordingly.
   const previewId = searchParams.get('shot');
   const previewIndex = useMemo(() => {
     if (!previewId) return -1;
-    return tabbedScreenshots.findIndex((s) => s.id === previewId);
-  }, [previewId, tabbedScreenshots]);
+    return filteredScreenshots.findIndex((s) => s.id === previewId);
+  }, [previewId, filteredScreenshots]);
 
-  // If the deep-linked screenshot is on the other platform tab, auto-switch.
+  // If a deep-linked screenshot exists in the group but isn't in the
+  // currently filtered set (e.g. user landed on /g/x?shot=Y while
+  // already filtered to a different platform), drop back to "All" so
+  // the preview surfaces.
   useEffect(() => {
     if (!previewId) return;
-    const found = groupScreenshots.find((s) => s.id === previewId);
-    if (!found || !found.platform) return;
-    if (found.platform === 'mobile' && activeTab !== 'mobile' && hasMobile) setActiveTab('mobile');
-    else if (found.platform === 'web' && activeTab !== 'web' && hasWeb) setActiveTab('web');
-    // intentionally omit activeTab from deps — switching is a one-shot reaction
-    // to a new previewId, not a continuous reconciliation
+    const inFiltered = filteredScreenshots.some((s) => s.id === previewId);
+    if (inFiltered) return;
+    const existsInGroup = groupScreenshots.some((s) => s.id === previewId);
+    if (existsInGroup && activeTab !== 'all') setActiveTab('all');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewId, groupScreenshots, hasMobile, hasWeb]);
+  }, [previewId, filteredScreenshots, groupScreenshots]);
 
   const openPreview = useCallback((shot: ScreenshotNode) => {
     setSearchParams((previous) => {
@@ -138,10 +172,10 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
 
   const navigatePreview = useCallback((direction: -1 | 1) => {
     if (previewIndex < 0) return;
-    const nextIndex = (previewIndex + direction + tabbedScreenshots.length) % tabbedScreenshots.length;
-    const nextShot = tabbedScreenshots[nextIndex];
+    const nextIndex = (previewIndex + direction + filteredScreenshots.length) % filteredScreenshots.length;
+    const nextShot = filteredScreenshots[nextIndex];
     if (nextShot) openPreview(nextShot);
-  }, [previewIndex, tabbedScreenshots, openPreview]);
+  }, [previewIndex, filteredScreenshots, openPreview]);
 
   // Esc + arrow keys while preview is open.
   useEffect(() => {
@@ -168,7 +202,7 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
     navigate('/');
   }
 
-  const previewShot = previewIndex >= 0 ? tabbedScreenshots[previewIndex] : null;
+  const previewShot = previewIndex >= 0 ? filteredScreenshots[previewIndex] : null;
 
   return (
     <div className="catalogue-page">
@@ -250,7 +284,17 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
 
         {(hasMobile || hasWeb) && (
           <div className="catalogue-group-detail__subnav">
-            <div className="catalogue-group-detail__tabs" role="tablist" aria-label="Platform">
+            <div className="catalogue-group-detail__tabs" role="tablist" aria-label="Platform filter">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'all'}
+                className={`catalogue-group-detail__tab${activeTab === 'all' ? ' is-active' : ''}`}
+                onClick={() => setActiveTab('all')}
+                aria-label="All platforms"
+              >
+                <LayoutGrid size={16} aria-hidden="true" />
+              </button>
               {hasMobile && (
                 <button
                   type="button"
@@ -258,7 +302,7 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
                   aria-selected={activeTab === 'mobile'}
                   className={`catalogue-group-detail__tab${activeTab === 'mobile' ? ' is-active' : ''}`}
                   onClick={() => setActiveTab('mobile')}
-                  aria-label="Mobile"
+                  aria-label="Mobile only"
                 >
                   <Smartphone size={16} aria-hidden="true" />
                 </button>
@@ -270,49 +314,56 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
                   aria-selected={activeTab === 'web'}
                   className={`catalogue-group-detail__tab${activeTab === 'web' ? ' is-active' : ''}`}
                   onClick={() => setActiveTab('web')}
-                  aria-label="Web"
+                  aria-label="Web only"
                 >
                   <Monitor size={16} aria-hidden="true" />
                 </button>
               )}
             </div>
             <span className="catalogue-group-detail__subnav-count">
-              {tabbedScreenshots.length} {tabbedScreenshots.length === 1 ? 'screen' : 'screens'}
+              {filteredScreenshots.length} {filteredScreenshots.length === 1 ? 'screen' : 'screens'}
             </span>
           </div>
         )}
 
-        {loading && tabbedScreenshots.length === 0 ? (
+        {loading && filteredScreenshots.length === 0 ? (
           <div className="catalogue-group-detail__empty">Loading screenshots…</div>
-        ) : tabbedScreenshots.length > 0 ? (
-          <div
-            className={`catalogue-group-detail__grid catalogue-group-detail__grid--${activeTab}`}
-          >
-            {tabbedScreenshots.map((shot) => (
-              <button
-                type="button"
-                key={shot.id}
-                className="catalogue-group-detail__thumb"
-                onClick={() => openPreview(shot)}
-                aria-label={shot.name || 'Screenshot'}
-              >
-                {shot.image_url ? (
-                  <ThumbHashImage
-                    src={shot.image_url}
-                    thumbHash={shot.thumb_hash ?? null}
-                    alt={shot.name || ''}
-                  />
-                ) : (
-                  <span className="catalogue-group-detail__thumb-empty">
-                    <ImageIcon size={20} aria-hidden="true" />
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+        ) : visibleScreenshots.length > 0 ? (
+          <>
+            <div className="catalogue-group-detail__grid">
+              {visibleScreenshots.map((shot) => (
+                <button
+                  type="button"
+                  key={shot.id}
+                  className="catalogue-group-detail__thumb"
+                  onClick={() => openPreview(shot)}
+                  aria-label={shot.name || 'Screenshot'}
+                >
+                  {shot.image_url ? (
+                    <ThumbHashImage
+                      src={shot.image_url}
+                      thumbHash={shot.thumb_hash ?? null}
+                      alt={shot.name || ''}
+                    />
+                  ) : (
+                    <span className="catalogue-group-detail__thumb-empty">
+                      <ImageIcon size={20} aria-hidden="true" />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {hasMore && (
+              <div ref={sentinelRef} className="catalogue-group-detail__sentinel">
+                Loading more…
+              </div>
+            )}
+          </>
         ) : (
           <div className="catalogue-group-detail__empty">
-            No {activeTab === 'mobile' ? 'mobile' : 'web'} screenshots in this group yet.
+            {activeTab === 'all'
+              ? 'No screenshots in this group yet.'
+              : `No ${activeTab === 'mobile' ? 'mobile' : 'web'} screenshots in this group.`}
           </div>
         )}
 
@@ -337,7 +388,7 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
           >
             <X size={20} aria-hidden="true" />
           </button>
-          {tabbedScreenshots.length > 1 && (
+          {filteredScreenshots.length > 1 && (
             <>
               <button
                 type="button"

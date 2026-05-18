@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { useNavigate } from 'react-router-dom';
 
 import { useDockMagnification } from '../hooks/use-dock-magnification';
 import { useDockPagination } from '../hooks/use-dock-pagination';
@@ -84,6 +85,8 @@ export function CatalogueMagnifiedDock({
     )),
     [appearanceMap, projectId, sortMode, stats],
   );
+
+  const navigate = useNavigate();
 
   // Shrunken-pill state machine (only relevant while isGroupView=true).
   // Default to shrunken on entering Group View; click → expanded; scroll
@@ -285,6 +288,13 @@ export function CatalogueMagnifiedDock({
                   initialAppearanceMap={appearanceMap}
                   onClick={() => {
                     if (isPaging) return;
+                    // In Group View mode the dock is a quick-jump affordance
+                    // to the group detail page — applying a filter wouldn't
+                    // do anything (Group View grid ignores the group filter).
+                    if (isGroupView) {
+                      navigate(`/g/${encodeURIComponent(group.groupKey)}`);
+                      return;
+                    }
                     onSelectGroup(group.groupKey === activeGroupKey ? null : group.groupKey);
                   }}
                 />
