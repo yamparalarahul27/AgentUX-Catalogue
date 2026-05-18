@@ -298,6 +298,10 @@ export function useCatalogueFamilyActions({
     }
 
     setScreenshots((previous) => previous.map((item) => item.id === id ? { ...item, ...nextPatch } : item));
+    // Cross-route consumers (Group View card platforms, Group detail
+    // tab counts, etc.) read from the full-scope cache — refresh so a
+    // Web → Mobile flip propagates everywhere, not just the lightbox.
+    invalidateCatalogueFullScopeCache();
     return true;
   }, [buildNextVariant, findVariantConflict, screenshots, setScreenshots, setToast]);
 
@@ -351,6 +355,10 @@ export function useCatalogueFamilyActions({
       if (!nextMetadata) return screenshot;
       return { ...screenshot, metadata: nextMetadata };
     }));
+    // Flow filter pools (toolbar dropdown, Settings → Flows checklist,
+    // search modal flow results) all read from the full-scope cache —
+    // refresh so re-labelled flows propagate immediately.
+    invalidateCatalogueFullScopeCache();
 
     setToast({ message: normalized ? `Flow set to "${normalized}"` : 'Flow cleared', type: 'success' });
     return true;
