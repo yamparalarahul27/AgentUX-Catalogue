@@ -23,6 +23,84 @@
   max-width: calc(100vw - 48px);
 }
 
+// Shrunken pill — Group View bottom slot. Compact button of 8
+// overlapping group icons (12px, 4px overlap). Click expands to the
+// full magnified dock; scroll / Esc / click-outside collapses back.
+.catalogue-dock-shrunken {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 8px 14px;
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(63, 63, 70, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: border-color 160ms ease-out, transform 160ms ease-out;
+  pointer-events: auto;
+  animation: dockFadeIn 220ms ease-out;
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.55);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.6);
+    outline-offset: 2px;
+  }
+}
+
+.catalogue-dock-shrunken__icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #18181b;
+  border: 1px solid rgba(63, 63, 70, 0.55);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  // Overlap by 4px — leftmost fully visible, each subsequent shifted
+  // left so 18px (22px − 4px) is exposed per icon after the first.
+  &:not(:first-child) {
+    margin-left: -4px;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.catalogue-dock-shrunken__letter {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a1a1aa;
+  line-height: 1;
+}
+
+// Fade-in keyframe used by both the shrunken pill (on Group-View entry)
+// and the full magnified dock (on expand). Each mount feels like a soft
+// entry rather than a hard swap. Pure CSS — no React Transition Group,
+// no extra state machinery.
+@keyframes dockFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .catalogue-dock {
   --dock-chip-size: 32px;
   --dock-chip-gap: 10px;
@@ -39,6 +117,10 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   overflow: visible; // scaled chips extend above the pill
   pointer-events: auto;
+  // Soft entry on each mount — matches the shrunken-pill fade so the
+  // shrunken ↔ expanded swap feels like a continuous bloom rather than
+  // an instant cut.
+  animation: dockFadeIn 220ms ease-out;
 }
 
 .catalogue-dock-page {

@@ -10,7 +10,7 @@ to a memory file (for full context) or to a PR (for in-flight work).
 - New ideas go straight into **Open** with a memory file backing them.
 - Estimates are rough — sizes are 🟢 quick (≤3h), 🟡 medium (½ day), 🔵 large (full session + scoping).
 
-Last updated: 2026-05-18 — added Features filter (🔵), toolbar filter icons (🟢), Group View shrunken dock (🟡), and two Group detail follow-ups (Edit modal extraction + full lightbox integration).
+Last updated: 2026-05-18 — Features filter (🔵), toolbar filter icons (🟢), Group View shrunken dock (🟡, ✅ shipping), two Group detail follow-ups (Edit modal + full lightbox), useEffect audit (🟡 code-quality sweep).
 
 ---
 
@@ -48,6 +48,7 @@ Last updated: 2026-05-18 — added Features filter (🔵), toolbar filter icons 
 | Trash for non-admin (own items, read-only, 15-day window) | Trash | [`parked_marketing_trash_visibility`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_marketing_trash_visibility.md) |
 | Settings: better empty states + flow card improvements | Settings | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Inline-toast → real toast notifications across the app | Notifications | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
+| useEffect audit — sweep 213 effects for "You Might Not Need an Effect" anti-patterns; replace with derived state / handlers / `useMemo` | Code quality | [`parked_useeffect_audit`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_useeffect_audit.md) |
 | Animated main-tab indicator (buildui.com pattern) | Navigation | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Customisable quick-filter chip strip (Cex/Dex/Spot/Futures etc.) | Search | [Mobbin backlog #7](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Group View — shrunken dock when active (pill of 8 overlapping icons, click-to-expand, scroll-to-collapse) | Catalogue dock | [`parked_group_view_shrunken_dock`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_view_shrunken_dock.md) |

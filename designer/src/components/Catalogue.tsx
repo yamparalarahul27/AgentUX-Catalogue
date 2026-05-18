@@ -1177,6 +1177,7 @@ export function Catalogue({
           activeGroupKey={activeChipGroupKey}
           sortMode={groupSortMode}
           onSelectGroup={handleSelectChipGroup}
+          isGroupView={sortBy === 'name-asc'}
         />
       )}
       <CatalogueUploadProgress
