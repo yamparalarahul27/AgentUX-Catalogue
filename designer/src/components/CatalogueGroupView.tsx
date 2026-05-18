@@ -250,19 +250,19 @@ function CatalogueGroupCard({ summary, appearanceMap }: CardProps) {
   }
 
   return (
-    <article className="catalogue-group-cell">
-      <div
-        className="catalogue-group-card"
-        role="button"
-        tabIndex={0}
-        onClick={openDetail}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            openDetail();
-          }
-        }}
-      >
+    <article
+      className="catalogue-group-cell"
+      role="button"
+      tabIndex={0}
+      onClick={openDetail}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDetail();
+        }
+      }}
+    >
+      <div className="catalogue-group-card">
         {(summary.platforms.web || summary.platforms.mobile) && (
           <div className="catalogue-group-card__platforms" title={platformsTitle ?? undefined}>
             {summary.platforms.web && <Monitor size={14} aria-hidden="true" />}

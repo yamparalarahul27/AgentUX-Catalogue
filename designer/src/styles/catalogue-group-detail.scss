@@ -10,19 +10,23 @@
 .catalogue-group-detail__back {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   background: transparent;
-  border: none;
+  border: 1px solid #27272a;
   color: #a1a1aa;
-  font-size: 13px;
   cursor: pointer;
-  padding: 6px 8px;
-  margin-left: -8px;
-  margin-bottom: 32px;
-  border-radius: 8px;
-  transition: background 0.15s, color 0.15s;
+  padding: 0;
+  margin-bottom: 24px;
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 
-  &:hover { color: #fafafa; background: rgba(255, 255, 255, 0.04); }
+  &:hover {
+    color: #fafafa;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: #3f3f46;
+  }
 }
 
 // ── header ─────────────────────────────────────────────────────────
@@ -58,8 +62,16 @@
 .catalogue-group-detail__heading {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
   padding-top: 6px;
+  min-width: 0;
+}
+
+.catalogue-group-detail__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
   min-width: 0;
 }
 
@@ -70,12 +82,15 @@
   letter-spacing: -0.02em;
   margin: 0;
   color: #fafafa;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .catalogue-group-detail__meta {
   display: flex;
   gap: 56px;
-  margin-top: 4px;
   flex-wrap: wrap;
 }
 
@@ -100,9 +115,47 @@
 }
 
 .catalogue-group-detail__actions {
-  display: flex;
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
-  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+// Action pill — matches the Share/Edit styling we want on the detail
+// header. Symmetric padding both sides, deliberate 6px icon→label gap,
+// line-height: 1 so the label sits perfectly centred with the icon.
+.catalogue-group-detail__action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #27272a;
+  background: transparent;
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  svg {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.04);
+    color: #fafafa;
+    border-color: #3f3f46;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 }
 
 // ── sub-nav ────────────────────────────────────────────────────────
@@ -117,6 +170,10 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
+}
+
+.catalogue-group-detail__subnav-spacer {
+  flex: 1 1 auto;
 }
 
 .catalogue-group-detail__tabs {
@@ -157,20 +214,25 @@
 
 // ── grid ───────────────────────────────────────────────────────────
 //
-// Single unified grid. Mobile and web thumbnails coexist; the tile is a
-// uniform 9:16 aspect (close to phone shape) so the grid stays tidy.
-// Web screenshots letterbox cleanly inside via object-fit: contain.
+// Matches the main catalogue grid — auto-fill from 220px (same as
+// .catalogue-grid--families) so the detail-page thumbs read at the same
+// scale users are used to. Density toggle (2× / 4×) overrides auto-fill.
+// Tiles keep a uniform 9:16 aspect so mixed mobile + web thumbs share
+// row heights; web screenshots letterbox via object-fit: contain.
 .catalogue-group-detail__grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+
+  &[data-density="2"] { grid-template-columns: repeat(2, 1fr); }
+  &[data-density="4"] { grid-template-columns: repeat(4, 1fr); }
 }
 
 .catalogue-group-detail__thumb {
   position: relative;
-  background: #1a1a1d;
-  border: 1px solid rgba(63, 63, 70, 0.45);
-  border-radius: 14px;
+  background: #111113;
+  border: 1px solid #27272a;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   padding: 0;
@@ -178,11 +240,12 @@
   align-items: center;
   justify-content: center;
   aspect-ratio: 9 / 16;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 
   &:hover {
-    border-color: rgba(99, 102, 241, 0.45);
     transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.32);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
   }
 
   img {
@@ -212,22 +275,6 @@
   text-align: center;
   color: #71717a;
   font-size: 12px;
-}
-
-// ── share toast ────────────────────────────────────────────────────
-.catalogue-group-detail__toast {
-  position: fixed;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(24, 24, 27, 0.95);
-  color: #fafafa;
-  font-size: 13px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  border: 1px solid #33363f;
-  z-index: 200;
-  pointer-events: none;
 }
 
 // ── lightweight preview overlay ────────────────────────────────────

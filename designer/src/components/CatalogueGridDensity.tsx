@@ -4,7 +4,6 @@ const OPTIONS: Array<{ value: GridDensity; label: string }> = [
   { value: 'auto', label: 'Auto' },
   { value: 2, label: '2x' },
   { value: 4, label: '4x' },
-  { value: 6, label: '6x' },
 ];
 
 interface CatalogueGridDensityProps {

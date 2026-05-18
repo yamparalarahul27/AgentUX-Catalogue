@@ -24,6 +24,16 @@
   }
 }
 
+// Locked-title variant — used when the modal is opened from a surface
+// where the group is fixed (e.g. CatalogueGroupDetail). Renders
+// "Share screens from [icon] [label]" inline so the user sees what
+// they're sharing without scanning the dropdown.
+.catalogue-share-modal__title--locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .catalogue-share-modal__close {
   background: transparent;
   border: none;
@@ -60,6 +70,13 @@
   grid-template-columns: 72px 1fr;
   align-items: center;
   gap: 10px;
+}
+
+// Span both columns of the parent 2×2 grid. Used by Title so it gets
+// the full modal width — its content (a freeform string) benefits more
+// from horizontal room than the dropdowns above it do.
+.catalogue-share-modal__row--wide {
+  grid-column: 1 / -1;
 }
 
 .catalogue-share-modal__label {
