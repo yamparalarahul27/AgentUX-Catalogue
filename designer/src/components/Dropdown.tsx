@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 
@@ -6,6 +6,10 @@ export interface DropdownOption {
   value: string;
   label: string;
   badge?: string;
+  // Optional leading icon rendered before the option label in the menu.
+  // Use small lucide-react icons (~13px) for consistency with the rest
+  // of the catalogue toolbar.
+  icon?: ReactNode;
 }
 
 interface DropdownPropsBase {
@@ -15,6 +19,10 @@ interface DropdownPropsBase {
   disabled?: boolean;
   searchable?: boolean;
   searchPlaceholder?: string;
+  // Optional leading icon rendered before the trigger label. Used to
+  // tag what the dropdown is filtering (Group, Flow, etc.) without
+  // relying on the placeholder text alone.
+  leadingIcon?: ReactNode;
 }
 
 interface DropdownPropsSingle extends DropdownPropsBase {
@@ -44,6 +52,7 @@ export function Dropdown(props: DropdownProps) {
     disabled = false,
     searchable = false,
     searchPlaceholder = 'Search…',
+    leadingIcon,
   } = props;
   const isMulti = props.multiple === true;
   const [open, setOpen] = useState(false);
@@ -147,6 +156,9 @@ export function Dropdown(props: DropdownProps) {
         onClick={() => !disabled && setOpen(!open)}
         disabled={disabled}
       >
+        {leadingIcon && (
+          <span className="dropdown__leading-icon" aria-hidden="true">{leadingIcon}</span>
+        )}
         <span className={`dropdown__label ${triggerIsPlaceholder ? 'dropdown__label--placeholder' : ''}`}>
           {triggerLabel}
         </span>
@@ -226,6 +238,9 @@ export function Dropdown(props: DropdownProps) {
                     <span className={`dropdown__check ${isSelected ? 'dropdown__check--on' : ''}`} aria-hidden="true">
                       {isSelected ? <Check size={12} /> : null}
                     </span>
+                  )}
+                  {o.icon && (
+                    <span className="dropdown__item-icon" aria-hidden="true">{o.icon}</span>
                   )}
                   <span>{o.label}</span>
                 </span>

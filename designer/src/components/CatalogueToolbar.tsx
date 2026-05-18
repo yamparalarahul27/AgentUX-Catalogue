@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, Check, ChevronDown, Plus, Search, Share2, SlidersHorizontal, X } from 'lucide-react';
+import { Bookmark, Check, ChevronDown, Clock, LayoutGrid, Plus, Search, Share2, SlidersHorizontal, Tag, Workflow, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -357,6 +357,7 @@ export function CatalogueToolbar({
                 values={filterGroup}
                 placeholder="Group"
                 searchPlaceholder="Search groups…"
+                leadingIcon={<LayoutGrid size={13} />}
                 options={groups.map((group) => ({ value: group, label: group }))}
                 onMultiChange={onFilterGroupChange}
               />
@@ -368,6 +369,7 @@ export function CatalogueToolbar({
                 values={filterFlow}
                 placeholder="Flow"
                 searchPlaceholder="Search flows…"
+                leadingIcon={<Workflow size={13} />}
                 options={allFlows.map((flow) => ({ value: flow, label: flow }))}
                 onMultiChange={onFilterFlowChange}
               />
@@ -379,6 +381,7 @@ export function CatalogueToolbar({
                 values={filterAnnotation}
                 placeholder="Annotation"
                 searchPlaceholder="Search annotations…"
+                leadingIcon={<Tag size={13} />}
                 options={annotationLabels.map((label) => ({ value: label, label }))}
                 onMultiChange={onFilterAnnotationChange}
               />
@@ -435,8 +438,8 @@ export function CatalogueToolbar({
               value={sortBy}
               placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
               options={[
-                { value: 'date-desc-global', label: 'Latest' },
-                { value: 'name-asc', label: 'Group View' },
+                { value: 'date-desc-global', label: 'Latest', icon: <Clock size={13} /> },
+                { value: 'name-asc', label: 'Group View', icon: <LayoutGrid size={13} /> },
               ]}
               onChange={(value) => onSortByChange((value || 'date-desc-global') as CatalogueSortOption)}
               disabled={isSortLocked}
