@@ -4,6 +4,7 @@ import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId } from '../lib/catalogue-families';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, ScreenFamily, ScreenshotNode } from '../types';
+import { invalidateCatalogueFullScopeCache } from './use-catalogue-full-scope';
 import { useCatalogueImageActions } from './use-catalogue-image-actions';
 
 interface ToastState {
@@ -393,6 +394,9 @@ export function useCatalogueFamilyActions({
     // Screen_families rows stay put; the UI filters them out by their
     // screenshot count (a family with zero live screenshots doesn't render).
     setScreenshots((previous) => previous.filter((screenshot) => getScreenshotFamilyId(screenshot) !== id));
+    // Refresh the cross-route full-scope cache so the chip strip /
+    // Group detail page don't keep showing the deleted screenshots.
+    invalidateCatalogueFullScopeCache();
     onFamilyDeleted?.(id);
 
     // Different toast wording based on whether the caller can reach the
