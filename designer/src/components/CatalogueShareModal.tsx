@@ -4,6 +4,7 @@ import { Check, Copy, X } from 'lucide-react';
 import { buildShareUrl, type SharePlatform } from '../lib/share-url';
 import type { ScreenshotNode } from '../types';
 import { CATALOGUE_FLOW_LABEL_KEY } from '../lib/catalogue-families';
+import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { Dropdown } from './Dropdown';
 
 interface CatalogueShareModalProps {
@@ -17,6 +18,10 @@ interface CatalogueShareModalProps {
   initialFlow: string | null;
   initialPlatform: SharePlatform | null;
   userEmail: string | null;
+  // When true, the Group dropdown is disabled (the group is fixed by
+  // the calling surface — e.g. opened from the group detail page) and
+  // the title rewrites to "Share screens from [icon] [name]".
+  lockGroup?: boolean;
 }
 
 function getFlowLabel(screenshot: ScreenshotNode): string | null {
@@ -40,6 +45,7 @@ export function CatalogueShareModal({
   initialFlow,
   initialPlatform,
   userEmail,
+  lockGroup = false,
 }: CatalogueShareModalProps) {
   const [group, setGroup] = useState<string | null>(initialGroup);
   const [flow, setFlow] = useState<string | null>(initialFlow);
@@ -142,7 +148,14 @@ export function CatalogueShareModal({
     <div className="confirm-overlay" onClick={onClose}>
       <div className="confirm-modal catalogue-share-modal" onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-share-modal__head">
-          <h3 className="confirm-title">Share this view</h3>
+          {lockGroup && group ? (
+            <h3 className="confirm-title catalogue-share-modal__title--locked">
+              <span>Share screens from</span>
+              <CatalogueGroupLabel group={group} iconSize={20} />
+            </h3>
+          ) : (
+            <h3 className="confirm-title">Share this view</h3>
+          )}
           <button type="button" className="catalogue-share-modal__close" onClick={onClose} aria-label="Close">
             <X size={16} />
           </button>
@@ -150,20 +163,22 @@ export function CatalogueShareModal({
 
         <div className="catalogue-share-modal__body">
           <div className="catalogue-share-modal__grid">
-            <div className="catalogue-share-modal__row">
-              <label className="catalogue-share-modal__label">Group</label>
-              <div className="catalogue-share-modal__control">
-                <Dropdown
-                  searchable
-                  value={group}
-                  placeholder="Select group…"
-                  searchPlaceholder="Search groups…"
-                  options={groupOptions}
-                  onChange={(value) => { setGroup(value); setFlow(null); }}
-                  className="catalogue-share-modal__dropdown"
-                />
+            {!lockGroup && (
+              <div className="catalogue-share-modal__row">
+                <label className="catalogue-share-modal__label">Group</label>
+                <div className="catalogue-share-modal__control">
+                  <Dropdown
+                    searchable
+                    value={group}
+                    placeholder="Select group…"
+                    searchPlaceholder="Search groups…"
+                    options={groupOptions}
+                    onChange={(value) => { setGroup(value); setFlow(null); }}
+                    className="catalogue-share-modal__dropdown"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="catalogue-share-modal__row">
               <label className="catalogue-share-modal__label">Flow</label>
@@ -194,7 +209,7 @@ export function CatalogueShareModal({
               </div>
             </div>
 
-            <div className="catalogue-share-modal__row">
+            <div className="catalogue-share-modal__row catalogue-share-modal__row--wide">
               <label className="catalogue-share-modal__label">Title</label>
               <div className="catalogue-share-modal__control">
                 <input

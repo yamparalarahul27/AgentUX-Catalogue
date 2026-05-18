@@ -9,10 +9,13 @@ import {
   resolveCatalogueGroupAppearance,
   subscribeCatalogueGroupAppearance,
 } from '../lib/catalogue-group-appearance';
+import { defaultGridDensity, persistGridDensity, type GridDensity } from '../lib/catalogue-helpers';
 import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
 import { useGroupAppearanceEditor } from '../hooks/use-group-appearance-editor';
 import type { ScreenshotNode } from '../types';
+import { CatalogueGridDensity } from './CatalogueGridDensity';
 import { CatalogueHeader } from './CatalogueHeader';
+import { CatalogueShareModal } from './CatalogueShareModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 import { ThumbHashImage } from './ThumbHashImage';
 import { Toast } from './Toast';
@@ -53,12 +56,18 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
 
   const { screenshots, loading } = useCatalogueFullScope();
   const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
-  const [shareToast, setShareToast] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   // Edit modal — rename across casings isn't supported on the detail
   // page in v1 (the rename helper lives inside the main catalogue's
   // family-actions hook). Label changes still save the appearance row;
   // they just don't rebrand the underlying `screenshots.group` field.
   const editor = useGroupAppearanceEditor({ screenshots, onRenameGroupKey: undefined });
+
+  // Grid density — Auto / 2× / 4×. Shared via the same localStorage key
+  // as the main catalogue so the user's preference carries between
+  // surfaces.
+  const [gridDensity, setGridDensity] = useState<GridDensity>(defaultGridDensity);
+  useEffect(() => { persistGridDensity(gridDensity); }, [gridDensity]);
 
   useEffect(() => {
     void ensureCatalogueGroupAppearanceLoaded(null);
@@ -190,17 +199,23 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
   }, [previewIndex, closePreview, navigatePreview]);
 
   function handleShare() {
-    const url = window.location.origin + '/designer/g/' + urlKey;
-    navigator.clipboard.writeText(url).then(
-      () => setShareToast('Link copied'),
-      () => setShareToast('Could not copy'),
-    );
-    window.setTimeout(() => setShareToast(null), 1800);
+    setShowShareModal(true);
   }
 
   function handleBack() {
     navigate('/');
   }
+
+  // Group list for the Share modal — derived from the full-scope set so
+  // the dropdown can render every group the user has access to (not just
+  // the one we're on).
+  const allGroupsForShare = useMemo(() => {
+    const set = new Set<string>();
+    for (const shot of screenshots) {
+      if (shot.group) set.add(shot.group);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [screenshots]);
 
   const previewShot = previewIndex >= 0 ? filteredScreenshots[previewIndex] : null;
 
@@ -226,9 +241,14 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
       />
 
       <main className="catalogue-main catalogue-group-detail">
-        <button type="button" className="catalogue-group-detail__back" onClick={handleBack}>
-          <ArrowLeft size={14} aria-hidden="true" />
-          Back to catalogue
+        <button
+          type="button"
+          className="catalogue-group-detail__back"
+          onClick={handleBack}
+          aria-label="Back to catalogue"
+          title="Back to catalogue"
+        >
+          <ArrowLeft size={18} aria-hidden="true" />
         </button>
 
         <header className="catalogue-group-detail__header">
@@ -241,7 +261,28 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
           </div>
 
           <div className="catalogue-group-detail__heading">
-            <h1 className="catalogue-group-detail__name">{label}</h1>
+            <div className="catalogue-group-detail__title-row">
+              <h1 className="catalogue-group-detail__name">{label}</h1>
+              <div className="catalogue-group-detail__actions">
+                <button
+                  type="button"
+                  className="catalogue-group-detail__action-btn"
+                  onClick={() => editor.beginEdit(groupName)}
+                  disabled={!groupName || loading}
+                >
+                  <Pencil size={14} aria-hidden="true" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  type="button"
+                  className="catalogue-group-detail__action-btn"
+                  onClick={handleShare}
+                >
+                  <Share2 size={14} aria-hidden="true" />
+                  <span>Share</span>
+                </button>
+              </div>
+            </div>
 
             <div className="catalogue-group-detail__meta">
               <div className="catalogue-group-detail__meta-col">
@@ -260,22 +301,6 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
                   <span className="catalogue-group-detail__meta-value">{typeMeta}</span>
                 </div>
               )}
-            </div>
-
-            <div className="catalogue-group-detail__actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => editor.beginEdit(groupName)}
-                disabled={!groupName || loading}
-              >
-                <Pencil size={14} aria-hidden="true" />
-                Edit
-              </button>
-              <button type="button" className="btn-secondary" onClick={handleShare}>
-                <Share2 size={14} aria-hidden="true" />
-                Share
-              </button>
             </div>
           </div>
         </header>
@@ -323,6 +348,8 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
             <span className="catalogue-group-detail__subnav-count">
               {filteredScreenshots.length} {filteredScreenshots.length === 1 ? 'screen' : 'screens'}
             </span>
+            <div className="catalogue-group-detail__subnav-spacer" />
+            <CatalogueGridDensity value={gridDensity} onChange={setGridDensity} />
           </div>
         )}
 
@@ -330,7 +357,10 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
           <div className="catalogue-group-detail__empty">Loading screenshots…</div>
         ) : visibleScreenshots.length > 0 ? (
           <>
-            <div className="catalogue-group-detail__grid">
+            <div
+              className="catalogue-group-detail__grid"
+              {...(gridDensity !== 'auto' ? { 'data-density': gridDensity } : {})}
+            >
               {visibleScreenshots.map((shot) => (
                 <button
                   type="button"
@@ -367,10 +397,19 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
           </div>
         )}
 
-        {shareToast && (
-          <div className="catalogue-group-detail__toast" role="status">{shareToast}</div>
-        )}
       </main>
+
+      <CatalogueShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        groups={allGroupsForShare}
+        screenshots={screenshots}
+        initialGroup={groupName || null}
+        initialFlow={null}
+        initialPlatform={null}
+        userEmail={user.email ?? null}
+        lockGroup
+      />
 
       {previewShot && (
         <div
