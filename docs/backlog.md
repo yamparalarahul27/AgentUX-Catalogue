@@ -10,7 +10,7 @@ to a memory file (for full context) or to a PR (for in-flight work).
 - New ideas go straight into **Open** with a memory file backing them.
 - Estimates are rough — sizes are 🟢 quick (≤3h), 🟡 medium (½ day), 🔵 large (full session + scoping).
 
-Last updated: 2026-05-18 — Features filter (🔵), toolbar filter icons (🟢), Group View shrunken dock (🟡, ✅ shipping), two Group detail follow-ups (Edit modal + full lightbox), useEffect audit (🟡 code-quality sweep).
+Last updated: 2026-05-18 — added post-login 404 (🟢), Edit/Share pill styling (🟢), in-app "What's new" (🔵). Mobbin #3 extended to "mobile = icons everywhere" beyond the strip.
 
 ---
 
@@ -29,6 +29,8 @@ Last updated: 2026-05-18 — Features filter (🔵), toolbar filter icons (🟢)
 | Rename "Bookmarks" → "Saved" + parabolic flight animation to the nav entry on save | Sidebar / micro-interaction | [Mobbin backlog #1 + #9](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Subtle hover scale/rotate on every icon-button | Polish | [Mobbin backlog #2](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Icons for Filter / Group / Flow / Group View in toolbar | Toolbar | [`parked_toolbar_filter_icons`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_toolbar_filter_icons.md) |
+| Post-login 404 page — catch-all `Route` rendering a branded NotFound + "Back to catalogue" | Routing | [`parked_post_login_404`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_post_login_404.md) |
+| Restyle Edit/Share buttons to match Figma design-system pill (needs Figma reference) | Group detail | [`parked_edit_share_pill_styling`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_edit_share_pill_styling.md) |
 | Lightbox: ESC to close + upload date "X days ago" (exact on hover) | Lightbox | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Settings: reorder tabs so Groups appears first | Settings | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Gallery: drop 6× grid (keep auto / 2× / 4×) + remove Reupload button | Gallery | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
@@ -71,6 +73,7 @@ Last updated: 2026-05-18 — Features filter (🔵), toolbar filter icons (🟢)
 | Text-view mode with hover-shuffling screenshot previews | [Mobbin backlog #8](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Carousel-style screenshot card (Mobbin-style, multiple shots per card) | [Mobbin backlog #10](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Feedback / Bug Report modal | [Mobbin backlog #11](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
+| "What's new" in-app surface — release notes / activity feed visible inside the catalogue | [`parked_whats_new_in_app`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_whats_new_in_app.md) |
 | Video section + Link section UI improvements | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Full-page loading: design quotes + "About me and my work" instead of plain spinner | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Roles / Members panel UI improvements | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |

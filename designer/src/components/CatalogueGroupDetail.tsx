@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { ArrowLeft, ChevronLeft, ChevronRight, ImageIcon, LayoutGrid, Monitor, Share2, Smartphone, X } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ImageIcon, LayoutGrid, Monitor, Pencil, Share2, Smartphone, X } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import {
@@ -10,9 +10,12 @@ import {
   subscribeCatalogueGroupAppearance,
 } from '../lib/catalogue-group-appearance';
 import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
+import { useGroupAppearanceEditor } from '../hooks/use-group-appearance-editor';
 import type { ScreenshotNode } from '../types';
 import { CatalogueHeader } from './CatalogueHeader';
+import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 import { ThumbHashImage } from './ThumbHashImage';
+import { Toast } from './Toast';
 
 type Platform = 'mobile' | 'web';
 
@@ -44,9 +47,14 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const { screenshots } = useCatalogueFullScope();
+  const { screenshots, loading } = useCatalogueFullScope();
   const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
   const [shareToast, setShareToast] = useState<string | null>(null);
+  // Edit modal — rename across casings isn't supported on the detail
+  // page in v1 (the rename helper lives inside the main catalogue's
+  // family-actions hook). Label changes still save the appearance row;
+  // they just don't rebrand the underlying `screenshots.group` field.
+  const editor = useGroupAppearanceEditor({ screenshots, onRenameGroupKey: undefined });
 
   useEffect(() => {
     void ensureCatalogueGroupAppearanceLoaded(null);
@@ -221,6 +229,15 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
             </div>
 
             <div className="catalogue-group-detail__actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => editor.beginEdit(groupName)}
+                disabled={!groupName || loading}
+              >
+                <Pencil size={14} aria-hidden="true" />
+                Edit
+              </button>
               <button type="button" className="btn-secondary" onClick={handleShare}>
                 <Share2 size={14} aria-hidden="true" />
                 Share
@@ -265,7 +282,9 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
           </div>
         )}
 
-        {tabbedScreenshots.length > 0 ? (
+        {loading && tabbedScreenshots.length === 0 ? (
+          <div className="catalogue-group-detail__empty">Loading screenshots…</div>
+        ) : tabbedScreenshots.length > 0 ? (
           <div
             className={`catalogue-group-detail__grid catalogue-group-detail__grid--${activeTab}`}
           >
@@ -351,6 +370,36 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
             )}
           </div>
         </div>
+      )}
+
+      {editor.editingGroupKey && (
+        <GroupAppearanceEditModal
+          group={editor.editingGroupOriginal}
+          labelDraft={editor.labelDraft}
+          iconUrlDraft={editor.iconUrlDraft}
+          categoryDraft={editor.categoryDraft}
+          regionDraft={editor.regionDraft}
+          hasUploadedIcon={editor.hasUploadedIcon}
+          isUploading={editor.isUploading}
+          isSaving={editor.isSaving}
+          message={editor.saveMessage}
+          onChangeLabel={editor.setLabelDraft}
+          onChangeCategory={editor.setCategoryDraft}
+          onChangeRegion={editor.setRegionDraft}
+          onPickFile={(file) => { void editor.handleIconUpload(file); }}
+          onRemoveUploadedIcon={() => { void editor.handleRemoveIcon(); }}
+          onSave={() => { void editor.save(); }}
+          onCancel={editor.cancelEdit}
+        />
+      )}
+
+      {editor.saveMessage && !editor.editingGroupKey && (
+        <Toast
+          message={editor.saveMessage}
+          type="success"
+          onClose={() => editor.setSaveMessage(null)}
+          duration={3000}
+        />
       )}
     </div>
   );
