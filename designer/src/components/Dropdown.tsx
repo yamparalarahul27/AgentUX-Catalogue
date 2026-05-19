@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useLayoutEffect, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 
@@ -57,6 +57,11 @@ export function Dropdown(props: DropdownProps) {
   const isMulti = props.multiple === true;
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // Keyboard nav cursor into the navigable item list (visible options
+  // + optional Create row). The placeholder/clear row at the top is
+  // not part of the navigation — users clear via mouse or by clearing
+  // the field, not by arrowing up to it.
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -75,6 +80,38 @@ export function Dropdown(props: DropdownProps) {
   const visibleOptions = searchable && searchQuery.trim()
     ? options.filter((option) => option.label.toLowerCase().includes(searchQuery.trim().toLowerCase()))
     : options;
+
+  // "+ Create" row appears in single-select creatable mode when the
+  // search query doesn't exactly match any existing option.
+  const showCreateRow = searchable && !isMulti && (props as DropdownPropsSingle).creatable === true
+    && searchQuery.trim().length > 0
+    && !options.some((o) => o.label.toLowerCase() === searchQuery.trim().toLowerCase());
+
+  // Flat list of items that arrow keys + Enter can target. Order
+  // matches DOM order in the menu so visual highlight tracks index.
+  type NavItem = { kind: 'option'; option: DropdownOption } | { kind: 'create' };
+  const navItems = useMemo<NavItem[]>(() => {
+    const list: NavItem[] = visibleOptions.map((option) => ({ kind: 'option', option }));
+    if (showCreateRow) list.push({ kind: 'create' });
+    return list;
+  }, [visibleOptions, showCreateRow]);
+
+  // Reset highlight when the user types / opens the menu; clamp when
+  // filter narrows the list below the current index.
+  useEffect(() => { setHighlightedIndex(0); }, [open, searchQuery]);
+  useEffect(() => {
+    if (highlightedIndex >= navItems.length) {
+      setHighlightedIndex(Math.max(0, navItems.length - 1));
+    }
+  }, [navItems.length, highlightedIndex]);
+
+  // Scroll the highlighted item into view when arrowing past the
+  // visible window of the (max-height capped) menu.
+  useEffect(() => {
+    if (!open || !menuRef.current) return;
+    const el = menuRef.current.querySelector('.dropdown__item--highlighted') as HTMLElement | null;
+    if (el) el.scrollIntoView({ block: 'nearest' });
+  }, [highlightedIndex, open]);
 
   const selected = !isMulti ? options.find((o) => o.value === props.value) : null;
   const selectedValues = isMulti ? props.values : [];
@@ -148,6 +185,41 @@ export function Dropdown(props: DropdownProps) {
     close();
   }
 
+  function activateNavItem(item: NavItem) {
+    if (item.kind === 'option') {
+      if (isMulti) {
+        toggleMultiValue(item.option.value);
+      } else {
+        (props as DropdownPropsSingle).onChange(item.option.value);
+        close();
+      }
+    } else {
+      // create
+      (props as DropdownPropsSingle).onChange(searchQuery.trim());
+      close();
+    }
+  }
+
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (navItems.length === 0) return;
+      setHighlightedIndex((i) => (i + 1) % navItems.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (navItems.length === 0) return;
+      setHighlightedIndex((i) => (i - 1 + navItems.length) % navItems.length);
+    } else if (event.key === 'Enter') {
+      const item = navItems[highlightedIndex];
+      if (!item) return;
+      event.preventDefault();
+      // Stop the form-level Enter-to-save (e.g. inline editor) — the
+      // user is picking a dropdown value, not submitting the form.
+      event.stopPropagation();
+      activateNavItem(item);
+    }
+  }
+
   return (
     <div ref={ref} className={`dropdown ${className || ''} ${open ? 'dropdown--open' : ''} ${isMulti ? 'dropdown--multi' : ''}`}>
       <button
@@ -175,6 +247,7 @@ export function Dropdown(props: DropdownProps) {
                 className="dropdown__search-input"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 placeholder={searchPlaceholder}
                 autoComplete="off"
               />
@@ -202,28 +275,30 @@ export function Dropdown(props: DropdownProps) {
           {searchable && visibleOptions.length === 0 && searchQuery.trim() && !(props as DropdownPropsSingle).creatable && (
             <div className="dropdown__empty">No matches</div>
           )}
-          {searchable && !isMulti && (props as DropdownPropsSingle).creatable && searchQuery.trim() &&
-            !options.some((o) => o.label.toLowerCase() === searchQuery.trim().toLowerCase()) && (
+          {showCreateRow && (
             <button
               type="button"
-              className="dropdown__item dropdown__item--create"
+              className={`dropdown__item dropdown__item--create ${highlightedIndex === visibleOptions.length ? 'dropdown__item--highlighted' : ''}`}
               onClick={() => {
                 (props as DropdownPropsSingle).onChange(searchQuery.trim());
                 close();
               }}
+              onMouseEnter={() => setHighlightedIndex(visibleOptions.length)}
             >
               <span className="dropdown__item-main">+ Create "{searchQuery.trim()}"</span>
             </button>
           )}
-          {visibleOptions.map((o) => {
+          {visibleOptions.map((o, idx) => {
             const isSelected = isMulti
               ? selectedValues.includes(o.value)
               : o.value === (props as DropdownPropsSingle).value;
+            const isHighlighted = highlightedIndex === idx;
             return (
               <button
                 key={o.value}
                 type="button"
-                className={`dropdown__item ${isSelected ? 'dropdown__item--active' : ''}`}
+                className={`dropdown__item ${isSelected ? 'dropdown__item--active' : ''} ${isHighlighted ? 'dropdown__item--highlighted' : ''}`}
+                onMouseEnter={() => setHighlightedIndex(idx)}
                 onClick={() => {
                   if (isMulti) {
                     toggleMultiValue(o.value);

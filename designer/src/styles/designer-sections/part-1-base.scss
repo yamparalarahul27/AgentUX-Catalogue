@@ -34,11 +34,19 @@ $success: #22c55e;
   color: $text;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
   white-space: nowrap;
 
   &:hover { border-color: $text-dim; }
   .dropdown--open & { border-color: $accent; }
+
+  // Visible keyboard-focus ring. The bare `outline: none` above was
+  // hiding tab focus on every dropdown trigger in the app — users
+  // couldn't see where their cursor was when stepping through forms.
+  &:focus-visible {
+    border-color: $accent;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  }
 
   &:disabled {
     cursor: not-allowed;
@@ -173,6 +181,14 @@ $success: #22c55e;
   transition: background 0.1s, color 0.1s;
 
   &:hover { background: rgba($accent, 0.08); color: $text; }
+
+  // Keyboard nav cursor — same look as :hover so mouse + keyboard
+  // share one visual language. Mouse-enter syncs the highlight so
+  // pointer takeover after arrowing doesn't fight the indicator.
+  &--highlighted {
+    background: rgba($accent, 0.08);
+    color: $text;
+  }
 
   &--active {
     color: $accent;

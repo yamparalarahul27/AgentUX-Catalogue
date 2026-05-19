@@ -334,7 +334,10 @@
   padding: 12px 20px;
   border-radius: 8px;
   font-size: 13px;
-  z-index: 300;
+  // Above the lightbox (z:500) so notifications triggered from inside
+  // it ("Link copied", bookmark errors, etc.) are actually visible.
+  // Below the welcome modal (z:9999) which still owns the top.
+  z-index: 1000;
   animation: toast-in 0.3s ease;
 
   &-error {

@@ -140,24 +140,29 @@ export function CatalogueLightboxCrop({
   const canApply = hasTrim && !isApplying;
 
   // Enter applies the crop when there's a trim to apply and we're not already
-  // applying. Suppressed when an input/textarea/contenteditable is focused so
-  // form fields keep their normal Enter behaviour.
+  // applying. Esc cancels at any time (unless we're mid-apply). Both
+  // suppressed when an input/textarea/contenteditable is focused.
   useEffect(() => {
-    if (!canApply) return;
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Enter') return;
       if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
       const target = event.target;
       if (target instanceof HTMLElement) {
         const tag = target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
       }
-      event.preventDefault();
-      onApply({ topTrim: topPx, bottomTrim: bottomPx, leftTrim: leftPx, rightTrim: rightPx });
+      if (event.key === 'Escape') {
+        if (isApplying) return;
+        event.preventDefault();
+        onCancel();
+      } else if (event.key === 'Enter') {
+        if (!canApply) return;
+        event.preventDefault();
+        onApply({ topTrim: topPx, bottomTrim: bottomPx, leftTrim: leftPx, rightTrim: rightPx });
+      }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [canApply, onApply, topPx, bottomPx, leftPx, rightPx]);
+  }, [canApply, isApplying, onApply, onCancel, topPx, bottomPx, leftPx, rightPx]);
 
   return (
     <div className="catalogue-lightbox-crop">
@@ -358,6 +363,7 @@ export function CatalogueLightboxCrop({
             className="btn-secondary"
             onClick={onCancel}
             disabled={isApplying}
+            title="Cancel (Esc)"
           >
             Cancel
           </button>

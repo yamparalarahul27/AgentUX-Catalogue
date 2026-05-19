@@ -89,6 +89,46 @@
         <h1 style="font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; margin-bottom: 14px;">What's new in AgentUX Catalogue</h1>
         <p class="changelog-intro">Every feature, fix, and improvement from the very first commit.</p>
 
+        <!-- May 16 – 19, 2026 -->
+        <article class="changelog-release">
+          <div class="changelog-release-header">
+            <span class="changelog-date">May 16 – 19, 2026</span>
+            <span class="changelog-title">Group Detail Pages, Login Backdrop &amp; Lightbox Keyboard Shortcuts</span>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--added">Added</span>
+            <ul class="changelog-items">
+              <li><strong>Group detail page at <code>/g/&lt;key&gt;</code></strong> — every group now has a dedicated page with header (icon, name, meta, Share + Edit), a sub-nav, and a breakpoint-bucketed thumb grid (mobile / web-narrow / web-medium / web-wide). All cells share a uniform row height; web-medium/wide span two columns and <code>grid-auto-flow: dense</code> packs single-col tiles into the gaps. Concentric radii (outer 18 · pad 10 · inner 8) frame each screenshot. Tabs default to "All", with a 50/page infinite scroll; the Group View dock chip and a single-group filter now both redirect to this page.</li>
+              <li><strong>Lightbox keyboard shortcuts</strong> — single-letter actions while a screenshot is open: <kbd>E</kbd> edit, <kbd>D</kbd> delete, <kbd>C</kbd> crop, <kbd>B</kbd> bookmark, <kbd>A</kbd> annotate. Each respects the same permission gate as its button; all are skipped while typing in a field or holding a modifier key.</li>
+              <li><strong>Inline editor keyboard flow</strong> — open with <kbd>E</kbd> and the Name field is pre-focused + selected. <kbd>Tab</kbd> walks through Name → Group → Flow → Theme → Platform → Web preset / Mobile OS → Save → Cancel with a visible indigo focus ring on every stop. <kbd>←</kbd>/<kbd>→</kbd> cycle Theme, Platform, and Mobile OS segmented controls. <kbd>Enter</kbd> saves from anywhere (with the dropdowns getting their own Enter behaviour). <kbd>Esc</kbd> cancels.</li>
+              <li><strong>Dropdown arrow navigation + Enter to select</strong> — type to filter, then <kbd>↓</kbd>/<kbd>↑</kbd> walk through filtered options with wrap, <kbd>Enter</kbd> picks the highlighted row (or the "+ Create '…'" row in creatable mode). Highlight scrolls into view automatically; mouse-hover re-syncs the highlight so pointer takeover doesn't fight the indicator.</li>
+              <li><strong>Crop: <kbd>Esc</kbd> cancels, <kbd>Enter</kbd> applies</strong> — both wired alongside the existing drag handles. The Cancel button's tooltip now reads "Cancel (Esc)" for discoverability.</li>
+              <li><strong>Login page bokeh backdrop</strong> — replaces the placeholder geometric SVG with a scatter of ~50 group icons across the viewport, heavily gaussian-blurred at rest, hover one to focus (crisp + brand-coloured ring + glow + label with name / screenshot count / category · region). The two-way wobble + pendulum animation are sine-smooth thanks to a <code>from/to + alternate infinite</code> pattern. Click any icon to pre-seed the catalogue's group filter for after sign-in (lazy <code>useState</code> initialiser, no flash of unfiltered catalogue). "Don't have a passcode? Ping <a href="https://x.com/yamparalarahul1">@yamparalarahul1</a> →" replaces "Ask the admin".</li>
+              <li><strong>Bayer-dithered 404 page</strong> — soft-404 for unknown groups (<code>/g/&lt;not-a-group&gt;</code>), plus a branded "Back to catalogue" affordance. The interactive Bayer dither + click-to-randomise echo the site's emerging visual vocabulary.</li>
+              <li><strong>Catalogue toolbar filter icons + sort icons</strong> — leading icons next to Filter / Group / Flow / Group View dropdowns, plus icons on Sort options. Each Group filter dropdown row also now renders its group's appearance icon next to the name.</li>
+              <li><strong>Clickable group labels</strong> — the group chip on every catalogue card, every screenshot in the lightbox header, and the meta-line chip in the lightbox comments panel are all clickable. They navigate to <code>/g/&lt;key&gt;</code> via a scoped <code>linkTo</code> prop, so share-page H1 and other read-only consumers stay non-interactive.</li>
+              <li><strong>"Explore latest" empty-state CTA</strong> — when filters are active and nothing matches, a pill button under the message clears every filter + search + resets sort to default in one click. The "No screenshots yet" first-upload empty state is untouched (that one needs Upload, not "clear filters").</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--changed">Changed</span>
+            <ul class="changelog-items">
+              <li><strong>Screenshot framing across catalogue, group detail, and lightbox.</strong> The <code>&lt;img&gt;</code> in every <code>ThumbHashImage</code> consumer now auto-sizes to its natural bounds (capped to the wrapper), so any <code>border-radius</code> / <code>box-shadow</code> applies to the visible screenshot rectangle, not the letterboxed container. Catalogue cards get a 4px top-only rounding + 1px hairline; group-detail thumbs get the full frame (outer 18 · pad 10 · inner 8); the lightbox image rounds 8px with a 1px white-22% stroke that hugs the contained image rect.</li>
+              <li><strong>Group + Flow filter chips are default-visible in the toolbar.</strong> First-time users were landing on an empty toolbar that hid the only path to understand "No matching screen families". The default for <code>catalogue:toolbar-visible-filters</code> flips from <code>[]</code> to <code>['group', 'flow']</code>; existing users who'd hidden either chip keep their localStorage choice.</li>
+              <li><strong>Visible focus rings on dropdown triggers and segmented-control buttons.</strong> <code>outline: none</code> on <code>.dropdown__trigger</code> had been swallowing tab focus on every dropdown in the app — users were tabbing through invisible focus stops. A <code>:focus-visible</code> ring now matches the open-state border colour with a soft accent glow. Same treatment on the segmented controls so arrow-key cycling reads visually.</li>
+              <li><strong>Lightbox media padding + concentric framing.</strong> The lightbox image area now has 32px horizontal padding so the screenshot doesn't crowd the surrounding chrome. A new inner wrapper carries the contain-math measurement so all annotation positioning stays accurate after the padding change.</li>
+            </ul>
+          </div>
+          <div class="changelog-section">
+            <span class="changelog-section-label changelog-section-label--fixed">Fixed</span>
+            <ul class="changelog-items">
+              <li><strong>Toasts now appear over the lightbox, not behind it.</strong> The <code>.toast</code> class was at <code>z-index: 300</code>, but the lightbox backdrop sits at <code>500</code> — so "Link copied", bookmark errors, and any other in-lightbox notification was rendering below a dimming layer and going entirely unseen. Toast bumps to <code>z-index: 1000</code>, still below the welcome-modal layer (9999).</li>
+              <li><strong>Group detail screenshot count stale after upload / delete / restore.</strong> Cache invalidation now fires on mutate so the count badge stays honest.</li>
+              <li><strong>Capability-broadcast audit follow-up.</strong> Flow label and variant details changes invalidate the full-scope cache so other tabs / sessions pick up the new values without a manual reload.</li>
+            </ul>
+          </div>
+        </article>
+
         <!-- May 15, 2026 -->
         <article class="changelog-release">
           <div class="changelog-release-header">
