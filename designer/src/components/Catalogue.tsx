@@ -866,6 +866,7 @@ export function Catalogue({
                 filterWebPreset={filterWebPreset}
                 gridDensity={gridDensity}
                 groups={allGroups}
+                groupAppearanceMap={appearanceMap}
                 isSortLocked={isSortLocked}
                 onFilterAnnotationChange={setFilterAnnotation}
                 onFilterFlowChange={setFilterFlow}

@@ -29,6 +29,7 @@ Last updated: 2026-05-18 — `/designer` page feedback: bottom-to-top fading gra
 | Rename "Bookmarks" → "Saved" + parabolic flight animation to the nav entry on save | Sidebar / micro-interaction | [Mobbin backlog #1 + #9](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Subtle hover scale/rotate on every icon-button | Polish | [Mobbin backlog #2](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Icons for Filter / Group / Flow / Group View in toolbar | Toolbar | [`parked_toolbar_filter_icons`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_toolbar_filter_icons.md) |
+| Concentric corner radii audit — apply `inner = outer − padding` wherever a rounded element sits inside another rounded container with non-zero padding | Polish / design system | [`feedback_concentric_corner_radii`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/feedback_concentric_corner_radii.md) |
 | Restyle Edit/Share buttons to match Figma design-system pill (needs Figma reference) | Group detail | [`parked_edit_share_pill_styling`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_edit_share_pill_styling.md) |
 | Lightbox: ESC to close + upload date "X days ago" (exact on hover) | Lightbox | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Settings: reorder tabs so Groups appears first | Settings | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
@@ -38,6 +39,7 @@ Last updated: 2026-05-18 — `/designer` page feedback: bottom-to-top fading gra
 | Dimensional border experiment — replace flat 1px borders with `inset 0 1px 0 white` + `0 1px 0 rgba(0,0,0,0.04)`; dark theme uses ~6% white inset + ~40% black outer. Trial on one surface first | Polish | [`parked_dimensional_border_shadows`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_dimensional_border_shadows.md) |
 | Catalogue card group label → group detail page (`<CatalogueGroupLabel>` inside `<CatalogueFamilyCard>` becomes a link to `/g/<key>`). Scope click handling so share-page H1 and other consumers stay non-interactive | Catalogue card | [`parked_clickable_group_label_on_card`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_clickable_group_label_on_card.md) |
 | "No matching screen families" empty state: bottom-to-top fading gradient background (theme-aware, scoped to the empty-state container) | Catalogue empty state | [`parked_empty_state_gradient_fade`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_empty_state_gradient_fade.md) |
+| Upload button: add tactile depth (layered shadows + inset top highlight + subtle gradient + pressed state). Light + dark variants; may pilot the dimensional-borders system | Polish / primary action | [`parked_upload_button_depth`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_upload_button_depth.md) |
 
 ---
 
@@ -89,6 +91,7 @@ Last updated: 2026-05-18 — `/designer` page feedback: bottom-to-top fading gra
 | Group trading volume from CoinGecko (CEX) + DefiLlama (DEX) on group header/detail | [`parked_group_trading_volume`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_trading_volume.md) |
 | Per-group UX strengths chart (Auth/Trading/Onboarding scores; curator vs peer review TBD) | [`parked_group_ux_strengths`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_ux_strengths.md) |
 | "Features" filter — hierarchy above Flows (e.g. "Spot" feature bundles many trading flows); needs schema + assignment UI | [`parked_features_filter`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_features_filter.md) |
+| Colour filter — once colour metadata is captured on every screenshot, surface a Colour filter rendered as a **circular flower-shape** swatch picker (petals = colour buckets, radial layout). Metadata pipeline (extraction + storage) is a precondition and a separate prior PR | [`parked_colour_filter`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_colour_filter.md) |
 
 ---
 

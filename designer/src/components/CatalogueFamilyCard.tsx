@@ -276,6 +276,7 @@ export function CatalogueFamilyCard({
                 className="catalogue-family-card__group"
                 group={family.group}
                 projectId={null}
+                linkTo={family.group ? `/g/${encodeURIComponent(family.group.trim().toLowerCase())}` : undefined}
               />
             </div>
             <div className="catalogue-card-meta-right">

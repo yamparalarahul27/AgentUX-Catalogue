@@ -6,6 +6,10 @@ import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import {
+  resolveCatalogueGroupAppearance,
+  type CatalogueGroupAppearanceMap,
+} from '../lib/catalogue-group-appearance';
 import { CatalogueGridDensity } from './CatalogueGridDensity';
 import { CatalogueFilterSheet } from './CatalogueFilterSheet';
 import { CataloguePlatformDropdown } from './CataloguePlatformDropdown';
@@ -35,6 +39,10 @@ interface CatalogueToolbarProps {
   filterWebPreset: string | null;
   gridDensity: GridDensity;
   groups: string[];
+  // Appearance map used to render group icons inside the Group filter
+  // dropdown options. The toolbar doesn't need to subscribe — when
+  // appearance changes the parent re-renders and a new map flows in.
+  groupAppearanceMap: CatalogueGroupAppearanceMap;
   isSortLocked: boolean;
   // When the Quick Upload modal is open, the toolbar's primary button
   // doubles as "Upload All". Lets the user kick off the upload without
@@ -144,6 +152,7 @@ export function CatalogueToolbar({
   filterWebPreset,
   gridDensity,
   groups,
+  groupAppearanceMap,
   isSortLocked,
   onFilterAnnotationChange,
   onFilterGroupChange,
@@ -358,7 +367,23 @@ export function CatalogueToolbar({
                 placeholder="Group"
                 searchPlaceholder="Search groups…"
                 leadingIcon={<LayoutGrid size={13} />}
-                options={groups.map((group) => ({ value: group, label: group }))}
+                options={groups.map((group) => {
+                  const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, group, null);
+                  return {
+                    value: group,
+                    label: group,
+                    icon: appearance.iconUrl ? (
+                      <img
+                        src={appearance.iconUrl}
+                        alt=""
+                        aria-hidden="true"
+                        className="dropdown__item-icon-img"
+                      />
+                    ) : (
+                      <LayoutGrid size={13} />
+                    ),
+                  };
+                })}
                 onMultiChange={onFilterGroupChange}
               />
             )}
