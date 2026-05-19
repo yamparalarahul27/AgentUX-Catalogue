@@ -315,6 +315,63 @@ export function CatalogueFamilyLightbox({
     window.addEventListener('keydown', handleEscapeKey);
     return () => window.removeEventListener('keydown', handleEscapeKey);
   }, [isOpen, selectedAnnotationId]);
+  // Single-letter lightbox shortcuts. Letter → action mapping mirrors
+  // the icon-bar buttons; each shortcut respects the same permission
+  // gates the corresponding button does. Skip everything when the
+  // user is typing in a field or holding a modifier key.
+  //
+  // Common-block modes (block ALL shortcuts): inline-editing, crop
+  // mode, delete-confirm dialog open — those own the keyboard.
+  // Annotation mode blocks E/D (matches the prior behaviour) but
+  // lets A through so the user can toggle annotation off via 'A'.
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleShortcut(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
+      if (isInlineEditing || confirmDeleteOpen || cropMode) return;
+      const key = event.key.toLowerCase();
+      if (key === 'a') {
+        // Annotation toggle — even if a draft is mid-flight, A still
+        // toggles (matches what clicking the annotation button does).
+        event.preventDefault();
+        setSheetMinimized(false);
+        setLightboxPanel('annotations');
+        toggleAnnotationMode();
+        return;
+      }
+      if (key === 'b') {
+        if (!onToggleBookmark || !screenshot) return;
+        event.preventDefault();
+        onToggleBookmark(screenshot.id);
+        return;
+      }
+      if (key === 'c') {
+        // openCropMode internally resets annotation state if needed.
+        if (!canEdit || !screenshot || !imageSize) return;
+        event.preventDefault();
+        openCropMode();
+        return;
+      }
+      // E and D require no other-mode interference.
+      if (annotationMode || annotationDraft) return;
+      if (key === 'e') {
+        if (!canEdit) return;
+        event.preventDefault();
+        setIsInlineEditing(true);
+      } else if (key === 'd') {
+        if (!canDelete) return;
+        event.preventDefault();
+        requestDeleteFamily();
+      }
+    }
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, [isOpen, canEdit, canDelete, isInlineEditing, annotationMode, annotationDraft, confirmDeleteOpen, cropMode, onToggleBookmark, screenshot, imageSize]);
   const notifyAnnotationActivity = useCallback((nextAnnotations: LightboxAnnotation[]) => {
     if (!screenshot) return;
     onAnnotationStateChange(screenshot.id, summarizeAnnotationActivity(nextAnnotations));

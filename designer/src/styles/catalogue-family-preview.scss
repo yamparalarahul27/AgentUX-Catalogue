@@ -365,8 +365,9 @@
   border-radius: 7px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
   min-width: 0;
+  outline: none;
 
   &:hover {
     color: #f4f4f5;
@@ -375,6 +376,12 @@
   &.is-active {
     background: #6366f1;
     color: #fff;
+  }
+
+  // Keyboard focus ring so Tab/arrow navigation through the
+  // segmented control is visible.
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.55);
   }
 }
 
