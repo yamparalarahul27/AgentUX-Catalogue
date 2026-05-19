@@ -290,6 +290,9 @@ export function CatalogueFamilyLightbox({
       }
       if (annotationMode || annotationDraft) return;
       if (confirmDeleteOpen) return;
+      // Block lightbox prev/next while in crop — left/right belong to
+      // the crop handles' own keyboard nudging in this mode.
+      if (cropMode) return;
       if (event.key === 'ArrowLeft' && onPrev) {
         event.preventDefault();
         onPrev();
@@ -300,7 +303,7 @@ export function CatalogueFamilyLightbox({
     }
     window.addEventListener('keydown', handleNavKey);
     return () => window.removeEventListener('keydown', handleNavKey);
-  }, [isOpen, onPrev, onNext, annotationMode, annotationDraft, confirmDeleteOpen]);
+  }, [isOpen, onPrev, onNext, annotationMode, annotationDraft, confirmDeleteOpen, cropMode]);
   useEffect(() => {
     if (!isOpen || !selectedAnnotationId) return;
     function handleEscapeKey(event: KeyboardEvent) {

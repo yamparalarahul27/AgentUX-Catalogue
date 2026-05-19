@@ -44,6 +44,14 @@
   justify-content: center;
   z-index: 2;
   touch-action: none;
+  outline: none;
+
+  // Keyboard focus indicator on the grip pill so users see which
+  // handle the arrow keys are nudging. Pointer hover stays clean.
+  &:focus-visible .catalogue-lightbox-crop__handle-grip {
+    background: #818cf8;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5), 0 0 14px rgba(99, 102, 241, 0.45);
+  }
 }
 
 .catalogue-lightbox-crop__handle--horizontal {
