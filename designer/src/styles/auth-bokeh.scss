@@ -1,0 +1,210 @@
+// Bokeh group-icon backdrop for the login page.
+//
+// Icons are scattered across the viewport behind the auth card.
+// At rest they're heavily gaussian-blurred (bokeh / depth-of-field).
+// On hover the icon becomes crisp, picks up a brand-coloured ring +
+// glow, and shows a name / count / category · region label. Click
+// stores a pending group-filter key in localStorage that the
+// catalogue's filter-state hook consumes on first render after sign-in.
+//
+// Animations use the pendulum pattern (two-keyframe `from/to` +
+// `alternate infinite`) so the ease-in-out sweeps the full range
+// without pausing at mid-cycle waypoints. Companion code:
+//   - components/BokehBackdrop.tsx
+//   - components/PasscodeLogin.tsx (mounts the backdrop)
+//   - hooks/use-catalogue-filter-state.ts (post-login pickup)
+
+.auth-bokeh-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.auth-bokeh-icon {
+  position: absolute;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  overflow: visible;
+  transition: filter 0.35s ease, opacity 0.35s ease, scale 0.35s ease;
+  will-change: filter, scale, translate, rotate;
+  background: #18181b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // Ambient drift — staggered per-icon via --drift-delay set inline.
+  animation: auth-bokeh-drift 14s ease-in-out infinite;
+  animation-delay: var(--drift-delay, 0s);
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+}
+
+@keyframes auth-bokeh-drift {
+  0%, 100% { translate: 0 0; }
+  25%      { translate: 8px -6px; }
+  50%      { translate: -6px 8px; }
+  75%      { translate: -8px -6px; }
+}
+
+// Size buckets — smaller = more blur = pseudo-depth (farther).
+.auth-bokeh-icon--xs { width: 32px; height: 32px; filter: blur(10px); opacity: 0.5;  }
+.auth-bokeh-icon--sm { width: 48px; height: 48px; filter: blur(12px); opacity: 0.5;  }
+.auth-bokeh-icon--md { width: 64px; height: 64px; filter: blur(14px); opacity: 0.45; }
+.auth-bokeh-icon--lg { width: 80px; height: 80px; filter: blur(16px); opacity: 0.4;  }
+.auth-bokeh-icon--xl { width: 96px; height: 96px; filter: blur(18px); opacity: 0.35; }
+
+.auth-bokeh-icon:hover {
+  filter: blur(0);
+  opacity: 1;
+  scale: 1.15;
+  z-index: 20;
+  // Pendulum: two-keyframe + alternate-infinite so the swing eases
+  // smoothly between extremes with no mid-cycle pause.
+  animation:
+    auth-bokeh-tilt 2.4s ease-in-out infinite alternate,
+    auth-bokeh-breathe 2.8s ease-in-out infinite alternate;
+}
+
+@keyframes auth-bokeh-tilt {
+  from { rotate: 6deg; }
+  to   { rotate: -6deg; }
+}
+@keyframes auth-bokeh-breathe {
+  from { scale: 1.15; translate: 0 0; }
+  to   { scale: 1.18; translate: 0 -2px; }
+}
+
+// Brand ring + soft glow keyed off --ring (set inline per icon).
+.auth-bokeh-icon::before,
+.auth-bokeh-icon::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.auth-bokeh-icon::before {
+  inset: -8px;
+  border: 1.5px solid var(--ring, #6366f1);
+}
+.auth-bokeh-icon::after {
+  inset: -16px;
+  background: radial-gradient(circle, var(--ring, #6366f1) 0%, transparent 60%);
+  filter: blur(8px);
+}
+.auth-bokeh-icon:hover::before {
+  opacity: 0.8;
+  animation: auth-bokeh-ring-pulse 2.8s ease-in-out infinite alternate;
+}
+.auth-bokeh-icon:hover::after { opacity: 0.45; }
+
+@keyframes auth-bokeh-ring-pulse {
+  from { opacity: 0.7;  transform: scale(1);    }
+  to   { opacity: 0.95; transform: scale(1.04); }
+}
+
+// ── focus label (text only, no chrome) ──────────────────────────
+.auth-bokeh-label {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 220px;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 21;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+.auth-bokeh-icon:hover .auth-bokeh-label { opacity: 1; }
+
+// Bottom-half icons: flip label above so it doesn't get clipped.
+.auth-bokeh-icon--flip .auth-bokeh-label {
+  top: auto;
+  bottom: calc(100% + 14px);
+}
+
+// Each line is its own block so the three pieces (name / count /
+// meta) stack vertically with proper margins instead of running
+// inline as the inner <span>s would by default.
+.auth-bokeh-label__name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fafafa;
+  margin: 0 0 8px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.auth-bokeh-label__count {
+  display: block;
+  font-size: 12px;
+  color: #a1a1aa;
+  margin: 0 0 10px;
+  line-height: 1.2;
+}
+.auth-bokeh-label__count strong {
+  color: #fafafa;
+  font-weight: 600;
+}
+.auth-bokeh-label__meta {
+  display: block;
+  font-size: 11px;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.auth-bokeh-label__meta-sep {
+  display: inline-block;
+  margin: 0 8px;
+  opacity: 0.4;
+}
+
+// ── click toast ────────────────────────────────────────────────
+// Pill-shaped notification just below the login card, shown when
+// a bokeh icon is clicked.
+.auth-bokeh-toast {
+  position: fixed;
+  left: 50%;
+  top: calc(50% + 210px);
+  transform: translate(-50%, 8px);
+  background: rgba(20, 20, 24, 0.95);
+  border: 1px solid rgba(63, 63, 70, 0.55);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 13px;
+  color: #fafafa;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 30;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+.auth-bokeh-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.auth-bokeh-toast strong { font-weight: 600; }
+.auth-bokeh-toast em {
+  color: #a1a1aa;
+  font-style: normal;
+  margin: 0 6px;
+  opacity: 0.5;
+}

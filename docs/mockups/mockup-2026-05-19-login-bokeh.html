@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Login — bokeh group-icon backdrop</title>
+<style>
+  :root {
+    --bg: #08080a;
+    --bg-2: #0e0e11;
+    --surface: rgba(20, 20, 24, 0.78);
+    --border: rgba(63, 63, 70, 0.55);
+    --border-strong: #2a2a31;
+    --text: #fafafa;
+    --text-dim: #a1a1aa;
+    --text-faint: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #7679f3;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(ellipse at center, var(--bg-2) 0%, var(--bg) 70%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ── full-screen layout ──────────────────────────────────────── */
+  .auth-page {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* ── bokeh layer (scattered, blurred, hover-to-focus) ────────── */
+  /*
+   * Each icon is absolutely positioned by inline left/top. At rest:
+   * filter: blur(N), opacity ~0.4. On hover the icon becomes crisp
+   * (blur 0), scales 1.15, picks up a soft brand-coloured outer ring,
+   * and shows a small label card next to it. Cursor sits on the icon
+   * the whole time, so the label can extend outward without flicker.
+   *
+   * The icon itself is a simple coloured circle with a monogram for
+   * this mockup — in production these would be the actual uploaded
+   * group icons from `catalogue_group_appearance`.
+   */
+  .bokeh-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .bokeh-icon {
+    position: absolute;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    cursor: pointer;
+    pointer-events: auto;
+    transition: filter 0.35s ease, opacity 0.35s ease, scale 0.35s ease;
+    will-change: filter, scale, translate, rotate;
+    /* Ambient drift — every icon gently sways in the background.
+     * --drift-delay is set per-icon by the auto-flip JS so the
+     * scatter doesn't move in lockstep. */
+    animation: bokeh-drift 14s ease-in-out infinite;
+    animation-delay: var(--drift-delay, 0s);
+  }
+  @keyframes bokeh-drift {
+    0%, 100% { translate: 0 0; }
+    25%      { translate: 8px -6px; }
+    50%      { translate: -6px 8px; }
+    75%      { translate: -8px -6px; }
+  }
+
+  /* size variants — readable at rest as soft blobs, useful on focus */
+  .bokeh-icon--xs  { width: 32px; height: 32px; font-size: 12px; }
+  .bokeh-icon--sm  { width: 48px; height: 48px; font-size: 16px; }
+  .bokeh-icon--md  { width: 64px; height: 64px; font-size: 20px; }
+  .bokeh-icon--lg  { width: 80px; height: 80px; font-size: 26px; }
+  .bokeh-icon--xl  { width: 96px; height: 96px; font-size: 32px; }
+
+  /* blur intensity — pseudo-depth: smaller icons = farther = more blur */
+  .bokeh-icon--xs { filter: blur(10px); opacity: 0.5; }
+  .bokeh-icon--sm { filter: blur(12px); opacity: 0.5; }
+  .bokeh-icon--md { filter: blur(14px); opacity: 0.45; }
+  .bokeh-icon--lg { filter: blur(16px); opacity: 0.4;  }
+  .bokeh-icon--xl { filter: blur(18px); opacity: 0.35; }
+
+  .bokeh-icon:hover {
+    filter: blur(0);
+    opacity: 1;
+    scale: 1.15;
+    z-index: 20;
+    /* Two animations with alternate-infinite — the canonical CSS
+     * pendulum pattern. Keyframes are only at the extremes so the
+     * ease-in-out flows smoothly across direction changes (no mid-
+     * swing pause). Slightly different durations so scale and tilt
+     * desync over time, which feels more organic. */
+    animation:
+      bokeh-focus-tilt 2.4s ease-in-out infinite alternate,
+      bokeh-focus-breathe 2.8s ease-in-out infinite alternate;
+  }
+
+  /* Tilt — starts at +6° (clockwise), eases all the way to -6°
+   * (anti-clockwise), then `alternate` reverses back. No 0° waypoint
+   * in the middle, so the swing is buttery smooth. */
+  @keyframes bokeh-focus-tilt {
+    from { rotate: 6deg; }
+    to   { rotate: -6deg; }
+  }
+  /* Breathe + 2px float, also as a pendulum. */
+  @keyframes bokeh-focus-breathe {
+    from { scale: 1.15; translate: 0 0; }
+    to   { scale: 1.18; translate: 0 -2px; }
+  }
+
+  /* Ring pulses softly — same pendulum pattern as the other focus
+   * animations, no mid-cycle pause. */
+  @keyframes bokeh-ring-pulse {
+    from { opacity: 0.7;  transform: scale(1);    }
+    to   { opacity: 0.95; transform: scale(1.04); }
+  }
+  .bokeh-icon:hover::before {
+    animation: bokeh-ring-pulse 2.8s ease-in-out infinite alternate;
+  }
+
+  /* brand ring + soft glow, both keyed to --ring (the group colour) */
+  .bokeh-icon::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ring);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+  .bokeh-icon::after {
+    content: '';
+    position: absolute;
+    inset: -16px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--ring) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    filter: blur(8px);
+  }
+  .bokeh-icon:hover::before { opacity: 0.8; }
+  .bokeh-icon:hover::after  { opacity: 0.45; }
+
+  /* ── focus label (appears on hover) ──────────────────────────── */
+  /* Pure text — no background, no border, no chip pills. A soft
+   * text-shadow keeps it legible over any bokeh colour underneath. */
+  .bokeh-label {
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 220px;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 21;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+  }
+  .bokeh-icon:hover .bokeh-label { opacity: 1; }
+  /* Bottom-half icons: label appears above so it doesn't get clipped. */
+  .bokeh-icon.flip-label .bokeh-label {
+    top: auto;
+    bottom: calc(100% + 14px);
+  }
+
+  .bokeh-label__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 2px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .bokeh-label__count {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 0 0 3px;
+  }
+  .bokeh-label__count strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .bokeh-label__meta {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 0;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .bokeh-label__meta-sep {
+    margin: 0 6px;
+    opacity: 0.4;
+  }
+
+  /* ── login card (foreground) ─────────────────────────────────── */
+  .auth-card {
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 18px;
+    padding: 40px 36px 32px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    backdrop-filter: blur(18px);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  }
+  .auth-card h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .auth-subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 28px;
+  }
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .auth-field {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: left;
+  }
+  .auth-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: rgba(12, 12, 14, 0.9);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  .auth-input:focus { border-color: var(--accent); }
+  .auth-input--passcode {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.04em;
+  }
+  .auth-input::placeholder { color: var(--text-faint); }
+  .auth-btn {
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: inherit;
+    margin-top: 6px;
+  }
+  .auth-btn:hover { background: var(--accent-hover); }
+
+  .auth-hint {
+    margin: 22px 0 0;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .auth-hint a {
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    padding-bottom: 1px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .auth-hint a:hover {
+    color: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+
+  /* ── click toast (sits just below the login card) ────────────── */
+  /* Fixed under the centred card. Shown when a bokeh icon is clicked
+   * (before login). We also persist the clicked group key so the
+   * catalogue can apply it as the active filter after sign-in. */
+  .auth-toast {
+    position: fixed;
+    left: 50%;
+    top: calc(50% + 210px);
+    transform: translate(-50%, 8px);
+    background: rgba(20, 20, 24, 0.95);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 30;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    white-space: nowrap;
+  }
+  .auth-toast.is-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  .auth-toast strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .auth-toast em {
+    color: var(--text-dim);
+    font-style: normal;
+    margin: 0 6px;
+    opacity: 0.5;
+  }
+
+  /* ── mockup helper banner (remove in production) ─────────────── */
+  .mock-note {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    background: rgba(12, 12, 14, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+  .mock-note strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="mock-note">
+  <strong>Mockup</strong> · Hover any blurred icon to see focus + label.
+</div>
+
+<div class="auth-page">
+  <!-- ── bokeh backdrop ── -->
+  <div class="bokeh-layer">
+
+    <!-- 30 scattered group icons. Mix of size buckets (xs/sm/md/lg/xl)
+         and brand colours. Inline left/top so the scatter is stable
+         across renders. Top-half icons add .so their tooltip
+         appears above (so it doesn't run off the viewport). -->
+
+    <div class="bokeh-icon bokeh-icon--md flip-label" style="left: 4%;  top: 6%;  --ring: #f0b90b; background: #f0b90b;">B
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Binance</p>
+        <p class="bokeh-label__count"><strong>312</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--sm flip-label" style="left: 14%; top: 14%; --ring: #0052ff; background: #0052ff;">C
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Coinbase</p>
+        <p class="bokeh-label__count"><strong>184</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>US</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--lg flip-label" style="left: 24%; top: 4%;  --ring: #ff007a; background: #ff007a;">U
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Uniswap</p>
+        <p class="bokeh-label__count"><strong>96</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xs flip-label" style="left: 38%; top: 12%; --ring: #5741d9; background: #5741d9;">K
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Kraken</p>
+        <p class="bokeh-label__count"><strong>72</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>US</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--md flip-label" style="left: 50%; top: 4%;  --ring: #ffffff; background: #1a1a1a; color: #fff;">O
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">OKX</p>
+        <p class="bokeh-label__count"><strong>241</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--sm flip-label" style="left: 62%; top: 9%;  --ring: #f7a600; background: #f7a600;">B
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Bybit</p>
+        <p class="bokeh-label__count"><strong>168</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xs flip-label" style="left: 75%; top: 5%;  --ring: #d1ff52; background: #d1ff52; color: #1a1a1a;">P
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">PancakeSwap</p>
+        <p class="bokeh-label__count"><strong>48</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--lg flip-label" style="left: 86%; top: 11%; --ring: #24ae8f; background: #24ae8f;">K
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">KuCoin</p>
+        <p class="bokeh-label__count"><strong>134</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--md flip-label" style="left: 6%;  top: 24%; --ring: #54ffd7; background: #54ffd7; color: #1a1a1a;">B
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Bitget</p>
+        <p class="bokeh-label__count"><strong>102</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xl flip-label" style="left: 92%; top: 28%; --ring: #ffd700; background: #ffd700; color: #1a1a1a;">G
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Gate.io</p>
+        <p class="bokeh-label__count"><strong>89</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xs" style="left: 3%; top: 42%; --ring: #00d09c; background: #00d09c;">C
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Crypto.com</p>
+        <p class="bokeh-label__count"><strong>116</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--sm" style="left: 11%; top: 56%; --ring: #1976d2; background: #1976d2;">B
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Bitfinex</p>
+        <p class="bokeh-label__count"><strong>67</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--md" style="left: 88%; top: 48%; --ring: #ec4899; background: #ec4899;">D
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">dYdX</p>
+        <p class="bokeh-label__count"><strong>53</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--lg" style="left: 4%; top: 72%; --ring: #2775ca; background: #2775ca;">G
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">GMX</p>
+        <p class="bokeh-label__count"><strong>41</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xl" style="left: 86%; top: 62%; --ring: #ff5500; background: #ff5500;">H
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">HTX</p>
+        <p class="bokeh-label__count"><strong>92</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xs" style="left: 16%; top: 86%; --ring: #fcd34d; background: #fcd34d; color: #1a1a1a;">M
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">MEXC</p>
+        <p class="bokeh-label__count"><strong>78</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--sm" style="left: 27%; top: 92%; --ring: #9333ea; background: #9333ea;">J
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Jupiter</p>
+        <p class="bokeh-label__count"><strong>34</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--md" style="left: 40%; top: 90%; --ring: #b5179e; background: #b5179e;">1
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">1inch</p>
+        <p class="bokeh-label__count"><strong>29</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--lg" style="left: 54%; top: 86%; --ring: #f97316; background: #f97316;">S
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">SushiSwap</p>
+        <p class="bokeh-label__count"><strong>22</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xs" style="left: 68%; top: 92%; --ring: #ef4444; background: #ef4444;">A
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Aave</p>
+        <p class="bokeh-label__count"><strong>57</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--sm" style="left: 80%; top: 88%; --ring: #38bdf8; background: #38bdf8;">C
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Curve</p>
+        <p class="bokeh-label__count"><strong>31</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--md flip-label" style="left: 47%; top: 18%; --ring: #14b8a6; background: #14b8a6;">R
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Raydium</p>
+        <p class="bokeh-label__count"><strong>26</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xs flip-label" style="left: 18%; top: 32%; --ring: #a855f7; background: #a855f7;">V
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Velodrome</p>
+        <p class="bokeh-label__count"><strong>18</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--lg" style="left: 6%; top: 88%; --ring: #06b6d4; background: #06b6d4;">H
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Hyperliquid</p>
+        <p class="bokeh-label__count"><strong>44</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xl flip-label" style="left: 70%; top: 22%; --ring: #f59e0b; background: #f59e0b;">T
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Trader Joe</p>
+        <p class="bokeh-label__count"><strong>15</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xs" style="left: 33%; top: 64%; --ring: #84cc16; background: #84cc16;">U
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Upbit</p>
+        <p class="bokeh-label__count"><strong>62</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--sm" style="left: 65%; top: 65%; --ring: #fb7185; background: #fb7185;">K
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Kine</p>
+        <p class="bokeh-label__count"><strong>9</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--md flip-label" style="left: 32%; top: 30%; --ring: #4ade80; background: #4ade80; color: #1a1a1a;">B
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Bitstamp</p>
+        <p class="bokeh-label__count"><strong>54</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>EU</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--xs flip-label" style="left: 58%; top: 32%; --ring: #fbbf24; background: #fbbf24; color: #1a1a1a;">P
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Phemex</p>
+        <p class="bokeh-label__count"><strong>21</strong> screenshots</p>
+        <p class="bokeh-label__meta">CEX<span class="bokeh-label__meta-sep">·</span>Asia</p>
+      </div>
+    </div>
+
+    <div class="bokeh-icon bokeh-icon--sm" style="left: 92%; top: 78%; --ring: #c084fc; background: #c084fc;">D
+      <div class="bokeh-label">
+        <p class="bokeh-label__name">Drift</p>
+        <p class="bokeh-label__count"><strong>11</strong> screenshots</p>
+        <p class="bokeh-label__meta">DEX<span class="bokeh-label__meta-sep">·</span>Global</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── login card ── -->
+  <div class="auth-card">
+    <h1>AgentUX Catalogue</h1>
+    <p class="auth-subtitle">A living atlas of crypto product UX</p>
+
+    <form class="auth-form" onsubmit="event.preventDefault();">
+      <label class="auth-field">
+        Email
+        <input type="email" class="auth-input" placeholder="you@example.com" autocomplete="username" />
+      </label>
+      <label class="auth-field">
+        Passcode
+        <input type="password" class="auth-input auth-input--passcode" placeholder="XXXX-XXXX-XXXX" autocomplete="current-password" />
+      </label>
+      <button type="submit" class="auth-btn">Sign in</button>
+    </form>
+
+    <p class="auth-hint">
+      Don't have a passcode? Ping <a href="https://x.com/yamparalarahul1" target="_blank" rel="noopener">@yamparalarahul1&nbsp;→</a>
+    </p>
+  </div>
+
+  <!-- ── click toast (hidden until a bokeh icon is clicked) ── -->
+  <div class="auth-toast" id="auth-toast" role="status" aria-live="polite">
+    Log in to check out <em>·</em> <strong id="auth-toast-group">Binance</strong>
+  </div>
+</div>
+
+<script>
+  // Auto-flip the label above the icon when the icon sits in the
+  // lower half of the viewport, so the tooltip doesn't get clipped.
+  // This makes the bokeh layer position-agnostic.
+  (function autoFlipLabels() {
+    const icons = document.querySelectorAll('.bokeh-icon');
+    const apply = () => {
+      const half = window.innerHeight / 2;
+      icons.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        el.classList.toggle('flip-label', rect.top > half);
+      });
+    };
+    // Stagger drift phase per icon so the bokeh layer doesn't sway in
+    // lockstep. Negative delay starts each one mid-cycle at a
+    // different point. 14s is the drift duration.
+    icons.forEach((el, i) => {
+      el.style.setProperty('--drift-delay', `-${(i * 1.31) % 14}s`);
+    });
+    apply();
+    window.addEventListener('resize', apply);
+  })();
+
+  // Click → toast + remember the clicked group for post-login filter.
+  (function clickToFilter() {
+    const toast = document.getElementById('auth-toast');
+    const toastGroup = document.getElementById('auth-toast-group');
+    let timer;
+    document.querySelectorAll('.bokeh-icon').forEach((el) => {
+      el.addEventListener('click', (event) => {
+        event.preventDefault();
+        const name = el.querySelector('.bokeh-label__name')?.textContent?.trim() ?? 'this group';
+        // groupKey shape mirrors how the catalogue keys groups: lower-case,
+        // alphanumeric, dashes for spaces, dots stripped. Replace with the
+        // real `group_key` from `catalogue_group_appearance` when wiring up.
+        const groupKey = name.toLowerCase().replace(/\./g, '').replace(/\s+/g, '-');
+        toastGroup.textContent = name;
+        toast.classList.add('is-visible');
+        clearTimeout(timer);
+        timer = setTimeout(() => toast.classList.remove('is-visible'), 2800);
+        try {
+          localStorage.setItem('agentux:pending-group-filter', groupKey);
+        } catch (_) {}
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

@@ -40,6 +40,7 @@ Last updated: 2026-05-18 — `/designer` page feedback: bottom-to-top fading gra
 | Catalogue card group label → group detail page (`<CatalogueGroupLabel>` inside `<CatalogueFamilyCard>` becomes a link to `/g/<key>`). Scope click handling so share-page H1 and other consumers stay non-interactive | Catalogue card | [`parked_clickable_group_label_on_card`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_clickable_group_label_on_card.md) |
 | "No matching screen families" empty state: bottom-to-top fading gradient background (theme-aware, scoped to the empty-state container) | Catalogue empty state | [`parked_empty_state_gradient_fade`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_empty_state_gradient_fade.md) |
 | Upload button: add tactile depth (layered shadows + inset top highlight + subtle gradient + pressed state). Light + dark variants; may pilot the dimensional-borders system | Polish / primary action | [`parked_upload_button_depth`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_upload_button_depth.md) |
+| Login page polish — real brand mark + tagline (A), returning-user email shortcut (B), loading/error micro-interactions (F). Smallest viable "front door fix" bundle | Auth / brand | [`parked_login_page_polish`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_login_page_polish.md) |
 
 ---
 
@@ -61,6 +62,7 @@ Last updated: 2026-05-18 — `/designer` page feedback: bottom-to-top fading gra
 | Group detail: Edit button (extract `GroupAppearanceEditModal` state into a hook / dialog) | Group detail | [`parked_group_detail_followups`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_detail_followups.md) |
 | Group detail: full `CatalogueFamilyLightbox` (annotations / comments / metadata) on preview | Group detail | [`parked_group_detail_followups`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_detail_followups.md) |
 | Group detail: header collapses into a thin sticky strip on scroll (icon + label + meta + Share/Edit stay accessible while browsing). `IntersectionObserver` + `position: sticky` | Group detail | [`parked_group_detail_sticky_strip_header`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_detail_sticky_strip_header.md) |
+| Login page hero — Tegaki handwriting greeting (D) + segmented passcode input (C) + memorable backdrop (E). The "all-in" bundle from the login polish memory; login becomes brand, not gate | Auth / brand | [`parked_login_page_polish`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_login_page_polish.md) |
 
 ---
 
