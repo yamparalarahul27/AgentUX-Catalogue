@@ -34,6 +34,8 @@ export function CatalogueLightboxCrop({
 }: CatalogueLightboxCropProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const topHandleRef = useRef<HTMLDivElement>(null);
+  const didInitialFocus = useRef(false);
   const [imgBox, setImgBox] = useState<ImgBox | null>(null);
   const [topPct, setTopPct] = useState(0);
   const [bottomPct, setBottomPct] = useState(0);
@@ -109,9 +111,73 @@ export function CatalogueLightboxCrop({
     };
   }, [topPct, bottomPct, leftPct, rightPct, imgBox]);
 
-  function startDrag(which: DragSide, event: React.PointerEvent) {
+  function startDrag(which: DragSide, event: React.PointerEvent<HTMLDivElement>) {
     event.preventDefault();
+    // Divs with tabIndex don't receive focus on click by default.
+    // Explicit focus() ensures arrow-key nudging works immediately
+    // after the user clicks a handle (no Tab gymnastics needed).
+    event.currentTarget.focus({ preventScroll: true });
     dragRef.current = { which };
+  }
+
+  // Auto-focus the top handle once the image has measured (imgBox is
+  // set after the first onLoad / recompute). Means the user can crop-
+  // open via 'C' and immediately use arrow keys — no Tab required.
+  // Guarded so a later resize/recompute doesn't yank focus away from
+  // whichever handle the user is interacting with.
+  useEffect(() => {
+    if (!imgBox || didInitialFocus.current) return;
+    didInitialFocus.current = true;
+    topHandleRef.current?.focus({ preventScroll: true });
+  }, [imgBox]);
+
+  // Keyboard nudge for each handle. 1% step normally, 5% with Shift —
+  // mirrors the slider convention (small step / page step). Arrow key
+  // direction maps to handle direction-of-travel: top handle ↑/↓
+  // moves it up/down, bottom handle ↑/↓ same (so increasing the
+  // bottom trim shifts the handle UP — matches what you see), and
+  // similarly left/right ←/→.
+  function nudgeTrim(which: DragSide, delta: number) {
+    if (which === 'top') {
+      const max = 1 - bottomPct - MIN_KEEP_FRACTION;
+      setTopPct((v) => Math.min(max, Math.max(0, v + delta)));
+    } else if (which === 'bottom') {
+      const max = 1 - topPct - MIN_KEEP_FRACTION;
+      setBottomPct((v) => Math.min(max, Math.max(0, v + delta)));
+    } else if (which === 'left') {
+      const max = 1 - rightPct - MIN_KEEP_FRACTION;
+      setLeftPct((v) => Math.min(max, Math.max(0, v + delta)));
+    } else {
+      const max = 1 - leftPct - MIN_KEEP_FRACTION;
+      setRightPct((v) => Math.min(max, Math.max(0, v + delta)));
+    }
+  }
+
+  function handleHandleKeyDown(which: DragSide, event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const step = event.shiftKey ? 0.05 : 0.01;
+    let delta = 0;
+    if (which === 'top') {
+      if (event.key === 'ArrowUp') delta = -step;
+      else if (event.key === 'ArrowDown') delta = step;
+      else return;
+    } else if (which === 'bottom') {
+      // Bottom handle: ↑ pulls trim up (more cropped from the bottom).
+      if (event.key === 'ArrowUp') delta = step;
+      else if (event.key === 'ArrowDown') delta = -step;
+      else return;
+    } else if (which === 'left') {
+      if (event.key === 'ArrowLeft') delta = -step;
+      else if (event.key === 'ArrowRight') delta = step;
+      else return;
+    } else {
+      // Right handle: ← pulls trim leftward (more cropped from the right).
+      if (event.key === 'ArrowLeft') delta = step;
+      else if (event.key === 'ArrowRight') delta = -step;
+      else return;
+    }
+    event.preventDefault();
+    nudgeTrim(which, delta);
   }
 
   function reset() {
@@ -260,6 +326,7 @@ export function CatalogueLightboxCrop({
             />
 
             <div
+              ref={topHandleRef}
               className="catalogue-lightbox-crop__handle catalogue-lightbox-crop__handle--horizontal"
               style={{
                 top: imgBox.top + topPct * imgBox.height - 9,
@@ -267,11 +334,14 @@ export function CatalogueLightboxCrop({
                 width: imgBox.width,
               }}
               onPointerDown={(event) => startDrag('top', event)}
+              onKeyDown={(event) => handleHandleKeyDown('top', event)}
+              tabIndex={0}
               role="slider"
-              aria-label="Trim top"
+              aria-label="Trim top (Arrow Up/Down, Shift for 5%)"
               aria-valuenow={topPx}
               aria-valuemin={0}
               aria-valuemax={naturalHeight}
+              aria-orientation="vertical"
             >
               <span className="catalogue-lightbox-crop__handle-grip" />
             </div>
@@ -283,11 +353,14 @@ export function CatalogueLightboxCrop({
                 width: imgBox.width,
               }}
               onPointerDown={(event) => startDrag('bottom', event)}
+              onKeyDown={(event) => handleHandleKeyDown('bottom', event)}
+              tabIndex={0}
               role="slider"
-              aria-label="Trim bottom"
+              aria-label="Trim bottom (Arrow Up/Down, Shift for 5%)"
               aria-valuenow={bottomPx}
               aria-valuemin={0}
               aria-valuemax={naturalHeight}
+              aria-orientation="vertical"
             >
               <span className="catalogue-lightbox-crop__handle-grip" />
             </div>
@@ -299,11 +372,14 @@ export function CatalogueLightboxCrop({
                 height: imgBox.height,
               }}
               onPointerDown={(event) => startDrag('left', event)}
+              onKeyDown={(event) => handleHandleKeyDown('left', event)}
+              tabIndex={0}
               role="slider"
-              aria-label="Trim left"
+              aria-label="Trim left (Arrow Left/Right, Shift for 5%)"
               aria-valuenow={leftPx}
               aria-valuemin={0}
               aria-valuemax={naturalWidth}
+              aria-orientation="horizontal"
             >
               <span className="catalogue-lightbox-crop__handle-grip catalogue-lightbox-crop__handle-grip--vertical" />
             </div>
@@ -315,11 +391,14 @@ export function CatalogueLightboxCrop({
                 height: imgBox.height,
               }}
               onPointerDown={(event) => startDrag('right', event)}
+              onKeyDown={(event) => handleHandleKeyDown('right', event)}
+              tabIndex={0}
               role="slider"
-              aria-label="Trim right"
+              aria-label="Trim right (Arrow Left/Right, Shift for 5%)"
               aria-valuenow={rightPx}
               aria-valuemin={0}
               aria-valuemax={naturalWidth}
+              aria-orientation="horizontal"
             >
               <span className="catalogue-lightbox-crop__handle-grip catalogue-lightbox-crop__handle-grip--vertical" />
             </div>
