@@ -30,7 +30,14 @@ export function CatalogueApp() {
   // persisted session in localStorage; getSession() resolves quickly.
   if (loading) return null;
 
-  if (!user) return <PasscodeLogin />;
+  if (!user) {
+    return (
+      <>
+        <PasscodeLogin />
+        {import.meta.env.DEV && <Agentation />}
+      </>
+    );
+  }
 
   return (
     <>

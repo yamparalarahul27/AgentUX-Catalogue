@@ -5,6 +5,25 @@ import { DEFAULT_CATALOGUE_SORT, type CatalogueSortOption } from '../lib/catalog
 import type { CatalogueQueryFilters } from './use-catalogue-data';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const PENDING_GROUP_FILTER_KEY = 'agentux:pending-group-filter';
+
+// Lazy initial state for `filterGroup`. If the user clicked a group on
+// the login page (BokehBackdrop), that key is in localStorage waiting
+// to be consumed. Reading + removing it in the useState initialiser
+// avoids a flash of unfiltered catalogue and a second render. Returns
+// `[]` when there's no pending filter or storage isn't available.
+function readPendingGroupFilter(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const pending = window.localStorage.getItem(PENDING_GROUP_FILTER_KEY);
+    if (!pending) return [];
+    window.localStorage.removeItem(PENDING_GROUP_FILTER_KEY);
+    const trimmed = pending.trim().toLowerCase();
+    return trimmed ? [trimmed] : [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Owns filter UI state independently from data fetching. The values returned
@@ -18,7 +37,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 export function useCatalogueFilterState() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryDebounced, setSearchQueryDebounced] = useState('');
-  const [filterGroup, setFilterGroup] = useState<string[]>([]);
+  const [filterGroup, setFilterGroup] = useState<string[]>(readPendingGroupFilter);
   const [filterFlow, setFilterFlow] = useState<string[]>([]);
   const [filterPlatform, setFilterPlatform] = useState<string | null>(null);
   const [filterTheme, setFilterTheme] = useState<string | null>(null);

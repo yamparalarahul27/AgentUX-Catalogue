@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { BokehBackdrop } from './BokehBackdrop';
 import { redeemPasscode } from '../lib/auth-passcode';
 
 // Full-page login screen. Submits (email, passcode) to auth-login via
@@ -62,14 +63,8 @@ export function PasscodeLogin() {
 
   return (
     <div className="auth-page">
+      <BokehBackdrop />
       <div className="auth-card">
-        <div className="auth-logo">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-            <path d="M3 7l6-4 6 4 6-4v14l-6 4-6-4-6 4V7z" />
-            <path d="M9 3v14" />
-            <path d="M15 7v14" />
-          </svg>
-        </div>
         <h1>AgentUX Catalogue</h1>
 
         <form className="auth-form passcode-login__form" onSubmit={handleSubmit}>
@@ -117,7 +112,17 @@ export function PasscodeLogin() {
           </button>
         </form>
 
-        <p className="passcode-login__hint">Don't have a passcode? Ask the admin.</p>
+        <p className="passcode-login__hint">
+          Don't have a passcode? Ping{' '}
+          <a
+            className="passcode-login__hint-link"
+            href="https://x.com/yamparalarahul1"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            @yamparalarahul1&nbsp;→
+          </a>
+        </p>
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import './styles/catalogue-family-overlays.scss';
 import './styles/catalogue-family-details-modal.scss';
 import './styles/catalogue-gallery-zoom.scss';
 import './styles/catalogue-lightbox-annotations.scss';
+import './styles/auth-bokeh.scss';
 import './styles/catalogue-team.scss';
 import './styles/catalogue-trash.scss';
 import './styles/catalogue-flags.scss';
