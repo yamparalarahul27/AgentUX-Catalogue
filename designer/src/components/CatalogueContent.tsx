@@ -71,6 +71,9 @@ interface CatalogueContentProps {
   // Gate the click-to-edit on the stack card title (and the gallery
   // view title, which uses the same predicate via canEdit below).
   canEditFamily: (family: CatalogueFamilyView) => boolean;
+  // Empty-state escape hatch — clears every filter + search + resets
+  // sort so the user lands on the unfiltered "Latest" view.
+  onClearFilters: () => void;
 }
 
 export function CatalogueContent({
@@ -115,6 +118,7 @@ export function CatalogueContent({
   onShareLink,
   canDeleteFamily,
   canEditFamily,
+  onClearFilters,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
     searchQuery ||
@@ -137,7 +141,12 @@ export function CatalogueContent({
       <div className="empty-state">
         <ImageIcon size={64} color="#3f3f46" strokeWidth={1.5} />
         <h2>{hasActiveFilters ? 'No matching screen families' : 'No screenshots yet'}</h2>
-        <p>{hasActiveFilters ? 'Try adjusting your search or filters.' : 'Upload screenshots to get started.'}</p>
+        <p>{hasActiveFilters ? 'Try adjusting your search or filters, or click below to explore the latest.' : 'Upload screenshots to get started.'}</p>
+        {hasActiveFilters && (
+          <button type="button" className="empty-state__cta" onClick={onClearFilters}>
+            Explore latest
+          </button>
+        )}
       </div>
     );
   }

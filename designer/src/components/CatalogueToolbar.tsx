@@ -87,9 +87,12 @@ type ToolbarFilterKey =
   | 'view';
 
 const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
-// First-time users see a clean toolbar — they opt filters in via Filters ▾.
-// Existing users keep their localStorage selections.
-const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = [];
+// First-time users see Group and Flow filters out of the box — these
+// are the two most-used dimensions and a fresh teammate landing on a
+// filtered-empty state with no visible filters had no idea why. Users
+// who've explicitly toggled either off keep their localStorage choice;
+// the default only applies when nothing is stored yet.
+const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['group', 'flow'];
 
 const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
   { key: 'flow', label: 'Flows' },

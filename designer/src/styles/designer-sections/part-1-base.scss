@@ -652,7 +652,31 @@ body {
   p {
     margin-top: 8px;
     font-size: 14px;
-    max-width: 320px;
+    max-width: 360px;
+  }
+}
+
+// "Explore latest" CTA on the filtered-empty state — clears every
+// filter + resets sort so the user lands on the unfiltered Latest view.
+.empty-state__cta {
+  margin-top: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid $accent;
+  background: $accent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: $accent-hover;
+    border-color: $accent-hover;
   }
 }
 

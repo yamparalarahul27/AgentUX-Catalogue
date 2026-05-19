@@ -93,6 +93,7 @@ export function Catalogue({
   // Filter UI state (owns filter/sort/search/viewBy state, with debounced search)
   const filterState = useCatalogueFilterState();
   const {
+    clearAllFilters,
     filters,
     filterAnnotation,
     filterFlow,
@@ -936,6 +937,7 @@ export function Catalogue({
                   <CatalogueContent
                     activeVariantKeys={upload.activeVariantKeys}
                     canEdit={!isGuest}
+                    onClearFilters={clearAllFilters}
                     filterFlow={filterFlow}
                     filterGroup={filterGroup}
                     filterMobileOs={filterMobileOs}
