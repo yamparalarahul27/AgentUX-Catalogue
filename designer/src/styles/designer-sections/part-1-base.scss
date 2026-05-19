@@ -195,7 +195,8 @@ $success: #22c55e;
   min-width: 0;
 }
 
-// Per-option icon (e.g. Latest / Group View in the Sort dropdown).
+// Per-option icon (e.g. Latest / Group View in the Sort dropdown,
+// or per-group icons in the Group filter dropdown).
 .dropdown__item-icon {
   display: inline-flex;
   align-items: center;
@@ -204,6 +205,17 @@ $success: #22c55e;
   flex-shrink: 0;
 
   .dropdown__item--active & { color: $text; }
+}
+
+// Image variant of the per-option icon — used by the Group filter
+// dropdown so each row shows its uploaded group icon. Sized to match
+// the lucide-react svg icons elsewhere in the menu (~14px).
+.dropdown__item-icon-img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
 }
 
 .dropdown__check {

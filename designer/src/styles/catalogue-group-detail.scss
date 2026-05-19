@@ -214,32 +214,62 @@
 
 // ── grid ───────────────────────────────────────────────────────────
 //
-// Matches the main catalogue grid — auto-fill from 220px (same as
-// .catalogue-grid--families) so the detail-page thumbs read at the same
-// scale users are used to. Density toggle (2× / 4×) overrides auto-fill.
-// Tiles keep a uniform 9:16 aspect so mixed mobile + web thumbs share
-// row heights; web screenshots letterbox via object-fit: contain.
+// Bucket-driven layout (uniform height, varied width). Every row is
+// the same height (mobile column-width × 9:16); thumbs span 1 col
+// (mobile, web-narrow) or 2 cols (web-medium, web-wide) so wider
+// breakpoints read as featured tiles. `grid-auto-flow: dense` packs
+// 1-col thumbs into gaps left by the 2-col spanners.
+//
+// Critical: --thumb-height is derived from viewport math (vw), NOT
+// percentage. `grid-auto-rows` uses height-percentage as its base,
+// which is circular when the grid's height is derived from its rows
+// (resolves to 0 px). The catalogue's max-content width is 1280px
+// with 32px page padding each side, so the grid's effective width is
+// min(1280px, 100vw - 64px). Anything wider falls back to vw math.
 .catalogue-group-detail__grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  --grid-cols: 4;
+  --grid-gap: 16px;
+  --grid-page-padding: 64px; // 32px each side (.catalogue-group-detail)
+  --grid-max-width: 1216px;  // 1280 minus the 64px page padding
+  --grid-width: min(var(--grid-max-width), calc(100vw - var(--grid-page-padding)));
+  --col-width: calc((var(--grid-width) - (var(--grid-cols) - 1) * var(--grid-gap)) / var(--grid-cols));
+  --thumb-height: calc(var(--col-width) * 16 / 9);
 
-  &[data-density="2"] { grid-template-columns: repeat(2, 1fr); }
-  &[data-density="4"] { grid-template-columns: repeat(4, 1fr); }
+  display: grid;
+  grid-template-columns: repeat(var(--grid-cols), 1fr);
+  grid-auto-rows: var(--thumb-height);
+  grid-auto-flow: dense;
+  gap: var(--grid-gap);
+
+  // Density toggle still honoured as a column-count override. "Auto"
+  // uses the responsive media queries below; 2× / 4× lock the count.
+  &[data-density="2"] { --grid-cols: 2; }
+  &[data-density="4"] { --grid-cols: 4; }
+}
+
+@media (max-width: 960px) {
+  .catalogue-group-detail__grid { --grid-cols: 3; }
+}
+@media (max-width: 640px) {
+  .catalogue-group-detail__grid { --grid-cols: 2; }
 }
 
 .catalogue-group-detail__thumb {
   position: relative;
   background: #111113;
   border: 1px solid #27272a;
-  border-radius: 12px;
+  // Concentric radii — outer 18, padding 10, inner 8. Frame the
+  // screenshot inside the thumb surface. Inner radius applied via
+  // the immediate child wrapper (ThumbHashImage renders a relative
+  // <div> as its root; we round + clip it to the 8px inner curve).
+  // See `feedback_concentric_corner_radii` for the rule.
+  border-radius: 18px;
+  padding: 10px;
   overflow: hidden;
   cursor: pointer;
-  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  aspect-ratio: 9 / 16;
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 
   &:hover {
@@ -248,12 +278,27 @@
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
   }
 
+  // The <img> auto-sizes to its natural bounds (capped to the
+  // wrapper) — so the radius + border apply only to the visible
+  // screenshot rectangle, not the letterbox area around it.
   img {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
   }
+}
+
+// Bucket modifiers — 1-col thumbs (mobile, narrow-web) leave the grid
+// at single column; 2-col thumbs span two columns so they're visibly
+// wider at the same height. Height for every variant is dictated by
+// `grid-auto-rows: var(--thumb-height)`.
+.catalogue-group-detail__thumb--mobile,
+.catalogue-group-detail__thumb--web-narrow {
+  // single column — default span
+}
+
+.catalogue-group-detail__thumb--web-medium,
+.catalogue-group-detail__thumb--web-wide {
+  grid-column: span 2;
 }
 
 .catalogue-group-detail__thumb-empty {

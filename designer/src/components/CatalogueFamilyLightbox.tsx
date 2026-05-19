@@ -607,16 +607,7 @@ export function CatalogueFamilyLightbox({
         </button>
       </div>
       <div className="catalogue-lightbox-body" onClick={(event) => event.stopPropagation()}>
-        <div
-          className="catalogue-lightbox-media"
-          ref={mediaRef}
-          onMouseDown={cropMode ? undefined : handleMediaMouseDown}
-          onMouseMove={cropMode ? undefined : handleMediaMouseMove}
-          onMouseUp={cropMode ? undefined : handleMediaMouseUp}
-          onMouseLeave={cropMode ? undefined : handleMediaMouseLeave}
-          onClick={cropMode ? undefined : handleMediaClick}
-          style={{ cursor: !cropMode && annotationMode && annotationEditAllowed ? 'crosshair' : 'default' }}
-        >
+        <div className="catalogue-lightbox-media">
           {cropMode && imageSize && screenshot.image_url ? (
             <CatalogueLightboxCrop
               imageUrl={screenshot.image_url}
@@ -629,7 +620,16 @@ export function CatalogueFamilyLightbox({
               onApply={(args) => void handleApplyCrop(args)}
             />
           ) : (
-          <>
+          <div
+            className="catalogue-lightbox-media-inner"
+            ref={mediaRef}
+            onMouseDown={handleMediaMouseDown}
+            onMouseMove={handleMediaMouseMove}
+            onMouseUp={handleMediaMouseUp}
+            onMouseLeave={handleMediaMouseLeave}
+            onClick={handleMediaClick}
+            style={{ cursor: annotationMode && annotationEditAllowed ? 'crosshair' : 'default' }}
+          >
           <img
             src={screenshot.image_url}
             alt={`${family.name} ${activeVariant.label}`}
@@ -728,7 +728,7 @@ export function CatalogueFamilyLightbox({
               <span>Loading next…</span>
             </div>
           )}
-          </>
+          </div>
           )}
         </div>
         <div className={`catalogue-lightbox-comments ${sheetMinimized ? 'is-minimized' : ''}`}>

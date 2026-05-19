@@ -158,6 +158,33 @@
   text-overflow: ellipsis;
 }
 
+// Clickable variant of <CatalogueGroupLabel>. Applied on catalogue
+// cards (links to `/g/<groupKey>`); read-only surfaces leave the
+// `linkTo` prop undefined and stay as a plain <span>.
+.catalogue-group-label--linked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition: color 0.15s ease;
+
+  &:hover { color: #f4f4f5; }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.6);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
 .catalogue-family-card__badges {
   display: inline-flex;
   align-items: center;
@@ -585,6 +612,16 @@
 .catalogue-card-image {
   img {
     transition: opacity 0.18s ease;
+    // Top corners only — bottom stays flush with the metadata strip.
+    // Hairline shadow gives the visible screenshot its own edge — uses
+    // box-shadow over `border` so it doesn't shrink the content. The
+    // <img> already auto-sizes (ThumbHashImage), so the shadow wraps
+    // just the screenshot's visible rectangle, not the letterbox area.
+    // Note: 4px is intentionally smaller than the card's outer 12px —
+    // breaks the strict concentric rule, but reads better against the
+    // metadata strip immediately below.
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
   }
 
   img.is-loading {

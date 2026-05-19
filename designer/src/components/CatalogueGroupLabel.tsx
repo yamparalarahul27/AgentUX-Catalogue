@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -18,6 +19,12 @@ interface CatalogueGroupLabelProps {
   // visual anchor stays even when appearance hasn't loaded. Used by
   // the share page H1 where the title text is rendered separately.
   iconOnly?: boolean;
+  // When provided, the label renders as a clickable element that
+  // navigates to the given route. Click is stopPropagation'd so the
+  // surrounding card / row click handler doesn't also fire. Currently
+  // used on catalogue cards to jump to `/g/<groupKey>`; leave undefined
+  // on read-only surfaces (share page H1, modal header, etc.).
+  linkTo?: string;
 }
 
 export function CatalogueGroupLabel({
@@ -27,7 +34,9 @@ export function CatalogueGroupLabel({
   className,
   iconSize = 14,
   iconOnly = false,
+  linkTo,
 }: CatalogueGroupLabelProps) {
+  const navigate = useNavigate();
   const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
   const [iconLoadFailed, setIconLoadFailed] = useState(false);
 
@@ -56,8 +65,8 @@ export function CatalogueGroupLabel({
   // is available. Keeps a consistent visual anchor.
   const firstLetter = (label?.trim()?.[0] || '?').toUpperCase();
 
-  return (
-    <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+  const inner = (
+    <>
       {shouldShowImage ? (
         <img
           src={appearance.iconUrl || undefined}
@@ -96,6 +105,29 @@ export function CatalogueGroupLabel({
           {label}
         </span>
       )}
+    </>
+  );
+
+  if (linkTo) {
+    return (
+      <button
+        type="button"
+        className={`catalogue-group-label catalogue-group-label--linked ${className || ''}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          navigate(linkTo);
+        }}
+        title={iconOnly ? label : undefined}
+        aria-label={iconOnly ? label : undefined}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+      {inner}
     </span>
   );
 }

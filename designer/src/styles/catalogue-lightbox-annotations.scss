@@ -15,15 +15,39 @@
   height: 100%;
   background: #000;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32px;
 }
 
+// Inner wrapper carries `mediaRef` so the contain-math measures the
+// actual image-available area (excluding outer padding). All annotation
+// positioning is relative to this element.
+.catalogue-lightbox-media-inner {
+  position: relative;
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Auto-size to the image's natural bounds (capped to the container).
+// With the parent set as flex centred, the <img>'s element box equals
+// the visible screenshot — so border-radius rounds real pixels and
+// box-shadow draws a 1px outline around the actual image, not the
+// letterboxed container.
 .catalogue-lightbox-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   display: block;
   cursor: default;
-  background: #000;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
 .catalogue-lightbox-pin-layer {
@@ -543,11 +567,6 @@
   .catalogue-lightbox-media {
     width: 100%;
     height: 100dvh;
-  }
-
-  .catalogue-lightbox-img {
-    width: 100%;
-    height: 100%;
   }
 
   .catalogue-lightbox-media-hint {

@@ -11,6 +11,7 @@ import {
 } from '../lib/catalogue-group-appearance';
 import { defaultGridDensity, persistGridDensity, type GridDensity } from '../lib/catalogue-helpers';
 import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
+import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useGroupAppearanceEditor } from '../hooks/use-group-appearance-editor';
 import type { ScreenshotNode } from '../types';
 import { CatalogueGridDensity } from './CatalogueGridDensity';
@@ -26,6 +27,30 @@ type PlatformFilter = 'all' | 'mobile' | 'web';
 // Initial visible window; we render this many thumbs upfront and load
 // PAGE_SIZE more whenever the user scrolls within reach of the bottom.
 const PAGE_SIZE = 50;
+
+// Thumb bucket — drives the per-thumb CSS class on the detail page
+// grid. Mobile + narrow-web take 1 column; the wider web breakpoints
+// take 2 columns ("--wide"), so they read as a featured tile while
+// every cell shares the same height (uniform-height-varied-width
+// layout). See `.catalogue-group-detail__grid` in the SCSS.
+type ThumbBucket = 'mobile' | 'web-narrow' | 'web-medium' | 'web-wide';
+
+function bucketForScreenshot(
+  shot: { platform: 'mobile' | 'web' | null; web_preset_key?: string | null },
+  presetWidthByKey: Map<string, number>,
+): ThumbBucket {
+  if (shot.platform === 'mobile') return 'mobile';
+  // Treat null platform as mobile — the v1 catalogue is mobile-heavy
+  // and an unlabelled screenshot is more often a phone shot than
+  // anything else.
+  if (shot.platform !== 'web') return 'mobile';
+  const presetWidth = shot.web_preset_key ? presetWidthByKey.get(shot.web_preset_key) : undefined;
+  // Web with no/unknown preset → assume the default wide bucket.
+  if (presetWidth === undefined) return 'web-wide';
+  if (presetWidth <= 480) return 'web-narrow';
+  if (presetWidth <= 900) return 'web-medium';
+  return 'web-wide';
+}
 
 interface CatalogueGroupDetailProps {
   user: User;
@@ -56,8 +81,20 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
   const navigate = useNavigate();
 
   const { screenshots, loading } = useCatalogueFullScope();
+  const { webPresets } = useCatalogueSettings(user.id);
   const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
   const [showShareModal, setShowShareModal] = useState(false);
+
+  // Lookup map keyed by preset id → width. Used by `bucketForScreenshot`
+  // to classify each thumb into one of four buckets (mobile, web-narrow,
+  // web-medium, web-wide). Recomputed only when the preset list changes.
+  const presetWidthByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const preset of webPresets) {
+      map.set(preset.key, preset.width);
+    }
+    return map;
+  }, [webPresets]);
   // Edit modal — rename across casings isn't supported on the detail
   // page in v1 (the rename helper lives inside the main catalogue's
   // family-actions hook). Label changes still save the appearance row;
@@ -379,11 +416,13 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
               className="catalogue-group-detail__grid"
               {...(gridDensity !== 'auto' ? { 'data-density': gridDensity } : {})}
             >
-              {visibleScreenshots.map((shot) => (
+              {visibleScreenshots.map((shot) => {
+                const bucket = bucketForScreenshot(shot, presetWidthByKey);
+                return (
                 <button
                   type="button"
                   key={shot.id}
-                  className="catalogue-group-detail__thumb"
+                  className={`catalogue-group-detail__thumb catalogue-group-detail__thumb--${bucket}`}
                   onClick={() => openPreview(shot)}
                   aria-label={shot.name || 'Screenshot'}
                 >
@@ -399,7 +438,8 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
                     </span>
                   )}
                 </button>
-              ))}
+                );
+              })}
             </div>
             {hasMore && (
               <div ref={sentinelRef} className="catalogue-group-detail__sentinel">
