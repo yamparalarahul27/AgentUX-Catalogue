@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { DEFAULT_CATALOGUE_VIEW_BY, type CatalogueViewBy } from '../lib/catalogue-activity';
 import { DEFAULT_CATALOGUE_SORT, type CatalogueSortOption } from '../lib/catalogue-sort';
@@ -90,7 +90,28 @@ export function useCatalogueFilterState() {
     filterWebPreset,
   ]);
 
+  // Wipes every filter + search + sort back to defaults. Used by the
+  // "Explore New" affordance on the empty-state, and any other "start
+  // fresh" callsite. View mode is intentionally NOT reset — that's a
+  // long-lived user preference, not a filter.
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setFilterGroup([]);
+    setFilterFlow([]);
+    setFilterPlatform(null);
+    setFilterTheme(null);
+    setFilterWebPreset(null);
+    setFilterMobileOs(null);
+    setFilterAnnotation([]);
+    setFilterPageType([]);
+    setFilterUiElement([]);
+    setFilterUxPattern([]);
+    setFilterScreenState(null);
+    setSortBy(DEFAULT_CATALOGUE_SORT);
+  }, []);
+
   return {
+    clearAllFilters,
     filters,
     filterAnnotation,
     filterFlow,
