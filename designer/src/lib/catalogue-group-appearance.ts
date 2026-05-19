@@ -395,16 +395,15 @@ export async function uploadCatalogueGroupIconToSupabase(input: {
   projectIds?: string[] | null;
   region?: CatalogueGroupRegion | null;
 }) {
+  // projectId / projectIds are accepted for backwards-compat with old
+  // callers but are no longer required — Project was removed from the
+  // architecture in migration 20260517_remove_project_scoping. Icons
+  // now write to the single global row per group_key, and storage uses
+  // the `'all-projects'` scope. See saveCatalogueGroupAppearanceToSupabase
+  // for the same flattening on the metadata side.
   const scopedProjects = input.projectId
     ? normalizeProjectKeys([input.projectId])
     : normalizeProjectKeys(input.projectIds);
-
-  if (scopedProjects.length === 0) {
-    return {
-      error: 'No projects available to save the uploaded icon.',
-      ok: false as const,
-    };
-  }
 
   const groupKey = normalizeGroupKey(input.group);
   if (!groupKey) {
@@ -491,16 +490,11 @@ export async function removeCatalogueGroupUploadedIconFromSupabase(input: {
   projectIds?: string[] | null;
   region?: CatalogueGroupRegion | null;
 }) {
+  // See `uploadCatalogueGroupIconToSupabase` — projectId / projectIds
+  // are accepted but no longer required; Project was flattened out.
   const scopedProjects = input.projectId
     ? normalizeProjectKeys([input.projectId])
     : normalizeProjectKeys(input.projectIds);
-
-  if (scopedProjects.length === 0) {
-    return {
-      error: 'No projects available to remove the uploaded icon.',
-      ok: false as const,
-    };
-  }
 
   const currentMap = readCatalogueGroupAppearanceMap();
   const groupKey = normalizeGroupKey(input.group);
