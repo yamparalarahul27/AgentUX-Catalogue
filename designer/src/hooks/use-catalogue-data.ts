@@ -202,8 +202,21 @@ export function useCatalogueData({
 
       // Group filter is sourced from screenshots.group so the dropdown reflects
       // what users expect to see in the catalogue results.
+      //
+      // Case-insensitive match: `screenshots.group` stores the original case
+      // the user typed at upload time, but filter values can arrive in either
+      // case (toolbar dropdown — original casing from facetScreenshots; URL
+      // ?group=X or bokeh-backdrop login click — normalized lowercase
+      // group_key). Without ilike, a lowercase filter against a mixed-case
+      // group would silently return zero rows. The chip-strip resolver in
+      // Catalogue.tsx normally expands lowercase → raw casings before the
+      // query fires; this is a belt-and-braces backup for any future writer
+      // that seeds filterGroup without going through that resolver.
       if (filters.group.length > 0) {
-        query = query.in('group', filters.group);
+        const groupOr = filters.group
+          .map((g) => `group.ilike."${g.replace(/"/g, '\\"')}"`)
+          .join(',');
+        query = query.or(groupOr);
       }
 
       if (filters.flow.length > 0) {

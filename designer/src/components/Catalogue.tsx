@@ -270,16 +270,24 @@ export function Catalogue({
   // currently-filtered raw casing.
   const activeChipGroupKey = filterGroup.length > 0 ? filterGroup[0].toLowerCase() : null;
 
-  // When the URL provides a single ?group=X but the project actually has
-  // multiple casings under that canonical key, expand filterGroup to all
-  // rawKeys once stats arrive. Avoids only fetching one casing when the
-  // user shared a link or reloaded.
+  // Reconcile a lowercase/canonical group filter (from `?group=X`,
+  // a bokeh-backdrop login click, or a shared link) with the actual
+  // raw casings stored on `screenshots.group`. The dropdown options
+  // and the SQL `IN (...)` match are case-sensitive, so when
+  // filterGroup carries a normalized form we need to swap it for
+  // every raw casing the project actually contains before the query
+  // can return rows.
+  //
+  // Earlier the bail was `stat.rawKeys.length <= 1` — that skipped
+  // the single-casing case, leaving a bokeh-seeded lowercase value
+  // mismatched with the one real raw casing. Now we just check if
+  // the sets already match.
   useEffect(() => {
     if (!CATALOGUE_CHIP_STRIP_ENABLED) return;
     if (filterGroup.length !== 1) return;
     const canonical = filterGroup[0].toLowerCase();
     const stat = groupStats.find((item) => item.groupKey === canonical);
-    if (!stat || stat.rawKeys.length <= 1) return;
+    if (!stat) return;
     const sameSet = stat.rawKeys.length === filterGroup.length
       && stat.rawKeys.every((key) => filterGroup.includes(key));
     if (!sameSet) {
