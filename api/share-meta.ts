@@ -15,9 +15,24 @@
 //   - designer/src/lib/share-url.ts — share URL builder/parser
 //   - designer/src/components/SharePage.tsx — the SPA share view
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import fs from 'node:fs';
 import path from 'node:path';
+
+// Minimal types matching the Vercel serverless function contract.
+// Avoids pulling in @vercel/node just for types (it ships with a
+// vulnerable `undici` transitive that trips `npm audit` in CI).
+// Vercel's runtime provides `query`, `setHeader`, `status`, and
+// `send` on its passed objects — these are the surface area we
+// actually use.
+interface VercelRequest {
+  query: Record<string, string | string[] | undefined>;
+  url?: string;
+}
+interface VercelResponse {
+  setHeader: (name: string, value: string) => void;
+  status: (code: number) => VercelResponse;
+  send: (body: string) => void;
+}
 
 interface ScreenshotRow {
   id: string;

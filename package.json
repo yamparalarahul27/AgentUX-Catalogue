@@ -15,8 +15,5 @@
     "type": "git",
     "url": "https://github.com/yamparalarahul27/agentux.git"
   },
-  "author": "yamparalarahul27",
-  "devDependencies": {
-    "@vercel/node": "^3.2.29"
-  }
+  "author": "yamparalarahul27"
 }
