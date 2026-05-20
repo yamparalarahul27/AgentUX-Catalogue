@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 
@@ -347,6 +347,33 @@ export function CatalogueVideosSection({
     [xPosts],
   );
 
+  // Single flat list driving arrow-key navigation in the lightbox.
+  // X posts first (since the section renders them first), then the
+  // Family Values clips. Mirrors visual order so ← / → match what
+  // the user sees.
+  const allPreviewKeys = useMemo<string[]>(() => {
+    const xKeys = sortedXPosts.map((post) => post.id);
+    const benjiKeys = REFERENCE_VIDEOS.map((video) => `benji-${video.id}`);
+    return [...xKeys, ...benjiKeys];
+  }, [sortedXPosts]);
+
+  const currentPreviewIndex = previewItemKey
+    ? allPreviewKeys.indexOf(previewItemKey)
+    : -1;
+  const hasPrev = currentPreviewIndex > 0;
+  const hasNext = currentPreviewIndex >= 0 && currentPreviewIndex < allPreviewKeys.length - 1;
+
+  function goToPreview(delta: -1 | 1) {
+    if (currentPreviewIndex < 0) return;
+    const nextIndex = currentPreviewIndex + delta;
+    if (nextIndex < 0 || nextIndex >= allPreviewKeys.length) return;
+    setPreviewItemKey(allPreviewKeys[nextIndex]);
+    // Reset the comment composer when nav'ing — it's tied to a
+    // specific item, leaving stale draft text in the box across
+    // items is confusing.
+    setCommentDraft('');
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -475,15 +502,33 @@ export function CatalogueVideosSection({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      // Don't hijack arrows while the user is typing in the comment
+      // composer or any other input inside the modal.
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) {
+          if (event.key === 'Escape') setPreviewItemKey(null);
+          return;
+        }
+      }
+
       if (event.key === 'Escape') {
         setPreviewItemKey(null);
+      } else if (event.key === 'ArrowLeft' && hasPrev) {
+        event.preventDefault();
+        goToPreview(-1);
+      } else if (event.key === 'ArrowRight' && hasNext) {
+        event.preventDefault();
+        goToPreview(1);
       }
     }
 
     if (!previewItemKey) return undefined;
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [previewItemKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewItemKey, hasPrev, hasNext]);
 
   const activeComments = previewItemKey ? commentsByVideo[previewItemKey] ?? [] : [];
 
@@ -775,6 +820,26 @@ export function CatalogueVideosSection({
               >
                 <X size={16} />
               </button>
+              {hasPrev && (
+                <button
+                  type="button"
+                  className="catalogue-videos-preview__nav catalogue-videos-preview__nav--prev"
+                  onClick={() => goToPreview(-1)}
+                  aria-label="Previous reference"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+              )}
+              {hasNext && (
+                <button
+                  type="button"
+                  className="catalogue-videos-preview__nav catalogue-videos-preview__nav--next"
+                  onClick={() => goToPreview(1)}
+                  aria-label="Next reference"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              )}
             </div>
 
             <aside className="catalogue-videos-preview__comments">

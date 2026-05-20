@@ -498,6 +498,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
+  z-index: 4;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   background: rgba(17, 17, 19, 0.82);
@@ -508,6 +509,46 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(24, 24, 27, 0.95);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+}
+
+// Prev / Next nav buttons — mirror the lightbox arrow pattern.
+// Sit in the left/right gutters of the media pane, hidden when
+// there's no neighbour in that direction.
+.catalogue-videos-preview__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(17, 17, 19, 0.82);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    background: rgba(24, 24, 27, 0.95);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: 2px;
+  }
+
+  &--prev { left: 20px; }
+  &--next { right: 20px; }
 }
 
 .catalogue-videos-preview__comments {
