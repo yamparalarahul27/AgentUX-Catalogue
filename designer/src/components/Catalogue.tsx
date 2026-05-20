@@ -71,6 +71,7 @@ import {
   parseFlowPresentation,
   type FlowPresentation,
 } from './CatalogueToolbar';
+import { SaveAnimationProvider } from './SaveAnimation';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
 import { CatalogueLinksSection } from './CatalogueLinksSection';
@@ -788,6 +789,7 @@ export function Catalogue({
     });
   }
   return (
+    <SaveAnimationProvider>
     <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
@@ -1320,5 +1322,6 @@ export function Catalogue({
         }}
       />
     </div>
+    </SaveAnimationProvider>
   );
 }

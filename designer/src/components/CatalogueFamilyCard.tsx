@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, Check, Link2, MapPin, Monitor, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
+import { Check, Link2, MapPin, Monitor, RefreshCw, Save, Smartphone, Trash2 } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
@@ -9,6 +9,7 @@ import { REFERENCE_IMAGES_ENABLED, REUPLOAD_ENABLED } from '../lib/feature-flags
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { ThumbHashImage } from './ThumbHashImage';
+import { useSaveAnimation } from './SaveAnimation';
 
 interface CatalogueFamilyCardProps {
   family: CatalogueFamilyView;
@@ -50,6 +51,7 @@ export function CatalogueFamilyCard({
   onShareLink,
   canDelete,
 }: CatalogueFamilyCardProps) {
+  const { flyFromButton } = useSaveAnimation();
   const fileRef = useRef<HTMLInputElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -178,15 +180,18 @@ export function CatalogueFamilyCard({
               <button
                 type="button"
                 className={`catalogue-card-action ${bookmarkedIds?.has(screenshot.id) ? 'is-bookmarked' : ''}`}
-                title={bookmarkedIds?.has(screenshot.id) ? 'Remove bookmark' : 'Bookmark this screenshot'}
-                aria-label={bookmarkedIds?.has(screenshot.id) ? 'Remove bookmark' : 'Bookmark this screenshot'}
+                title={bookmarkedIds?.has(screenshot.id) ? 'Unsave' : 'Save this screenshot'}
+                aria-label={bookmarkedIds?.has(screenshot.id) ? 'Unsave' : 'Save this screenshot'}
                 aria-pressed={bookmarkedIds?.has(screenshot.id) ?? false}
-                onClick={() => onToggleBookmark(screenshot.id)}
+                onClick={(event) => {
+                  const wasBookmarked = bookmarkedIds?.has(screenshot.id) ?? false;
+                  onToggleBookmark(screenshot.id);
+                  if (!wasBookmarked && screenshot.image_url) {
+                    flyFromButton(event.currentTarget, screenshot.image_url);
+                  }
+                }}
               >
-                <Bookmark
-                  size={14}
-                  fill={bookmarkedIds?.has(screenshot.id) ? 'currentColor' : 'none'}
-                />
+                <Save size={14} />
               </button>
             )}
             {onShareLink && screenshot && (

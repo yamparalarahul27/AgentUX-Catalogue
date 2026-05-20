@@ -823,6 +823,7 @@ export function CatalogueFamilyLightbox({
                 hideCatalogueActions={showLabelTab}
                 isBookmarked={Boolean(screenshot && bookmarkedIds?.has(screenshot.id))}
                 onToggleBookmark={onToggleBookmark && screenshot ? () => onToggleBookmark(screenshot.id) : undefined}
+                saveAnimationImageUrl={screenshot?.image_url}
                 onShareLink={onShareLink && screenshot ? () => onShareLink(screenshot.id) : undefined}
                 existingFlows={existingFlows}
                 existingGroups={existingGroups}
