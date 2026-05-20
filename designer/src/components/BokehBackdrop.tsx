@@ -47,7 +47,7 @@ interface BokehGroup {
   key: string;
   name: string;
   iconUrl: string;
-  category: 'cex' | 'dex' | null;
+  category: 'cex' | 'dex' | 'other' | null;
   region: 'india' | 'global' | null;
   count: number;
   // Layout (seeded once per mount)
@@ -141,7 +141,7 @@ function buildLayout(rows: AppearanceRow[], counts: Map<string, number>): BokehG
       key,
       name: (row.display_label?.trim() || key.replace(/-/g, ' ')).replace(/\b\w/g, (c) => c.toUpperCase()),
       iconUrl: row.icon_url as string,
-      category: row.category === 'cex' || row.category === 'dex' ? row.category : null,
+      category: row.category === 'cex' || row.category === 'dex' || row.category === 'other' ? row.category : null,
       region: row.region === 'india' || row.region === 'global' ? row.region : null,
       count: counts.get(key) ?? 0,
       leftPct,

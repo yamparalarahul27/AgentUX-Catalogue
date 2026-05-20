@@ -23,6 +23,11 @@ interface DropdownPropsBase {
   // tag what the dropdown is filtering (Group, Flow, etc.) without
   // relying on the placeholder text alone.
   leadingIcon?: ReactNode;
+  // `chips` lays the option list out as a flex-wrap cloud of pill
+  // buttons instead of a vertical list. Best for bounded multi-select
+  // filters (e.g. Flow); the default vertical list scales better for
+  // long lists (Group, Annotation).
+  variant?: 'list' | 'chips';
 }
 
 interface DropdownPropsSingle extends DropdownPropsBase {
@@ -53,6 +58,7 @@ export function Dropdown(props: DropdownProps) {
     searchable = false,
     searchPlaceholder = 'Search…',
     leadingIcon,
+    variant = 'list',
   } = props;
   const isMulti = props.multiple === true;
   const [open, setOpen] = useState(false);
@@ -158,18 +164,25 @@ export function Dropdown(props: DropdownProps) {
     const spaceAbove = rect.top - 8;
     const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
     const availableHeight = openUpward ? spaceAbove : spaceBelow;
+    // Chip-cloud menus need more horizontal room — flex-wrap looks
+    // squashed at the trigger's own width. Cap at the viewport so it
+    // never spills off the right edge on narrow displays.
+    const baseWidth = Math.max(rect.width, 140);
+    const width = variant === 'chips'
+      ? Math.min(window.innerWidth - 32, Math.max(baseWidth, 480))
+      : baseWidth;
 
     setMenuStyle({
       position: 'fixed',
       left: rect.left,
-      width: Math.max(rect.width, 140),
+      width,
       maxHeight: Math.min(360, Math.max(120, availableHeight)),
       zIndex: 1400,
       ...(openUpward
         ? { bottom: window.innerHeight - rect.top + 4 }
         : { top: rect.bottom + 4 }),
     });
-  }, [open]);
+  }, [open, variant]);
 
   function toggleMultiValue(value: string) {
     if (!isMulti) return;
@@ -238,7 +251,7 @@ export function Dropdown(props: DropdownProps) {
       </button>
 
       {open && !disabled && createPortal(
-        <div ref={menuRef} className="dropdown__menu" style={menuStyle}>
+        <div ref={menuRef} className={`dropdown__menu ${variant === 'chips' ? 'dropdown__menu--chips' : ''}`} style={menuStyle}>
           {searchable && (
             <div className="dropdown__search">
               <input
@@ -288,6 +301,7 @@ export function Dropdown(props: DropdownProps) {
               <span className="dropdown__item-main">+ Create "{searchQuery.trim()}"</span>
             </button>
           )}
+          <div className={variant === 'chips' ? 'dropdown__items dropdown__items--chips' : 'dropdown__items'}>
           {visibleOptions.map((o, idx) => {
             const isSelected = isMulti
               ? selectedValues.includes(o.value)
@@ -323,6 +337,7 @@ export function Dropdown(props: DropdownProps) {
               </button>
             );
           })}
+          </div>
         </div>,
         document.body,
       )}

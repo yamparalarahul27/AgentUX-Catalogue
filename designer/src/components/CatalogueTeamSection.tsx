@@ -85,6 +85,7 @@ const TYPE_FILTER_OPTIONS: { label: string; value: GroupTypeFilter }[] = [
   { label: 'All', value: 'all' },
   { label: 'CEX', value: 'cex' },
   { label: 'DEX', value: 'dex' },
+  { label: 'Other', value: 'other' },
   { label: 'Untagged', value: 'untagged' },
 ];
 

@@ -394,6 +394,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                variant="chips"
                 values={filterFlow}
                 placeholder="Flow"
                 searchPlaceholder="Search flows…"

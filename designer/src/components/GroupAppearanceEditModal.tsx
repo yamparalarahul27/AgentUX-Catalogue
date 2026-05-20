@@ -28,6 +28,7 @@ interface GroupAppearanceEditModalProps {
 const CATEGORY_OPTIONS: { label: string; value: CatalogueGroupCategory | null }[] = [
   { label: 'CEX', value: 'cex' },
   { label: 'DEX', value: 'dex' },
+  { label: 'Other', value: 'other' },
   { label: 'None', value: null },
 ];
 

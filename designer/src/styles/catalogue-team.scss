@@ -398,6 +398,14 @@
     background: rgba(168, 85, 247, 0.12);
   }
 
+  // Neutral slate tag for "Other" — visually distinct from
+  // CEX (blue) / DEX (purple) without competing for attention.
+  &--other {
+    border-color: rgba(148, 163, 184, 0.45);
+    color: #e2e8f0;
+    background: rgba(148, 163, 184, 0.12);
+  }
+
   &--india {
     border-color: rgba(34, 197, 94, 0.45);
     color: #bbf7d0;

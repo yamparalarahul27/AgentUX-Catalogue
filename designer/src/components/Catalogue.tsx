@@ -46,6 +46,7 @@ import { CatalogueBulkFlowDialog } from './CatalogueBulkFlowDialog';
 import { CatalogueBulkGroupDialog } from './CatalogueBulkGroupDialog';
 import { CatalogueBulkRenameModal } from './CatalogueBulkRenameModal';
 import { CatalogueContent } from './CatalogueContent';
+import { CatalogueFlowStrip } from './CatalogueFlowStrip';
 import { CatalogueDropOverlay } from './CatalogueDropOverlay';
 import { CatalogueUploadProgress } from './CatalogueUploadProgress';
 import { CatalogueShareModal } from './CatalogueShareModal';
@@ -938,6 +939,18 @@ export function Catalogue({
                 }}
                 onOpenShare={canShare && !isGuest ? () => setShowShareModal(true) : undefined}
                 onOpenSearch={() => setShowSearchModal(true)}
+              />
+
+              <CatalogueFlowStrip
+                screenshots={fullScopeScreenshots}
+                filterFlow={filterFlow}
+                onToggleFlow={(flow) => {
+                  setFilterFlow((current) => (
+                    current.includes(flow)
+                      ? current.filter((value) => value !== flow)
+                      : [...current, flow]
+                  ));
+                }}
               />
 
               <div className="catalogue-body-layout">
