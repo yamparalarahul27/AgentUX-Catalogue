@@ -99,7 +99,9 @@
                   <li>Group chip strip above the toolbar — one chip per group with a paused-by-default ticker, sort menu (Recent · A–Z · Count) shared with Grid section ordering, and a shareable <code>?group=</code> URL</li>
                   <li>ThumbHash placeholders — instant blurry previews before full images load (28 bytes per image)</li>
                   <li>Lightbox with arrow-key navigation, auto-loading next at the paginated boundary, comments, and inline editing</li>
-                  <li>Lightbox keyboard shortcuts — <kbd>E</kbd> edit · <kbd>D</kbd> delete · <kbd>C</kbd> crop · <kbd>B</kbd> bookmark · <kbd>A</kbd> annotate. Inside the inline editor: name field pre-focused, <kbd>Tab</kbd> walks through fields with a visible focus ring, <kbd>↑</kbd>/<kbd>↓</kbd> arrow nav through dropdown results, <kbd>Enter</kbd> saves, <kbd>Esc</kbd> cancels.</li>
+                  <li>Lightbox keyboard shortcuts — <kbd>E</kbd> edit · <kbd>D</kbd> delete · <kbd>C</kbd> crop · <kbd>B</kbd> save · <kbd>A</kbd> annotate. Inside the inline editor: name field pre-focused, <kbd>Tab</kbd> walks through fields with a visible focus ring, <kbd>↑</kbd>/<kbd>↓</kbd> arrow nav through dropdown results, <kbd>Enter</kbd> saves, <kbd>Esc</kbd> cancels. Inside crop: arrow keys nudge each handle (1% / 5% with <kbd>Shift</kbd>).</li>
+                  <li>Save → parabolic flight animation. A small thumbnail of the screenshot arcs from the clicked Save button to the toolbar's Saved filter — confirmation you can <em>see</em>, not just a toast. Share buttons morph to a green checkmark on copy with a cubic-bezier overshoot.</li>
+                  <li>Flow chip strip below the toolbar — optional alternative to the Flow dropdown. Pick "Flow as strip" in the Filters ▾ menu and every flow becomes a one-click chip; the dropdown variant uses a chip-cloud layout instead of a vertical list. Multi-select either way.</li>
                   <li>Lightbox crop — trim any side (top, bottom, left, right) of a screenshot in one pass; annotations re-project to the new bounds. <kbd>Enter</kbd> applies, <kbd>Esc</kbd> cancels.</li>
                   <li>Area annotations — drag a box around a region (a modal, a button, a state) and name it; the catalogue is filterable by annotation label across the full DB</li>
                   <li>Lightbox area focus — clicking an area annotation dims the rest of the screenshot so the region you're discussing pops. Click outside or press <kbd>Esc</kbd> to clear.</li>
@@ -126,14 +128,15 @@
                 </svg>
               </div>
               <h3>Videos</h3>
-              <p class="product-tagline">Collect design reference videos and embed X (Twitter) posts for competitive UX research.</p>
+              <p class="product-tagline">Collect design reference videos and X (Twitter) posts for competitive UX research — thumbnail-first cards, click to load.</p>
               <span class="product-audience">References</span>
 
               <details class="product-details" open>
                 <summary>What it does</summary>
                 <ul class="check-list">
                   <li>Curated video library for design references and competitive UX studies</li>
-                  <li>Embed X (Twitter) posts with native rendering via Twitter Widgets API</li>
+                  <li>X (Twitter) posts render as thumbnail-first cards — author + handle + text excerpt + media poster — without loading <code>widgets.js</code> on first paint. Click any card to open the lightbox with the embed inside.</li>
+                  <li>Lightbox nav with <kbd>←</kbd> / <kbd>→</kbd> arrow keys + prev/next buttons walks between saved references</li>
                   <li>Add references from the web UI or directly from Telegram</li>
                   <li>Comments per video for team discussion and annotation</li>
                 </ul>
