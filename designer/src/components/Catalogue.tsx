@@ -64,7 +64,13 @@ import { deriveLabelFilterValues } from '../lib/labeling/derive-filter-values';
 import { CatalogueGroupChipStrip } from './CatalogueGroupChipStrip';
 import { CatalogueMagnifiedDock } from './CatalogueMagnifiedDock';
 import { useViewportWidth } from '../hooks/use-viewport-width';
-import { CatalogueToolbar } from './CatalogueToolbar';
+import {
+  CatalogueToolbar,
+  DEFAULT_FLOW_PRESENTATION,
+  FLOW_PRESENTATION_KEY,
+  parseFlowPresentation,
+  type FlowPresentation,
+} from './CatalogueToolbar';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
 import { CatalogueLinksSection } from './CatalogueLinksSection';
@@ -356,6 +362,40 @@ export function Catalogue({
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
   const [gridDensity, setGridDensity] = useState<GridDensity>(defaultGridDensity);
+
+  // Flow presentation (dropdown vs strip) — owned here so both the
+  // toolbar's Flow control and the chip strip below can react to it.
+  // Lazy-init from localStorage; toolbar drives changes via callback.
+  const [flowPresentation, setFlowPresentation] = useState<FlowPresentation>(() => {
+    if (typeof window === 'undefined') return DEFAULT_FLOW_PRESENTATION;
+    try {
+      return parseFlowPresentation(window.localStorage.getItem(FLOW_PRESENTATION_KEY));
+    } catch {
+      return DEFAULT_FLOW_PRESENTATION;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FLOW_PRESENTATION_KEY, flowPresentation);
+    } catch {
+      // ignore persistence failures
+    }
+  }, [flowPresentation]);
+
+  // Mirror just the "is Flow visible?" bit from the toolbar's
+  // Filters ▾ menu so the strip can be conditionally rendered.
+  // Seeded from the same localStorage key the toolbar uses.
+  const [flowFilterEnabled, setFlowFilterEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const raw = window.localStorage.getItem('catalogue:toolbar-visible-filters');
+      if (!raw) return true; // default visible includes 'flow'
+      const parsed = JSON.parse(raw) as unknown;
+      return Array.isArray(parsed) && parsed.includes('flow');
+    } catch {
+      return true;
+    }
+  });
   // Pre-auth-gate this opened a spoofable email-prompt modal. The gate
   // now blocks unauthenticated users before they reach this component;
   // the callsites below stay only because they're guarded by conditions
@@ -939,19 +979,24 @@ export function Catalogue({
                 }}
                 onOpenShare={canShare && !isGuest ? () => setShowShareModal(true) : undefined}
                 onOpenSearch={() => setShowSearchModal(true)}
+                flowPresentation={flowPresentation}
+                onFlowPresentationChange={setFlowPresentation}
+                onVisibleFiltersChange={(filters) => setFlowFilterEnabled(filters.includes('flow'))}
               />
 
-              <CatalogueFlowStrip
-                screenshots={fullScopeScreenshots}
-                filterFlow={filterFlow}
-                onToggleFlow={(flow) => {
-                  setFilterFlow((current) => (
-                    current.includes(flow)
-                      ? current.filter((value) => value !== flow)
-                      : [...current, flow]
-                  ));
-                }}
-              />
+              {flowFilterEnabled && flowPresentation === 'strip' && (
+                <CatalogueFlowStrip
+                  screenshots={fullScopeScreenshots}
+                  filterFlow={filterFlow}
+                  onToggleFlow={(flow) => {
+                    setFilterFlow((current) => (
+                      current.includes(flow)
+                        ? current.filter((value) => value !== flow)
+                        : [...current, flow]
+                    ));
+                  }}
+                />
+              )}
 
               <div className="catalogue-body-layout">
                 <div className="catalogue-body-main">

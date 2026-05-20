@@ -199,8 +199,15 @@
   gap: 4px;
 }
 
+.catalogue-filter-menu__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .catalogue-filter-menu__item {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
@@ -224,6 +231,42 @@
     border-color: rgba(99, 102, 241, 0.45);
     background: rgba(99, 102, 241, 0.14);
     color: #ffffff;
+  }
+}
+
+// Inline 2-button radio toggle next to the Flow row — picks the
+// Flow presentation (dropdown vs strip). Only renders when Flow is
+// checked.
+.catalogue-filter-menu__presentation {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #2a2a31;
+  border-radius: 999px;
+  padding: 2px;
+  background: rgba(15, 15, 16, 0.6);
+  flex-shrink: 0;
+}
+
+.catalogue-filter-menu__presentation-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover { color: #fafafa; }
+
+  &.is-active {
+    background: #6366f1;
+    color: #fff;
   }
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, Check, ChevronDown, Clock, LayoutGrid, Plus, Search, Share2, SlidersHorizontal, Tag, Workflow, X } from 'lucide-react';
+import { Bookmark, Check, ChevronDown, Clock, LayoutGrid, Plus, Rows3, Search, Share2, SlidersHorizontal, Tag, Workflow, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -76,7 +76,18 @@ interface CatalogueToolbarProps {
   sortBy: CatalogueSortOption;
   viewBy: CatalogueViewBy;
   viewMode: CatalogueViewMode;
+  // Owns where the Flow filter renders (dropdown vs strip). Lifted to
+  // the parent so Catalogue.tsx can render the strip below the toolbar
+  // when 'strip' is selected.
+  flowPresentation: FlowPresentation;
+  onFlowPresentationChange: (value: FlowPresentation) => void;
+  // Fired whenever the user toggles a filter row in the Filters ▾
+  // menu — Catalogue mirrors the Flow bit so it knows whether to
+  // render the chip strip. Toolbar still owns the persistence.
+  onVisibleFiltersChange?: (filters: ToolbarFilterKey[]) => void;
 }
+
+export type { ToolbarFilterKey };
 
 type ToolbarFilterKey =
   | 'flow'
@@ -93,6 +104,19 @@ const TOOLBAR_FILTER_KEY = 'catalogue:toolbar-visible-filters';
 // who've explicitly toggled either off keep their localStorage choice;
 // the default only applies when nothing is stored yet.
 const DEFAULT_VISIBLE_FILTERS: ToolbarFilterKey[] = ['group', 'flow'];
+
+// Where the Flow filter renders when it's enabled — either a compact
+// dropdown in the toolbar or an expanded chip strip below it. Mutually
+// exclusive (one or the other, never both). Default is 'dropdown' to
+// match the original behaviour; users opt into 'strip' via a toggle
+// next to the Flow row in the Filters ▾ menu.
+export type FlowPresentation = 'dropdown' | 'strip';
+export const FLOW_PRESENTATION_KEY = 'catalogue:flow-presentation';
+export const DEFAULT_FLOW_PRESENTATION: FlowPresentation = 'dropdown';
+
+export function parseFlowPresentation(value: string | null): FlowPresentation {
+  return value === 'strip' || value === 'dropdown' ? value : DEFAULT_FLOW_PRESENTATION;
+}
 
 const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
   { key: 'flow', label: 'Flows' },
@@ -186,6 +210,9 @@ export function CatalogueToolbar({
   sortBy,
   viewBy,
   viewMode,
+  flowPresentation,
+  onFlowPresentationChange,
+  onVisibleFiltersChange,
 }: CatalogueToolbarProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -245,7 +272,8 @@ export function CatalogueToolbar({
     } catch {
       // ignore persistence failures
     }
-  }, [visibleFilters]);
+    onVisibleFiltersChange?.(Array.from(visibleFilters));
+  }, [visibleFilters, onVisibleFiltersChange]);
 
   const activeFilterCount =
     filterGroup.length +
@@ -390,7 +418,7 @@ export function CatalogueToolbar({
                 onMultiChange={onFilterGroupChange}
               />
             )}
-            {isFilterVisible('flow') && (
+            {isFilterVisible('flow') && flowPresentation === 'dropdown' && (
               <Dropdown
                 multiple
                 searchable
@@ -599,16 +627,46 @@ export function CatalogueToolbar({
           <div className="catalogue-filter-menu__list">
             {FILTER_OPTIONS.map((option) => {
               const selected = visibleFilters.has(option.key);
+              // Flow gets an extra inline toggle when it's enabled —
+              // switches between toolbar dropdown and below-toolbar
+              // chip strip. The presentation choice persists alongside
+              // the visibility choice.
+              const isFlowRow = option.key === 'flow';
               return (
-                <button
-                  key={option.key}
-                  type="button"
-                  className={`catalogue-filter-menu__item ${selected ? 'is-selected' : ''}`}
-                  onClick={() => toggleVisibleFilter(option.key)}
-                >
-                  <span>{option.label}</span>
-                  <span className="catalogue-filter-menu__check">{selected ? <Check size={12} /> : null}</span>
-                </button>
+                <div key={option.key} className="catalogue-filter-menu__row">
+                  <button
+                    type="button"
+                    className={`catalogue-filter-menu__item ${selected ? 'is-selected' : ''}`}
+                    onClick={() => toggleVisibleFilter(option.key)}
+                  >
+                    <span>{option.label}</span>
+                    <span className="catalogue-filter-menu__check">{selected ? <Check size={12} /> : null}</span>
+                  </button>
+                  {isFlowRow && selected && (
+                    <div className="catalogue-filter-menu__presentation" role="radiogroup" aria-label="Flow presentation">
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={flowPresentation === 'dropdown'}
+                        title="Dropdown in toolbar"
+                        className={`catalogue-filter-menu__presentation-btn ${flowPresentation === 'dropdown' ? 'is-active' : ''}`}
+                        onClick={() => onFlowPresentationChange('dropdown')}
+                      >
+                        <ChevronDown size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={flowPresentation === 'strip'}
+                        title="Chip strip below toolbar"
+                        className={`catalogue-filter-menu__presentation-btn ${flowPresentation === 'strip' ? 'is-active' : ''}`}
+                        onClick={() => onFlowPresentationChange('strip')}
+                      >
+                        <Rows3 size={13} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
