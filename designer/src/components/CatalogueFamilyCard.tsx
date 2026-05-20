@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, Check, Link2, MapPin, Monitor, RefreshCw, Smartphone, Trash2 } from 'lucide-react';
+import { Check, Copy, MapPin, Monitor, RefreshCw, Save, Smartphone, Trash2 } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
@@ -9,6 +9,8 @@ import { REFERENCE_IMAGES_ENABLED, REUPLOAD_ENABLED } from '../lib/feature-flags
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { ThumbHashImage } from './ThumbHashImage';
+import { useSaveAnimation } from './SaveAnimation';
+import { CopyMorphIcon, useCopyConfirmation } from './CopyMorphIcon';
 
 interface CatalogueFamilyCardProps {
   family: CatalogueFamilyView;
@@ -50,6 +52,8 @@ export function CatalogueFamilyCard({
   onShareLink,
   canDelete,
 }: CatalogueFamilyCardProps) {
+  const { flyFromButton } = useSaveAnimation();
+  const { justCopied: justShared, confirm: confirmShareCopy } = useCopyConfirmation();
   const fileRef = useRef<HTMLInputElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -178,26 +182,44 @@ export function CatalogueFamilyCard({
               <button
                 type="button"
                 className={`catalogue-card-action ${bookmarkedIds?.has(screenshot.id) ? 'is-bookmarked' : ''}`}
-                title={bookmarkedIds?.has(screenshot.id) ? 'Remove bookmark' : 'Bookmark this screenshot'}
-                aria-label={bookmarkedIds?.has(screenshot.id) ? 'Remove bookmark' : 'Bookmark this screenshot'}
+                title={bookmarkedIds?.has(screenshot.id) ? 'Unsave' : 'Save this screenshot'}
+                aria-label={bookmarkedIds?.has(screenshot.id) ? 'Unsave' : 'Save this screenshot'}
                 aria-pressed={bookmarkedIds?.has(screenshot.id) ?? false}
-                onClick={() => onToggleBookmark(screenshot.id)}
+                onClick={(event) => {
+                  // The card-actions row sits inside the preview <button>
+                  // that opens the lightbox. Stop the click here so save
+                  // doesn't also open the lightbox.
+                  event.stopPropagation();
+                  const wasBookmarked = bookmarkedIds?.has(screenshot.id) ?? false;
+                  onToggleBookmark(screenshot.id);
+                  if (!wasBookmarked && screenshot.image_url) {
+                    flyFromButton(event.currentTarget, screenshot.image_url);
+                  }
+                }}
               >
-                <Bookmark
-                  size={14}
-                  fill={bookmarkedIds?.has(screenshot.id) ? 'currentColor' : 'none'}
-                />
+                <Save size={14} />
               </button>
             )}
             {onShareLink && screenshot && (
               <button
                 type="button"
                 className="catalogue-card-action"
-                title="Copy share link to this screenshot"
+                title={justShared ? 'Copied!' : 'Copy share link to this screenshot'}
                 aria-label="Copy share link to this screenshot"
-                onClick={() => onShareLink(screenshot.id)}
+                onClick={(event) => {
+                  // Inside the preview button — stop bubbling so we
+                  // don't also open the lightbox.
+                  event.stopPropagation();
+                  onShareLink(screenshot.id);
+                  confirmShareCopy();
+                }}
               >
-                <Link2 size={14} />
+                <CopyMorphIcon
+                  defaultIcon={<Copy size={14} />}
+                  confirmedIcon={<Check size={14} />}
+                  justCopied={justShared}
+                  size={14}
+                />
               </button>
             )}
             {canDelete && (

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Bookmark, Check, ChevronDown, Clock, LayoutGrid, Plus, Rows3, Search, Share2, SlidersHorizontal, Tag, Workflow, X } from 'lucide-react';
+import { Check, ChevronDown, Clock, LayoutGrid, Plus, Rows3, Save, Search, Share2, SlidersHorizontal, Tag, Workflow, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -15,6 +15,7 @@ import { CatalogueFilterSheet } from './CatalogueFilterSheet';
 import { CataloguePlatformDropdown } from './CataloguePlatformDropdown';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
+import { useSaveAnimation } from './SaveAnimation';
 
 interface CatalogueToolbarProps {
   allFlows: string[];
@@ -218,6 +219,17 @@ export function CatalogueToolbar({
   const menuRef = useRef<HTMLDivElement>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+
+  // Register this toolbar's Saved button as the animation target so
+  // a parabolic save-to-Saved animation can fly to it. The provider
+  // exposes a no-op stub when unmounted (share page, etc.) so no
+  // explicit null-check needed at the callsite.
+  const { registerTarget } = useSaveAnimation();
+  const savedFilterButtonRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    registerTarget(savedFilterButtonRef.current);
+    return () => registerTarget(null);
+  }, [registerTarget]);
   const [visibleFilters, setVisibleFilters] = useState<Set<ToolbarFilterKey>>(() => {
     try {
       return parseVisibleFilters(window.localStorage.getItem(TOOLBAR_FILTER_KEY));
@@ -538,17 +550,18 @@ export function CatalogueToolbar({
           {onBookmarkFilterToggle && (
             <button
               type="button"
+              ref={savedFilterButtonRef}
               className={`catalogue-toolbar-bookmark catalogue-toolbar--desktop-only ${bookmarkFilterOn ? 'is-active' : ''}`}
               onClick={onBookmarkFilterToggle}
               title={
                 bookmarkFilterOn
                   ? 'Show all screenshots'
-                  : `Show only your bookmarks${bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}`
+                  : `Show only Saved${bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}`
               }
-              aria-label={bookmarkFilterOn ? 'Show all screenshots' : 'Show only your bookmarks'}
+              aria-label={bookmarkFilterOn ? 'Show all screenshots' : 'Show only Saved'}
               aria-pressed={bookmarkFilterOn}
             >
-              <Bookmark size={16} fill={bookmarkFilterOn ? 'currentColor' : 'none'} />
+              <Save size={16} />
             </button>
           )}
           {/* Desktop button — flips between "Quick Upload" → "Upload All (N)"

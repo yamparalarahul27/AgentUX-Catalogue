@@ -1,8 +1,10 @@
-import { Bookmark, Crop, Link2, MapPin, MessageCircle, Pencil, RefreshCw, Trash2 } from 'lucide-react';
+import { Check, Copy, Crop, MapPin, MessageCircle, Pencil, RefreshCw, Save, Trash2 } from 'lucide-react';
 
 import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
+import { useSaveAnimation } from './SaveAnimation';
+import { CopyMorphIcon, useCopyConfirmation } from './CopyMorphIcon';
 
 interface CatalogueFamilyLightboxActionsProps {
   annotationsCount: number;
@@ -31,6 +33,10 @@ interface CatalogueFamilyLightboxActionsProps {
   hideCatalogueActions?: boolean;
   isBookmarked?: boolean;
   onToggleBookmark?: () => void;
+  // Source image for the parabolic save-to-Saved animation. The
+  // animation only fires when toggling INTO the saved state (not on
+  // unsave). Omit to skip the animation.
+  saveAnimationImageUrl?: string;
   // Single-screenshot share. Optional — if omitted, the Share icon
   // isn't rendered (e.g., when the lightbox shows a non-shareable
   // surface like the Labelling Studio context).
@@ -76,6 +82,7 @@ export function CatalogueFamilyLightboxActions({
   hideCatalogueActions = false,
   isBookmarked,
   onToggleBookmark,
+  saveAnimationImageUrl,
   onShareLink,
   onDelete,
   onFlowChange,
@@ -96,6 +103,8 @@ export function CatalogueFamilyLightboxActions({
   canEdit,
   canDelete,
 }: CatalogueFamilyLightboxActionsProps) {
+  const { flyFromButton } = useSaveAnimation();
+  const { justCopied: justShared, confirm: confirmShareCopy } = useCopyConfirmation();
   return (
     <div className="catalogue-family-lightbox__summary" style={{ borderTop: 0, borderRadius: '0 0 16px 16px' }}>
       <div className="catalogue-lightbox-icon-bar">
@@ -118,22 +127,32 @@ export function CatalogueFamilyLightboxActions({
           <button
             type="button"
             className={`catalogue-lightbox-icon-btn ${isBookmarked ? 'is-bookmarked' : ''}`}
-            onClick={onToggleBookmark}
-            title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+            onClick={(event) => {
+              if (!isBookmarked && saveAnimationImageUrl) {
+                flyFromButton(event.currentTarget, saveAnimationImageUrl);
+              }
+              onToggleBookmark();
+            }}
+            title={isBookmarked ? 'Unsave' : 'Save'}
             aria-pressed={Boolean(isBookmarked)}
           >
-            <Bookmark size={15} fill={isBookmarked ? 'currentColor' : 'none'} />
+            <Save size={15} />
           </button>
         )}
         {!hideCatalogueActions && onShareLink && (
           <button
             type="button"
             className="catalogue-lightbox-icon-btn"
-            onClick={onShareLink}
-            title="Copy share link to this screenshot"
+            onClick={() => { onShareLink(); confirmShareCopy(); }}
+            title={justShared ? 'Copied!' : 'Copy share link to this screenshot'}
             aria-label="Copy share link to this screenshot"
           >
-            <Link2 size={15} />
+            <CopyMorphIcon
+              defaultIcon={<Copy size={15} />}
+              confirmedIcon={<Check size={15} />}
+              justCopied={justShared}
+              size={15}
+            />
           </button>
         )}
         <span className="catalogue-lightbox-icon-bar__spacer" />

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Bookmark,
   ChevronDown,
   LogIn,
   LogOut,
   MonitorCog,
   MoreHorizontal,
+  Save,
   Settings,
   Tags,
 } from 'lucide-react';
@@ -204,8 +204,8 @@ export function CatalogueHeader({
             aria-checked={myBookmarksActive}
             onClick={toggleMyBookmarks}
           >
-            <Bookmark size={14} aria-hidden="true" />
-            My bookmarks
+            <Save size={14} aria-hidden="true" />
+            Saved
           </button>
 
           <div className="catalogue-header-menu__divider" role="presentation" />

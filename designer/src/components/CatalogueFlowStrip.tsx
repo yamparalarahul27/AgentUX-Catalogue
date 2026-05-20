@@ -30,12 +30,14 @@ function buildFlowChips(screenshots: ScreenshotNode[]): FlowChip[] {
 }
 
 export function CatalogueFlowStrip({ screenshots, filterFlow, onToggleFlow }: CatalogueFlowStripProps) {
+  // Both useMemo calls must run on every render — keep them before
+  // any conditional return so React's hook-count stays stable.
   const chips = useMemo(() => buildFlowChips(screenshots), [screenshots]);
+  const activeSet = useMemo(() => new Set(filterFlow), [filterFlow]);
+
   // Hide entirely when the project has no flows yet — empty strip
   // is just visual noise.
   if (chips.length === 0) return null;
-
-  const activeSet = useMemo(() => new Set(filterFlow), [filterFlow]);
 
   return (
     <div className="catalogue-flow-strip" role="group" aria-label="Flow filter">
