@@ -14,6 +14,13 @@ interface XPostReference {
   tweetId: string;
   url: string;
   addedAt: string;
+  authorHandle: string | null;
+  authorName: string | null;
+  textExcerpt: string | null;
+  posterUrl: string | null;
+  likedCount: number | null;
+  postedAt: string | null;
+  metadataFetchedAt: string | null;
 }
 
 interface VideoComment {
@@ -28,6 +35,13 @@ interface CatalogueVideoReferenceRow {
   external_id: string;
   source_type: string;
   url: string;
+  author_handle: string | null;
+  author_name: string | null;
+  text_excerpt: string | null;
+  poster_url: string | null;
+  liked_count: number | null;
+  posted_at: string | null;
+  metadata_fetched_at: string | null;
 }
 
 interface CatalogueVideoCommentRow {
@@ -62,12 +76,68 @@ const REFERENCE_VIDEOS: ReferenceVideo[] = BENJI_VIDEO_IDS.map((id) => ({
 const TWITTER_WIDGET_SCRIPT_ID = 'twitter-wjs';
 let twitterWidgetsScriptPromise: Promise<void> | null = null;
 
+// Format the `created_at` timestamp into a relative "saved 2d ago"
+// label for the card footer. Coarse — we only need day-level
+// granularity for the at-a-glance view.
+function formatSavedAgo(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return '';
+  const diffMs = Date.now() - then;
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
+// Compact display of large like counts: 1.2k, 14k, 1.3m.
+function formatCount(n: number | null | undefined): string | null {
+  if (n === null || n === undefined || !Number.isFinite(n)) return null;
+  if (n < 1000) return String(n);
+  if (n < 10_000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  if (n < 1_000_000) return `${Math.round(n / 1000)}k`;
+  return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`;
+}
+
+// Deterministic gradient for the text-only-tweet fallback poster.
+// Hash the tweet ID into one of N preset gradients so the same
+// post always gets the same background.
+const TEXT_GRADIENTS = [
+  'linear-gradient(135deg, #6366f1, #ec4899)',
+  'linear-gradient(135deg, #f59e0b, #ef4444)',
+  'linear-gradient(135deg, #14b8a6, #06b6d4)',
+  'linear-gradient(135deg, #8b5cf6, #ec4899)',
+  'linear-gradient(135deg, #10b981, #3b82f6)',
+  'linear-gradient(135deg, #f97316, #db2777)',
+];
+function gradientForTweet(tweetId: string): string {
+  let hash = 0;
+  for (let i = 0; i < tweetId.length; i += 1) {
+    hash = (hash * 31 + tweetId.charCodeAt(i)) & 0xffffffff;
+  }
+  return TEXT_GRADIENTS[Math.abs(hash) % TEXT_GRADIENTS.length];
+}
+
 function toXPostReference(row: CatalogueVideoReferenceRow): XPostReference {
   return {
     id: `x-${row.external_id}`,
     tweetId: row.external_id,
     url: row.url,
     addedAt: row.created_at,
+    authorHandle: row.author_handle,
+    authorName: row.author_name,
+    textExcerpt: row.text_excerpt,
+    posterUrl: row.poster_url,
+    likedCount: row.liked_count,
+    postedAt: row.posted_at,
+    metadataFetchedAt: row.metadata_fetched_at,
   };
 }
 
@@ -287,7 +357,7 @@ export function CatalogueVideosSection({
       const [xPostsResult, commentsResult] = await Promise.all([
         supabase
           .from('catalogue_video_references')
-          .select('source_type, external_id, url, created_at')
+          .select('source_type, external_id, url, created_at, author_handle, author_name, text_excerpt, poster_url, liked_count, posted_at, metadata_fetched_at')
           .eq('source_type', 'x_post')
           .order('created_at', { ascending: false }),
         supabase
@@ -328,6 +398,80 @@ export function CatalogueVideosSection({
       cancelled = true;
     };
   }, []);
+
+  // Lazy backfill — any saved X post without metadata gets enriched
+  // via the fetch-tweet-metadata Edge Function and written back to
+  // the row. Runs once per render pass when there are stale rows.
+  // New tweets follow the same path on first read after insert, so
+  // there's no separate "on save" code path to maintain.
+  useEffect(() => {
+    const stale = xPosts.filter((post) => !post.metadataFetchedAt && post.tweetId);
+    if (stale.length === 0) return;
+    let cancelled = false;
+
+    async function enrich() {
+      const tweetIds = stale.slice(0, 20).map((post) => post.tweetId);
+      try {
+        const { data, error } = await supabase.functions.invoke<{
+          results: Array<{
+            tweetId: string;
+            authorHandle: string | null;
+            authorName: string | null;
+            textExcerpt: string | null;
+            posterUrl: string | null;
+            likedCount: number | null;
+            postedAt: string | null;
+          }>;
+        }>('fetch-tweet-metadata', { body: { tweetIds } });
+
+        if (cancelled || error || !data?.results) return;
+
+        const fetchedAt = new Date().toISOString();
+        // Write the metadata back to the row so we don't re-fetch
+        // on every page load. Updates happen in parallel.
+        await Promise.all(data.results.map(async (result) => {
+          if (cancelled) return;
+          const updateRow = {
+            author_handle: result.authorHandle,
+            author_name: result.authorName,
+            text_excerpt: result.textExcerpt,
+            poster_url: result.posterUrl,
+            liked_count: result.likedCount,
+            posted_at: result.postedAt,
+            metadata_fetched_at: fetchedAt,
+          };
+          await supabase
+            .from('catalogue_video_references')
+            .update(updateRow)
+            .eq('source_type', 'x_post')
+            .eq('external_id', result.tweetId);
+        }));
+
+        if (cancelled) return;
+        // Optimistic local update so the cards refresh immediately
+        // instead of waiting for a re-fetch.
+        setXPosts((current) => current.map((post) => {
+          const match = data.results.find((r) => r.tweetId === post.tweetId);
+          if (!match) return post;
+          return {
+            ...post,
+            authorHandle: match.authorHandle,
+            authorName: match.authorName,
+            textExcerpt: match.textExcerpt,
+            posterUrl: match.posterUrl,
+            likedCount: match.likedCount,
+            postedAt: match.postedAt,
+            metadataFetchedAt: fetchedAt,
+          };
+        }));
+      } catch {
+        // Metadata is opportunistic — silent failure is fine.
+      }
+    }
+
+    void enrich();
+    return () => { cancelled = true; };
+  }, [xPosts]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -495,34 +639,79 @@ export function CatalogueVideosSection({
               <>
                 <h3 className="catalogue-videos__section-title">Saved X Posts</h3>
                 <div className="catalogue-videos__grid">
-                  {sortedXPosts.map((post) => (
-                    <article key={post.id} className="catalogue-videos__card">
-                      <button
-                        type="button"
-                        className="catalogue-videos__preview-button"
+                  {sortedXPosts.map((post) => {
+                    const handle = post.authorHandle ? `@${post.authorHandle}` : null;
+                    const displayName = post.authorName || handle || 'Loading…';
+                    const excerpt = post.textExcerpt
+                      ?? (post.metadataFetchedAt ? null : 'Fetching tweet…');
+                    const likeLabel = formatCount(post.likedCount);
+                    const savedAgo = formatSavedAgo(post.addedAt);
+                    const hasPoster = Boolean(post.posterUrl);
+                    return (
+                      <article
+                        key={post.id}
+                        className="catalogue-videos__x-card"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => setPreviewItemKey(post.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setPreviewItemKey(post.id);
+                          }
+                        }}
                       >
-                        Preview
-                      </button>
-                      <button
-                        type="button"
-                        className="catalogue-videos__remove-button"
-                        title="Remove X post"
-                        onClick={() => void removeXPost(post.id)}
-                      >
-                        Remove
-                      </button>
-                      <div className="catalogue-videos__tweet-wrap">
-                        <XPostEmbed className="catalogue-videos__tweet" tweetId={post.tweetId} />
-                      </div>
-                      <div className="catalogue-videos__meta">
-                        <span className="catalogue-videos__title">X Post {post.tweetId}</span>
-                        <a href={post.url} target="_blank" rel="noreferrer">
-                          Open post
-                        </a>
-                      </div>
-                    </article>
-                  ))}
+                        <div
+                          className={`catalogue-videos__x-thumb ${hasPoster ? '' : 'catalogue-videos__x-thumb--gradient'}`}
+                          style={hasPoster
+                            ? { backgroundImage: `url("${post.posterUrl ?? ''}")` }
+                            : { background: gradientForTweet(post.tweetId) }}
+                        >
+                          {!hasPoster && excerpt && (
+                            <p className="catalogue-videos__x-thumb-text">{excerpt}</p>
+                          )}
+                          <span className="catalogue-videos__x-source-pill">𝕏 Post</span>
+                          <button
+                            type="button"
+                            className="catalogue-videos__x-menu"
+                            title="More actions"
+                            aria-label="More actions"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              // Two-action menu — keep minimal until the
+                              // lightbox PR introduces a proper popover.
+                              if (window.confirm('Remove this X post from saved references?')) {
+                                void removeXPost(post.id);
+                              }
+                            }}
+                          >
+                            ⋯
+                          </button>
+                          <div className="catalogue-videos__x-play" aria-hidden="true">▶</div>
+                        </div>
+                        <div className="catalogue-videos__x-body">
+                          <div className="catalogue-videos__x-author">
+                            <span className="catalogue-videos__x-avatar" aria-hidden="true" />
+                            <span className="catalogue-videos__x-name">
+                              {displayName}
+                              {handle && post.authorName && (
+                                <span className="catalogue-videos__x-handle">{handle}</span>
+                              )}
+                            </span>
+                          </div>
+                          {hasPoster && excerpt && (
+                            <p className="catalogue-videos__x-text">{excerpt}</p>
+                          )}
+                          <div className="catalogue-videos__x-footer">
+                            <span className="catalogue-videos__x-footer-left">
+                              {likeLabel && <span>♥ {likeLabel}</span>}
+                            </span>
+                            {savedAgo && <span>Saved {savedAgo}</span>}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               </>
             )}
