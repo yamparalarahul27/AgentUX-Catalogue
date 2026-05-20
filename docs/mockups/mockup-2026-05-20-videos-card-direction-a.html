@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Videos — card ideation</title>
+<style>
+  :root {
+    --bg: #0c0c0e;
+    --surface: #16161a;
+    --surface-2: #1d1d22;
+    --border: #2a2a31;
+    --border-strong: #3a3a44;
+    --text: #fafafa;
+    --text-dim: #a1a1aa;
+    --text-faint: #71717a;
+    --accent: #6366f1;
+    --accent-soft: rgba(99, 102, 241, 0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+    padding: 56px 32px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  p.sub {
+    color: var(--text-dim);
+    margin: 0 0 48px;
+    font-size: 14px;
+    max-width: 70ch;
+  }
+  h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    margin: 0 0 18px;
+    font-weight: 600;
+  }
+  .badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .badge--current { background: rgba(244, 63, 94, 0.18); color: #fda4af; }
+  .badge--a { background: rgba(99, 102, 241, 0.18); color: #c7d2fe; }
+  .badge--b { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+
+  section { margin-bottom: 64px; }
+
+  .grid {
+    display: grid;
+    gap: 16px;
+  }
+  .grid--3 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .grid--2 { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+
+  /* ──────────────────────────────────────────────────────────────
+   * CURRENT — what's shipped today
+   * ────────────────────────────────────────────────────────────── */
+  .current-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .current-card__preview-btn {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(99, 102, 241, 0.85);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 2;
+    cursor: pointer;
+  }
+  .current-card__remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    z-index: 2;
+    cursor: pointer;
+  }
+  .current-card__embed {
+    background: #fff;
+    color: #0f1419;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 32px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .current-card__embed-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .current-card__embed-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #c084fc;
+  }
+  .current-card__embed-meta strong { display: block; font-size: 13px; color: #0f1419; }
+  .current-card__embed-meta span { font-size: 12px; color: #536471; }
+  .current-card__embed-body { font-size: 13px; color: #0f1419; }
+  .current-card__embed-image {
+    margin-top: 10px;
+    height: 140px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #c084fc, #6366f1);
+    position: relative;
+  }
+  .current-card__embed-image::after {
+    content: '🎬';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+  }
+  .current-card__embed-footer {
+    margin-top: 10px;
+    color: #536471;
+    font-size: 11px;
+    display: flex;
+    gap: 14px;
+  }
+  .current-card__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .current-card__meta a { color: var(--accent); text-decoration: none; }
+  .current-card__title { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--text-faint); }
+
+  /* ──────────────────────────────────────────────────────────────
+   * A — Thumbnail-first card (Pinterest / Mobbin pattern)
+   * ────────────────────────────────────────────────────────────── */
+  .card-a {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .card-a:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+  }
+  .card-a__thumb {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, #f97316, #ec4899);
+    overflow: hidden;
+  }
+  .card-a__thumb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.65) 100%);
+  }
+  .card-a__play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(15, 15, 16, 0.78);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    z-index: 2;
+    transition: background 0.18s ease, transform 0.18s ease;
+  }
+  .card-a:hover .card-a__play {
+    background: var(--accent);
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+  .card-a__source-pill {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(15, 15, 16, 0.78);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #e4e4e7;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 3;
+  }
+  .card-a__menu {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(15, 15, 16, 0.65);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fafafa;
+    z-index: 3;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-a:hover .card-a__menu { opacity: 1; }
+  .card-a__menu:hover { background: rgba(15, 15, 16, 0.92); }
+  .card-a__body { padding: 12px 14px 14px; }
+  .card-a__author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .card-a__avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+    flex-shrink: 0;
+  }
+  .card-a__handle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .card-a__handle-suffix {
+    font-size: 11px;
+    color: var(--text-faint);
+    font-weight: 400;
+  }
+  .card-a__text {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    line-height: 1.45;
+    margin: 0 0 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-a__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .card-a__footer-left { display: inline-flex; gap: 10px; align-items: center; }
+
+  /* ──────────────────────────────────────────────────────────────
+   * B — Compact list card (denser, more rows visible)
+   * ────────────────────────────────────────────────────────────── */
+  .card-b {
+    display: grid;
+    grid-template-columns: 96px 1fr auto;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .card-b:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+  }
+  .card-b__thumb {
+    width: 96px;
+    height: 60px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #14b8a6, #6366f1);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .card-b__thumb-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 22px;
+  }
+  .card-b__body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card-b__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-b__avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    flex-shrink: 0;
+  }
+  .card-b__handle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .card-b__source {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    margin-left: auto;
+  }
+  .card-b__text {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    line-height: 1.4;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-b__footer {
+    margin-top: 2px;
+    font-size: 11px;
+    color: var(--text-faint);
+    display: inline-flex;
+    gap: 10px;
+  }
+  .card-b__actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .card-b__action {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .card-b__action:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+   * helpers
+   * ────────────────────────────────────────────────────────────── */
+  .label-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+  .meta-icon {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    background: currentColor;
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-position: center;
+    mask-repeat: no-repeat;
+  }
+</style>
+</head>
+<body>
+
+<h1>Videos section — card ideation</h1>
+<p class="sub">Three card layouts for X-post references in the Videos section. Goal: cleaner UI, no inline X embed on first render, click-to-load. Currently each card renders the full <code>twttr.widgets.createTweet</code> iframe inline — heavy on the network and visually cluttered. The two proposed directions show what a thumbnail-first card looks like.</p>
+
+<!-- ────────── CURRENT ────────── -->
+<section>
+  <h2>Current state <span class="badge badge--current">Shipping today</span></h2>
+  <div class="grid grid--3">
+    <article class="current-card">
+      <button class="current-card__preview-btn">Preview</button>
+      <button class="current-card__remove-btn">Remove</button>
+      <div class="current-card__embed">
+        <div class="current-card__embed-header">
+          <div class="current-card__embed-avatar"></div>
+          <div class="current-card__embed-meta">
+            <strong>Emil Kowalski</strong>
+            <span>@emilkowalski_</span>
+          </div>
+        </div>
+        <div class="current-card__embed-body">A button morphing into a confirmation pill — feels so much better than a separate toast. The detail that lands: the icon scales overshoots by 6% then settles.</div>
+        <div class="current-card__embed-image"></div>
+        <div class="current-card__embed-footer">
+          <span>♻ 142</span>
+          <span>♥ 1.2k</span>
+          <span>11:42 AM · Mar 12</span>
+        </div>
+      </div>
+      <div class="current-card__meta">
+        <span class="current-card__title">X Post 1234567890123456789</span>
+        <a href="#">Open post</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ────────── DIRECTION A — Thumbnail-first ────────── -->
+<section>
+  <div class="label-row">
+    <h2 style="margin: 0">Direction A — Thumbnail-first card <span class="badge badge--a">Proposed</span></h2>
+  </div>
+  <p class="sub" style="margin-bottom: 24px;">Big poster-style thumbnail of the tweet's image / video frame. Author + handle + short text below. Play indicator centred. Source pill (X / video) top-left, three-dot menu top-right (hover-only). Click anywhere → modal embed loads (X.js fetched lazily).</p>
+
+  <div class="grid grid--3">
+    <article class="card-a">
+      <div class="card-a__thumb">
+        <span class="card-a__source-pill">𝕏 Post</span>
+        <button class="card-a__menu" title="More">⋯</button>
+        <div class="card-a__play">▶</div>
+      </div>
+      <div class="card-a__body">
+        <div class="card-a__author">
+          <div class="card-a__avatar"></div>
+          <span class="card-a__handle">Emil Kowalski <span class="card-a__handle-suffix">@emilkowalski_</span></span>
+        </div>
+        <p class="card-a__text">A button morphing into a confirmation pill — feels so much better than a separate toast. The icon scales overshoots by 6% then settles.</p>
+        <div class="card-a__footer">
+          <span class="card-a__footer-left">
+            <span>♥ 1.2k</span>
+            <span>💬 3</span>
+          </span>
+          <span>Saved 2d ago</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card-a">
+      <div class="card-a__thumb" style="background: linear-gradient(135deg, #14b8a6, #06b6d4);">
+        <span class="card-a__source-pill">▶ Video</span>
+        <button class="card-a__menu" title="More">⋯</button>
+        <div class="card-a__play">▶</div>
+      </div>
+      <div class="card-a__body">
+        <div class="card-a__author">
+          <div class="card-a__avatar" style="background: linear-gradient(135deg, #14b8a6, #06b6d4);"></div>
+          <span class="card-a__handle">Family Values <span class="card-a__handle-suffix">Ep. 12</span></span>
+        </div>
+        <p class="card-a__text">Walking through the Robinhood onboarding flow — the gradient hero, the haptic on first input, the celebration on first deposit.</p>
+        <div class="card-a__footer">
+          <span class="card-a__footer-left">
+            <span>4:32</span>
+            <span>💬 1</span>
+          </span>
+          <span>Saved 6d ago</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card-a">
+      <div class="card-a__thumb" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">
+        <span class="card-a__source-pill">𝕏 Post</span>
+        <button class="card-a__menu" title="More">⋯</button>
+        <div class="card-a__play">▶</div>
+      </div>
+      <div class="card-a__body">
+        <div class="card-a__author">
+          <div class="card-a__avatar" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
+          <span class="card-a__handle">Adam Argyle <span class="card-a__handle-suffix">@argyleink</span></span>
+        </div>
+        <p class="card-a__text">The new CSS @scope rule means we can finally have component-scoped styles without a build step.</p>
+        <div class="card-a__footer">
+          <span class="card-a__footer-left">
+            <span>♥ 842</span>
+            <span>💬 12</span>
+          </span>
+          <span>Saved 1w ago</span>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ────────── DIRECTION B — Compact list card ────────── -->
+<section>
+  <div class="label-row">
+    <h2 style="margin: 0">Direction B — Compact list card <span class="badge badge--b">Proposed</span></h2>
+  </div>
+  <p class="sub" style="margin-bottom: 24px;">Denser. Small thumbnail left, full meta on the right. More rows visible per screen — better when you've saved many references. Same click-to-load behaviour.</p>
+
+  <div class="grid grid--2">
+    <article class="card-b">
+      <div class="card-b__thumb">
+        <div class="card-b__thumb-play">▶</div>
+      </div>
+      <div class="card-b__body">
+        <div class="card-b__head">
+          <div class="card-b__avatar"></div>
+          <span class="card-b__handle">Emil Kowalski</span>
+          <span class="card-b__source">𝕏 Post</span>
+        </div>
+        <p class="card-b__text">A button morphing into a confirmation pill — feels so much better than a separate toast. The icon scales overshoots by 6% then settles.</p>
+        <div class="card-b__footer">
+          <span>♥ 1.2k</span>
+          <span>💬 3 comments</span>
+          <span>Saved 2d ago</span>
+        </div>
+      </div>
+      <div class="card-b__actions">
+        <button class="card-b__action" title="Open on X">↗</button>
+        <button class="card-b__action" title="More">⋯</button>
+      </div>
+    </article>
+
+    <article class="card-b">
+      <div class="card-b__thumb" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">
+        <div class="card-b__thumb-play">▶</div>
+      </div>
+      <div class="card-b__body">
+        <div class="card-b__head">
+          <div class="card-b__avatar" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
+          <span class="card-b__handle">Adam Argyle</span>
+          <span class="card-b__source">𝕏 Post</span>
+        </div>
+        <p class="card-b__text">The new CSS @scope rule means we can finally have component-scoped styles without a build step.</p>
+        <div class="card-b__footer">
+          <span>♥ 842</span>
+          <span>💬 12</span>
+          <span>Saved 1w ago</span>
+        </div>
+      </div>
+      <div class="card-b__actions">
+        <button class="card-b__action" title="Open on X">↗</button>
+        <button class="card-b__action" title="More">⋯</button>
+      </div>
+    </article>
+
+    <article class="card-b">
+      <div class="card-b__thumb" style="background: linear-gradient(135deg, #14b8a6, #06b6d4);">
+        <div class="card-b__thumb-play">▶</div>
+      </div>
+      <div class="card-b__body">
+        <div class="card-b__head">
+          <div class="card-b__avatar" style="background: linear-gradient(135deg, #14b8a6, #06b6d4);"></div>
+          <span class="card-b__handle">Family Values</span>
+          <span class="card-b__source">Video</span>
+        </div>
+        <p class="card-b__text">Walking through the Robinhood onboarding flow — the gradient hero, the haptic on first input, the celebration on first deposit.</p>
+        <div class="card-b__footer">
+          <span>4:32 min</span>
+          <span>💬 1</span>
+          <span>Saved 6d ago</span>
+        </div>
+      </div>
+      <div class="card-b__actions">
+        <button class="card-b__action" title="Open">↗</button>
+        <button class="card-b__action" title="More">⋯</button>
+      </div>
+    </article>
+  </div>
+</section>
+
+</body>
+</html>

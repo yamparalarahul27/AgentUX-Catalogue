@@ -115,6 +115,212 @@
   min-height: 0;
 }
 
+// ── X Post card (Direction A from the 2026-05-20 ideation) ──────────
+// Thumbnail-first card. Renders without loading X widgets.js — the
+// embed only mounts when the user clicks (handled by the preview
+// modal). Text-only tweets fall back to a deterministic gradient
+// poster with the excerpt rendered on top.
+.catalogue-videos__x-card {
+  position: relative;
+  background: #16161a;
+  border: 1px solid #27272a;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: #3a3a44;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
+
+    .catalogue-videos__x-menu { opacity: 1; }
+    .catalogue-videos__x-play {
+      background: #6366f1;
+      transform: translate(-50%, -50%) scale(1.06);
+    }
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  }
+}
+
+.catalogue-videos__x-thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  // Soft bottom gradient ensures the source pill + play indicator
+  // stay legible over busy poster images.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.55) 100%);
+    pointer-events: none;
+  }
+
+  // Text-only fallback — the gradient lives directly on the element.
+  // Add internal padding so the rendered excerpt has room to breathe.
+  &--gradient {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+  }
+}
+
+.catalogue-videos__x-thumb-text {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.catalogue-videos__x-source-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(15, 15, 16, 0.78);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e4e4e7;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  z-index: 2;
+}
+
+.catalogue-videos__x-menu {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(15, 15, 16, 0.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fafafa;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0;
+  z-index: 2;
+  transition: opacity 0.15s ease, background 0.15s ease;
+
+  &:hover { background: rgba(15, 15, 16, 0.92); }
+  &:focus-visible { opacity: 1; outline: 2px solid rgba(99, 102, 241, 0.6); }
+}
+
+.catalogue-videos__x-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(15, 15, 16, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  z-index: 2;
+  transition: background 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+}
+
+.catalogue-videos__x-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.catalogue-videos__x-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.catalogue-videos__x-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  flex-shrink: 0;
+}
+
+.catalogue-videos__x-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fafafa;
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogue-videos__x-handle {
+  font-size: 11px;
+  font-weight: 400;
+  color: #71717a;
+}
+
+.catalogue-videos__x-text {
+  color: #a1a1aa;
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.catalogue-videos__x-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #71717a;
+}
+
+.catalogue-videos__x-footer-left {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .catalogue-videos__card {
   position: relative;
   aspect-ratio: 4 / 3;
