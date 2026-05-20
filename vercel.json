@@ -2,6 +2,7 @@
   "buildCommand": "npm run build:site",
   "outputDirectory": "site",
   "rewrites": [
+    { "source": "/designer/share", "destination": "/api/share-meta" },
     { "source": "/designer", "destination": "/designer/catalogue.html" },
     { "source": "/designer/(.*)", "destination": "/designer/catalogue.html" }
   ]
