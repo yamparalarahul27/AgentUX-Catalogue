@@ -103,6 +103,51 @@ $success: #22c55e;
   &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
 }
 
+// Chip variant — flex-wrap cloud of pill buttons instead of a
+// vertical list. The menu itself is widened by the JS layout
+// effect; CSS just relaxes max-width so the cap doesn't fight.
+.dropdown__menu--chips {
+  max-width: none;
+
+  .dropdown__items--chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 2px;
+
+    .dropdown__item {
+      width: auto;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid #2a2a31;
+      color: $text-muted;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      gap: 6px;
+
+      &:hover { color: $text; border-color: $text-dim; background: transparent; }
+
+      &--highlighted {
+        background: rgba($accent, 0.12);
+        border-color: rgba($accent, 0.35);
+        color: $text;
+      }
+
+      &--active {
+        background: rgba($accent, 0.18);
+        border-color: rgba($accent, 0.5);
+        color: #c7d2fe;
+        font-weight: 500;
+      }
+
+      // Hide the multi-select checkmark in chip mode — active state
+      // is conveyed by the pill background colour.
+      .dropdown__check { display: none; }
+    }
+  }
+}
+
 .dropdown__search {
   position: sticky;
   top: -4px;

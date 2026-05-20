@@ -1,0 +1,63 @@
+// Catalogue Flow chip strip — sits below the toolbar, mirrors the
+// pattern of the Group chip strip but simpler (no ticker, no sort
+// menu). Horizontal scroll, right-edge mask hint for overflow.
+
+.catalogue-flow-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 32px 8px 0;
+  margin: 0 0 12px;
+  scrollbar-width: none;
+  // Soft fade on the right edge hints that more chips exist past
+  // the visible region without a visible scrollbar.
+  mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent 100%);
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.catalogue-flow-strip__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid #2a2a31;
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    color: #fafafa;
+    border-color: #71717a;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  }
+
+  &.is-active {
+    background: rgba(99, 102, 241, 0.16);
+    border-color: rgba(99, 102, 241, 0.45);
+    color: #c7d2fe;
+  }
+}
+
+.catalogue-flow-strip__count {
+  color: #71717a;
+  font-size: 11px;
+  font-weight: 400;
+
+  .catalogue-flow-strip__chip:hover & { color: #a1a1aa; }
+  .catalogue-flow-strip__chip.is-active & { color: rgba(199, 210, 254, 0.7); }
+}

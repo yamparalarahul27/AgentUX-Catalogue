@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type CatalogueGroupCategory = 'cex' | 'dex';
+export type CatalogueGroupCategory = 'cex' | 'dex' | 'other';
 export type CatalogueGroupRegion = 'india' | 'global';
 
 export interface CatalogueGroupAppearance {
@@ -24,7 +24,7 @@ interface CatalogueGroupAppearanceRow {
 
 function normalizeCategory(value?: string | null): CatalogueGroupCategory | undefined {
   const cleaned = value?.trim().toLowerCase();
-  if (cleaned === 'cex' || cleaned === 'dex') return cleaned;
+  if (cleaned === 'cex' || cleaned === 'dex' || cleaned === 'other') return cleaned;
   return undefined;
 }
 
