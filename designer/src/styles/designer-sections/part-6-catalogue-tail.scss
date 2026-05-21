@@ -283,7 +283,10 @@
 
 .catalogue-bulk-bar {
   position: fixed;
-  bottom: 24px;
+  // Sit above the magnified dock (which lives at bottom: 24px,
+  // visible chrome ~56-64px tall). 100px clears the dock pill and
+  // leaves a small gap between the two surfaces.
+  bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;

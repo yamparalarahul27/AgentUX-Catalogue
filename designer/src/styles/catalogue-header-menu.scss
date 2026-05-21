@@ -1,11 +1,12 @@
 // Identity pill in the header — replaces the legacy hamburger trigger.
 // Shows the signed-in user's username (before @) on desktop with a
 // chevron, or "Sign in" with a login icon when no user is set.
+//
+// Positioned inside .catalogue-header__right (which uses
+// margin-left: auto to anchor the cluster to the right edge); the
+// pill itself stays in normal flex flow so it sits next to its
+// neighbour (Settings icon button).
 .catalogue-identity-pill {
-  position: absolute;
-  right: 24px;
-  top: 50%;
-  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -291,10 +292,6 @@
 }
 
 @media (max-width: 900px) {
-  .catalogue-identity-pill {
-    right: 12px;
-  }
-
   .catalogue-identity-pill__name {
     max-width: 80px;
   }

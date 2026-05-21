@@ -106,13 +106,62 @@ export function GroupAppearanceEditModal({
         </div>
 
         <div className="group-edit-body">
-          <GroupPreview
-            label={labelDraft.trim() || group}
-            iconUrl={iconUrlDraft}
-            hasUploadedIcon={hasUploadedIcon}
-            onRemoveUploadedIcon={onRemoveUploadedIcon}
-            removeDisabled={isUploading || isSaving}
-          />
+          {/* Top row: brand identity at a glance.
+              Preview wraps to its content width on the left; Type +
+              Region segmented controls stack on the right. */}
+          <div className="group-edit-identity-row">
+            <GroupPreview
+              label={labelDraft.trim() || group}
+              iconUrl={iconUrlDraft}
+              hasUploadedIcon={hasUploadedIcon}
+              onRemoveUploadedIcon={onRemoveUploadedIcon}
+              removeDisabled={isUploading || isSaving}
+            />
+
+            <div className="group-edit-meta-stack">
+              <div className="group-edit-field">
+                <span>Type</span>
+                <div className="group-edit-segmented" role="radiogroup" aria-label="Type">
+                  {CATEGORY_OPTIONS.map((option) => {
+                    const checked = categoryDraft === option.value;
+                    return (
+                      <button
+                        key={option.label}
+                        type="button"
+                        role="radio"
+                        aria-checked={checked}
+                        className={`group-edit-segmented-option${checked ? ' is-active' : ''}`}
+                        onClick={() => onChangeCategory(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="group-edit-field">
+                <span>Region</span>
+                <div className="group-edit-segmented" role="radiogroup" aria-label="Region">
+                  {REGION_OPTIONS.map((option) => {
+                    const checked = regionDraft === option.value;
+                    return (
+                      <button
+                        key={option.label}
+                        type="button"
+                        role="radio"
+                        aria-checked={checked}
+                        className={`group-edit-segmented-option${checked ? ' is-active' : ''}`}
+                        onClick={() => onChangeRegion(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <label className="group-edit-field">
             <span>Display name</span>
@@ -151,48 +200,6 @@ export function GroupAppearanceEditModal({
                 event.target.value = '';
               }}
             />
-          </div>
-
-          <div className="group-edit-field">
-            <span>Type</span>
-            <div className="group-edit-segmented" role="radiogroup" aria-label="Type">
-              {CATEGORY_OPTIONS.map((option) => {
-                const checked = categoryDraft === option.value;
-                return (
-                  <button
-                    key={option.label}
-                    type="button"
-                    role="radio"
-                    aria-checked={checked}
-                    className={`group-edit-segmented-option${checked ? ' is-active' : ''}`}
-                    onClick={() => onChangeCategory(option.value)}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="group-edit-field">
-            <span>Region</span>
-            <div className="group-edit-segmented" role="radiogroup" aria-label="Region">
-              {REGION_OPTIONS.map((option) => {
-                const checked = regionDraft === option.value;
-                return (
-                  <button
-                    key={option.label}
-                    type="button"
-                    role="radio"
-                    aria-checked={checked}
-                    className={`group-edit-segmented-option${checked ? ' is-active' : ''}`}
-                    onClick={() => onChangeRegion(option.value)}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           {message && <div className="group-edit-message">{message}</div>}

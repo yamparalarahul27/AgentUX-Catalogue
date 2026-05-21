@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
+  Link as LinkIcon,
   LogIn,
   LogOut,
   MonitorCog,
@@ -92,11 +93,6 @@ export function CatalogueHeader({
     };
   }, [menuOpen]);
 
-  function openSection(section: CatalogueSection) {
-    onSectionChange(section);
-    setMenuOpen(false);
-  }
-
   function openSettings() {
     onOpenSettings();
     setMenuOpen(false);
@@ -155,38 +151,67 @@ export function CatalogueHeader({
         <button
           type="button"
           role="tab"
-          className={`catalogue-header__tab ${activeSection === 'links' ? 'is-active' : ''}`}
+          className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'links' ? 'is-active' : ''}`}
           aria-selected={activeSection === 'links'}
+          aria-label="Links"
+          title="Links"
           onClick={() => onSectionChange('links')}
           data-short="L"
         >
-          Links
+          <LinkIcon size={15} aria-hidden="true" />
         </button>
+        {showStudioEntry && (
+          <button
+            type="button"
+            role="tab"
+            className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'studio' ? 'is-active' : ''}`}
+            aria-selected={activeSection === 'studio'}
+            aria-label="Labelling Studio (for AI)"
+            title="Labelling Studio · for AI"
+            onClick={() => onSectionChange('studio')}
+          >
+            <Tags size={15} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
-      {userEmail ? (
-        <button
-          ref={pillRef}
-          type="button"
-          className={`catalogue-identity-pill ${canAdmin ? 'is-admin' : ''} ${menuOpen ? 'is-open' : ''}`}
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((previous) => !previous)}
-          title={userEmail}
-        >
-          <span className="catalogue-identity-pill__name">{usernameOf(userEmail)}</span>
-          <ChevronDown size={14} aria-hidden="true" />
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="catalogue-identity-pill catalogue-identity-pill--signin"
-          onClick={onSignIn}
-        >
-          <LogIn size={14} aria-hidden="true" />
-          <span>Sign in</span>
-        </button>
-      )}
+      <div className="catalogue-header__right">
+        {userEmail ? (
+          <button
+            ref={pillRef}
+            type="button"
+            className={`catalogue-identity-pill ${canAdmin ? 'is-admin' : ''} ${menuOpen ? 'is-open' : ''}`}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((previous) => !previous)}
+            title={userEmail}
+          >
+            <span className="catalogue-identity-pill__name">{usernameOf(userEmail)}</span>
+            <ChevronDown size={14} aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="catalogue-identity-pill catalogue-identity-pill--signin"
+            onClick={onSignIn}
+          >
+            <LogIn size={14} aria-hidden="true" />
+            <span>Sign in</span>
+          </button>
+        )}
+
+        {userEmail && canAdmin && (
+          <button
+            type="button"
+            className={`catalogue-header__icon-btn ${activeSection === 'team' ? 'is-active' : ''}`}
+            aria-label="Settings"
+            title="Settings"
+            onClick={() => onSectionChange('team')}
+          >
+            <Settings size={15} aria-hidden="true" />
+          </button>
+        )}
+      </div>
 
       {menuOpen && userEmail && (
         <div ref={menuRef} className="catalogue-header-menu" role="menu" aria-label="Account menu">
@@ -219,31 +244,6 @@ export function CatalogueHeader({
             <MonitorCog size={14} aria-hidden="true" />
             <span>Web Breakpoints Settings</span>
           </button>
-
-          {canAdmin && (
-            <button
-              type="button"
-              className={`catalogue-header-menu__item catalogue-header-menu__item--row ${activeSection === 'team' ? 'is-active' : ''}`}
-              role="menuitem"
-              onClick={() => openSection('team')}
-            >
-              <Settings size={14} aria-hidden="true" />
-              <span>Settings</span>
-            </button>
-          )}
-
-          {showStudioEntry && (
-            <button
-              type="button"
-              className={`catalogue-header-menu__item catalogue-header-menu__item--row ${activeSection === 'studio' ? 'is-active' : ''}`}
-              role="menuitem"
-              onClick={() => openSection('studio')}
-            >
-              <Tags size={14} aria-hidden="true" />
-              <span>Labelling Studio</span>
-              <span className="catalogue-header-menu__tag">For AI</span>
-            </button>
-          )}
 
           <div className="catalogue-header-menu__divider" role="presentation" />
 

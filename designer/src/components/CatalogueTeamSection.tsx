@@ -228,18 +228,18 @@ export function CatalogueTeamSection({
         }]
       : []),
     {
-      id: 'flows',
-      label: 'Flows',
-      icon: Workflow,
-      count: flowChecklist.length,
-      description: `All flows from uploaded screenshots. ${flowChecklist.length} flow${flowChecklist.length !== 1 ? 's' : ''} tracked. Click a flow to filter the catalogue.`,
-    },
-    {
       id: 'groups',
       label: 'Groups',
       icon: LayoutGrid,
       count: groupChecklist.length,
       description: `All groups used in uploaded screenshots. ${groupChecklist.length} group${groupChecklist.length !== 1 ? 's' : ''} found. Click a group to filter the catalogue.`,
+    },
+    {
+      id: 'flows',
+      label: 'Flows',
+      icon: Workflow,
+      count: flowChecklist.length,
+      description: `All flows from uploaded screenshots. ${flowChecklist.length} flow${flowChecklist.length !== 1 ? 's' : ''} tracked. Click a flow to filter the catalogue.`,
     },
     {
       id: 'trash',
