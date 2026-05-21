@@ -391,17 +391,21 @@
 }
 
 .catalogue-lightbox-annotation-composer input {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid #2a2a31;
-  border-radius: 8px;
-  padding: 8px 10px;
-  color: #18181b;
+  background: #0f1014;
+  border: 1px solid #303038;
+  border-radius: 10px;
+  padding: 9px 10px;
+  color: #fff;
   font-size: 13px;
   font-family: inherit;
   outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
-  &:focus {
+  &::placeholder { color: #71717a; }
+
+  &:focus-visible {
     border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
   }
 }
 

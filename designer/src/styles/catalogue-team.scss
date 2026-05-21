@@ -32,6 +32,61 @@
   }
 }
 
+// Icon-only variant of the header tab — used by Links + Labelling
+// Studio. Square footprint so they read as compact symbols alongside
+// the wider Catalogue / Videos text tabs.
+.catalogue-header__tab--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  padding: 0;
+}
+
+// Right-side cluster — anchors the identity pill + Settings icon
+// to the right edge of the header (margin-left: auto absorbs the
+// flex gap). Tight 6px gap inside so they read as one unit.
+.catalogue-header__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+// Icon-only header chrome button (Settings, sitting left of the
+// identity pill). Pill shape, same height + visual language as
+// the existing identity pill so the row reads as one unit.
+.catalogue-header__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: #3f3f46;
+  }
+
+  &.is-active {
+    color: #fff;
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.45);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.5);
+    outline-offset: 2px;
+  }
+}
+
 .catalogue-shell--team {
   display: block;
 }
@@ -686,6 +741,28 @@
   overflow-y: auto;
 }
 
+// Top row of the modal: brand identity at a glance. Preview wraps to
+// its content width on the left, Type + Region segmented controls
+// stack on the right. Falls back to a single column below ~520px so
+// the segmented controls don't get crushed on mobile.
+.group-edit-identity-row {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.group-edit-meta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 // Three-context preview: shows the icon + label as it'll render in the
 // Card (medium), Chip (small), and Lightbox breadcrumb. Lets the user
 // pick an icon that works at all sizes. The × on the Card preview's
@@ -699,6 +776,11 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(63, 63, 70, 0.6);
   border-radius: 10px;
+  // Wrap to its content width inside the identity row. `max-content`
+  // on the grid track keeps the preview at its intrinsic size; this
+  // is a safety net for legacy layouts.
+  width: max-content;
+  max-width: 100%;
 }
 
 .group-edit-preview__label {

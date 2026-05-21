@@ -37,6 +37,7 @@ import {
   CATALOGUE_CHIP_RECENCY_HOURS,
   CATALOGUE_CHIP_STRIP_ENABLED,
   LABELING_STUDIO_ENABLED,
+  LABELING_STUDIO_MIN_VIEWPORT_PX,
 } from '../lib/feature-flags';
 import { buildPresetUsage, defaultGridDensity, defaultViewMode, persistGridDensity, persistViewMode } from '../lib/catalogue-helpers';
 import type { GridDensity } from '../lib/catalogue-helpers';
@@ -672,6 +673,76 @@ export function Catalogue({
       document.body.style.paddingRight = previousPaddingRight;
     };
   }, [isAnyModalOpen]);
+
+  // Single-letter section + quick-upload shortcuts at the catalogue
+  // page level. Mirrors the lightbox's keyboard pattern: skip when
+  // typing, holding a modifier, or while any modal (incl. lightbox
+  // + Quick Upload) is open. The lightbox owns C/B for crop/save
+  // internally — those won't reach this handler because lightbox
+  // sets previewFamily, which flips isAnyModalOpen.
+  //
+  //   C → Catalogue       V → Videos
+  //   L → Links           I → Labelling Studio (when capable)
+  //   U → Quick Upload    (when capable)
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
+      if (isAnyModalOpen) return;
+      if (upload.showQuickUpload) return;
+      const key = event.key.toLowerCase();
+      if (key === 'c') {
+        event.preventDefault();
+        setActiveSection('catalogue');
+      } else if (key === 'v') {
+        event.preventDefault();
+        setActiveSection('videos');
+      } else if (key === 'l') {
+        event.preventDefault();
+        setActiveSection('links');
+      } else if (key === 'i') {
+        if (!canLabelingStudio || !LABELING_STUDIO_ENABLED) return;
+        if (viewportWidth < LABELING_STUDIO_MIN_VIEWPORT_PX) return;
+        event.preventDefault();
+        setActiveSection('studio');
+      } else if (key === 'u') {
+        if (!canUpload || activeSection !== 'catalogue') return;
+        event.preventDefault();
+        guardAction(() => {
+          upload.seedQuickUploadFromFiltersIfFirstOpen({
+            filterFlow,
+            filterGroup,
+            filterPlatform,
+            filterTheme,
+            filterWebPreset,
+            filterMobileOs,
+          });
+          upload.setShowQuickUpload(true);
+        });
+      }
+    }
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, [
+    isAnyModalOpen,
+    upload,
+    canLabelingStudio,
+    canUpload,
+    viewportWidth,
+    activeSection,
+    guardAction,
+    filterFlow,
+    filterGroup,
+    filterPlatform,
+    filterTheme,
+    filterWebPreset,
+    filterMobileOs,
+  ]);
+
   function openPreview(familyId: string) {
     setPreviewStartInlineEdit(false);
     setPreviewFamilyId(familyId);
