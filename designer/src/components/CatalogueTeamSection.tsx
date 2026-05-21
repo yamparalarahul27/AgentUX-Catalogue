@@ -133,7 +133,11 @@ export function CatalogueTeamSection({
   onSelectFlow,
   onSelectGroup,
 }: CatalogueTeamSectionProps) {
-  const [subTab, setSubTab] = useState<TeamSubTab>(TEAM_UPLOAD_ANALYTICS_ENABLED ? 'analytics' : 'flows');
+  // Groups is the default sub-tab when entering Team — matches the
+  // user's expectation that the Settings icon "opens" group config.
+  // Sidebar tab order also leads with Groups, so the body should
+  // mirror that.
+  const [subTab, setSubTab] = useState<TeamSubTab>('groups');
   // Shared admin-passcode unlock state — Members + Roles both read from
   // here, so unlocking once in either sub-tab unlocks the other for the
   // tab session (persisted to sessionStorage). Stale-passcode rebound is

@@ -73,6 +73,8 @@ import {
   type FlowPresentation,
 } from './CatalogueToolbar';
 import { SaveAnimationProvider } from './SaveAnimation';
+import { WhatsNewPanel, getWhatsNewUnseenCount } from './WhatsNewPanel';
+import { AppUpdateToast } from './AppUpdateToast';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
 import { CatalogueLinksSection } from './CatalogueLinksSection';
@@ -351,6 +353,28 @@ export function Catalogue({
   const [showSettings, setShowSettings] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  // What's New panel open / unseen count. Auto-opens on first
+  // render after a reload triggered by the App-update toast — a
+  // sessionStorage flag (`agentux:open-whats-new-after-refresh`)
+  // carries that intent across the reload.
+  const [showWhatsNew, setShowWhatsNew] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      if (window.sessionStorage.getItem('agentux:open-whats-new-after-refresh') === '1') {
+        window.sessionStorage.removeItem('agentux:open-whats-new-after-refresh');
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  });
+  const [whatsNewUnseen, setWhatsNewUnseen] = useState(() => getWhatsNewUnseenCount());
+  // Recompute unseen count when the panel closes — the close handler
+  // stamps the latest release as seen, so the badge should drop to 0.
+  useEffect(() => {
+    if (!showWhatsNew) setWhatsNewUnseen(getWhatsNewUnseenCount());
+  }, [showWhatsNew]);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
@@ -683,6 +707,7 @@ export function Catalogue({
   //
   //   C → Catalogue       V → Videos
   //   L → Links           I → Labelling Studio (when capable)
+  //   S → Settings (Team) (when admin)
   //   U → Quick Upload    (when capable)
   useEffect(() => {
     function handleShortcut(event: KeyboardEvent) {
@@ -709,6 +734,10 @@ export function Catalogue({
         if (viewportWidth < LABELING_STUDIO_MIN_VIEWPORT_PX) return;
         event.preventDefault();
         setActiveSection('studio');
+      } else if (key === 's') {
+        if (!canAdmin) return;
+        event.preventDefault();
+        setActiveSection('team');
       } else if (key === 'u') {
         if (!canUpload || activeSection !== 'catalogue') return;
         event.preventDefault();
@@ -730,6 +759,7 @@ export function Catalogue({
   }, [
     isAnyModalOpen,
     upload,
+    canAdmin,
     canLabelingStudio,
     canUpload,
     viewportWidth,
@@ -885,6 +915,19 @@ export function Catalogue({
             return;
           }
           setBookmarkFilterOn((previous) => !previous);
+        }}
+        onOpenWhatsNew={() => setShowWhatsNew(true)}
+        whatsNewUnseenCount={whatsNewUnseen}
+      />
+      <WhatsNewPanel isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
+      <AppUpdateToast
+        onRefresh={() => {
+          try {
+            window.sessionStorage.setItem('agentux:open-whats-new-after-refresh', '1');
+          } catch {
+            // ignore; panel just won't auto-open
+          }
+          window.location.reload();
         }}
       />
       {activeSection === 'team' && canAdmin ? (

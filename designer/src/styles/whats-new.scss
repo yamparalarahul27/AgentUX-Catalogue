@@ -1,0 +1,483 @@
+// What's New slide-in panel + App-update toast. Two notification
+// surfaces, designed to work together — the toast prompts users to
+// refresh stale JS, the panel reveals what changed after they do.
+
+// ── What's New panel (slide-in from right) ─────────────────────
+.whats-new-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 1100;
+  animation: whats-new-fade 0.18s ease-out;
+}
+
+@keyframes whats-new-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.whats-new-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(480px, 100vw);
+  background: #16161a;
+  border-left: 1px solid #3a3a44;
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  z-index: 1101;
+  animation: whats-new-slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes whats-new-slide-in {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.whats-new-panel__header {
+  padding: 20px 22px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #27272a;
+  flex-shrink: 0;
+}
+
+.whats-new-panel__header-icon {
+  color: #c7d2fe;
+  flex-shrink: 0;
+}
+
+.whats-new-panel__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fafafa;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.whats-new-panel__count {
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.whats-new-panel__close {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid #27272a;
+  color: #a1a1aa;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    color: #fafafa;
+    border-color: #3a3a44;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: 2px;
+  }
+}
+
+.whats-new-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #27272a; border-radius: 999px; }
+}
+
+.whats-new-panel__footer {
+  padding: 12px 22px;
+  border-top: 1px solid #27272a;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.whats-new-panel__dismiss {
+  background: transparent;
+  border: 1px solid #27272a;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    color: #fafafa;
+    border-color: #3a3a44;
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+// Release card inside the panel
+.whats-new-release {
+  border-bottom: 1px solid #27272a;
+  transition: background 0.12s ease;
+
+  &:last-child { border-bottom: none; }
+}
+
+// The head row owns toggling for non-latest cards. Padding lives
+// here (not on the article) so the click target hugs the head and
+// the expanded body's spacing is controlled separately. items
+// align to flex-start so a tall two-line title doesn't push the
+// chevron off-centre — it stays pinned to the top-right.
+.whats-new-release__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 22px 14px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+
+  &.is-toggle {
+    cursor: pointer;
+    transition: background 0.12s ease;
+
+    &:hover { background: rgba(255, 255, 255, 0.03); }
+
+    &:focus-visible {
+      outline: none;
+      background: rgba(99, 102, 241, 0.08);
+    }
+  }
+}
+
+// Date + title stack vertically inside the head. Linear-style:
+// date is the section marker, title is the headline below it.
+.whats-new-release__head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0; // allow title to wrap rather than overflow
+  flex: 1;
+}
+
+// Meta row inside the head — date and the "new" pulse-dot sit
+// inline so the dot reads as a date-level marker, not a title one.
+.whats-new-release__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// Collapsed cards run a tighter head so the timeline reads as a
+// list, not a stack of full cards. Title also drops a notch in
+// size to match the lower density.
+.whats-new-release--collapsed .whats-new-release__head {
+  padding: 12px 22px;
+
+  .whats-new-release__title {
+    font-size: 13px;
+  }
+}
+
+// Chevron sits at the top-right of the head row. flex-start
+// alignment on the parent keeps it pinned even when the title
+// wraps; a small top offset centres it visually against the date.
+.whats-new-release__chevron {
+  color: #71717a;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  .whats-new-release__head.is-toggle:hover & { color: #fafafa; }
+}
+
+// Body — image + bullets. No top padding (head already has the
+// gap to the meta row); just side + bottom padding for the bullets.
+.whats-new-release__body {
+  padding: 0 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.whats-new-release__date {
+  font-size: 11px;
+  color: #71717a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.02em;
+}
+
+.whats-new-release__new-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6366f1;
+  animation: whats-new-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes whats-new-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+}
+
+.whats-new-release__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fafafa;
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.whats-new-release__image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  background-color: rgba(99, 102, 241, 0.08);
+  background-position: center;
+  background-size: cover;
+}
+
+.whats-new-release__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Each bullet is a two-column grid: fixed-width badge column +
+// flexible text column. The fixed column means every badge ends
+// at the same x-coordinate, so bullet text aligns down the list.
+.whats-new-release__item {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.whats-new-release__item-text {
+  color: #a1a1aa;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+// Kind badges: small all-caps pills. Three variants tinted to read
+// at a glance — indigo for net-new, amber for improvements, green
+// for fixes. Each uses a translucent fill + matching text so they
+// sit lightly against the dark panel background.
+.whats-new-kind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.whats-new-kind--new {
+  background: rgba(99, 102, 241, 0.14);
+  color: #c7d2fe;
+}
+
+.whats-new-kind--improved {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
+}
+
+.whats-new-kind--fix {
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
+}
+
+// ── Header trigger (✨ icon) ────────────────────────────────────
+// Sits in .catalogue-header__right between the identity pill and
+// the Settings icon. Reuses the existing icon-btn pattern + adds
+// the pulsing unseen-dot top-right corner.
+.catalogue-header__sparkles-btn {
+  position: relative;
+}
+
+.catalogue-header__sparkles-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6366f1;
+  // Outline matching the header background so the dot reads as
+  // notched into the icon rather than floating over it.
+  box-shadow: 0 0 0 2px #0f0f10;
+  animation: whats-new-pulse 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+// ── App-update toast (bottom-right) ─────────────────────────────
+// Sticky — doesn't auto-dismiss. The user has to act (Refresh,
+// Later, or ×). Bottom-right by default; mobile shifts to a
+// full-width pill above the safe-area inset.
+.app-update-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 320px;
+  background: #16161a;
+  border: 1px solid #3a3a44;
+  border-radius: 14px;
+  padding: 14px 14px 14px 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  z-index: 1050;
+  animation: app-update-slide-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+// Indigo→green gradient stripe on the left edge — visually
+// distinct from the regular notification toast (which has no
+// stripe) so users learn "stripe = action required".
+.app-update-toast::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #6366f1, #22c55e);
+  border-radius: 14px 0 0 14px;
+}
+
+@keyframes app-update-slide-in {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.app-update-toast__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-update-toast__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-update-toast__title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: #fafafa;
+}
+
+.app-update-toast__text {
+  font-size: 12px;
+  color: #a1a1aa;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.app-update-toast__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-update-toast__primary {
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+
+  &:hover { background: #7679f3; }
+  &:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.6); outline-offset: 2px; }
+}
+
+.app-update-toast__secondary {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: #a1a1aa;
+  border: none;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover { color: #fafafa; }
+}
+
+.app-update-toast__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover { color: #fafafa; background: rgba(255, 255, 255, 0.04); }
+}
+
+@media (max-width: 640px) {
+  .app-update-toast {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .whats-new-panel {
+    width: 100vw;
+  }
+}

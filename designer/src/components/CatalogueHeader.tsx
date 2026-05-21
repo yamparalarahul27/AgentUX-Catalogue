@@ -8,7 +8,8 @@ import {
   MoreHorizontal,
   Save,
   Settings,
-  Tags,
+  Sparkles,
+  Star,
 } from 'lucide-react';
 
 import agentuxLogo from '../assets/agentux-logo.svg';
@@ -34,6 +35,9 @@ interface CatalogueHeaderProps {
   onLogoutEverywhere: () => void;
   myBookmarksActive: boolean;
   onToggleMyBookmarks: () => void;
+  // What's New panel trigger — pulsing dot when there are unseen releases.
+  onOpenWhatsNew: () => void;
+  whatsNewUnseenCount: number;
 }
 
 function usernameOf(email: string): string {
@@ -53,6 +57,8 @@ export function CatalogueHeader({
   onLogoutEverywhere,
   myBookmarksActive,
   onToggleMyBookmarks,
+  onOpenWhatsNew,
+  whatsNewUnseenCount,
 }: CatalogueHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutMoreOpen, setLogoutMoreOpen] = useState(false);
@@ -170,7 +176,7 @@ export function CatalogueHeader({
             title="Labelling Studio · for AI"
             onClick={() => onSectionChange('studio')}
           >
-            <Tags size={15} aria-hidden="true" />
+            <Sparkles size={15} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -197,6 +203,21 @@ export function CatalogueHeader({
           >
             <LogIn size={14} aria-hidden="true" />
             <span>Sign in</span>
+          </button>
+        )}
+
+        {userEmail && (
+          <button
+            type="button"
+            className="catalogue-header__icon-btn catalogue-header__sparkles-btn"
+            aria-label={whatsNewUnseenCount > 0 ? `What's new (${whatsNewUnseenCount} new)` : "What's new"}
+            title={whatsNewUnseenCount > 0 ? `What's new · ${whatsNewUnseenCount} new` : "What's new"}
+            onClick={onOpenWhatsNew}
+          >
+            <Star size={15} aria-hidden="true" />
+            {whatsNewUnseenCount > 0 && (
+              <span className="catalogue-header__sparkles-dot" aria-hidden="true" />
+            )}
           </button>
         )}
 
