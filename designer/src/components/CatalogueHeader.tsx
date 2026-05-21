@@ -70,6 +70,12 @@ export function CatalogueHeader({
   // is a desktop-only surface.
   const showStudioEntry =
     canLabelingStudio && LABELING_STUDIO_ENABLED && viewportWidth >= LABELING_STUDIO_MIN_VIEWPORT_PX;
+  // Mobile header: shorten the identity pill to the first letter of the
+  // username so the absolute-centered tabs pill has room on the right and
+  // doesn't overlap. Threshold matches the tab-collapse rule (900px).
+  const isNarrowHeader = viewportWidth < 900;
+  const username = userEmail ? usernameOf(userEmail) : '';
+  const visibleUsername = isNarrowHeader && username ? username.charAt(0).toUpperCase() : username;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -101,6 +107,11 @@ export function CatalogueHeader({
 
   function openSettings() {
     onOpenSettings();
+    setMenuOpen(false);
+  }
+
+  function goToTeamSettings() {
+    onSectionChange('team');
     setMenuOpen(false);
   }
 
@@ -162,7 +173,6 @@ export function CatalogueHeader({
           aria-label="Links"
           title="Links"
           onClick={() => onSectionChange('links')}
-          data-short="L"
         >
           <LinkIcon size={15} aria-hidden="true" />
         </button>
@@ -192,7 +202,7 @@ export function CatalogueHeader({
             onClick={() => setMenuOpen((previous) => !previous)}
             title={userEmail}
           >
-            <span className="catalogue-identity-pill__name">{usernameOf(userEmail)}</span>
+            <span className="catalogue-identity-pill__name">{visibleUsername}</span>
             <ChevronDown size={14} aria-hidden="true" />
           </button>
         ) : (
@@ -221,7 +231,7 @@ export function CatalogueHeader({
           </button>
         )}
 
-        {userEmail && canAdmin && (
+        {userEmail && canAdmin && !isNarrowHeader && (
           <button
             type="button"
             className={`catalogue-header__icon-btn ${activeSection === 'team' ? 'is-active' : ''}`}
@@ -255,6 +265,18 @@ export function CatalogueHeader({
           </button>
 
           <div className="catalogue-header-menu__divider" role="presentation" />
+
+          {canAdmin && (
+            <button
+              type="button"
+              className={`catalogue-header-menu__item catalogue-header-menu__item--row ${activeSection === 'team' ? 'is-active' : ''}`}
+              role="menuitem"
+              onClick={goToTeamSettings}
+            >
+              <Settings size={14} aria-hidden="true" />
+              <span>Settings</span>
+            </button>
+          )}
 
           <button
             type="button"
