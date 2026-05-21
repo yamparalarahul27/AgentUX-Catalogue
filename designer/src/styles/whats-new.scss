@@ -362,18 +362,28 @@
   pointer-events: none;
 }
 
-// ── App-update toast (bottom-right) ─────────────────────────────
+// ── App-update toast (top-right on desktop) ─────────────────────
 // Sticky — doesn't auto-dismiss. The user has to act (Refresh,
-// Later, or ×). Bottom-right by default; mobile shifts to a
-// full-width pill above the safe-area inset.
+// Later, or ×). Top-right on desktop matches the system-notification
+// convention (Slack, browser, Vercel) and stays clear of the
+// magnified dock at the bottom. Mobile shifts to a full-width pill
+// above the safe-area inset — no dock conflict there.
 .app-update-toast {
   position: fixed;
-  bottom: 20px;
+  // 80px lands the toast just below the catalogue header on desktop.
+  // env(safe-area-inset-top) covers PWA / iPad standalone where iOS
+  // pads the top with the status bar.
+  top: calc(80px + env(safe-area-inset-top));
   right: 20px;
   width: 360px;
   background: #16161a;
   border: 1px solid #3a3a44;
   border-radius: 16px;
+  // overflow:hidden clips the ::before gradient stripe to the toast's
+  // 16px rounded corners. Without it the stripe's own border-radius
+  // can't honour 16px on a 3px-wide element, so the corners poked
+  // past the toast outline at top-left and bottom-left.
+  overflow: hidden;
   padding: 16px 16px 16px 20px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   display: flex;
@@ -495,7 +505,11 @@
 }
 
 @media (max-width: 640px) {
+  // Mobile: full-width pill anchored above the safe-area inset.
+  // `top: auto` unwinds the desktop top-right placement so the
+  // bottom-anchored layout takes over.
   .app-update-toast {
+    top: auto;
     left: 12px;
     right: 12px;
     width: auto;
