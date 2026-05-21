@@ -1,6 +1,12 @@
 // What's New slide-in panel + App-update toast. Two notification
 // surfaces, designed to work together — the toast prompts users to
 // refresh stale JS, the panel reveals what changed after they do.
+//
+// Spacing / type / radius follow Apple HIG conventions as a pilot
+// surface: 4pt spacing grid, HIG iOS type scale (17/15/13/11 mapped
+// to Headline / Subheadline / Footnote / Caption-2), and rectangular
+// kind badges in mixed case (HIG drops ALL-CAPS for tags). The
+// project's indigo accent is preserved on top of the HIG structure.
 
 // ── What's New panel (slide-in from right) ─────────────────────
 .whats-new-overlay {
@@ -39,10 +45,10 @@
 }
 
 .whats-new-panel__header {
-  padding: 20px 22px 16px;
+  padding: 20px 20px 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   border-bottom: 1px solid #27272a;
   flex-shrink: 0;
 }
@@ -52,23 +58,24 @@
   flex-shrink: 0;
 }
 
+// HIG Headline: 17pt Semibold, tight tracking.
 .whats-new-panel__title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
   color: #fafafa;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.022em;
 }
 
+// Mixed-case rectangular tag — HIG drops ALL-CAPS for badges.
 .whats-new-panel__count {
   background: rgba(99, 102, 241, 0.16);
   color: #c7d2fe;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 8px;
+  letter-spacing: 0.01em;
 }
 
 .whats-new-panel__close {
@@ -107,7 +114,7 @@
 }
 
 .whats-new-panel__footer {
-  padding: 12px 22px;
+  padding: 12px 20px;
   border-top: 1px solid #27272a;
   display: flex;
   align-items: center;
@@ -115,14 +122,15 @@
   flex-shrink: 0;
 }
 
+// Rectangular dismiss button (HIG-style 8pt radius). Footnote-sized.
 .whats-new-panel__dismiss {
   background: transparent;
   border: 1px solid #27272a;
   color: #a1a1aa;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  padding: 6px 14px;
-  border-radius: 999px;
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 
@@ -150,7 +158,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 18px 22px 14px;
+  padding: 20px 20px 12px;
   background: transparent;
   border: none;
   width: 100%;
@@ -193,10 +201,12 @@
 // list, not a stack of full cards. Title also drops a notch in
 // size to match the lower density.
 .whats-new-release--collapsed .whats-new-release__head {
-  padding: 12px 22px;
+  padding: 12px 20px;
 
+  // Subheadline-sized title for collapsed cards — still legible,
+  // visually distinct from the Headline (17) used when expanded.
   .whats-new-release__title {
-    font-size: 13px;
+    font-size: 15px;
   }
 }
 
@@ -216,17 +226,20 @@
 // Body — image + bullets. No top padding (head already has the
 // gap to the meta row); just side + bottom padding for the bullets.
 .whats-new-release__body {
-  padding: 0 22px 18px;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
+// HIG Footnote (13pt) for dates. Dropped the monospace stack —
+// HIG uses SF Pro throughout, and the mono read like a build hash
+// next to the editorial title.
 .whats-new-release__date {
-  font-size: 11px;
+  font-size: 13px;
   color: #71717a;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.02em;
+  font-weight: 500;
+  letter-spacing: -0.005em;
 }
 
 .whats-new-release__new-dot {
@@ -243,19 +256,21 @@
   50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
 }
 
+// HIG Headline: 17pt Semibold, tight tracking, line-height 22/17.
 .whats-new-release__title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
   color: #fafafa;
   margin: 0;
-  letter-spacing: -0.01em;
-  line-height: 1.35;
+  letter-spacing: -0.022em;
+  line-height: 1.29;
 }
 
+// Concentric: image radius 12 sits inside the body's 20px padding.
 .whats-new-release__image {
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 10px;
+  border-radius: 12px;
   background-color: rgba(99, 102, 241, 0.08);
   background-position: center;
   background-size: cover;
@@ -267,40 +282,44 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
-// Each bullet is a two-column grid: fixed-width badge column +
-// flexible text column. The fixed column means every badge ends
-// at the same x-coordinate, so bullet text aligns down the list.
+// Two-column grid: fixed-width badge column + flexible text column.
+// The fixed column means every badge ends at the same x-coordinate,
+// so bullet text aligns down the list. 80px is wide enough for the
+// mixed-case "Improved" badge at the 11pt size.
 .whats-new-release__item {
   display: grid;
-  grid-template-columns: 64px 1fr;
-  gap: 10px;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
   align-items: baseline;
 }
 
+// HIG Subheadline (15pt) for bullet text — the single biggest
+// legibility upgrade over the previous 13pt.
 .whats-new-release__item-text {
   color: #a1a1aa;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
-// Kind badges: small all-caps pills. Three variants tinted to read
-// at a glance — indigo for net-new, amber for improvements, green
-// for fixes. Each uses a translucent fill + matching text so they
-// sit lightly against the dark panel background.
+// Kind badges, HIG-style: rectangular 8pt corners, mixed case
+// (no ALL-CAPS), 11pt Caption-2 weight. Three variants tinted to
+// read at a glance — indigo for net-new, amber for improvements,
+// green for fixes. Translucent fill + matching text so they sit
+// lightly against the dark panel background.
 .whats-new-kind {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 4px 8px;
-  border-radius: 999px;
-  line-height: 1;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 4px 10px;
+  border-radius: 8px;
+  line-height: 1.27;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -351,12 +370,12 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 320px;
+  width: 360px;
   background: #16161a;
   border: 1px solid #3a3a44;
-  border-radius: 14px;
-  padding: 14px 14px 14px 18px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  border-radius: 16px;
+  padding: 16px 16px 16px 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   display: flex;
   gap: 12px;
   align-items: flex-start;
@@ -375,7 +394,7 @@
   bottom: 0;
   width: 3px;
   background: linear-gradient(180deg, #6366f1, #22c55e);
-  border-radius: 14px 0 0 14px;
+  border-radius: 16px 0 0 16px;
 }
 
 @keyframes app-update-slide-in {
@@ -384,8 +403,8 @@
 }
 
 .app-update-toast__icon {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: rgba(99, 102, 241, 0.16);
   color: #c7d2fe;
@@ -400,18 +419,22 @@
   min-width: 0;
 }
 
+// HIG Subheadline (15pt Semibold) — clearer than the previous 13pt
+// at the typical viewing distance of a corner toast.
 .app-update-toast__title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   margin: 0 0 2px;
   color: #fafafa;
+  letter-spacing: -0.01em;
 }
 
 .app-update-toast__text {
-  font-size: 12px;
+  font-size: 13px;
   color: #a1a1aa;
-  margin: 0 0 10px;
-  line-height: 1.4;
+  margin: 0 0 12px;
+  line-height: 1.38;
+  letter-spacing: -0.005em;
 }
 
 .app-update-toast__actions {
@@ -421,15 +444,16 @@
 }
 
 .app-update-toast__primary {
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 8px;
   background: #6366f1;
   color: #fff;
   border: none;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
+  letter-spacing: -0.01em;
   transition: background 0.15s;
 
   &:hover { background: #7679f3; }
@@ -437,13 +461,14 @@
 }
 
 .app-update-toast__secondary {
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 8px;
   background: transparent;
   color: #a1a1aa;
   border: none;
-  font-size: 12px;
+  font-size: 13px;
   font-family: inherit;
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition: color 0.15s;
 
