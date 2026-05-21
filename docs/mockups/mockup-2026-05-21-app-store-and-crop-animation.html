@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Thoughts — App Store links + Crop detach animation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    padding: 48px 32px;
+    background:
+      radial-gradient(900px 600px at 20% -10%, rgba(99,102,241,0.10), transparent),
+      radial-gradient(700px 500px at 90% 110%, rgba(236,72,153,0.08), transparent),
+      #0a0a0c;
+    color: #fafafa;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .lede {
+    color: #a1a1aa;
+    font-size: 14px;
+    margin-bottom: 48px;
+    max-width: 700px;
+  }
+
+  /* Idea card */
+  .idea {
+    background: #16161a;
+    border: 1px solid #27272a;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .idea__stripe {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #6366f1, #ec4899);
+  }
+  .idea--delight .idea__stripe { background: linear-gradient(180deg, #f59e0b, #ec4899); }
+
+  .idea__header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+  .idea__num {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6366f1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .idea--delight .idea__num { color: #f59e0b; }
+  .idea__size {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.14);
+    color: #fcd34d;
+  }
+  .idea__size--blue {
+    background: rgba(99, 102, 241, 0.14);
+    color: #c7d2fe;
+  }
+
+  .idea h2 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.022em;
+    margin-bottom: 16px;
+    color: #fafafa;
+  }
+
+  .idea__verdict {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 24px;
+  }
+  .verdict--build {
+    background: rgba(34, 197, 94, 0.14);
+    color: #86efac;
+  }
+  .verdict--maybe {
+    background: rgba(245, 158, 11, 0.14);
+    color: #fcd34d;
+  }
+  .verdict--skip {
+    background: rgba(239, 68, 68, 0.14);
+    color: #fca5a5;
+  }
+
+  /* Two-column layout */
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 760px) {
+    .cols { grid-template-columns: 1fr; }
+  }
+
+  .col h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #71717a;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  /* Pros / cons / table */
+  ul.bullets {
+    list-style: none;
+    padding: 0;
+  }
+  ul.bullets li {
+    color: #d4d4d8;
+    font-size: 14px;
+    line-height: 1.5;
+    padding-left: 22px;
+    position: relative;
+    margin-bottom: 8px;
+  }
+  ul.bullets li::before {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+  ul.bullets.pros li::before {
+    content: '+';
+    background: rgba(34, 197, 94, 0.4);
+  }
+  ul.bullets.cons li::before {
+    content: '−';
+    background: rgba(239, 68, 68, 0.4);
+  }
+  ul.bullets.notes li::before {
+    content: '·';
+    background: rgba(99, 102, 241, 0.4);
+  }
+
+  /* ASCII block */
+  .ascii {
+    background: #0f0f10;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #d4d4d8;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 20px 0;
+  }
+
+  /* Inline labels */
+  .label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .label--data { background: rgba(99, 102, 241, 0.16); color: #c7d2fe; }
+  .label--ui { background: rgba(236, 72, 153, 0.16); color: #f9a8d4; }
+  .label--risk { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+
+  /* Recommendation panel */
+  .rec {
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 20px;
+  }
+  .rec strong {
+    color: #c7d2fe;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .rec p {
+    color: #d4d4d8;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  /* Footer / steps */
+  .steps {
+    background: #16161a;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 32px;
+  }
+  .steps h4 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #71717a;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .steps ol {
+    padding-left: 22px;
+    color: #d4d4d8;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .steps li { margin-bottom: 6px; }
+  .steps code {
+    background: rgba(99, 102, 241, 0.14);
+    color: #c7d2fe;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Two more ideas — my thoughts</h1>
+  <p class="lede">
+    For each idea: my take, what it costs, what the implementation sketch looks like, and a verdict.
+    Format matches the way we discussed HIG earlier — easier to skim than a wall of text.
+  </p>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <!-- IDEA 1                                                    -->
+  <!-- ──────────────────────────────────────────────────────── -->
+  <article class="idea">
+    <div class="idea__stripe"></div>
+
+    <div class="idea__header">
+      <span class="idea__num">Idea 1 · Group detail page</span>
+      <span class="idea__size idea__size--blue">🟡 medium</span>
+    </div>
+    <h2>App Store + Play Store info with download counts</h2>
+
+    <div class="idea__verdict verdict--build">Recommended: build</div>
+
+    <p style="color:#d4d4d8;font-size:15px;margin-bottom:24px;">
+      Show App Store / Play Store links + a hardcoded download count (with a "last updated" date stamp)
+      on each group's <code style="background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:13px;">/g/&lt;key&gt;</code> detail page.
+      Already have <code style="background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:13px;">apple-logo.svg</code> and <code style="background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:13px;">android-logo.svg</code> in the repo
+      — assets are ready.
+    </p>
+
+    <div class="cols">
+      <div class="col">
+        <h3>Pros</h3>
+        <ul class="bullets pros">
+          <li>Context: "1.2M downloads" instantly tells the user whether they're looking at a major app or a long-tail niche</li>
+          <li>Quick exit to the actual app — useful for designers researching live UX</li>
+          <li>Hardcoded counts are honest (with the "as of" date) — no live API costs, no rate limits, no broken integrations</li>
+          <li>Same data model fits both stores cleanly; admin updates monthly</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Cons / things to think about</h3>
+        <ul class="bullets cons">
+          <li>Maintenance: someone has to refresh the numbers periodically. Stale-but-dated is fine; stale-and-undated looks sloppy</li>
+          <li>Not every group is a public app (some are dApps, marketing pages, or internal tools) — UI needs to gracefully hide when there's no store link</li>
+          <li>Play Store + App Store download counts use different units (App Store doesn't publicly show downloads — only ratings/reviews). May need a footnote</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ascii">┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   ╭──╮  Binance                                             │
+│   │..│  Spot · Futures · Options                            │
+│   ╰──╯                                                       │
+│                                                             │
+│   ┌─────────────────────┐  ┌─────────────────────┐         │
+│   │  🍎  App Store       │  │  🤖  Play Store     │         │
+│   │  4.7 ★ · 1.2M ratings│  │  150M+ downloads    │         │
+│   │  ─ as of May 2026 ─  │  │  ─ as of May 2026 ─ │         │
+│   └─────────────────────┘  └─────────────────────┘         │
+│                                                             │
+│   ─── Designer Picks ───────────────────────────────────    │
+│   [hero shot 1]  [hero shot 2]                              │
+│                                                             │
+│   ─── Web ──────────────────────────────────────────────    │
+│   [thumb] [thumb] [thumb] [thumb] [thumb] [thumb]           │
+│                                                             │
+│   ─── Mobile ───────────────────────────────────────────    │
+│   [thumb] [thumb] [thumb] [thumb] [thumb] [thumb]           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘</div>
+
+    <div class="cols">
+      <div class="col">
+        <h3>Data model</h3>
+        <ul class="bullets notes">
+          <li><span class="label label--data">groups</span> add <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 5px;border-radius:4px;">app_store_url</code>, <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 5px;border-radius:4px;">play_store_url</code></li>
+          <li><span class="label label--data">groups</span> add <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 5px;border-radius:4px;">app_store_rating</code> (text, e.g. "4.7 ★ · 1.2M ratings")</li>
+          <li><span class="label label--data">groups</span> add <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 5px;border-radius:4px;">play_store_downloads</code> (text, e.g. "150M+ downloads")</li>
+          <li><span class="label label--data">groups</span> add <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 5px;border-radius:4px;">store_stats_updated_at</code> (date)</li>
+          <li>All optional — UI hides the section entirely when both URLs are NULL</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>UI affordances</h3>
+        <ul class="bullets notes">
+          <li><span class="label label--ui">component</span> New <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(99,102,241,0.14);color:#c7d2fe;padding:2px 5px;border-radius:4px;">&lt;StoreLinkCard&gt;</code> — store icon, name, rating/downloads, "as of" date</li>
+          <li><span class="label label--ui">layout</span> Two cards side-by-side on desktop, stack on mobile</li>
+          <li><span class="label label--ui">edit</span> Admin can edit values from the existing Group Appearance edit modal</li>
+          <li><span class="label label--ui">empty</span> When only one store is set, that card spans full width</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rec">
+      <strong>Why "Build"</strong>
+      <p>Genuinely useful context, scales to every group in the catalogue, low maintenance once admin updates land. The "as-of" date keeps the numbers honest. Fits naturally above the Designer Picks row on the detail page.</p>
+    </div>
+  </article>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <!-- IDEA 2                                                    -->
+  <!-- ──────────────────────────────────────────────────────── -->
+  <article class="idea idea--delight">
+    <div class="idea__stripe"></div>
+
+    <div class="idea__header">
+      <span class="idea__num">Idea 2 · Lightbox crop interaction</span>
+      <span class="idea__size">🟡 medium-high</span>
+    </div>
+    <h2>Dotted crop lines + "pieces detach" animation on confirm</h2>
+
+    <div class="idea__verdict verdict--maybe">Split the verdict: dotted = build, detach = trial</div>
+
+    <p style="color:#d4d4d8;font-size:15px;margin-bottom:24px;">
+      Two changes bundled together. The first is straightforward polish. The second is a delight feature
+      that <strong style="color:#fcd34d;">could feel slow</strong> if not done carefully.
+    </p>
+
+    <h3 style="font-size:14px;color:#fafafa;font-weight:600;margin-bottom:12px;margin-top:16px;">Part A — Dotted crop guide lines</h3>
+
+    <div class="cols">
+      <div class="col">
+        <h3>What this is</h3>
+        <ul class="bullets notes">
+          <li>Replace the solid crop border + grid lines with <strong style="color:#fafafa;">dashed/dotted</strong> style</li>
+          <li>Matches how Photoshop / Lightroom / Figma render crop guides — instantly recognisable as "this is a transient cut line, not a real boundary"</li>
+          <li>Pure CSS: <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(245,158,11,0.14);color:#fcd34d;padding:2px 5px;border-radius:4px;">border-style: dashed</code> on the crop overlay rectangle and the rule-of-thirds grid lines</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>My take</h3>
+        <p style="color:#d4d4d8;font-size:14px;">
+          <span style="color:#86efac;font-weight:600;">Build.</span> 5-minute change, zero risk, immediately
+          more familiar to anyone who's used a real photo editor. Should have been dashed from day one.
+        </p>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;color:#fafafa;font-weight:600;margin-bottom:12px;margin-top:24px;">Part B — Pieces detach on confirm</h3>
+
+    <div class="ascii">  Before crop (drawing)            On confirm (animation, ~400ms)            After
+  ┌──────────────────────┐         ┌──────────────────────┐                ┌──────────┐
+  │ - - - - - - - - - -  │         │  ↗ piece 1 flies off │                │          │
+  │  ┌────────────────┐  │   →     │     ┌──────────┐     │    →           │  kept    │
+  │  │   kept area    │  │         │     │  kept    │  ↘  │                │  area    │
+  │  └────────────────┘  │         │  ↙              ↘    │                │          │
+  │ - - - - - - - - - -  │         │   piece 3   piece 4  │                └──────────┘
+  └──────────────────────┘         └──────────────────────┘
+                                      ⤷ outer regions fade
+                                        + rotate + drop away</div>
+
+    <div class="cols">
+      <div class="col">
+        <h3>What it would take</h3>
+        <ul class="bullets notes">
+          <li><span class="label label--ui">technique</span> Split the original image into 4 absolutely-positioned divs (top / bottom / left / right rims) each with the same image clipped via <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(245,158,11,0.14);color:#fcd34d;padding:2px 5px;border-radius:4px;">clip-path</code> or <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(245,158,11,0.14);color:#fcd34d;padding:2px 5px;border-radius:4px;">overflow:hidden</code> + offset</li>
+          <li><span class="label label--ui">animation</span> On confirm, each rim gets a unique CSS transform (translate + rotate + opacity) and animates over ~300-400ms with <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(245,158,11,0.14);color:#fcd34d;padding:2px 5px;border-radius:4px;">cubic-bezier(0.22, 1, 0.36, 1)</code></li>
+          <li><span class="label label--ui">finalise</span> When animation completes, swap to the actual cropped image source</li>
+          <li><span class="label label--ui">a11y</span> Respect <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(245,158,11,0.14);color:#fcd34d;padding:2px 5px;border-radius:4px;">prefers-reduced-motion</code> — fall back to a simple fade</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Risks</h3>
+        <ul class="bullets cons">
+          <li><span class="label label--risk">UX cost</span> Adds 300-400ms to every crop confirm. For someone cropping 10 shots in a row, that's 3-4 seconds of waiting on theatre they've already seen</li>
+          <li><span class="label label--risk">complexity</span> The 4-piece split is non-trivial. Edge cases: crop near image edge (some pieces have zero area), portrait vs landscape, very small crops</li>
+          <li><span class="label label--risk">first-impression vs repeat</span> Delightful the first 3 times, friction the next 30</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rec">
+      <strong>Recommendation</strong>
+      <p>
+        <strong style="color:#86efac;">Ship Part A immediately</strong> — dotted lines are pure win.
+        <br/>
+        <strong style="color:#fcd34d;">Park Part B</strong> as a Friday-afternoon experiment with two non-negotiables: <em>(1) skippable</em>
+        (hold shift to skip the animation), and <em>(2) reduced-motion fallback</em>. If it lands well, keep. If
+        it slows people down on the second day, revert.
+      </p>
+    </div>
+  </article>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <!-- Summary card                                              -->
+  <!-- ──────────────────────────────────────────────────────── -->
+  <div class="steps">
+    <h4>Filing plan (this PR)</h4>
+    <ol>
+      <li>This HTML mockup → <code>docs/mockups/mockup-2026-05-21-app-store-and-crop-animation.html</code></li>
+      <li>Memory file: <code>parked_app_store_info_on_group_detail.md</code> (🟡 medium, recommended)</li>
+      <li>Memory file: <code>parked_crop_dotted_lines_and_detach_animation.md</code> (Part A 🟢, Part B 🟡 + risk)</li>
+      <li>MEMORY.md index updated</li>
+      <li>docs/backlog.md — App Store info row in 🟡 Medium, dotted-lines row in 🟢 Quick wins, detach-animation row in 🔵 Larger</li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>
