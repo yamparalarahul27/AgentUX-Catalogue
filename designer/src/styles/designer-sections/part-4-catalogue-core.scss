@@ -10,7 +10,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 24px;
+  // Top padding adds the iOS safe-area inset so the header doesn't sit
+  // underneath the status bar / dynamic island when launched as a PWA
+  // from the home screen (`apple-mobile-web-app-status-bar-style:
+  // black-translucent` makes the status bar overlay content). The inset
+  // is 0 in regular browsers, so this is safe on desktop.
+  padding: calc(16px + env(safe-area-inset-top)) 24px 16px;
   border-bottom: 1px solid $border;
 
   .header-left {
