@@ -1271,7 +1271,6 @@ export function Catalogue({
           canEdit={!isGuest}
           canEditMetadata={canEditFamily(previewFamily)}
           canDelete={canDeleteFamily(previewFamily)}
-          existingAnnotationLabels={annotationLabels}
           existingFlows={allFlows}
           existingGroups={allGroups}
           family={previewFamily}

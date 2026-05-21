@@ -34,7 +34,6 @@ interface CatalogueFamilyLightboxProps {
   // just hide affordances the caller can't act on.
   canEditMetadata?: boolean;
   canDelete?: boolean;
-  existingAnnotationLabels?: string[];
   existingFlows: string[];
   existingGroups: string[];
   family: CatalogueFamilyView;
@@ -114,7 +113,6 @@ export function CatalogueFamilyLightbox({
   canEdit = true,
   canEditMetadata = true,
   canDelete = true,
-  existingAnnotationLabels = [],
   existingFlows,
   existingGroups,
   family,
@@ -981,40 +979,31 @@ export function CatalogueFamilyLightbox({
                   )}
                   {annotationError && <p className="catalogue-lightbox-annotation-error">{annotationError}</p>}
                   {annotationDraft && (
-                    <div className="catalogue-lightbox-annotation-composer">
-                      <div className="catalogue-lightbox-annotation-composer-label">
-                        {annotationDraft.shape === 'area'
-                          ? `New area at ${annotationDraft.x.toFixed(1)}%, ${annotationDraft.y.toFixed(1)}% — ${annotationDraft.width.toFixed(1)}% × ${annotationDraft.height.toFixed(1)}%`
-                          : `New pin at ${annotationDraft.x.toFixed(1)}%, ${annotationDraft.y.toFixed(1)}%`}
-                      </div>
+                    <form
+                      className="catalogue-lightbox-annotation-composer"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void addAnnotation();
+                      }}
+                    >
                       <input
                         ref={annotationInputRef}
                         type="text"
                         value={annotationDraftText}
                         onChange={(event) => setAnnotationDraftText(event.target.value)}
                         onKeyDown={(event) => {
-                          if (event.key === 'Enter') void addAnnotation();
                           if (event.key === 'Escape') {
                             setAnnotationDraft(null);
                             setAnnotationDraftText('');
                           }
                         }}
                         placeholder={annotationDraft.shape === 'area' ? 'Name this area (e.g. Sign-up modal)' : 'Write annotation text...'}
-                        list="catalogue-annotation-suggestions"
                         autoComplete="off"
                       />
-                      {existingAnnotationLabels.length > 0 && (
-                        <datalist id="catalogue-annotation-suggestions">
-                          {existingAnnotationLabels.map((label) => (
-                            <option key={label} value={label} />
-                          ))}
-                        </datalist>
-                      )}
                       <div className="catalogue-lightbox-annotation-composer-actions">
                         <button
-                          type="button"
+                          type="submit"
                           className="catalogue-lightbox-annotation-save"
-                          onClick={() => void addAnnotation()}
                           disabled={!annotationDraftText.trim()}
                         >
                           {annotationDraft.shape === 'area' ? 'Save area' : 'Save pin'}
@@ -1030,7 +1019,7 @@ export function CatalogueFamilyLightbox({
                           Cancel
                         </button>
                       </div>
-                    </div>
+                    </form>
                   )}
                   <div className="catalogue-lightbox-annotation-list">
                     {annotations.length === 0 ? (
