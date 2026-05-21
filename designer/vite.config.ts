@@ -1,6 +1,24 @@
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
+
+// Build-time identifier baked into the bundle + written as a sibling
+// JSON file. The runtime app polls /designer/build-id.json and
+// compares to the constant — when they diverge, a new build is live
+// and the App-update toast surfaces. Stable per `vite build` run.
+const BUILD_ID = String(Date.now());
+
+function writeBuildIdJson(): Plugin {
+  return {
+    name: 'write-build-id-json',
+    apply: 'build',
+    closeBundle() {
+      const outFile = path.resolve(__dirname, '../site/designer/build-id.json');
+      fs.writeFileSync(outFile, JSON.stringify({ id: BUILD_ID }) + '\n');
+    },
+  };
+}
 
 function spaFallback(): Plugin {
   return {
@@ -25,7 +43,10 @@ function spaFallback(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [spaFallback(), react()],
+  define: {
+    __BUILD_ID__: JSON.stringify(BUILD_ID),
+  },
+  plugins: [spaFallback(), writeBuildIdJson(), react()],
   base: '/designer/',
   resolve: {
     dedupe: ['react', 'react-dom'],

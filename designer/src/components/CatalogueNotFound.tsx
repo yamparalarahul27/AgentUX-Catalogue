@@ -371,6 +371,8 @@ export function CatalogueNotFound({ user, onLogout, onLogoutEverywhere }: Catalo
         onLogoutEverywhere={onLogoutEverywhere}
         myBookmarksActive={false}
         onToggleMyBookmarks={() => { /* no-op on 404 */ }}
+        onOpenWhatsNew={() => { /* no-op on 404 */ }}
+        whatsNewUnseenCount={0}
       />
 
       <main className="catalogue-main catalogue-not-found">

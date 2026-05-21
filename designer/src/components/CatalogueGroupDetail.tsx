@@ -293,6 +293,8 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
         onLogoutEverywhere={onLogoutEverywhere}
         myBookmarksActive={false}
         onToggleMyBookmarks={() => { /* no-op on detail page */ }}
+        onOpenWhatsNew={() => { /* no-op on detail page — host the panel on the main catalogue */ }}
+        whatsNewUnseenCount={0}
       />
 
       <main className="catalogue-main catalogue-group-detail">
