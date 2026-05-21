@@ -1,0 +1,25 @@
+{
+  "name": "AgentUX Catalogue",
+  "short_name": "AgentUX",
+  "description": "Curated catalogue of crypto-app UX screens, grouped by family and flow.",
+  "start_url": "/designer/",
+  "scope": "/designer/",
+  "display": "standalone",
+  "background_color": "#0f0f10",
+  "theme_color": "#0f0f10",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/designer/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/designer/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
