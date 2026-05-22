@@ -393,6 +393,35 @@
   animation: app-update-slide-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+// Mosaic dot pattern in the top-right corner — gives the toast a
+// subtle "this is alive" texture that pulses with the new-version
+// signal. Two layered backgrounds: the indigo dot grid + an elliptical
+// fade overlay matching the toast bg colour so the dots only show in
+// the top-right and fade out toward the content. Opacity pulses 0.55 ↔
+// 0.95 on a 3.4s loop.
+.app-update-toast::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle, rgba(99, 102, 241, 0.85) 1.4px, transparent 1.9px),
+    radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%);
+  background-size: 5px 5px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  animation: app-update-toast-mosaic 3.4s ease-in-out infinite;
+}
+
+@keyframes app-update-toast-mosaic {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-update-toast::after { animation: none; opacity: 0.7; }
+}
+
 // Indigo→green gradient stripe on the left edge — visually
 // distinct from the regular notification toast (which has no
 // stripe) so users learn "stripe = action required".
@@ -405,6 +434,7 @@
   width: 3px;
   background: linear-gradient(180deg, #6366f1, #22c55e);
   border-radius: 16px 0 0 16px;
+  z-index: 1;
 }
 
 @keyframes app-update-slide-in {
@@ -413,6 +443,8 @@
 }
 
 .app-update-toast__icon {
+  position: relative;
+  z-index: 2;
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -425,6 +457,8 @@
 }
 
 .app-update-toast__body {
+  position: relative;
+  z-index: 2;
   flex: 1;
   min-width: 0;
 }
@@ -487,6 +521,7 @@
 
 .app-update-toast__close {
   position: absolute;
+  z-index: 3;
   top: 8px;
   right: 8px;
   width: 22px;

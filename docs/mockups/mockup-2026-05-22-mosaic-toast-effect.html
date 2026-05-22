@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mosaic dot effect — toast & WhatsNew header variants</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    padding: 48px 32px;
+    background:
+      radial-gradient(900px 600px at 20% -10%, rgba(99,102,241,0.10), transparent),
+      radial-gradient(700px 500px at 90% 110%, rgba(236,72,153,0.06), transparent),
+      #0a0a0c;
+    color: #fafafa;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    margin-bottom: 8px;
+  }
+  .lede {
+    color: #a1a1aa;
+    font-size: 14px;
+    margin-bottom: 48px;
+    max-width: 720px;
+  }
+
+  .section-num {
+    font-size: 11px;
+    color: #6366f1;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fafafa;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .section-desc {
+    color: #a1a1aa;
+    font-size: 14px;
+    margin-bottom: 20px;
+    max-width: 720px;
+  }
+  .section { margin-bottom: 64px; }
+
+  /* ─── Base toast (sample surface to apply the mosaic to) ─── */
+  .toast {
+    position: relative;
+    width: 380px;
+    background: #16161a;
+    border: 1px solid #3a3a44;
+    border-radius: 16px;
+    padding: 16px 16px 16px 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    overflow: hidden;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .toast::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #6366f1, #22c55e);
+  }
+  .toast__icon {
+    position: relative;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: rgba(99,102,241,0.16);
+    color: #c7d2fe;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .toast__body { position: relative; flex: 1; min-width: 0; z-index: 1; }
+  .toast__title { font-size: 15px; font-weight: 600; margin: 0 0 2px; color: #fafafa; letter-spacing: -0.01em; }
+  .toast__text { font-size: 13px; color: #a1a1aa; margin: 0 0 12px; line-height: 1.38; }
+  .toast__actions { display: inline-flex; gap: 4px; }
+  .toast__primary {
+    padding: 6px 14px; border-radius: 8px; background: #6366f1; color: #fff; border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .toast__secondary {
+    padding: 6px 12px; border-radius: 8px; background: transparent; color: #a1a1aa; border: none;
+    font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 24px;
+  }
+  .variant {
+    background: #111114;
+    border: 1px solid #1f1f23;
+    border-radius: 18px;
+    padding: 28px 24px 24px;
+  }
+  .variant__label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #6366f1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .variant__title {
+    font-size: 14px;
+    color: #fafafa;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .variant__desc {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #71717a;
+    line-height: 1.5;
+  }
+  .variant__code {
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #c7d2fe;
+    background: rgba(99,102,241,0.06);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 6px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ─────────────────────────────────────────────────────── */
+  /* MOSAIC VARIANTS                                          */
+  /* All overlay on top of the .toast surface via a child div */
+  /* ─────────────────────────────────────────────────────── */
+
+  /* The mosaic itself — a 6px grid of tiny squares */
+  .mosaic {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Variant A — right-edge fade (matches the user's reference) */
+  .mosaic--right-fade {
+    background-image:
+      radial-gradient(circle, rgba(99,102,241,0.35) 1px, transparent 1.4px);
+    background-size: 6px 6px;
+    background-position: 0 0;
+    -webkit-mask-image: linear-gradient(to left, #000 0%, #000 40%, transparent 100%);
+            mask-image: linear-gradient(to left, #000 0%, #000 40%, transparent 100%);
+  }
+
+  /* Variant B — top-right corner only */
+  .mosaic--corner-tr {
+    background-image:
+      radial-gradient(circle, rgba(99,102,241,0.4) 1px, transparent 1.4px);
+    background-size: 6px 6px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+            mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+  }
+
+  /* Variant C — all four corners (subtle, symmetric) */
+  .mosaic--all-corners {
+    background-image:
+      radial-gradient(circle, rgba(99,102,241,0.35) 1px, transparent 1.4px);
+    background-size: 6px 6px;
+    -webkit-mask-image:
+      radial-gradient(circle at 0% 0%, #000 0%, transparent 35%),
+      radial-gradient(circle at 100% 0%, #000 0%, transparent 35%),
+      radial-gradient(circle at 0% 100%, #000 0%, transparent 35%),
+      radial-gradient(circle at 100% 100%, #000 0%, transparent 35%);
+    -webkit-mask-composite: source-over;
+            mask-image:
+      radial-gradient(circle at 0% 0%, #000 0%, transparent 35%),
+      radial-gradient(circle at 100% 0%, #000 0%, transparent 35%),
+      radial-gradient(circle at 0% 100%, #000 0%, transparent 35%),
+      radial-gradient(circle at 100% 100%, #000 0%, transparent 35%);
+            mask-composite: add;
+  }
+
+  /* Variant D — wraps the whole edge as a thin ring */
+  .mosaic--edge-ring {
+    background-image:
+      radial-gradient(circle, rgba(99,102,241,0.35) 1px, transparent 1.4px);
+    background-size: 6px 6px;
+    -webkit-mask-image:
+      linear-gradient(#000, #000),
+      linear-gradient(#000, #000);
+    -webkit-mask-position: 0 0, 0 0;
+    -webkit-mask-size: 100% 100%, calc(100% - 80px) calc(100% - 40px);
+    -webkit-mask-repeat: no-repeat, no-repeat;
+    -webkit-mask-composite: source-out;
+            mask-image:
+      linear-gradient(#000, #000),
+      linear-gradient(#000, #000);
+            mask-position: 0 0, 40px 20px;
+            mask-size: 100% 100%, calc(100% - 80px) calc(100% - 40px);
+            mask-repeat: no-repeat, no-repeat;
+            mask-composite: exclude;
+  }
+
+  /* Variant E — denser, square grid (boxes not dots) — matches the "mosaic BOXES" phrasing */
+  .mosaic--boxes-right {
+    background-image:
+      linear-gradient(rgba(99,102,241,0.20) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,102,241,0.20) 1px, transparent 1px);
+    background-size: 8px 8px;
+    -webkit-mask-image: linear-gradient(to left, #000 0%, #000 35%, transparent 100%);
+            mask-image: linear-gradient(to left, #000 0%, #000 35%, transparent 100%);
+  }
+
+  /* Variant F — boxes filled (Vercel-style stippled squares) */
+  .mosaic--filled-boxes-right {
+    background-image:
+      radial-gradient(rgba(99,102,241,0.45) 1px, transparent 1.6px);
+    background-size: 5px 5px;
+    -webkit-mask-image: linear-gradient(to left, #000 0%, #000 30%, transparent 90%);
+            mask-image: linear-gradient(to left, #000 0%, #000 30%, transparent 90%);
+  }
+
+  /* ─── Animations ─── */
+  /* Subtle pulse — opacity dim 0.35 → 0.65 → 0.35, 3s loop */
+  @keyframes mosaic-pulse {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 0.85; }
+  }
+  .is-blinking {
+    animation: mosaic-pulse 3.4s ease-in-out infinite;
+  }
+
+  /* Slow shimmer — pan the mosaic across (very gentle) */
+  @keyframes mosaic-shimmer {
+    0%   { background-position: 0 0; }
+    100% { background-position: 12px 0; }
+  }
+  .is-shimmering {
+    animation: mosaic-shimmer 6s linear infinite;
+  }
+
+  /* Helper to give the title some breathing room above the grid */
+  .legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: #a1a1aa;
+    margin-left: 10px;
+  }
+  .legend--rec {
+    background: rgba(34,197,94,0.10);
+    border-color: rgba(34,197,94,0.32);
+    color: #86efac;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Mosaic dot effect — six variants, two animation states</h1>
+  <p class="lede">
+    Reference: the Vercel-style orange notice with a stippled fade-in pattern. Goal: same vibe on the
+    App-update toast (and optionally WhatsNew panel header). Each variant shows the static state on the
+    left and the animated state on the right. <strong style="color:#d4d4d8;">Pick one</strong>.
+  </p>
+
+  <!-- A — right-edge fade -->
+  <div class="section">
+    <p class="section-num">Variant A · Right-edge fade (closest match to your reference)</p>
+    <h2 class="section-title">Dots fade in from the right edge<span class="legend legend--rec">recommended</span></h2>
+    <p class="section-desc">
+      Single edge, soft fade. Matches the orange notification you shared. Uses a CSS <code>mask-image</code>
+      gradient so the dots taper to invisible toward the content side.
+    </p>
+    <div class="grid-2">
+      <div class="variant">
+        <p class="variant__label">A1 · static</p>
+        <p class="variant__title">No animation</p>
+        <div class="toast">
+          <div class="mosaic mosaic--right-fade"></div>
+          <div class="toast__icon" style="position:relative;z-index:1;">✦</div>
+          <div class="toast__body">
+            <p class="toast__title">A new version is available</p>
+            <p class="toast__text">Refresh to get the latest fixes and features.</p>
+            <div class="toast__actions">
+              <button class="toast__primary">Refresh</button>
+              <button class="toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+        <p class="variant__desc">Subtle, calm. No movement. Matches Vercel's "info banner" treatment.</p>
+      </div>
+
+      <div class="variant">
+        <p class="variant__label">A2 · pulsing</p>
+        <p class="variant__title">Dim ↔ bright pulse (3.4s)</p>
+        <div class="toast">
+          <div class="mosaic mosaic--right-fade is-blinking"></div>
+          <div class="toast__icon">✦</div>
+          <div class="toast__body">
+            <p class="toast__title">A new version is available</p>
+            <p class="toast__text">Refresh to get the latest fixes and features.</p>
+            <div class="toast__actions">
+              <button class="toast__primary">Refresh</button>
+              <button class="toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+        <p class="variant__desc">Whole mosaic breathes opacity 0.45 ↔ 0.85. Calls attention without being noisy.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- B — top-right corner only -->
+  <div class="section">
+    <p class="section-num">Variant B · Single corner (top-right)</p>
+    <h2 class="section-title">Dots concentrated in one corner, radial fade</h2>
+    <p class="section-desc">
+      Tighter than A — only the top-right corner glows with the mosaic. Quiet, almost like a finger pointing
+      at the close button.
+    </p>
+    <div class="grid-2">
+      <div class="variant">
+        <p class="variant__label">B1 · static</p>
+        <p class="variant__title">No animation</p>
+        <div class="toast">
+          <div class="mosaic mosaic--corner-tr"></div>
+          <div class="toast__icon">✦</div>
+          <div class="toast__body">
+            <p class="toast__title">A new version is available</p>
+            <p class="toast__text">Refresh to get the latest fixes and features.</p>
+            <div class="toast__actions">
+              <button class="toast__primary">Refresh</button>
+              <button class="toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <p class="variant__label">B2 · pulsing</p>
+        <p class="variant__title">Dim ↔ bright pulse (3.4s)</p>
+        <div class="toast">
+          <div class="mosaic mosaic--corner-tr is-blinking"></div>
+          <div class="toast__icon">✦</div>
+          <div class="toast__body">
+            <p class="toast__title">A new version is available</p>
+            <p class="toast__text">Refresh to get the latest fixes and features.</p>
+            <div class="toast__actions">
+              <button class="toast__primary">Refresh</button>
+              <button class="toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C — all four corners -->
+  <div class="section">
+    <p class="section-num">Variant C · All four corners (your literal "corner mosaic boxes")</p>
+    <h2 class="section-title">Dots in each corner, symmetric</h2>
+    <p class="section-desc">
+      Mosaic clouds in all four corners. Most "decorated" look. Reads as a framed notification.
+    </p>
+    <div class="grid-2">
+      <div class="variant">
+        <p class="variant__label">C1 · static</p>
+        <p class="variant__title">No animation</p>
+        <div class="toast">
+          <div class="mosaic mosaic--all-corners"></div>
+          <div class="toast__icon">✦</div>
+          <div class="toast__body">
+            <p class="toast__title">A new version is available</p>
+            <p class="toast__text">Refresh to get the latest fixes and features.</p>
+            <div class="toast__actions">
+              <button class="toast__primary">Refresh</button>
+              <button class="toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <p class="variant__label">C2 · pulsing</p>
+        <p class="variant__title">Dim ↔ bright pulse (3.4s)</p>
+        <div class="toast">
+          <div class="mosaic mosaic--all-corners is-blinking"></div>
+          <div class="toast__icon">✦</div>
+          <div class="toast__body">
+            <p class="toast__title">A new version is available</p>
+            <p class="toast__text">Refresh to get the latest fixes and features.</p>
+            <div class="toast__actions">
+              <button class="toast__primary">Refresh</button>
+              <button class="toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- E/F — boxes flavour -->
+  <div class="section">
+    <p class="section-num">Variants E & F · Boxes instead of dots</p>
+    <h2 class="section-title">For "mosaic BOXES" if dots feel too round</h2>
+    <p class="section-desc">
+      You said "mosaic boxes" — these use grid lines (E) or denser square stipple (F) instead of round dots
+      for a sharper, more pixel-like feel.
+    </p>
+    <div class="grid-2">
+      <div class="variant">
+        <p class="variant__label">E · grid lines, right-edge fade, static</p>
+        <p class="variant__title">Square grid pattern</p>
+        <div class="toast">
+          <div class="mosaic mosaic--boxes-right"></div>
+          <div class="toast__icon">✦</div>
+          <div class="toast__body">
+            <p class="toast__title">A new version is available</p>
+            <p class="toast__text">Refresh to get the latest fixes and features.</p>
+            <div class="toast__actions">
+              <button class="toast__primary">Refresh</button>
+              <button class="toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <p class="variant__label">F · dense stipple, right-edge fade, blinking</p>
+        <p class="variant__title">Dense Vercel-style stipple</p>
+        <div class="toast">
+          <div class="mosaic mosaic--filled-boxes-right is-blinking"></div>
+          <div class="toast__icon">✦</div>
+          <div class="toast__body">
+            <p class="toast__title">A new version is available</p>
+            <p class="toast__text">Refresh to get the latest fixes and features.</p>
+            <div class="toast__actions">
+              <button class="toast__primary">Refresh</button>
+              <button class="toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendation -->
+  <div class="section">
+    <p class="section-num">Recommendation</p>
+    <h2 class="section-title">A2 — right-edge fade with subtle pulse</h2>
+    <p class="section-desc" style="max-width:760px;">
+      Closest to your reference image, doesn't compete with the toast content, and the gentle pulse signals
+      "this is alive and worth your attention" without being distracting. C2 (all-corners) is more decorative
+      but starts to feel like the toast is being held in quotation marks.
+      <br/><br/>
+      Pick a letter+number combo and tell me whether to apply to <strong style="color:#d4d4d8;">just the
+      App-update toast</strong>, or also the WhatsNew panel header and/or regular notification toast.
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

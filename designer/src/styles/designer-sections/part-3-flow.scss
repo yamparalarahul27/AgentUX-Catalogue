@@ -331,42 +331,95 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
-  border-radius: 8px;
+  padding: 14px 56px 14px 20px;       // right padding for close button + mosaic
+  border-radius: 10px;
   font-size: 13px;
+  min-height: 48px;
+  overflow: hidden;                    // contain the mosaic to the rounded box
   // Above the lightbox (z:500) so notifications triggered from inside
   // it ("Link copied", bookmark errors, etc.) are actually visible.
   // Below the welcome modal (z:9999) which still owns the top.
   z-index: 1000;
   animation: toast-in 0.3s ease;
 
+  // Mosaic dot pattern in the top-right corner, pulsing opacity. Two
+  // layered backgrounds: dots + an elliptical bg-coloured fade overlay
+  // that pushes the dots toward the corner. Per-type colour overrides
+  // come right below.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-size: 5px 5px, 100% 100%;
+    background-repeat: repeat, no-repeat;
+    animation: toast-mosaic 3.4s ease-in-out infinite;
+  }
+
+  // Real content sits above the mosaic.
+  > * { position: relative; z-index: 1; }
+
   &-error {
     background: #7f1d1d;
     border: 1px solid #991b1b;
     color: #fecaca;
+
+    &::after {
+      background-image:
+        radial-gradient(circle, rgba(252, 165, 165, 1) 1.6px, transparent 2.0px),
+        radial-gradient(ellipse 110% 240% at 0% 100%, #7f1d1d 30%, transparent 75%);
+    }
   }
 
   &-success {
     background: #14532d;
     border: 1px solid #166534;
     color: #bbf7d0;
+
+    &::after {
+      background-image:
+        radial-gradient(circle, rgba(134, 239, 172, 1) 1.6px, transparent 2.0px),
+        radial-gradient(ellipse 110% 240% at 0% 100%, #14532d 30%, transparent 75%);
+    }
   }
 
   &-info {
     background: $surface;
     border: 1px solid $border;
     color: $text;
+
+    &::after {
+      background-image:
+        radial-gradient(circle, rgba(99, 102, 241, 0.85) 1.4px, transparent 1.9px),
+        radial-gradient(ellipse 110% 240% at 0% 100%, $surface 30%, transparent 75%);
+    }
   }
 }
 
+@keyframes toast-mosaic {
+  0%, 100% { opacity: 0.65; }
+  50%      { opacity: 1.00; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast::after { animation: none; opacity: 0.8; }
+}
+
 .toast-close {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  z-index: 2;
   background: none;
   border: none;
   color: inherit;
   font-size: 18px;
   cursor: pointer;
   opacity: 0.7;
-  padding: 0 4px;
+  padding: 4px 6px;
+  line-height: 1;
 
   &:hover { opacity: 1; }
 }
