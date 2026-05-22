@@ -42,7 +42,9 @@ function activatePasteZone(id: string) {
   activePasteZoneId = id;
 }
 
-function isImageFile(file: File) {
+// Exported so the Paste-from-Clipboard sibling button can reuse the
+// same filtering + naming convention as the drop zone's paste handler.
+export function isImageFile(file: File) {
   return file.type.startsWith('image/') || ACCEPTED_TYPES.includes(file.type);
 }
 
@@ -52,7 +54,7 @@ function getFileExtensionFromType(mimeType: string) {
   return 'png';
 }
 
-function withGeneratedName(file: File, index: number) {
+export function withGeneratedName(file: File, index: number) {
   if (file.name && file.name.trim().length > 0) return file;
   const extension = getFileExtensionFromType(file.type || 'image/png');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');

@@ -745,6 +745,122 @@
   min-width: 0;
 }
 
+// Side-by-side row containing the drop zone + Paste-from-clipboard
+// button. nowrap keeps them on the same line on desktop; the drop
+// zone gets `flex: 1` + `min-width: 0` so it shrinks to make room
+// for the fixed paste pill instead of pushing it below.
+//
+// On very narrow viewports (<= 480px) we let it wrap — at that
+// width even a shrunken drop zone gets cramped, and stacking is
+// more usable than a tiny squashed row.
+.catalogue-quick-upload-drop-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: nowrap;
+
+  > :first-child {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+  }
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+
+    > :first-child { flex: 1 1 100%; }
+  }
+}
+
+// Paste-from-clipboard target. Visually a button, but technically a
+// contenteditable div — that's the only DOM surface that can receive a
+// native `paste` event with image bytes (including iOS Universal
+// Clipboard transfers). Outer caret + selection are hidden by the
+// child structure (icon/labels are contenteditable=false).
+.catalogue-paste-clipboard {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 124px;
+  flex: 0 0 124px;
+  padding: 16px 12px;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px dashed rgba(99, 102, 241, 0.35);
+  border-radius: 10px;
+  color: #c7d2fe;
+  cursor: pointer;
+  font-family: inherit;
+  caret-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.10);
+    border-color: rgba(99, 102, 241, 0.55);
+    color: #e0e7ff;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible,
+  &:focus {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: 2px;
+  }
+
+  &[data-disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+// Focused state — the surface is primed to receive ⌘V. Solid border,
+// brighter accent so the user sees the prompt to paste.
+.catalogue-paste-clipboard--active {
+  background: rgba(99, 102, 241, 0.14);
+  border-style: solid;
+  border-color: rgba(99, 102, 241, 0.65);
+  color: #e0e7ff;
+}
+
+.catalogue-paste-clipboard__label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.catalogue-paste-clipboard__hint {
+  font-size: 11px;
+  color: #71717a;
+  text-align: center;
+  line-height: 1.3;
+  min-height: 14px;
+}
+
+// Success state — transient green flash after files are pasted.
+.catalogue-paste-clipboard--success {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #bbf7d0;
+
+  .catalogue-paste-clipboard__hint { color: #86efac; }
+}
+
+// Warning / error state — amber for empty clipboard / permission denied / unsupported / generic error.
+.catalogue-paste-clipboard--warn {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fcd34d;
+
+  .catalogue-paste-clipboard__hint { color: #fcd34d; }
+}
+
 .catalogue-quick-upload-right .catalogue-upload-hint {
   margin: 0;
   padding: 20px 0;
