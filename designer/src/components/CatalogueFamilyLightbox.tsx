@@ -1077,6 +1077,7 @@ export function CatalogueFamilyLightbox({
                         <UiElementComposerExtras
                           tagAsUiElement={tagAsUiElement}
                           onToggle={() => setTagAsUiElement((current) => !current)}
+                          draftText={annotationDraftText}
                         />
                       )}
                       <div className="catalogue-lightbox-annotation-composer-actions">
@@ -1148,11 +1149,6 @@ export function CatalogueFamilyLightbox({
                             )}
                           </div>
                           <p className="catalogue-lightbox-annotation-text">{annotation.text}</p>
-                          <span className="catalogue-lightbox-annotation-coords">
-                            {annotation.shape === 'area' && annotation.width !== null && annotation.height !== null
-                              ? `area · ${annotation.x.toFixed(1)}%, ${annotation.y.toFixed(1)}% — ${annotation.width.toFixed(1)}% × ${annotation.height.toFixed(1)}%`
-                              : `pin · ${annotation.x.toFixed(1)}%, ${annotation.y.toFixed(1)}%`}
-                          </span>
                         </div>
                       ))
                     )}
