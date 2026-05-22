@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, Star, X } from 'lucide-react';
 
-import { WHATS_NEW_RELEASES, type WhatsNewBullet, type WhatsNewRelease } from '../data/whats-new';
+import {
+  getCachedWhatsNewReleases,
+  loadWhatsNewReleases,
+  type WhatsNewBullet,
+  type WhatsNewRelease,
+} from '../data/whats-new';
 
 // localStorage key for the most-recently-seen release id. Used to
 // compute the unseen-count badge on the header trigger and decide
@@ -14,7 +19,21 @@ interface WhatsNewPanelProps {
 }
 
 export function WhatsNewPanel({ isOpen, onClose }: WhatsNewPanelProps) {
-  const releases = WHATS_NEW_RELEASES;
+  // Releases come from /designer/whats-new.json at runtime. Initial
+  // state reads the module-level cache (populated by the eager fetch
+  // on app mount); if that hasn't resolved yet, the in-effect fetch
+  // below catches up.
+  const [releases, setReleases] = useState<WhatsNewRelease[]>(() => getCachedWhatsNewReleases());
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    void loadWhatsNewReleases().then((data) => {
+      if (!cancelled) setReleases(data);
+    });
+    return () => { cancelled = true; };
+  }, [isOpen]);
+
   // Track which collapsed releases the user has expanded inline.
   // Latest release is always expanded; everything else starts
   // collapsed and the user can flip them open one at a time.
@@ -201,7 +220,9 @@ function countUnseen(releases: WhatsNewRelease[]): number {
 }
 
 // Re-exported for the header trigger so it can render the badge
-// without duplicating the comparison logic.
+// without duplicating the comparison logic. Reads from the cache,
+// which is populated by an eager `loadWhatsNewReleases()` call on
+// app mount (see Catalogue.tsx).
 export function getWhatsNewUnseenCount(): number {
-  return countUnseen(WHATS_NEW_RELEASES);
+  return countUnseen(getCachedWhatsNewReleases());
 }

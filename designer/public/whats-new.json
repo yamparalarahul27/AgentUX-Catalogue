@@ -1,0 +1,78 @@
+[
+  {
+    "id": "2026-05-22-paste-from-clipboard",
+    "date": "May 22, 2026",
+    "title": "Paste from clipboard + UI Element tagging",
+    "bullets": [
+      { "kind": "new", "text": "Quick Upload has a Paste pill next to the drop zone — click it and Cmd/Ctrl+V to drop in images, works on iOS via long-press too" },
+      { "kind": "new", "text": "Annotate an area then flip \"Tag as UI Element\" to add it to the UI Element filter taxonomy — no Studio access needed" },
+      { "kind": "new", "text": "New UI Element filter in the toolbar, plus a green \"[📦 N]\" badge on cards that have tagged UI elements" }
+    ]
+  },
+  {
+    "id": "2026-05-22-mobile-header-chips-pwa",
+    "date": "May 22, 2026",
+    "title": "Mobile header, PWA install & filter chip strip",
+    "bullets": [
+      { "kind": "improved", "text": "Header on mobile shrinks — identity pill collapses to a single letter, Settings moves into the dropdown, no more overlap" },
+      { "kind": "new", "text": "Real app icon when you Add to Home Screen on iPhone — dark boot screen, no more white flash on launch" },
+      { "kind": "improved", "text": "Selected filter chips now show as a row below the toolbar with one-click remove + Clear all" },
+      { "kind": "fix", "text": "App-update toast moved to top-right on desktop so it stops overlapping the magnified dock" }
+    ]
+  },
+  {
+    "id": "2026-05-21-whats-new-and-toasts",
+    "date": "May 21, 2026",
+    "title": "What's New panel + App-update toast",
+    "imageUrl": "/designer/mockup-2026-05-21-whats-new-panel.html",
+    "bullets": [
+      { "kind": "new", "text": "Click the star in the header to see what shipped recently — release notes right inside the app" },
+      { "kind": "new", "text": "When a new build deploys, a toast appears so you can refresh and pick up the latest" },
+      { "kind": "improved", "text": "Labelling Studio icon now matches the AI theme — sparkles instead of tags" }
+    ]
+  },
+  {
+    "id": "2026-05-20-saved-and-videos",
+    "date": "May 20, 2026",
+    "title": "Saved animation, Copy morph & Videos overhaul",
+    "bullets": [
+      { "kind": "improved", "text": "Bookmarks is now \"Saved\" — and you'll see screens fly into the Saved tab when you stash them" },
+      { "kind": "improved", "text": "Copying a share link gives you a clear green checkmark instead of a silent click" },
+      { "kind": "improved", "text": "Videos load instantly: see who posted and read the excerpt before deciding to load the full embed" },
+      { "kind": "new", "text": "Speed through the lightbox with single keys — E edit · D delete · C crop · B save · A annotate" },
+      { "kind": "new", "text": "Jump anywhere in the app with C / V / L / I / S, or hit U to start a quick upload" }
+    ]
+  },
+  {
+    "id": "2026-05-19-keyboard-first-lightbox",
+    "date": "May 19, 2026",
+    "title": "Keyboard-first lightbox + group filter fixes",
+    "bullets": [
+      { "kind": "new", "text": "Fine-tune crops with arrow keys — hold Shift for bigger jumps" },
+      { "kind": "new", "text": "Pick search results without touching the mouse: arrow through and hit Enter" },
+      { "kind": "fix", "text": "Your catalogue no longer comes up empty after login — group filters now ignore casing" },
+      { "kind": "new", "text": "Share links you paste in Slack or X show a proper preview card" }
+    ]
+  },
+  {
+    "id": "2026-05-16-group-detail-pages",
+    "date": "May 16 – 19, 2026",
+    "title": "Group detail pages, login backdrop & toolbar refinements",
+    "bullets": [
+      { "kind": "new", "text": "Every group has its own page at /g/<key> — a tight grid of every screen, sized for your viewport" },
+      { "kind": "new", "text": "Click a group icon on the login screen to land straight in that group after sign-in" },
+      { "kind": "new", "text": "Browse flows from a chip strip below the toolbar — quicker than opening the dropdown" },
+      { "kind": "improved", "text": "Groups without a category land in \"Other\" instead of muddying \"Untagged\"" }
+    ]
+  },
+  {
+    "id": "2026-05-15-roles",
+    "date": "May 15, 2026",
+    "title": "Role system, Marketing Bucket & capability-aware UI",
+    "bullets": [
+      { "kind": "new", "text": "Roles replace the admin / non-admin split — every member gets exactly the capabilities they need" },
+      { "kind": "improved", "text": "Mint a passcode for a teammate and pick their role in the same step" },
+      { "kind": "new", "text": "Marketing uploads now flow into a \"Marketing Bucket\" group, ready for an admin to promote" }
+    ]
+  }
+]

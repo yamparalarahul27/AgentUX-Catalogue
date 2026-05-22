@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mosaic B2 — applied to all toasts (info / success / error)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    padding: 48px 32px;
+    background: #0a0a0c;
+    color: #fafafa;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.022em; margin-bottom: 8px; }
+  .lede { color: #a1a1aa; font-size: 14px; margin-bottom: 40px; max-width: 720px; }
+
+  .section { margin-bottom: 56px; }
+  .section-num {
+    font-size: 11px; color: #6366f1; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 18px; font-weight: 600; color: #fafafa;
+    margin-bottom: 6px; letter-spacing: -0.01em;
+  }
+  .section-desc {
+    color: #a1a1aa; font-size: 14px; margin-bottom: 20px; max-width: 720px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 20px;
+  }
+  .variant {
+    background: #111114;
+    border: 1px solid #1f1f23;
+    border-radius: 16px;
+    padding: 22px 22px 18px;
+  }
+  .variant__label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .variant__label--info { color: #c7d2fe; }
+  .variant__label--success { color: #86efac; }
+  .variant__label--error { color: #fca5a5; }
+  .variant__note {
+    margin-top: 12px; font-size: 12px; color: #71717a; line-height: 1.5;
+  }
+
+  /* ─── B2 mosaic — single top-right corner cloud, pulsing ─── */
+  .mosaic {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    animation: mosaic-pulse 3.4s ease-in-out infinite;
+  }
+  @keyframes mosaic-pulse {
+    0%, 100% { opacity: 0.50; }
+    50%      { opacity: 0.95; }
+  }
+
+  /* Per-color mosaic — `--dot` is the dot color, brighter for green/red
+     so they read as "shine" on the dark toast surface */
+  .mosaic--indigo {
+    --dot: rgba(99, 102, 241, 0.42);
+    background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.4px);
+    background-size: 6px 6px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+            mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+  }
+  .mosaic--green-A {
+    --dot: rgba(34, 197, 94, 0.50);
+    background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.4px);
+    background-size: 6px 6px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+            mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+  }
+  /* "lighter fill / shine" — brighter + slightly bigger dots */
+  .mosaic--green-B {
+    --dot: rgba(134, 239, 172, 0.65);
+    background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.6px);
+    background-size: 6px 6px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+            mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+  }
+  /* Even shinier — adds an inner glow + edge highlight */
+  .mosaic--green-C {
+    --dot: rgba(187, 247, 208, 0.75);
+    background-image: radial-gradient(circle, var(--dot) 1.3px, transparent 1.7px);
+    background-size: 6px 6px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+            mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+    filter: drop-shadow(0 0 6px rgba(134, 239, 172, 0.35));
+  }
+  .mosaic--red-A {
+    --dot: rgba(239, 68, 68, 0.50);
+    background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.4px);
+    background-size: 6px 6px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+            mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+  }
+  .mosaic--red-B {
+    --dot: rgba(252, 165, 165, 0.65);
+    background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.6px);
+    background-size: 6px 6px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+            mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+  }
+  .mosaic--red-C {
+    --dot: rgba(254, 202, 202, 0.75);
+    background-image: radial-gradient(circle, var(--dot) 1.3px, transparent 1.7px);
+    background-size: 6px 6px;
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+            mask-image: radial-gradient(circle at 100% 0%, #000 0%, transparent 60%);
+    filter: drop-shadow(0 0 6px rgba(252, 165, 165, 0.35));
+  }
+
+  /* ─── Generic toast skin ─── */
+  /* Layout: text left, close button pinned right, padding-right reserved
+     for the mosaic so it has visible real estate even on a 48px-tall toast. */
+  .toast {
+    position: relative;
+    background: #16161a;
+    border: 1px solid #3a3a44;
+    border-radius: 14px;
+    padding: 14px 56px 14px 18px;     /* extra right padding for mosaic + close */
+    overflow: hidden;
+    display: flex; align-items: center;
+    gap: 10px;
+    color: #f4f4f5;
+    font-size: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    min-height: 56px;                  /* taller so the corner cloud has room */
+  }
+  .toast > * { position: relative; z-index: 1; }
+  .toast > span { flex: 1; min-width: 0; }   /* text takes available space, no gap-stretch */
+  .toast-info    { border-color: rgba(99,102,241,0.45); }
+  .toast-success { border-color: rgba(34,197,94,0.45); }
+  .toast-error   { border-color: rgba(239,68,68,0.45); }
+  .toast-close {
+    position: absolute;
+    top: 50%; right: 12px;
+    transform: translateY(-50%);
+    background: transparent; border: none; color: #a1a1aa; font-size: 18px;
+    cursor: pointer; padding: 4px 6px; line-height: 1;
+    z-index: 2;
+  }
+  /* Small-toast override — bigger dots, brighter, no mask. The fade
+     is achieved by an ELLIPTICAL radial gradient OVERLAY (matching
+     the toast bg colour) layered on top of the dots in the bottom-
+     left, leaving the top-right exposed. More bulletproof than
+     mask-image which collapses awkwardly on flat aspect ratios. */
+  .toast .mosaic {
+    background-color: transparent !important;
+    -webkit-mask-image: none !important;
+            mask-image: none !important;
+    background-repeat: repeat, no-repeat !important;
+    background-size: 5px 5px, 100% 100% !important;
+    background-position: 0 0, 0 0 !important;
+    animation: mosaic-pulse-strong 3.4s ease-in-out infinite;
+  }
+  @keyframes mosaic-pulse-strong {
+    0%, 100% { opacity: 0.70; }
+    50%      { opacity: 1.00; }
+  }
+  /* Each variant = layer1 (dots) + layer2 (corner fade overlay tinted toast-bg) */
+  .toast .mosaic--indigo {
+    background-image:
+      radial-gradient(circle, rgba(99,102,241,0.85) 1.4px, transparent 1.9px),
+      radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%) !important;
+  }
+  .toast .mosaic--green-A {
+    background-image:
+      radial-gradient(circle, rgba(34,197,94,0.85) 1.4px, transparent 1.9px),
+      radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%) !important;
+  }
+  .toast .mosaic--green-B {
+    background-image:
+      radial-gradient(circle, rgba(134,239,172,1.0) 1.6px, transparent 2.0px),
+      radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%) !important;
+  }
+  .toast .mosaic--green-C {
+    background-image:
+      radial-gradient(circle, rgba(187,247,208,1.0) 1.7px, transparent 2.1px),
+      radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%) !important;
+    filter: drop-shadow(0 0 8px rgba(134,239,172,0.45));
+  }
+  .toast .mosaic--red-A {
+    background-image:
+      radial-gradient(circle, rgba(239,68,68,0.85) 1.4px, transparent 1.9px),
+      radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%) !important;
+  }
+  .toast .mosaic--red-B {
+    background-image:
+      radial-gradient(circle, rgba(252,165,165,1.0) 1.6px, transparent 2.0px),
+      radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%) !important;
+  }
+  .toast .mosaic--red-C {
+    background-image:
+      radial-gradient(circle, rgba(254,202,202,1.0) 1.7px, transparent 2.1px),
+      radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%) !important;
+    filter: drop-shadow(0 0 8px rgba(252,165,165,0.45));
+  }
+
+  /* ─── App-update toast (matching the real one) ─── */
+  .app-update-toast {
+    position: relative;
+    width: 380px;
+    background: #16161a;
+    border: 1px solid #3a3a44;
+    border-radius: 16px;
+    padding: 16px 16px 16px 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    overflow: hidden;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .app-update-toast::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #6366f1, #22c55e);
+    z-index: 1;
+  }
+  .app-update-toast > *:not(.mosaic) { position: relative; z-index: 1; }
+  .app-update-toast__icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(99,102,241,0.16); color: #c7d2fe;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .app-update-toast__body { flex: 1; min-width: 0; }
+  .app-update-toast__title { font-size: 15px; font-weight: 600; margin: 0 0 2px; color: #fafafa; letter-spacing: -0.01em; }
+  .app-update-toast__text { font-size: 13px; color: #a1a1aa; margin: 0 0 12px; line-height: 1.38; }
+  .app-update-toast__primary {
+    padding: 6px 14px; border-radius: 8px; background: #6366f1; color: #fff; border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .app-update-toast__secondary {
+    padding: 6px 12px; border-radius: 8px; background: transparent; color: #a1a1aa; border: none;
+    font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Mosaic B2 — applied to all toasts</h1>
+  <p class="lede">
+    Single top-right corner cloud, pulsing opacity 0.5 ↔ 0.95 over 3.4s. The key call to make:
+    <strong style="color:#d4d4d8;">how bright should the green and red dots be?</strong> Indigo (info) keeps
+    your reference brightness. Green and red each have three options labelled A → C: subtle / shiny / extra shiny.
+  </p>
+
+  <!-- ─── INDIGO / INFO ─── -->
+  <div class="section">
+    <p class="section-num">Info (indigo) — baseline</p>
+    <h2 class="section-title">App-update toast + Toast (info type)</h2>
+    <p class="section-desc">
+      Same brightness as the Variant B2 you picked. Reference for what the others should "match in feel".
+    </p>
+    <div class="grid">
+      <div class="variant">
+        <p class="variant__label variant__label--info">App-update toast · indigo</p>
+        <div class="app-update-toast">
+          <div class="mosaic mosaic--indigo"></div>
+          <div class="app-update-toast__icon">✦</div>
+          <div class="app-update-toast__body">
+            <p class="app-update-toast__title">A new version is available</p>
+            <p class="app-update-toast__text">Refresh to get the latest fixes and features.</p>
+            <div>
+              <button class="app-update-toast__primary">Refresh</button>
+              <button class="app-update-toast__secondary">Later</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="variant">
+        <p class="variant__label variant__label--info">Toast (type=info)</p>
+        <div class="toast toast-info">
+          <div class="mosaic mosaic--indigo"></div>
+          <span>Saved to your bookmarks</span>
+          <button class="toast-close">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── GREEN / SUCCESS ─── -->
+  <div class="section">
+    <p class="section-num">Success (green) — three brightness options</p>
+    <h2 class="section-title">Toast (success type) · pick A / B / C</h2>
+    <p class="section-desc">
+      <strong style="color:#d4d4d8;">A</strong> = matched to indigo opacity (0.50).
+      <strong style="color:#d4d4d8;">B</strong> = lighter green pastel + bigger dots — has "shine".
+      <strong style="color:#d4d4d8;">C</strong> = lightest + a drop-shadow glow halo (extra shiny).
+    </p>
+    <div class="grid">
+      <div class="variant">
+        <p class="variant__label variant__label--success">Green A · same brightness as info</p>
+        <div class="toast toast-success">
+          <div class="mosaic mosaic--green-A"></div>
+          <span>✓ Group "Allinx" added</span>
+          <button class="toast-close">×</button>
+        </div>
+        <p class="variant__note">Matches info but feels muted on a dark surface — green's lower contrast eats the shine.</p>
+      </div>
+      <div class="variant">
+        <p class="variant__label variant__label--success">Green B · lighter, shinier ★ recommended</p>
+        <div class="toast toast-success">
+          <div class="mosaic mosaic--green-B"></div>
+          <span>✓ Group "Allinx" added</span>
+          <button class="toast-close">×</button>
+        </div>
+        <p class="variant__note">Pastel green (text-200) + slightly bigger dots. Pops without being neon.</p>
+      </div>
+      <div class="variant">
+        <p class="variant__label variant__label--success">Green C · drop-shadow glow halo</p>
+        <div class="toast toast-success">
+          <div class="mosaic mosaic--green-C"></div>
+          <span>✓ Group "Allinx" added</span>
+          <button class="toast-close">×</button>
+        </div>
+        <p class="variant__note">Lightest + soft halo via <code>filter: drop-shadow</code>. Most "alive" but the heaviest.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── RED / ERROR ─── -->
+  <div class="section">
+    <p class="section-num">Error (red) — three brightness options</p>
+    <h2 class="section-title">Toast (error type) · pick A / B / C</h2>
+    <p class="section-desc">
+      Same scale. <strong style="color:#d4d4d8;">A</strong> matched to info opacity,
+      <strong style="color:#d4d4d8;">B</strong> lighter pastel-red shine,
+      <strong style="color:#d4d4d8;">C</strong> lightest with halo.
+    </p>
+    <div class="grid">
+      <div class="variant">
+        <p class="variant__label variant__label--error">Red A · same brightness as info</p>
+        <div class="toast toast-error">
+          <div class="mosaic mosaic--red-A"></div>
+          <span>Couldn't save — please try again</span>
+          <button class="toast-close">×</button>
+        </div>
+        <p class="variant__note">Reads as muted; might not signal "error" loud enough.</p>
+      </div>
+      <div class="variant">
+        <p class="variant__label variant__label--error">Red B · lighter, shinier ★ recommended</p>
+        <div class="toast toast-error">
+          <div class="mosaic mosaic--red-B"></div>
+          <span>Couldn't save — please try again</span>
+          <button class="toast-close">×</button>
+        </div>
+        <p class="variant__note">Pastel red. Loud enough for "error" without screaming.</p>
+      </div>
+      <div class="variant">
+        <p class="variant__label variant__label--error">Red C · drop-shadow glow halo</p>
+        <div class="toast toast-error">
+          <div class="mosaic mosaic--red-C"></div>
+          <span>Couldn't save — please try again</span>
+          <button class="toast-close">×</button>
+        </div>
+        <p class="variant__note">Halo version. Risk: errors feel "decorated" when they should feel urgent.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Summary ─── -->
+  <div class="section">
+    <p class="section-num">Recommendation</p>
+    <h2 class="section-title">B for both green and red (pastel + slightly bigger dots, no halo)</h2>
+    <p class="section-desc" style="max-width:760px;">
+      Indigo at 0.42 opacity reads well because indigo is naturally dim. Green and red sit closer to white in
+      luminance, so the same 0.42 opacity feels too "thin" — bumping to pastel shades at 0.65 with bigger
+      dots gives you the "shine" you mentioned without going full neon. C (halo) is pretty but starts to
+      look decorated rather than functional.
+      <br/><br/>
+      <strong style="color:#d4d4d8;">Tell me</strong>: are you on team B for both, or want a mix
+      (e.g. B for success, C for error to make errors feel more urgent)?
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

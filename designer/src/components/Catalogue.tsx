@@ -74,6 +74,7 @@ import {
 } from './CatalogueToolbar';
 import { SaveAnimationProvider } from './SaveAnimation';
 import { WhatsNewPanel, getWhatsNewUnseenCount } from './WhatsNewPanel';
+import { loadWhatsNewReleases } from '../data/whats-new';
 import { AppUpdateToast } from './AppUpdateToast';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
@@ -370,6 +371,12 @@ export function Catalogue({
     return false;
   });
   const [whatsNewUnseen, setWhatsNewUnseen] = useState(() => getWhatsNewUnseenCount());
+  // Eager-fetch the release feed on app mount so the badge updates
+  // as soon as the JSON resolves. Without this, the badge starts at
+  // 0 and only updates when the user opens the panel.
+  useEffect(() => {
+    void loadWhatsNewReleases().then(() => setWhatsNewUnseen(getWhatsNewUnseenCount()));
+  }, []);
   // Recompute unseen count when the panel closes — the close handler
   // stamps the latest release as seen, so the badge should drop to 0.
   useEffect(() => {
