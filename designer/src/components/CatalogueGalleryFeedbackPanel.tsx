@@ -114,9 +114,6 @@ export function CatalogueGalleryFeedbackPanel({
           {feedback.annotationError && <p className="catalogue-lightbox-annotation-error">{feedback.annotationError}</p>}
           {feedback.annotationDraft && (
             <div className="catalogue-lightbox-annotation-composer">
-              <div className="catalogue-lightbox-annotation-composer-label">
-                New pin at {feedback.annotationDraft.x.toFixed(1)}%, {feedback.annotationDraft.y.toFixed(1)}%
-              </div>
               <input
                 type="text"
                 value={feedback.annotationDraftText}
@@ -187,9 +184,6 @@ export function CatalogueGalleryFeedbackPanel({
                     )}
                   </div>
                   <p className="catalogue-lightbox-annotation-text">{annotation.text}</p>
-                  <span className="catalogue-lightbox-annotation-coords">
-                    {annotation.x.toFixed(1)}%, {annotation.y.toFixed(1)}%
-                  </span>
                 </div>
               ))
             )}
