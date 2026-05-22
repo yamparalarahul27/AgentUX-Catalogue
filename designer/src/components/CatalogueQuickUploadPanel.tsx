@@ -6,6 +6,7 @@ import appleLogo from '../assets/apple-logo.svg';
 import { MARKETING_BUCKET_GROUP } from '../lib/marketing-bucket';
 import { buildConventionName } from '../lib/naming';
 import { UploadZone, type FolderDropContext } from './UploadZone';
+import { PasteFromClipboardButton } from './PasteFromClipboardButton';
 
 interface QuickUploadQueueItem {
   id: string;
@@ -360,7 +361,10 @@ export function CatalogueQuickUploadPanel({
         <p className="catalogue-upload-hint" style={{ textAlign: 'left', padding: '8px 0' }}>
           Naming format: <code>01-deposit-select-coin.png</code>
         </p>
-        <UploadZone onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />
+        <div className="catalogue-quick-upload-drop-row">
+          <UploadZone onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />
+          <PasteFromClipboardButton onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />
+        </div>
       </div>
 
       <div className="catalogue-quick-upload-right">
