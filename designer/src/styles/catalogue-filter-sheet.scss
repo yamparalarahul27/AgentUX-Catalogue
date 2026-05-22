@@ -277,17 +277,17 @@
   font-weight: 700;
 }
 
-// Active filter pills in toolbar
-
+// Active filter pills row, rendered below the toolbar on all viewports.
+// Each pill = one selected value (Group / Flow / Annotation / Platform /
+// Theme / View). Click the pill to remove that filter; the Clear all
+// button at the end clears everything in one go (only shown when 2+
+// pills are active, since a single-pill "clear all" is silly).
 .catalogue-filter-pills {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  padding: 4px 0 8px;
-}
-
-.catalogue-filter-pills--mobile {
-  display: none;
+  padding: 8px 0 4px;
 }
 
 .catalogue-filter-pill {
@@ -342,13 +342,33 @@
   line-height: 1;
 }
 
+// "Clear all" trailing the pills row. Visually distinct (text-only, no
+// background) so it doesn't compete with the filter pills themselves.
+.catalogue-filter-pills__clear-all {
+  background: transparent;
+  border: none;
+  color: #71717a;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    color: #fafafa;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: 2px;
+  }
+}
+
 @media (max-width: 960px) {
   .catalogue-filter-menu {
     display: none;
-  }
-
-  .catalogue-filter-pills--mobile {
-    display: flex;
   }
 }
 

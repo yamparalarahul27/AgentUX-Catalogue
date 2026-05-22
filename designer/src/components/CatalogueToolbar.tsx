@@ -688,13 +688,31 @@ export function CatalogueToolbar({
       )}
 
       {activePills.length > 0 && (
-        <div className="catalogue-filter-pills catalogue-filter-pills--mobile">
+        <div className="catalogue-filter-pills">
           {activePills.map((pill) => (
             <button key={pill.key} type="button" className="catalogue-filter-pill" onClick={pill.onRemove}>
               <span>{pill.label}</span>
               <span className="catalogue-filter-pill__close"><CloseIcon /></span>
             </button>
           ))}
+          {activePills.length > 1 && (
+            <button
+              type="button"
+              className="catalogue-filter-pills__clear-all"
+              onClick={() => {
+                onFilterGroupChange([]);
+                onFilterFlowChange([]);
+                onFilterAnnotationChange([]);
+                onFilterPlatformChange(null);
+                onFilterWebPresetChange(null);
+                onFilterMobileOsChange(null);
+                onFilterThemeChange(null);
+                if (viewBy !== 'all') onViewByChange('all');
+              }}
+            >
+              Clear all
+            </button>
+          )}
         </div>
       )}
 
