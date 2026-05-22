@@ -342,18 +342,20 @@
   z-index: 1000;
   animation: toast-in 0.3s ease;
 
-  // Mosaic dot pattern in the top-right corner, pulsing opacity. Two
-  // layered backgrounds: dots + an elliptical bg-coloured fade overlay
-  // that pushes the dots toward the corner. Per-type colour overrides
-  // come right below.
+  // Mosaic dot pattern in the top-right corner, pulsing opacity. A
+  // single dot-grid layer masked by a corner-anchored radial gradient
+  // so the dots are confined to the top-right and fade out toward
+  // the content. Per-type dot-colour overrides come right below.
   &::after {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 0;
-    background-size: 5px 5px, 100% 100%;
-    background-repeat: repeat, no-repeat;
+    background-size: 4px 4px;
+    background-repeat: repeat;
+    mask-image: radial-gradient(circle at 100% 0%, #000 0%, #000 25%, transparent 65%);
+    -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, #000 25%, transparent 65%);
     animation: toast-mosaic 3.4s ease-in-out infinite;
   }
 
@@ -366,9 +368,7 @@
     color: #fecaca;
 
     &::after {
-      background-image:
-        radial-gradient(circle, rgba(252, 165, 165, 1) 1.6px, transparent 2.0px),
-        radial-gradient(ellipse 110% 240% at 0% 100%, #7f1d1d 30%, transparent 75%);
+      background-image: radial-gradient(circle, rgba(252, 165, 165, 0.85) 1.1px, transparent 1.5px);
     }
   }
 
@@ -378,9 +378,7 @@
     color: #bbf7d0;
 
     &::after {
-      background-image:
-        radial-gradient(circle, rgba(134, 239, 172, 1) 1.6px, transparent 2.0px),
-        radial-gradient(ellipse 110% 240% at 0% 100%, #14532d 30%, transparent 75%);
+      background-image: radial-gradient(circle, rgba(134, 239, 172, 0.85) 1.1px, transparent 1.5px);
     }
   }
 
@@ -390,21 +388,54 @@
     color: $text;
 
     &::after {
-      background-image:
-        radial-gradient(circle, rgba(99, 102, 241, 0.85) 1.4px, transparent 1.9px),
-        radial-gradient(ellipse 110% 240% at 0% 100%, $surface 30%, transparent 75%);
+      background-image: radial-gradient(circle, rgba(99, 102, 241, 0.6) 1px, transparent 1.4px);
     }
   }
 }
 
 @keyframes toast-mosaic {
-  0%, 100% { opacity: 0.65; }
-  50%      { opacity: 1.00; }
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.85; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .toast::after { animation: none; opacity: 0.8; }
+  .toast::after { animation: none; opacity: 0.65; }
 }
+
+// PARKED — per-dot random twinkle (paired with components/ToastMosaic.tsx).
+// Randomness reads right but the visual feels too scattered — needs
+// clustering / dot-weighting / mask-shape polish before re-enabling.
+// Uncomment + uncomment ToastMosaic.tsx + re-add <ToastMosaic />
+// to AppUpdateToast.tsx and Toast.tsx to revive. Parked 2026-05-23.
+/*
+.toast-mosaic {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  mask-image: radial-gradient(circle at 100% 0%, #000 0%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, #000 30%, transparent 75%);
+}
+
+.toast-mosaic__dot {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  animation-name: toast-mosaic-twinkle;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes toast-mosaic-twinkle {
+  0%, 100% { opacity: 0.12; transform: scale(0.85); }
+  50%      { opacity: 0.95; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-mosaic__dot { animation: none; opacity: 0.55; transform: none; }
+}
+*/
 
 .toast-close {
   position: absolute;
@@ -415,7 +446,7 @@
   background: none;
   border: none;
   color: inherit;
-  font-size: 18px;
+  font-size: 32px;
   cursor: pointer;
   opacity: 0.7;
   padding: 4px 6px;
