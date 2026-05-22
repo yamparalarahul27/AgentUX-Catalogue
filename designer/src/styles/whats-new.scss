@@ -395,31 +395,28 @@
 
 // Mosaic dot pattern in the top-right corner — gives the toast a
 // subtle "this is alive" texture that pulses with the new-version
-// signal. Two layered backgrounds: the indigo dot grid + an elliptical
-// fade overlay matching the toast bg colour so the dots only show in
-// the top-right and fade out toward the content. Opacity pulses 0.55 ↔
-// 0.95 on a 3.4s loop.
+// signal. A single dot-grid layer, masked by a corner-anchored
+// radial gradient so the dots are only visible in the top-right and
+// fade out toward the content. Opacity pulses on a 3.4s loop.
 .app-update-toast::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background-image:
-    radial-gradient(circle, rgba(99, 102, 241, 0.85) 1.4px, transparent 1.9px),
-    radial-gradient(ellipse 110% 240% at 0% 100%, #16161a 30%, transparent 75%);
-  background-size: 5px 5px, 100% 100%;
-  background-repeat: repeat, no-repeat;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.55) 1px, transparent 1.4px) 0 0 / 4px 4px;
+  mask-image: radial-gradient(circle at 100% 0%, #000 0%, #000 25%, transparent 65%);
+  -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, #000 25%, transparent 65%);
   animation: app-update-toast-mosaic 3.4s ease-in-out infinite;
 }
 
 @keyframes app-update-toast-mosaic {
-  0%, 100% { opacity: 0.55; }
-  50%      { opacity: 0.95; }
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.85; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-update-toast::after { animation: none; opacity: 0.7; }
+  .app-update-toast::after { animation: none; opacity: 0.6; }
 }
 
 // Indigo→green gradient stripe on the left edge — visually

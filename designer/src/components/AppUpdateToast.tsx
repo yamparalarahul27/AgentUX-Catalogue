@@ -147,7 +147,7 @@ export function AppUpdateToast({ onRefresh }: AppUpdateToastProps) {
         title="Dismiss for this build"
         aria-label="Dismiss"
       >
-        <X size={14} />
+        <X size={20} />
       </button>
     </div>
   );
