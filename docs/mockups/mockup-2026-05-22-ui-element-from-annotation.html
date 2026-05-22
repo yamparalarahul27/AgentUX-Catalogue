@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>UI Element from Annotation — thoughts</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    padding: 48px 32px;
+    background:
+      radial-gradient(900px 600px at 20% -10%, rgba(99,102,241,0.10), transparent),
+      radial-gradient(700px 500px at 90% 110%, rgba(34,197,94,0.08), transparent),
+      #0a0a0c;
+    color: #fafafa;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .lede {
+    color: #a1a1aa;
+    font-size: 14px;
+    margin-bottom: 40px;
+    max-width: 720px;
+  }
+  .lede strong { color: #d4d4d8; }
+
+  .section {
+    background: #16161a;
+    border: 1px solid #27272a;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .section__stripe {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #6366f1, #22c55e);
+  }
+  .section__num {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6366f1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .section h2 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.022em;
+    color: #fafafa;
+    margin-bottom: 18px;
+  }
+  .section p {
+    color: #d4d4d8;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .section p:last-child { margin-bottom: 0; }
+  code.inline {
+    background: rgba(99, 102, 241, 0.14);
+    color: #c7d2fe;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+
+  .ascii {
+    background: #0f0f10;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #d4d4d8;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+
+  .col-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 14px;
+  }
+  @media (max-width: 760px) { .col-2 { grid-template-columns: 1fr; } }
+
+  .col h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #71717a;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  ul.bullets {
+    list-style: none;
+    padding: 0;
+  }
+  ul.bullets li {
+    color: #d4d4d8;
+    font-size: 14px;
+    line-height: 1.55;
+    padding-left: 22px;
+    position: relative;
+    margin-bottom: 8px;
+  }
+  ul.bullets li::before {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+  ul.bullets.pros li::before { content: '+'; background: rgba(34,197,94,0.4); }
+  ul.bullets.cons li::before { content: '−'; background: rgba(239,68,68,0.4); }
+  ul.bullets.notes li::before { content: '·'; background: rgba(99,102,241,0.4); }
+  ul.bullets.warn li::before { content: '!'; background: rgba(245,158,11,0.4); }
+
+  /* Path comparison table */
+  table.paths {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0;
+    font-size: 13px;
+  }
+  table.paths th, table.paths td {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid #27272a;
+    vertical-align: top;
+  }
+  table.paths th {
+    color: #71717a;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  table.paths td:first-child {
+    font-weight: 600;
+    color: #c7d2fe;
+    width: 90px;
+  }
+  table.paths tr.recommended td:first-child {
+    background: rgba(34, 197, 94, 0.08);
+    border-left: 3px solid #22c55e;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .badge--rec { background: rgba(34,197,94,0.16); color: #86efac; }
+  .badge--mid { background: rgba(245,158,11,0.16); color: #fcd34d; }
+  .badge--skip { background: rgba(239,68,68,0.16); color: #fca5a5; }
+
+  .rec {
+    background: rgba(34, 197, 94, 0.06);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 18px;
+  }
+  .rec strong {
+    color: #86efac;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .rec p { color: #d4d4d8; font-size: 14px; line-height: 1.55; margin: 0; }
+
+  .file-list {
+    background: #0f0f10;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #a1a1aa;
+    line-height: 1.7;
+  }
+  .file-list strong { color: #c7d2fe; }
+
+  .pill-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+  }
+  .pill-row .pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(99,102,241,0.14);
+    color: #c7d2fe;
+  }
+  .pill-row .pill--asset { background: rgba(34,197,94,0.14); color: #86efac; }
+  .pill-row .pill--studio { background: rgba(245,158,11,0.14); color: #fcd34d; }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>UI Element tag — promoted from annotations</h1>
+  <p class="lede">
+    Today the <strong>UI Element</strong> filter is populated by the <strong>Labelling Studio</strong> only
+    (admin / ResearcherAI). Annotations live in a parallel universe — useful for pinpointing pieces of the screen,
+    but invisible to the filter taxonomy. <strong>The proposal:</strong> let any annotator promote an area annotation
+    into a UI Element tag, growing the taxonomy democratically.
+    <br/><br/>
+    <span style="color:#71717a;">No existing backlog item — this is net-new. Thinking through it before filing.</span>
+  </p>
+
+  <!-- 1 ─────────────────────────────────────────────── -->
+  <article class="section">
+    <div class="section__stripe"></div>
+    <p class="section__num">1 · The two concepts today</p>
+    <h2>How annotations and UI Elements live separately</h2>
+    <p>
+      Two parallel systems on the same screenshot, no connection between them:
+    </p>
+
+    <div class="col-2">
+      <div class="col">
+        <h3>Annotations</h3>
+        <ul class="bullets notes">
+          <li>Drawn by anyone with edit rights in the lightbox</li>
+          <li>Area (rectangle) or pin (point); has free-text label</li>
+          <li>Stored in the <code class="inline">annotations</code> table per screenshot</li>
+          <li>Used for <em>locating</em> pieces of UX — "look at this here"</li>
+        </ul>
+        <div class="pill-row">
+          <span class="pill">"Sign-up modal"</span>
+          <span class="pill">"CTA button"</span>
+          <span class="pill">"Skeleton state"</span>
+        </div>
+      </div>
+      <div class="col">
+        <h3>UI Elements</h3>
+        <ul class="bullets notes">
+          <li>Set in the Labelling Studio only (admin / ResearcherAI)</li>
+          <li>Stored at <code class="inline">metadata.label.screen_analysis.ui_elements</code> as a string array</li>
+          <li>Aggregated across the catalogue and exposed in the Filter sheet</li>
+          <li>Used for <em>categorising</em> the catalogue — "show me every screen that has a Bottom Nav"</li>
+        </ul>
+        <div class="pill-row">
+          <span class="pill pill--studio">Bottom Nav</span>
+          <span class="pill pill--studio">Asset Strip</span>
+          <span class="pill pill--studio">Order Book</span>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 2 ─────────────────────────────────────────────── -->
+  <article class="section">
+    <div class="section__stripe"></div>
+    <p class="section__num">2 · What you proposed</p>
+    <h2>One annotation flow, two outcomes</h2>
+    <p>
+      User draws an area around an Asset Strip on the Binance Trade screen. In the composer, instead of just typing
+      a free-text label and saving, they get a small toggle: <strong>"Tag as UI Element"</strong>. When checked,
+      the label name (with autocomplete from existing UI Elements) becomes part of both the annotation and the
+      screenshot's UI Element list — instantly filterable.
+    </p>
+
+    <div class="ascii">  ┌──────────────────────────────────────────────────────────┐
+  │  Trade screen — Binance                                  │
+  │                                                          │
+  │    ┌──────────────────────────────┐                      │
+  │    │  ↕ Asset Strip (user-drawn)  │                      │
+  │    └──────────────────────────────┘                      │
+  │                                                          │
+  │  ┌─────────────────────────────────────┐                 │
+  │  │ Composer                            │                 │
+  │  │  [ Asset Strip          ]           │ ← annotation    │
+  │  │                                     │   label         │
+  │  │  ☑ Tag as UI Element                │ ← NEW           │
+  │  │     suggests: Asset Strip · Strip…  │                 │
+  │  │                                     │                 │
+  │  │  [ Save area ]   [ Cancel ]         │                 │
+  │  └─────────────────────────────────────┘                 │
+  └──────────────────────────────────────────────────────────┘
+
+  After save:
+    • annotation row created (existing behaviour)
+    • screenshot's ui_elements gains "Asset Strip"
+    • Filter sheet now lists "Asset Strip" as a selectable UI Element
+    • Other annotators get "Asset Strip" as an autocomplete suggestion</div>
+  </article>
+
+  <!-- 3 ─────────────────────────────────────────────── -->
+  <article class="section">
+    <div class="section__stripe"></div>
+    <p class="section__num">3 · Three implementation paths</p>
+    <h2>How to wire it up</h2>
+
+    <table class="paths">
+      <thead>
+        <tr>
+          <th>Path</th>
+          <th>What changes</th>
+          <th>Trade-offs</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="recommended">
+          <td>A <span class="badge badge--rec">Recommended</span></td>
+          <td>
+            <strong>Two writes on save.</strong> Annotation table unchanged. When the toggle is checked, the save
+            handler ALSO patches <code class="inline">metadata.label.screen_analysis.ui_elements</code> on the
+            screenshot (de-duped). Existing filter query untouched.
+          </td>
+          <td>
+            🟢 Minimal schema work. Existing filter just works.<br/>
+            🟡 Two writes — needs transactional safety or "best-effort second write" with a small reconcile job.
+          </td>
+        </tr>
+        <tr>
+          <td>B <span class="badge badge--mid">More work</span></td>
+          <td>
+            <strong>Annotations become the source of truth.</strong> Add <code class="inline">is_ui_element</code>
+            + <code class="inline">ui_element_name</code> columns to annotations. Filter query reads from annotations
+            joined to screenshots. Existing studio-set ui_elements get backfilled into annotations as
+            "studio-imported" rows.
+          </td>
+          <td>
+            🟢 Single source of truth, no drift.<br/>
+            🔴 Schema migration + filter query rewrite + backfill of existing studio data. Bigger blast radius.
+          </td>
+        </tr>
+        <tr>
+          <td>C <span class="badge badge--skip">Skip</span></td>
+          <td>
+            <strong>Database trigger keeps them in sync.</strong> Annotations get the flag (like B), but a Postgres
+            trigger maintains the jsonb on the screenshot row, so reads stay fast and the filter doesn't change.
+          </td>
+          <td>
+            🟢 Best of both worlds at read time.<br/>
+            🔴 Triggers add hidden behaviour — debugging gets harder. Overkill for current data volume.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </article>
+
+  <!-- 4 ─────────────────────────────────────────────── -->
+  <article class="section">
+    <div class="section__stripe"></div>
+    <p class="section__num">4 · Risk: taxonomy bloat</p>
+    <h2>"Asset Strip", "asset strip", "AssetStrip", "Asset list"…</h2>
+    <p>
+      The biggest danger of democratising the taxonomy is that everyone names things slightly differently.
+      A clean studio-curated list of 40 elements becomes a sprawl of 200 near-duplicates inside a month.
+    </p>
+
+    <div class="col-2">
+      <div class="col">
+        <h3>Safeguards in v1</h3>
+        <ul class="bullets warn">
+          <li><strong>Autocomplete first.</strong> When the user starts typing, suggest existing UI elements (already used elsewhere). Encourages reuse over creation.</li>
+          <li><strong>Normalize on save.</strong> Trim, collapse whitespace, Title-Case the saved value so "asset strip" → "Asset Strip".</li>
+          <li><strong>Soft cap.</strong> If a new value differs from an existing one by &lt; 2 characters (Levenshtein), warn the user inline: "Did you mean Asset Strip?"</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Admin tools (v2 backlog)</h3>
+        <ul class="bullets notes">
+          <li>Merge tool: select two UI element names → rewrites all references to the canonical one</li>
+          <li>Promote/demote: admins can mark certain UI elements as "official" (shown in filter) vs "informal" (hidden until merged)</li>
+          <li>Studio integration: Labelling Studio sees user-tagged elements with provenance, can curate them in</li>
+        </ul>
+      </div>
+    </div>
+  </article>
+
+  <!-- 5 ─────────────────────────────────────────────── -->
+  <article class="section">
+    <div class="section__stripe"></div>
+    <p class="section__num">5 · Verdict</p>
+    <h2>Worth building — Path A, with the v1 safeguards</h2>
+
+    <div class="rec">
+      <strong>Recommendation</strong>
+      <p>
+        Build it as Path A (two writes, existing filter). Ship with the three safeguards (autocomplete, normalize, near-match warning).
+        Defer the admin merge tools to a follow-up — only worth building once we have evidence the taxonomy is bloating.
+        Pair this with the parked <em>Edit comments</em> work — both touch the lightbox composer area.
+      </p>
+    </div>
+
+    <p style="margin-top:16px;">
+      <strong>Size estimate:</strong> 🟡 medium — half-day for the toggle + save-side write + autocomplete; another quarter-day for normalise + near-match warning.
+      Most of the time is going to be polish on the autocomplete UX, not the data plumbing.
+    </p>
+  </article>
+
+  <!-- 6 ─────────────────────────────────────────────── -->
+  <article class="section">
+    <div class="section__stripe"></div>
+    <p class="section__num">6 · What to file</p>
+    <h2>If we agree, here's what I'd commit</h2>
+
+    <div class="file-list">
+      <strong>Memory file:</strong> parked_ui_element_from_annotation.md<br/>
+      &nbsp;&nbsp;— spec for Path A, the three safeguards, the v2 admin tools<br/><br/>
+      <strong>Backlog row (🟡 medium section):</strong><br/>
+      &nbsp;&nbsp;— "UI Element from annotation — promote area annotations to the UI Element filter taxonomy. Two writes (annotation + screen_analysis.ui_elements), autocomplete from existing elements, normalize on save, near-match warning"<br/><br/>
+      <strong>Mockup:</strong> this file →<br/>
+      &nbsp;&nbsp;docs/mockups/mockup-2026-05-22-ui-element-from-annotation.html<br/><br/>
+      <strong>MEMORY.md index:</strong> updated with the new entry
+    </div>
+
+    <p style="margin-top:16px;color:#a1a1aa;font-size:13px;">
+      Confirm Path A + the v1 safeguard set, and I'll file all four. Or push back if you want a different path, scope, or want to drop a safeguard.
+    </p>
+  </article>
+
+</div>
+</body>
+</html>

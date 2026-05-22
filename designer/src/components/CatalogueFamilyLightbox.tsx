@@ -22,6 +22,11 @@ import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { EditableTitle } from './EditableTitle';
 import { LabelEditor } from './labeling/LabelEditor';
 import { AI_LABELING_PROMPT } from '../lib/labeling/ai-prompt';
+import {
+  promoteAnnotationToUiElement,
+  normalizeUiElementName,
+} from '../lib/labeling/promote-annotation-to-ui-element';
+import { UiElementComposerExtras } from './CatalogueLightboxUiElementExtras';
 import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib/feature-flags';
 import { ConfirmModal } from './ConfirmModal';
 interface CatalogueFamilyLightboxProps {
@@ -36,6 +41,11 @@ interface CatalogueFamilyLightboxProps {
   canDelete?: boolean;
   existingFlows: string[];
   existingGroups: string[];
+  // Existing UI Element taxonomy values (from `screen_analysis.ui_elements`
+  // across all labeled screenshots). Used by the annotation composer to
+  // offer autocomplete + the near-match guard when the user promotes an
+  // annotation into the UI Element filter.
+  existingUiElements?: string[];
   family: CatalogueFamilyView;
   flowName: string | null;
   isAdmin?: boolean;
@@ -113,6 +123,7 @@ export function CatalogueFamilyLightbox({
   canEdit = true,
   canEditMetadata = true,
   canDelete = true,
+  existingUiElements = [],
   existingFlows,
   existingGroups,
   family,
@@ -170,6 +181,15 @@ export function CatalogueFamilyLightbox({
   const [comments, setComments] = useState<ScreenshotComment[]>([]); const [newComment, setNewComment] = useState(''); const [loadingComments, setLoadingComments] = useState(false); const [commentsError, setCommentsError] = useState('');
   const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]); const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [annotationMode, setAnnotationMode] = useState(false); const [annotationDraftText, setAnnotationDraftText] = useState(''); const [annotationDraft, setAnnotationDraft] = useState<AnnotationDraft | null>(null); const [drawing, setDrawing] = useState<DrawingState | null>(null); const [annotationError, setAnnotationError] = useState('');
+  // "Tag as UI Element" toggle — promotes the annotation's label into the
+  // screenshot's `screen_analysis.ui_elements` array on save, so it becomes
+  // filterable. Only available on area annotations (pins represent a single
+  // location, not a UI element you'd filter by).
+  const [tagAsUiElement, setTagAsUiElement] = useState(false);
+  // UI Elements promoted in this lightbox session — overlays the
+  // `existingUiElements` prop so the UI badge reflects the just-saved
+  // value without waiting for a catalogue refetch.
+  const [sessionUiElements, setSessionUiElements] = useState<string[]>([]);
   const [annotationEditAllowed, setAnnotationEditAllowed] = useState<boolean>(() => isAnnotationEditAllowedNow());
   const [imageSize, setImageSize] = useState<ImageSize | null>(null); const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -182,6 +202,28 @@ export function CatalogueFamilyLightbox({
   const activeVariant = useMemo(() => getActiveFamilyVariant(family, activeVariantKey), [activeVariantKey, family]); const screenshot = activeVariant?.screenshot ?? null;
   const mediaLayout = useMemo(() => getContainLayout(mediaSize, imageSize), [imageSize, mediaSize]);
   const groupColor = getGroupColor(family.group);
+  // Existing UI Elements (from the studio-curated taxonomy) merged with
+  // any promoted in this lightbox session. Used by autocomplete + the
+  // near-match guard + the "UI" badge on annotations.
+  const combinedUiElements = useMemo(() => {
+    if (sessionUiElements.length === 0) return existingUiElements;
+    const seen = new Set(existingUiElements.map((value) => value.toLowerCase()));
+    const merged = [...existingUiElements];
+    for (const value of sessionUiElements) {
+      if (!seen.has(value.toLowerCase())) {
+        merged.push(value);
+        seen.add(value.toLowerCase());
+      }
+    }
+    return merged;
+  }, [existingUiElements, sessionUiElements]);
+  // Annotation labels that match a known UI Element (case-insensitive)
+  // get the green "UI" badge on the canvas. Set lookup is O(1) per
+  // annotation in the render loop.
+  const uiElementLookup = useMemo(
+    () => new Set(combinedUiElements.map((value) => value.toLowerCase())),
+    [combinedUiElements],
+  );
 
   function ensureCanEdit() { if (canEdit) return true; onRequireAuth?.(); return false; }
 
@@ -200,6 +242,7 @@ export function CatalogueFamilyLightbox({
     setDrawing(null);
     setAnnotationDraftText('');
     setAnnotationError('');
+    setSessionUiElements([]);
     setImageSize(null);
     setMediaSize(null);
     setCropMode(false);
@@ -260,6 +303,14 @@ export function CatalogueFamilyLightbox({
     if (!annotationDraft) return;
     annotationInputRef.current?.focus();
     annotationInputRef.current?.select();
+  }, [annotationDraft]);
+  // Reset the "Tag as UI Element" toggle whenever the draft closes
+  // (save, cancel, escape, or screenshot change). Avoids state bleed
+  // when the user opens a fresh annotation on the same screenshot.
+  useEffect(() => {
+    if (!annotationDraft) {
+      setTagAsUiElement(false);
+    }
   }, [annotationDraft]);
   useEffect(() => {
     function handleResize() {
@@ -488,6 +539,23 @@ export function CatalogueFamilyLightbox({
     setSelectedAnnotationId(inserted.id);
     setAnnotationDraft(null);
     setAnnotationDraftText('');
+    // Second write — promote the annotation label into the screenshot's
+    // ui_elements list. Best-effort; annotation row is already saved if
+    // we got here. Failure surfaces as a non-blocking notice but doesn't
+    // roll back the annotation.
+    if (tagAsUiElement && annotationDraft.shape === 'area') {
+      const canonical = normalizeUiElementName(trimmed);
+      const result = await promoteAnnotationToUiElement(screenshot, canonical, userEmail || null);
+      if (result.ok) {
+        setSessionUiElements((current) => (
+          current.some((value) => value.toLowerCase() === canonical.toLowerCase())
+            ? current
+            : [...current, canonical]
+        ));
+      } else {
+        setAnnotationError('Annotation saved, but tagging it as a UI Element failed. Try again from the Studio.');
+      }
+    }
   }
   async function deleteAnnotation(annotationId: string) {
     if (!ensureCanEdit()) return;
@@ -716,7 +784,12 @@ export function CatalogueFamilyLightbox({
                     }}
                     title={annotation.text}
                   >
-                    <span className="catalogue-lightbox-area-label">{index + 1} · {annotation.text}</span>
+                    <span className="catalogue-lightbox-area-label">
+                      {index + 1} · {annotation.text}
+                      {uiElementLookup.has(annotation.text.toLowerCase()) && (
+                        <span className="catalogue-lightbox-area-label__ui-badge">UI</span>
+                      )}
+                    </span>
                   </button>
                 ) : (
                   <button
@@ -1000,6 +1073,12 @@ export function CatalogueFamilyLightbox({
                         placeholder={annotationDraft.shape === 'area' ? 'Name this area (e.g. Sign-up modal)' : 'Write annotation text...'}
                         autoComplete="off"
                       />
+                      {annotationDraft.shape === 'area' && (
+                        <UiElementComposerExtras
+                          tagAsUiElement={tagAsUiElement}
+                          onToggle={() => setTagAsUiElement((current) => !current)}
+                        />
+                      )}
                       <div className="catalogue-lightbox-annotation-composer-actions">
                         <button
                           type="submit"
@@ -1045,6 +1124,14 @@ export function CatalogueFamilyLightbox({
                           <div className="catalogue-lightbox-annotation-item-top">
                             <span className="catalogue-lightbox-annotation-badge">{index + 1}</span>
                             <span className="catalogue-lightbox-annotation-time">{formatDateTime(annotation.created_at)}</span>
+                            {annotation.shape === 'area' && uiElementLookup.has(annotation.text.toLowerCase()) && (
+                              <span
+                                className="catalogue-lightbox-annotation-ui-badge"
+                                title="This annotation is also a UI Element"
+                              >
+                                UI
+                              </span>
+                            )}
                             {(isAdmin || annotation.user_email === userEmail) && (
                               <button
                                 type="button"

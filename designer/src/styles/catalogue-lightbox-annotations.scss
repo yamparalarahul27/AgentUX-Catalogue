@@ -134,6 +134,23 @@
   max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// Inline "UI" badge on a canvas area label when the annotation's text
+// matches a known UI Element. Sits to the right of the label text so
+// it's visually attached without breaking the rounded indigo pill.
+.catalogue-lightbox-area-label__ui-badge {
+  background: #22c55e;
+  color: #0a0a0c;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1;
 }
 
 .catalogue-lightbox-area--draft {
@@ -444,6 +461,105 @@
     color: #f4f4f5;
     background: #101014;
   }
+}
+
+// ── UI Element promote toggle + autocomplete + warning ─────────────────
+// All three sub-blocks rendered by <UiElementComposerExtras> below the
+// annotation input. Indigo accent throughout to signal "this lands in
+// the catalogue's UI Element filter taxonomy".
+
+.catalogue-lightbox-ui-element-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 2px;
+  background: rgba(99, 102, 241, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 8px;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.32);
+  }
+
+  &.is-on {
+    background: rgba(99, 102, 241, 0.14);
+    border-color: rgba(99, 102, 241, 0.55);
+    color: #fafafa;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: 2px;
+  }
+}
+
+.catalogue-lightbox-ui-element-toggle__switch {
+  position: relative;
+  width: 26px;
+  height: 14px;
+  background: #3a3a44;
+  border-radius: 999px;
+  flex-shrink: 0;
+  transition: background 0.18s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    background: #fafafa;
+    border-radius: 50%;
+    transition: transform 0.18s ease;
+  }
+
+  .catalogue-lightbox-ui-element-toggle.is-on & {
+    background: #6366f1;
+  }
+  .catalogue-lightbox-ui-element-toggle.is-on &::after {
+    transform: translateX(12px);
+  }
+}
+
+.catalogue-lightbox-ui-element-toggle__label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.catalogue-lightbox-ui-element-toggle__hint {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: #71717a;
+
+  .catalogue-lightbox-ui-element-toggle.is-on & {
+    color: #c7d2fe;
+  }
+}
+
+// "UI" badge appended to annotation rows whose label matches a known
+// UI Element. Sits in the annotation-item-top row alongside the index
+// pill and timestamp.
+.catalogue-lightbox-annotation-ui-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+  line-height: 1;
+  margin-left: 4px;
 }
 
 .catalogue-lightbox-annotation-item {
