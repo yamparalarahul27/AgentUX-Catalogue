@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ChevronDown, Clock, LayoutGrid, Plus, Rows3, Save, Search, Share2, SlidersHorizontal, Tag, Workflow, X } from 'lucide-react';
+import { Boxes, Check, ChevronDown, Clock, LayoutGrid, Plus, Rows3, Save, Search, Share2, SlidersHorizontal, Tag, Workflow, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -94,6 +94,7 @@ type ToolbarFilterKey =
   | 'flow'
   | 'group'
   | 'annotation'
+  | 'uiElement'
   | 'platform'
   | 'theme'
   | 'view';
@@ -123,6 +124,7 @@ const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
   { key: 'flow', label: 'Flows' },
   { key: 'group', label: 'Groups' },
   { key: 'annotation', label: 'Annotations' },
+  { key: 'uiElement', label: 'UI Elements' },
   { key: 'platform', label: 'Platforms' },
   { key: 'theme', label: 'Themes' },
   { key: 'view', label: 'View' },
@@ -291,6 +293,7 @@ export function CatalogueToolbar({
     filterGroup.length +
     filterFlow.length +
     filterAnnotation.length +
+    filterUiElement.length +
     (filterPlatform ? 1 : 0) +
     (filterTheme ? 1 : 0) +
     (viewBy !== 'all' ? 1 : 0);
@@ -310,6 +313,11 @@ export function CatalogueToolbar({
     key: `annotation:${label}`,
     label: `Annotation: ${label}`,
     onRemove: () => onFilterAnnotationChange(filterAnnotation.filter((value) => value !== label)),
+  }));
+  filterUiElement.forEach((value) => activePills.push({
+    key: `ui:${value}`,
+    label: `UI Element: ${value}`,
+    onRemove: () => onFilterUiElementChange?.(filterUiElement.filter((current) => current !== value)),
   }));
   if (filterPlatform) {
     const presetLabel = allWebPresets.find((preset) => preset.id === filterWebPreset)?.label;
@@ -365,6 +373,7 @@ export function CatalogueToolbar({
       if (key === 'flow') onFilterFlowChange([]);
       if (key === 'group') onFilterGroupChange([]);
       if (key === 'annotation') onFilterAnnotationChange([]);
+      if (key === 'uiElement') onFilterUiElementChange?.([]);
       if (key === 'platform') {
         onFilterPlatformChange(null);
         onFilterWebPresetChange(null);
@@ -453,6 +462,18 @@ export function CatalogueToolbar({
                 leadingIcon={<Tag size={13} />}
                 options={annotationLabels.map((label) => ({ value: label, label }))}
                 onMultiChange={onFilterAnnotationChange}
+              />
+            )}
+            {isFilterVisible('uiElement') && allUiElements.length > 0 && (
+              <Dropdown
+                multiple
+                searchable
+                values={filterUiElement}
+                placeholder="UI Element"
+                searchPlaceholder="Search UI elements…"
+                leadingIcon={<Boxes size={13} />}
+                options={allUiElements.map((value) => ({ value, label: value }))}
+                onMultiChange={(values) => onFilterUiElementChange?.(values)}
               />
             )}
             {isFilterVisible('platform') && (
@@ -703,6 +724,7 @@ export function CatalogueToolbar({
                 onFilterGroupChange([]);
                 onFilterFlowChange([]);
                 onFilterAnnotationChange([]);
+                onFilterUiElementChange?.([]);
                 onFilterPlatformChange(null);
                 onFilterWebPresetChange(null);
                 onFilterMobileOsChange(null);

@@ -430,6 +430,23 @@
   backdrop-filter: blur(4px);
 }
 
+// "Has UI Elements tagged" badge on the family card. Same chip shape
+// as the annotation count badge to its right, but tinted green to match
+// the "UI" badge used in the lightbox so users learn the colour means
+// "UI Element taxonomy".
+.catalogue-card-ui-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(34, 197, 94, 0.22);
+  color: #bbf7d0;
+  backdrop-filter: blur(4px);
+}
+
 // Reference popover
 .catalogue-card-ref-popover {
   position: absolute;

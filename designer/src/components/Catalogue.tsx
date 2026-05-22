@@ -1273,6 +1273,7 @@ export function Catalogue({
           canDelete={canDeleteFamily(previewFamily)}
           existingFlows={allFlows}
           existingGroups={allGroups}
+          existingUiElements={labelFilterValues.uiElements}
           family={previewFamily}
           flowName={previewFamily.flow_label}
           isAdmin={canAdmin}

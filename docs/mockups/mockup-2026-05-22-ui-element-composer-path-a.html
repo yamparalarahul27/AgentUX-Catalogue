@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>UI Element from Annotation — Path A UI</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    padding: 48px 32px;
+    background:
+      radial-gradient(900px 600px at 20% -10%, rgba(99,102,241,0.10), transparent),
+      radial-gradient(700px 500px at 90% 110%, rgba(34,197,94,0.08), transparent),
+      #0a0a0c;
+    color: #fafafa;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    margin-bottom: 8px;
+  }
+  .lede {
+    color: #a1a1aa;
+    font-size: 14px;
+    margin-bottom: 40px;
+    max-width: 720px;
+  }
+  .section-title {
+    font-size: 11px;
+    color: #6366f1;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .section-sub {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fafafa;
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+  }
+  .section { margin-bottom: 56px; }
+
+  /* ─── Composer card (mocks the lightbox composer) ─── */
+  .composer {
+    width: 100%;
+    max-width: 460px;
+    background: #16161a;
+    border: 1px solid #27272a;
+    border-radius: 14px;
+    padding: 18px 20px 16px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+  }
+  .composer__caption {
+    font-size: 11px;
+    color: #71717a;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .composer__input {
+    width: 100%;
+    background: #0f0f10;
+    border: 1px solid #3a3a44;
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: #fafafa;
+    font-size: 15px;
+    font-family: inherit;
+    margin-bottom: 14px;
+  }
+  .composer__input:focus { outline: 2px solid rgba(99, 102, 241, 0.55); }
+  .composer__input--placeholder { color: #71717a; }
+
+  /* The toggle */
+  .composer__toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: -4px 0 14px;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.04);
+    border: 1px solid rgba(99, 102, 241, 0.16);
+    cursor: pointer;
+  }
+  .composer__toggle-row--on {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.45);
+  }
+  .composer__switch {
+    width: 28px;
+    height: 16px;
+    background: #3a3a44;
+    border-radius: 999px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.18s;
+  }
+  .composer__switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 12px; height: 12px;
+    background: #fafafa;
+    border-radius: 50%;
+    transition: transform 0.18s;
+  }
+  .composer__toggle-row--on .composer__switch { background: #6366f1; }
+  .composer__toggle-row--on .composer__switch::after { transform: translateX(12px); }
+  .composer__toggle-label {
+    font-size: 13px;
+    color: #d4d4d8;
+    font-weight: 500;
+  }
+  .composer__toggle-row--on .composer__toggle-label { color: #fafafa; }
+  .composer__toggle-hint {
+    margin-left: auto;
+    font-size: 11px;
+    color: #71717a;
+  }
+
+  /* Autocomplete dropdown */
+  .composer__autocomplete {
+    background: #0f0f10;
+    border: 1px solid #3a3a44;
+    border-radius: 8px;
+    margin: -10px 0 14px;
+    padding: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .composer__autocomplete-label {
+    font-size: 10px;
+    color: #71717a;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    padding: 6px 8px 4px;
+  }
+  .composer__autocomplete-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: #d4d4d8;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .composer__autocomplete-item:hover,
+  .composer__autocomplete-item--active { background: rgba(99, 102, 241, 0.15); color: #fafafa; }
+  .composer__autocomplete-item--create { color: #86efac; }
+  .composer__autocomplete-count {
+    margin-left: auto;
+    font-size: 10px;
+    color: #71717a;
+    background: rgba(255,255,255,0.04);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  /* Near-match warning */
+  .composer__warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: -8px 0 14px;
+    padding: 10px 12px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.30);
+    border-radius: 8px;
+    font-size: 12px;
+    color: #fcd34d;
+    line-height: 1.45;
+  }
+  .composer__warning strong { font-weight: 600; }
+  .composer__warning a {
+    color: #fbbf24;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  /* Actions */
+  .composer__actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .composer__btn {
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .composer__btn--primary { background: #6366f1; color: #fff; }
+  .composer__btn--primary:hover { background: #7679f3; }
+  .composer__btn--secondary { background: transparent; color: #a1a1aa; }
+  .composer__btn--secondary:hover { color: #fafafa; background: rgba(255,255,255,0.04); }
+
+  /* Storyboard grid */
+  .storyboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 24px;
+  }
+  .state {
+    background: #111114;
+    border: 1px solid #1f1f23;
+    border-radius: 18px;
+    padding: 24px;
+  }
+  .state__header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .state__num {
+    font-size: 10px;
+    font-weight: 700;
+    color: #6366f1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .state__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fafafa;
+  }
+  .state__sub {
+    margin-left: auto;
+    font-size: 11px;
+    color: #71717a;
+  }
+  .state__desc {
+    margin-top: 16px;
+    font-size: 13px;
+    color: #a1a1aa;
+    line-height: 1.55;
+  }
+
+  /* Annotated screenshot mock */
+  .canvas {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background:
+      linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #27272a;
+  }
+  .canvas__rect {
+    position: absolute;
+    border: 2px solid #6366f1;
+    background: rgba(99, 102, 241, 0.10);
+    border-radius: 4px;
+  }
+  .canvas__label {
+    position: absolute;
+    top: -28px;
+    left: 0;
+    background: #6366f1;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px 3px 6px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .canvas__badge-ui {
+    background: #22c55e;
+    color: #0a0a0c;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 4px;
+  }
+
+  /* Filter sheet preview */
+  .filter-sheet {
+    width: 100%;
+    max-width: 320px;
+    background: #0e0e10;
+    border: 1px solid #27272a;
+    border-radius: 14px;
+    padding: 18px 20px;
+  }
+  .filter-sheet__section-label {
+    font-size: 11px;
+    color: #71717a;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .filter-sheet__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .filter-sheet__chip {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid #2a2a30;
+    color: #d4d4d8;
+  }
+  .filter-sheet__chip--new {
+    background: rgba(34, 197, 94, 0.16);
+    border-color: rgba(34, 197, 94, 0.45);
+    color: #86efac;
+    font-weight: 600;
+  }
+
+  /* Implementation list */
+  .impl {
+    background: #16161a;
+    border: 1px solid #27272a;
+    border-radius: 14px;
+    padding: 24px 28px;
+  }
+  .impl h3 {
+    font-size: 13px;
+    color: #c7d2fe;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .impl-row {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px dashed #27272a;
+  }
+  .impl-row:last-child { border-bottom: none; }
+  .impl-step {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.18);
+    color: #c7d2fe;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .impl-body {
+    color: #d4d4d8;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .impl-body strong { color: #fafafa; }
+  code.inline {
+    background: rgba(99, 102, 241, 0.14);
+    color: #c7d2fe;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>UI Element from Annotation — Path A interface</h1>
+  <p class="lede">
+    Path A confirmed: keep existing schema, two writes on save (annotation + <code style="background:rgba(99,102,241,0.14);color:#c7d2fe;padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:13px;">screen_analysis.ui_elements</code>).
+    This mockup focuses on <strong style="color:#d4d4d8;">the composer UI states</strong> across the user's typing journey — what they see at each step.
+  </p>
+
+  <!-- ─── Storyboard of composer states ─── -->
+  <div class="section">
+    <p class="section-title">Composer · States</p>
+    <h2 class="section-sub">Five states walking the user through the typing journey</h2>
+
+    <div class="storyboard">
+
+      <!-- State 1: Toggle OFF -->
+      <div class="state">
+        <div class="state__header">
+          <span class="state__num">State 1</span>
+          <span class="state__title">Toggle off (default — regular annotation)</span>
+        </div>
+        <div class="composer">
+          <div class="composer__caption">Annotate</div>
+          <input class="composer__input composer__input--placeholder" placeholder="Name this area (e.g. Asset Strip)" />
+          <div class="composer__toggle-row">
+            <div class="composer__switch"></div>
+            <span class="composer__toggle-label">Tag as UI Element</span>
+            <span class="composer__toggle-hint">— off</span>
+          </div>
+          <div class="composer__actions">
+            <button class="composer__btn composer__btn--secondary">Cancel</button>
+            <button class="composer__btn composer__btn--primary">Save area</button>
+          </div>
+        </div>
+        <p class="state__desc">Default state. Composer behaves exactly like today — type a label, save as an annotation. No UI Element side effect.</p>
+      </div>
+
+      <!-- State 2: Toggle ON, nothing typed -->
+      <div class="state">
+        <div class="state__header">
+          <span class="state__num">State 2</span>
+          <span class="state__title">Toggle on, empty input → autocomplete shows existing</span>
+        </div>
+        <div class="composer">
+          <div class="composer__caption">Annotate</div>
+          <input class="composer__input composer__input--placeholder" placeholder="Type a UI Element name…" />
+          <div class="composer__toggle-row composer__toggle-row--on">
+            <div class="composer__switch"></div>
+            <span class="composer__toggle-label">Tag as UI Element</span>
+            <span class="composer__toggle-hint">— on</span>
+          </div>
+          <div class="composer__autocomplete">
+            <div class="composer__autocomplete-label">Existing UI Elements · pick or type a new one</div>
+            <div class="composer__autocomplete-item">
+              <span>Bottom Nav</span><span class="composer__autocomplete-count">42</span>
+            </div>
+            <div class="composer__autocomplete-item composer__autocomplete-item--active">
+              <span>Asset Strip</span><span class="composer__autocomplete-count">18</span>
+            </div>
+            <div class="composer__autocomplete-item">
+              <span>Order Book</span><span class="composer__autocomplete-count">11</span>
+            </div>
+            <div class="composer__autocomplete-item">
+              <span>Sign-up Modal</span><span class="composer__autocomplete-count">9</span>
+            </div>
+          </div>
+          <div class="composer__actions">
+            <button class="composer__btn composer__btn--secondary">Cancel</button>
+            <button class="composer__btn composer__btn--primary" disabled style="opacity:0.5;cursor:not-allowed;">Save area</button>
+          </div>
+        </div>
+        <p class="state__desc">Toggle flipped to ON. Autocomplete reveals existing UI Elements with usage counts (recency or frequency-sorted). User can arrow-down + Enter to pick, or start typing a new one.</p>
+      </div>
+
+      <!-- State 3: Typing, exact match suggested -->
+      <div class="state">
+        <div class="state__header">
+          <span class="state__num">State 3</span>
+          <span class="state__title">Typing "Ass" → autocomplete narrows</span>
+        </div>
+        <div class="composer">
+          <div class="composer__caption">Annotate</div>
+          <input class="composer__input" value="Ass" />
+          <div class="composer__toggle-row composer__toggle-row--on">
+            <div class="composer__switch"></div>
+            <span class="composer__toggle-label">Tag as UI Element</span>
+            <span class="composer__toggle-hint">— on</span>
+          </div>
+          <div class="composer__autocomplete">
+            <div class="composer__autocomplete-label">Matches</div>
+            <div class="composer__autocomplete-item composer__autocomplete-item--active">
+              <span><strong>Ass</strong>et Strip</span><span class="composer__autocomplete-count">18</span>
+            </div>
+            <div class="composer__autocomplete-item">
+              <span><strong>Ass</strong>ets Tab</span><span class="composer__autocomplete-count">5</span>
+            </div>
+          </div>
+          <div class="composer__actions">
+            <button class="composer__btn composer__btn--secondary">Cancel</button>
+            <button class="composer__btn composer__btn--primary">Save area</button>
+          </div>
+        </div>
+        <p class="state__desc">As the user types, matches filter in real-time. Enter picks the highlighted suggestion. This is the <strong>autocomplete safeguard</strong> — strongly nudges the user toward existing taxonomy entries.</p>
+      </div>
+
+      <!-- State 4: Near-match warning -->
+      <div class="state">
+        <div class="state__header">
+          <span class="state__num">State 4</span>
+          <span class="state__title">Typo: "Asset Strep" → near-match warning</span>
+        </div>
+        <div class="composer">
+          <div class="composer__caption">Annotate</div>
+          <input class="composer__input" value="Asset Strep" />
+          <div class="composer__toggle-row composer__toggle-row--on">
+            <div class="composer__switch"></div>
+            <span class="composer__toggle-label">Tag as UI Element</span>
+            <span class="composer__toggle-hint">— on</span>
+          </div>
+          <div class="composer__warning">
+            <span style="font-size:14px;line-height:1;margin-top:1px;">⚠</span>
+            <span>
+              <strong>Did you mean "Asset Strip"?</strong> &nbsp;
+              <a>Use existing</a> &nbsp;·&nbsp; <a>Save as new anyway</a>
+            </span>
+          </div>
+          <div class="composer__actions">
+            <button class="composer__btn composer__btn--secondary">Cancel</button>
+            <button class="composer__btn composer__btn--primary">Save area</button>
+          </div>
+        </div>
+        <p class="state__desc">Levenshtein distance < 2 from an existing UI Element triggers the warning. User can accept the existing one (cleaner taxonomy) or override and save as new. This is the <strong>near-match safeguard</strong>.</p>
+      </div>
+
+      <!-- State 5: Creating new -->
+      <div class="state">
+        <div class="state__header">
+          <span class="state__num">State 5</span>
+          <span class="state__title">No match → "+ Create" appears</span>
+        </div>
+        <div class="composer">
+          <div class="composer__caption">Annotate</div>
+          <input class="composer__input" value="quote header" />
+          <div class="composer__toggle-row composer__toggle-row--on">
+            <div class="composer__switch"></div>
+            <span class="composer__toggle-label">Tag as UI Element</span>
+            <span class="composer__toggle-hint">— on</span>
+          </div>
+          <div class="composer__autocomplete">
+            <div class="composer__autocomplete-label">No matches</div>
+            <div class="composer__autocomplete-item composer__autocomplete-item--create composer__autocomplete-item--active">
+              <span>+ Create <strong>"Quote Header"</strong></span>
+            </div>
+          </div>
+          <div class="composer__actions">
+            <button class="composer__btn composer__btn--secondary">Cancel</button>
+            <button class="composer__btn composer__btn--primary">Save area</button>
+          </div>
+        </div>
+        <p class="state__desc">No match in the taxonomy → option to create a new UI Element appears. Display normalizes the value (Title Case) before saving — this is the <strong>normalize safeguard</strong>. Saved value: <code class="inline">Quote Header</code>, not <code class="inline">quote header</code>.</p>
+      </div>
+
+      <!-- State 6: After save -->
+      <div class="state">
+        <div class="state__header">
+          <span class="state__num">State 6</span>
+          <span class="state__title">After save — annotation gets a UI Element badge</span>
+        </div>
+        <div style="position:relative;margin:36px 8px 0;">
+          <div class="canvas">
+            <div class="canvas__rect" style="top: 22%; left: 8%; width: 84%; height: 14%;">
+              <div class="canvas__label">
+                Asset Strip
+                <span class="canvas__badge-ui">UI</span>
+              </div>
+            </div>
+            <div class="canvas__rect" style="top: 60%; left: 6%; width: 50%; height: 28%; border-color:#71717a; background:rgba(255,255,255,0.04);">
+              <div class="canvas__label" style="background:#52525b;">Loading state</div>
+            </div>
+          </div>
+        </div>
+        <p class="state__desc">Annotation renders on the canvas as usual, but with a small green <strong>UI</strong> badge marking it as a UI Element. Hover shows tooltip "This annotation is also a UI Element. Click to manage."</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── Downstream: filter sheet ─── -->
+  <div class="section">
+    <p class="section-title">Downstream effect</p>
+    <h2 class="section-sub">Filter sheet picks up the new UI Element instantly</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:32px;align-items:start;">
+      <div class="filter-sheet">
+        <div class="filter-sheet__section-label">UI Element</div>
+        <div class="filter-sheet__chips">
+          <div class="filter-sheet__chip">Bottom Nav</div>
+          <div class="filter-sheet__chip">Asset Strip</div>
+          <div class="filter-sheet__chip">Order Book</div>
+          <div class="filter-sheet__chip">Sign-up Modal</div>
+          <div class="filter-sheet__chip">Trade Form</div>
+          <div class="filter-sheet__chip filter-sheet__chip--new">Quote Header  · new</div>
+        </div>
+      </div>
+      <div>
+        <p style="color:#d4d4d8;font-size:14px;line-height:1.6;margin-bottom:12px;">
+          After save, the filter sheet's UI Element section instantly includes the new tag. Other annotators see it
+          in their autocomplete next time they open the composer with the toggle on.
+        </p>
+        <p style="color:#a1a1aa;font-size:13px;line-height:1.55;">
+          The "new" badge could be optional polish — a small subtle marker on UI Elements created in the last 24h,
+          fading once the tag has been used a few times. Not core to v1.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Implementation steps ─── -->
+  <div class="section">
+    <p class="section-title">Wiring</p>
+    <h2 class="section-sub">Six small pieces of code</h2>
+
+    <div class="impl">
+      <h3>What ships in the PR</h3>
+
+      <div class="impl-row">
+        <div class="impl-step">1</div>
+        <div class="impl-body">
+          <strong>Composer state:</strong> add <code class="inline">tagAsUiElement: boolean</code> + auto-derive
+          <code class="inline">normalizedLabel</code> (trim, collapse whitespace, Title Case). Existing
+          <code class="inline">annotationDraftText</code> stays as-is for the annotation row.
+        </div>
+      </div>
+
+      <div class="impl-row">
+        <div class="impl-step">2</div>
+        <div class="impl-body">
+          <strong>Toggle UI:</strong> new <code class="inline">.lightbox-annotation-toggle</code> row between
+          the input and the action buttons in <code class="inline">CatalogueFamilyLightbox.tsx</code>.
+        </div>
+      </div>
+
+      <div class="impl-row">
+        <div class="impl-step">3</div>
+        <div class="impl-body">
+          <strong>Autocomplete:</strong> when toggle is on, render a <code class="inline">.lightbox-annotation-suggestions</code>
+          list below the input. Source: pull from existing
+          <code class="inline">screen_analysis.ui_elements</code> via the existing
+          <code class="inline">allUiElements</code> prop already threaded through to the lightbox parent.
+        </div>
+      </div>
+
+      <div class="impl-row">
+        <div class="impl-step">4</div>
+        <div class="impl-body">
+          <strong>Near-match guard:</strong> tiny Levenshtein-distance check (≤2 chars) against existing UI Elements;
+          render the amber warning row when a fuzzy match is found and the typed value isn't an exact existing one.
+          Two CTAs: "Use existing" (replaces input value) and "Save as new anyway" (proceeds normally).
+        </div>
+      </div>
+
+      <div class="impl-row">
+        <div class="impl-step">5</div>
+        <div class="impl-body">
+          <strong>Save handler — two writes:</strong>
+          (a) existing <code class="inline">addAnnotation</code> call;
+          (b) if <code class="inline">tagAsUiElement</code> is true, fetch the screenshot's current
+          <code class="inline">metadata.label.screen_analysis.ui_elements</code>, de-dupe-merge with the new
+          normalized value, write back. Wrapped in a tiny helper
+          <code class="inline">promoteAnnotationToUiElement(screenshotId, label)</code>.
+        </div>
+      </div>
+
+      <div class="impl-row">
+        <div class="impl-step">6</div>
+        <div class="impl-body">
+          <strong>Badge on the annotation:</strong> render a small green "UI" pill on the annotation label
+          when it's been promoted. Derived: any annotation whose label is also in the screenshot's
+          ui_elements array. No new column needed.
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:18px;color:#a1a1aa;font-size:13px;">
+      Total: ~300 LOC across the composer JSX, a helper, and styles. No schema migration. No backend changes
+      (Supabase RLS already lets the screenshot owner / admin patch their own labels).
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

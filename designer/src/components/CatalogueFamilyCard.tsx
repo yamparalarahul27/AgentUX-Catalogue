@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Copy, MapPin, Monitor, RefreshCw, Save, Smartphone, Trash2 } from 'lucide-react';
+import { Boxes, Check, Copy, MapPin, Monitor, RefreshCw, Save, Smartphone, Trash2 } from 'lucide-react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
@@ -68,6 +68,17 @@ export function CatalogueFamilyCard({
   const imageUrl = screenshot?.image_url ?? '';
   // const groupColor = getGroupColor(family.group); // unused while .catalogue-card-dot is commented out below
   const platform = screenshot?.platform;
+  // Count UI Element tags from the screenshot's label metadata. Used by
+  // the indicator badge on the card so users see at a glance which shots
+  // have curated/promoted UI Elements. Reads the nested jsonb path
+  // defensively because labels can be missing entirely on older shots.
+  const uiElementCount = (() => {
+    const metadata = screenshot?.metadata as Record<string, unknown> | undefined;
+    const label = metadata?.label as Record<string, unknown> | undefined;
+    const screenAnalysis = label?.screen_analysis as Record<string, unknown> | undefined;
+    const list = screenAnalysis?.ui_elements;
+    return Array.isArray(list) ? list.length : 0;
+  })();
   const [isImageLoading, setIsImageLoading] = useState(Boolean(imageUrl));
   const [hasImageError, setHasImageError] = useState(false);
 
@@ -153,6 +164,12 @@ export function CatalogueFamilyCard({
           {screenshot && (
             <div className="catalogue-card-indicators">
               {REFERENCE_IMAGES_ENABLED && screenshot.reference_url && <span className="catalogue-card-ref-btn">Ref</span>}
+              {uiElementCount > 0 && (
+                <span className="catalogue-card-ui-btn" title={`${uiElementCount} UI Element${uiElementCount === 1 ? '' : 's'} tagged`}>
+                  <Boxes size={11} strokeWidth={2.25} />
+                  {uiElementCount}
+                </span>
+              )}
               {(screenshot.annotation_count ?? 0) > 0 && (
                 <span className="catalogue-card-comment-btn">
                   <MapPin size={11} strokeWidth={2.25} />
