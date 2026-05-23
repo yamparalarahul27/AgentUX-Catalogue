@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
+import { ConfirmModal } from './ConfirmModal';
 
 interface ReferenceVideo {
   id: string;
@@ -330,6 +331,11 @@ export function CatalogueVideosSection({
   const [editingTag, setEditingTag] = useState<string | null>(null);
   const [tagDraft, setTagDraft] = useState('');
   const [tagAddDraft, setTagAddDraft] = useState('');
+  // Pending-delete confirmation. The ⋯ button on a card sets this;
+  // the ConfirmModal renders when non-null. Using post.id so we can
+  // resolve the post (title, tweetId) inside the modal for the
+  // message + the actual delete call.
+  const [pendingDeleteXPostId, setPendingDeleteXPostId] = useState<string | null>(null);
 
   // Tag editor state is tied to the currently-open lightbox item. Reset
   // everything when the preview switches or closes — otherwise a draft
@@ -868,15 +874,11 @@ export function CatalogueVideosSection({
                           <button
                             type="button"
                             className="catalogue-videos__x-menu"
-                            title="More actions"
-                            aria-label="More actions"
+                            title="Remove from saved references"
+                            aria-label="Remove from saved references"
                             onClick={(event) => {
                               event.stopPropagation();
-                              // Two-action menu — keep minimal until the
-                              // lightbox PR introduces a proper popover.
-                              if (window.confirm('Remove this X post from saved references?')) {
-                                void removeXPost(post.id);
-                              }
+                              setPendingDeleteXPostId(post.id);
                             }}
                           >
                             ⋯
@@ -1142,6 +1144,28 @@ export function CatalogueVideosSection({
           </div>
         </div>
       )}
+
+      {pendingDeleteXPostId && (() => {
+        const post = xPosts.find((p) => p.id === pendingDeleteXPostId);
+        const label = post?.authorName
+          || (post?.authorHandle ? `@${post.authorHandle}` : null)
+          || 'this X post';
+        return (
+          <ConfirmModal
+            title="Remove from saved references?"
+            message={`"${label}" will be removed from the Videos section. This can't be undone.`}
+            confirmLabel="Remove"
+            cancelLabel="Cancel"
+            danger
+            onConfirm={() => {
+              const id = pendingDeleteXPostId;
+              setPendingDeleteXPostId(null);
+              if (id) void removeXPost(id);
+            }}
+            onCancel={() => setPendingDeleteXPostId(null)}
+          />
+        );
+      })()}
     </>
   );
 }
