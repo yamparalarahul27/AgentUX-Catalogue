@@ -84,7 +84,7 @@ interface CatalogueFamilyLightboxProps {
   // surface that wants to suppress sharing) can omit it.
   onShareLink?: (screenshotId: string) => void;
 }
-type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string };
+type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; is_public?: boolean };
 type LightboxPanel = 'label' | 'comments' | 'annotations';
 type AnnotationDraft = { shape: 'pin' | 'area'; x: number; y: number; width: number; height: number };
 type DrawingState = { startX: number; startY: number; currentX: number; currentY: number };
@@ -458,6 +458,23 @@ export function CatalogueFamilyLightbox({
     setComments((previous) => previous.filter((comment) => comment.id !== commentId));
     onCommentCountChange?.(screenshot.id, -1);
   }, [canEdit, onCommentCountChange, onRequireAuth, screenshot]);
+  const toggleCommentPublic = useCallback(async (commentId: string, nextIsPublic: boolean) => {
+    if (!ensureCanEdit()) return;
+    // Optimistic flip — UI updates immediately, revert on error.
+    setComments((previous) => previous.map((comment) =>
+      comment.id === commentId ? { ...comment, is_public: nextIsPublic } : comment
+    ));
+    const { error } = await supabase
+      .from('screenshot_comments')
+      .update({ is_public: nextIsPublic })
+      .eq('id', commentId);
+    if (error) {
+      setComments((previous) => previous.map((comment) =>
+        comment.id === commentId ? { ...comment, is_public: !nextIsPublic } : comment
+      ));
+      setCommentsError('Unable to update share visibility.');
+    }
+  }, [canEdit, onRequireAuth]);
   function getRelativePosition(event: React.MouseEvent<HTMLDivElement>): { x: number; y: number } | null {
     if (!mediaLayout) return null;
     const rect = event.currentTarget.getBoundingClientRect();
@@ -1009,6 +1026,7 @@ export function CatalogueFamilyLightbox({
                           userEmail={userEmail}
                           isAdmin={isAdmin}
                           onDelete={(commentId) => void deleteComment(commentId)}
+                          onToggleIsPublic={(commentId, nextIsPublic) => void toggleCommentPublic(commentId, nextIsPublic)}
                           formatDateTime={formatDateTime}
                         />
                       ))

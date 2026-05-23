@@ -93,6 +93,7 @@ export interface ScreenshotComment {
   created_at: string;
   resolved_at?: string | null;
   resolved_by_email?: string | null;
+  is_public?: boolean;
 }
 
 export interface ParsedScreenshotName {

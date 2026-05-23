@@ -110,6 +110,39 @@
   gap: 6px;
 }
 
+// Per-comment "Show on share page" toggle. Off = muted icon; on =
+// indigo eye to mirror the share-page surfacing state. Click flips
+// is_public on screenshot_comments.
+.catalogue-lightbox-comment-share-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: $accent;
+    background: rgba($accent, 0.12);
+  }
+
+  &.is-on {
+    color: $accent;
+    background: rgba($accent, 0.18);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($accent, 0.6);
+    outline-offset: 1px;
+  }
+}
+
 .catalogue-lightbox-comment-text {
   font-size: 13px;
   color: $text;

@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Share page — Comments tile (counter + preview)</title>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --surface: #16161a;
+    --surface-2: #1c1c20;
+    --border: #27272a;
+    --border-soft: #3a3a44;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #6366f1;
+    --accent-soft: rgba(99, 102, 241, 0.16);
+    --accent-border: rgba(99, 102, 241, 0.35);
+  }
+  * { box-sizing: border-box; }
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.32) transparent;
+  }
+  html::-webkit-scrollbar { width: 5px; }
+  html::-webkit-scrollbar-track { background: transparent; }
+  html::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.32); border-radius: 999px; }
+  html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    padding: 48px 32px 64px;
+  }
+
+  /* ── intro ────────────────────────────────────────── */
+  .intro {
+    max-width: 1080px;
+    margin: 0 auto 28px;
+  }
+  .intro h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+  .intro p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.55;
+    max-width: 720px;
+  }
+  .frames-grid {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  /* ── share frame chrome ───────────────────────────── */
+  .frame {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .frame__label {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 18px;
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .frame__label .badge {
+    background: var(--accent-soft);
+    color: #c7d2fe;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+  }
+  .frame__bar {
+    height: 28px;
+    background: #08080a;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+  }
+  .frame__dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #27272a;
+  }
+  .frame__url {
+    margin-left: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'SF Mono', Menlo, monospace;
+  }
+  .frame__body { padding: 24px 32px 32px; }
+
+  /* ── share page header ────────────────────────────── */
+  .share-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .share-top__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .share-top__brand .logo {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #6366f1, #22c55e);
+  }
+  .share-top__time {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 999px;
+  }
+
+  /* ── intro section: title (left) + tile (right) ──── */
+  .share-intro {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+    margin-bottom: 24px;
+  }
+  .share-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  .share-title .group-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(34, 197, 94, 0.25));
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #c7d2fe;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .share-meta {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+  }
+  .share-meta span {
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .share-meta .sep {
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--text-dim);
+  }
+
+  /* ── COMMENTS TILE (the new bit) ──────────────────── */
+  .comments-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+    color: inherit;
+  }
+  .comments-tile:hover {
+    border-color: var(--border-soft);
+    background: var(--surface-2);
+  }
+  .comments-tile.is-active {
+    border-color: var(--accent-border);
+    background: var(--accent-soft);
+  }
+  .comments-tile__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .comments-tile__count {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.005em;
+  }
+  .comments-tile__count .pill {
+    background: var(--accent-soft);
+    color: #c7d2fe;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .comments-tile__chev {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .comments-tile__preview {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+  .comments-tile__preview .preview-avatar {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #22c55e);
+    font-size: 9px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .comments-tile__preview .preview-body {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .comments-tile__preview .preview-author {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .comments-tile__preview .preview-time {
+    color: var(--text-dim);
+    margin-left: 4px;
+    font-size: 11px;
+  }
+
+  /* ── hero ─────────────────────────────────────────── */
+  .share-hero {
+    height: 360px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(34, 197, 94, 0.12));
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: 'SF Mono', Menlo, monospace;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* ── expanded comments list ───────────────────────── */
+  .comments-expanded {
+    margin-top: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    animation: slide-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .comments-expanded__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .comments-expanded__title {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .comments-expanded__title .pill {
+    background: var(--accent-soft);
+    color: #c7d2fe;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+  }
+  .comments-expanded__close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .comments-expanded__close:hover {
+    color: var(--text);
+    background: var(--surface-2);
+  }
+
+  .note {
+    padding: 12px 14px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .note:last-child { margin-bottom: 0; }
+  .note__head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .note__avatar {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #22c55e);
+    font-size: 10px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .note__author {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .note__time {
+    font-size: 11.5px;
+    color: var(--text-dim);
+  }
+  .note__body {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .share-see-all {
+    display: inline-block;
+    margin-top: 22px;
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .share-see-all:hover { color: #818bff; }
+
+  /* ── responsive ───────────────────────────────────── */
+  @media (max-width: 720px) {
+    .share-intro {
+      grid-template-columns: 1fr;
+    }
+    .comments-tile {
+      order: 2;
+    }
+  }
+</style>
+</head>
+<body>
+
+<section class="intro">
+  <h1>Comments tile — counter + preview pattern</h1>
+  <p>The Comments tile sits in the page header, right of the title. It shows the count + the latest comment as a teaser. Click the tile (or anywhere on it) to expand a full thread below the hero. No empty side tiles — only the Comments tile is rendered until there's more to put there.</p>
+</section>
+
+<div class="frames-grid">
+
+  <!-- ─── COLLAPSED ────────────────────────────────────── -->
+  <div class="frame">
+    <div class="frame__label">State 1 <span class="badge">default (collapsed)</span></div>
+    <div class="frame__bar">
+      <span class="frame__dot"></span><span class="frame__dot"></span><span class="frame__dot"></span>
+      <span class="frame__url">agentux.hirahul.xyz/share?id=screen-deposit-001</span>
+    </div>
+    <div class="frame__body">
+
+      <!-- share header -->
+      <div class="share-top">
+        <div class="share-top__brand">
+          <span class="logo"></span>
+          <span>AgentUX</span>
+        </div>
+        <span class="share-top__time">🕐 47m ago</span>
+      </div>
+
+      <!-- title + tile -->
+      <div class="share-intro">
+        <div>
+          <h2 class="share-title">
+            <span class="group-icon">P</span>
+            Deposit
+          </h2>
+          <p class="share-meta">
+            <span>👤 Rahul</span>
+            <span class="sep"></span>
+            <span>Polyester · Trade</span>
+            <span class="sep"></span>
+            <span>🖥 Web</span>
+          </p>
+        </div>
+
+        <button type="button" class="comments-tile" id="tile-collapsed">
+          <div class="comments-tile__head">
+            <span class="comments-tile__count">💬 Comments <span class="pill">2</span></span>
+            <span class="comments-tile__chev">▾</span>
+          </div>
+          <p class="comments-tile__preview">
+            <span class="preview-avatar">Y</span>
+            <span class="preview-body">
+              <span class="preview-author">Yamparala</span>
+              <span class="preview-time">· 5h</span>
+              <br>
+              Updated the copy to be more inclusive. "Your email" reads warmer than "Email address" without losing precision.
+            </span>
+          </p>
+        </button>
+      </div>
+
+      <!-- hero -->
+      <div class="share-hero">DEPOSIT · HERO</div>
+
+      <a href="#" class="share-see-all">See all screens →</a>
+
+    </div>
+  </div>
+
+  <!-- ─── EXPANDED ─────────────────────────────────────── -->
+  <div class="frame">
+    <div class="frame__label">State 2 <span class="badge">after click — expanded</span></div>
+    <div class="frame__bar">
+      <span class="frame__dot"></span><span class="frame__dot"></span><span class="frame__dot"></span>
+      <span class="frame__url">agentux.hirahul.xyz/share?id=screen-deposit-001</span>
+    </div>
+    <div class="frame__body">
+
+      <!-- share header -->
+      <div class="share-top">
+        <div class="share-top__brand">
+          <span class="logo"></span>
+          <span>AgentUX</span>
+        </div>
+        <span class="share-top__time">🕐 47m ago</span>
+      </div>
+
+      <!-- title + tile (active) -->
+      <div class="share-intro">
+        <div>
+          <h2 class="share-title">
+            <span class="group-icon">P</span>
+            Deposit
+          </h2>
+          <p class="share-meta">
+            <span>👤 Rahul</span>
+            <span class="sep"></span>
+            <span>Polyester · Trade</span>
+            <span class="sep"></span>
+            <span>🖥 Web</span>
+          </p>
+        </div>
+
+        <button type="button" class="comments-tile is-active">
+          <div class="comments-tile__head">
+            <span class="comments-tile__count">💬 Comments <span class="pill">2</span></span>
+            <span class="comments-tile__chev">▴</span>
+          </div>
+          <p class="comments-tile__preview">
+            <span class="preview-avatar">Y</span>
+            <span class="preview-body">
+              <span class="preview-author">Yamparala</span>
+              <span class="preview-time">· 5h</span>
+              <br>
+              Updated the copy to be more inclusive. "Your email" reads warmer than "Email address" without losing precision.
+            </span>
+          </p>
+        </button>
+      </div>
+
+      <!-- hero -->
+      <div class="share-hero">DEPOSIT · HERO</div>
+
+      <!-- expanded thread -->
+      <div class="comments-expanded">
+        <div class="comments-expanded__head">
+          <span class="comments-expanded__title">Comments <span class="pill">2</span></span>
+          <button type="button" class="comments-expanded__close">Hide ▴</button>
+        </div>
+
+        <div class="note">
+          <div class="note__head">
+            <span class="note__avatar">Y</span>
+            <span class="note__author">Yamparala</span>
+            <span class="note__time">5h ago</span>
+          </div>
+          <p class="note__body">Updated the copy to be more inclusive. "Your email" reads warmer than "Email address" without losing precision.</p>
+        </div>
+
+        <div class="note">
+          <div class="note__head">
+            <span class="note__avatar">Y</span>
+            <span class="note__author">Yamparala</span>
+            <span class="note__time">2d ago</span>
+          </div>
+          <p class="note__body">Discussed making the input larger here — current 44pt feels right for fat-finger tolerance but might widen on tablet.</p>
+        </div>
+      </div>
+
+      <a href="#" class="share-see-all">See all screens →</a>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Live demo: clicking the collapsed tile activates the second frame state
+  // so you can poke it without scrolling.
+  document.getElementById('tile-collapsed').addEventListener('click', function () {
+    const expanded = document.querySelectorAll('.frame')[1];
+    expanded.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  document.querySelectorAll('.comments-expanded__close').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.frame')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+
+</body>
+</html>

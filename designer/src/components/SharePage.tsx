@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   Clock,
   GalleryHorizontal,
   Images,
   Inbox,
   List as ListIcon,
   Loader2,
+  MessageSquare,
   Monitor,
   Smartphone,
   User,
@@ -19,7 +22,7 @@ import {
 } from '../lib/relative-time';
 import { parseShareUrl, type ShareParams } from '../lib/share-url';
 import { supabase } from '../lib/supabase';
-import type { ScreenshotNode } from '../types';
+import type { ScreenshotComment, ScreenshotNode } from '../types';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { SharePageCarousel, type SharePageCarouselItem } from './SharePageCarousel';
 import { ThumbHashImage } from './ThumbHashImage';
@@ -117,11 +120,25 @@ function writeUrl(view: ShareView, step: number) {
   window.history.replaceState({}, '', url);
 }
 
+function authorNameFromEmail(email: string): string {
+  // First-name extraction: "yamparala@gmail.com" → "Yamparala".
+  // Splits on @, drops the domain, capitalises. Falls back to email
+  // if the prefix is empty.
+  const prefix = email.split('@')[0] ?? '';
+  if (!prefix) return email;
+  return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+}
+
 export function SharePage() {
   const params = parseShareUrl(window.location.search);
   const [state, setState] = useState<FetchState>(params ? { kind: 'loading' } : { kind: 'error', message: 'Invalid share link.' });
   const [view, setView] = useState<ShareView>(readViewFromUrl);
   const [step, setStep] = useState<number>(readStepFromUrl);
+  // Public comments for single-screenshot shares. Stays empty in
+  // filter mode — comments-on-share is intentionally scoped to single
+  // mode for v1 (the carousel/list views are a separate UX problem).
+  const [comments, setComments] = useState<ScreenshotComment[]>([]);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   useEffect(() => {
     if (!params) return;
@@ -145,6 +162,36 @@ export function SharePage() {
     window.addEventListener('popstate', handlePop);
     return () => window.removeEventListener('popstate', handlePop);
   }, []);
+
+  // Fetch public comments — single-mode only. Anon SELECT is gated by
+  // the share_page_anon_read_public RLS policy (is_public=true and
+  // non-deleted screenshot). Newest first.
+  const screenshotIdForComments =
+    state.kind === 'ready' && state.screenshots.length > 0 && params?.mode === 'single'
+      ? state.screenshots[0].id
+      : null;
+  useEffect(() => {
+    if (!screenshotIdForComments) {
+      setComments([]);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('screenshot_comments')
+      .select('*')
+      .eq('screenshot_id', screenshotIdForComments)
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data) {
+          setComments([]);
+          return;
+        }
+        setComments(data as ScreenshotComment[]);
+      });
+    return () => { cancelled = true; };
+  }, [screenshotIdForComments]);
 
   useEffect(() => {
     writeUrl(view, step);
@@ -280,6 +327,42 @@ export function SharePage() {
                 </button>
               </div>
             )}
+            {isSingleMode && comments.length > 0 && (
+              <button
+                type="button"
+                className={`share-page__comments-tile${commentsOpen ? ' is-active' : ''}`}
+                aria-expanded={commentsOpen}
+                aria-controls="share-page-comments-thread"
+                onClick={() => setCommentsOpen((open) => !open)}
+              >
+                <span className="share-page__comments-tile-head">
+                  <span className="share-page__comments-tile-count">
+                    <MessageSquare size={14} aria-hidden="true" />
+                    <span>Comments</span>
+                    <span className="share-page__comments-tile-pill">{comments.length}</span>
+                  </span>
+                  {commentsOpen ? (
+                    <ChevronUp size={14} aria-hidden="true" />
+                  ) : (
+                    <ChevronDown size={14} aria-hidden="true" />
+                  )}
+                </span>
+                <span className="share-page__comments-tile-preview">
+                  <span className="share-page__comments-tile-avatar" aria-hidden="true">
+                    {authorNameFromEmail(comments[0].user_email).charAt(0)}
+                  </span>
+                  <span className="share-page__comments-tile-preview-body">
+                    <span className="share-page__comments-tile-author">
+                      {authorNameFromEmail(comments[0].user_email)}
+                    </span>
+                    <span className="share-page__comments-tile-time">
+                      {' · '}{formatRelativeTime(new Date(comments[0].created_at))}
+                    </span>
+                    <span className="share-page__comments-tile-body">{comments[0].text}</span>
+                  </span>
+                </span>
+              </button>
+            )}
           </div>
           {state.kind === 'ready' && (
             <p className="share-page__meta">
@@ -345,6 +428,48 @@ export function SharePage() {
                 alt={singleScreenshot.name}
               />
             </div>
+            {commentsOpen && comments.length > 0 && (
+              <section
+                id="share-page-comments-thread"
+                className="share-page__comments-thread"
+                aria-label="Comments"
+              >
+                <div className="share-page__comments-thread-head">
+                  <h2 className="share-page__comments-thread-title">
+                    Comments
+                    <span className="share-page__comments-tile-pill">{comments.length}</span>
+                  </h2>
+                  <button
+                    type="button"
+                    className="share-page__comments-thread-close"
+                    onClick={() => setCommentsOpen(false)}
+                  >
+                    Hide <ChevronUp size={14} aria-hidden="true" />
+                  </button>
+                </div>
+                <ol className="share-page__comments-thread-list">
+                  {comments.map((comment) => (
+                    <li key={comment.id} className="share-page__comment">
+                      <div className="share-page__comment-head">
+                        <span className="share-page__comment-avatar" aria-hidden="true">
+                          {authorNameFromEmail(comment.user_email).charAt(0)}
+                        </span>
+                        <span className="share-page__comment-author">
+                          {authorNameFromEmail(comment.user_email)}
+                        </span>
+                        <span
+                          className="share-page__comment-time"
+                          title={formatAbsoluteDateTime(new Date(comment.created_at))}
+                        >
+                          {formatRelativeTime(new Date(comment.created_at))}
+                        </span>
+                      </div>
+                      <p className="share-page__comment-body">{comment.text}</p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
             {seeAllScreensHref && (
               <a className="share-page__hero-link" href={seeAllScreensHref}>
                 See all screens →
