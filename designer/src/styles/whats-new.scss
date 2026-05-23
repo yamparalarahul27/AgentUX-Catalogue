@@ -393,20 +393,34 @@
   animation: app-update-slide-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-// Mosaic dot pattern in the top-right corner — gives the toast a
-// subtle "this is alive" texture that pulses with the new-version
-// signal. A single dot-grid layer, masked by a corner-anchored
-// radial gradient so the dots are only visible in the top-right and
-// fade out toward the content. Opacity pulses on a 3.4s loop.
+// Mosaic dot pattern — two horizontal layers that span the whole
+// toast: a blurry one anchored to the LEFT (soft halo behind the
+// icon + text) and a sharp one anchored to the RIGHT (crisp dot
+// grid). Each is masked with an opposing linear gradient so they
+// blend smoothly through the middle of the toast. Opacity pulses
+// on a 3.4s loop. The 3px left inset keeps both layers clear of
+// the stripe.
+.app-update-toast__mosaic-blur {
+  position: absolute;
+  inset: 0 0 0 3px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle, rgba(129, 132, 255, 1) 1.8px, transparent 2.2px) 0 0 / 5px 5px;
+  filter: blur(2.5px);
+  mask-image: linear-gradient(to right, #000 0%, #000 30%, transparent 75%);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 30%, transparent 75%);
+  animation: app-update-toast-mosaic 3.4s ease-in-out infinite;
+}
+
 .app-update-toast::after {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: 0 0 0 3px;
   pointer-events: none;
   z-index: 0;
   background: radial-gradient(circle, rgba(99, 102, 241, 0.55) 1px, transparent 1.4px) 0 0 / 4px 4px;
-  mask-image: radial-gradient(circle at 100% 0%, #000 0%, #000 25%, transparent 65%);
-  -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 0%, #000 25%, transparent 65%);
+  mask-image: linear-gradient(to right, transparent 25%, #000 70%);
+  -webkit-mask-image: linear-gradient(to right, transparent 25%, #000 70%);
   animation: app-update-toast-mosaic 3.4s ease-in-out infinite;
 }
 
@@ -416,6 +430,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .app-update-toast__mosaic-blur,
   .app-update-toast::after { animation: none; opacity: 0.6; }
 }
 

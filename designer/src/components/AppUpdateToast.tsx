@@ -116,6 +116,7 @@ export function AppUpdateToast({ onRefresh }: AppUpdateToastProps) {
 
   return (
     <div className="app-update-toast" role="status" aria-live="polite">
+      <span className="app-update-toast__mosaic-blur" aria-hidden="true" />
       <span className="app-update-toast__icon" aria-hidden="true">
         <Sparkles size={16} />
       </span>
