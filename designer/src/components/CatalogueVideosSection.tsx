@@ -757,16 +757,7 @@ export function CatalogueVideosSection({
         <header className="catalogue-videos__head">
           <div className="catalogue-videos__copy">
             <h2>Videos as Medium</h2>
-            <p>Streamed from benji.org for design inspiration and competitive UX study.</p>
           </div>
-          <a
-            className="catalogue-videos__source"
-            href="https://benji.org/family-values"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open source page
-          </a>
         </header>
 
         {loadError && <p className="catalogue-videos__error">{loadError}</p>}
