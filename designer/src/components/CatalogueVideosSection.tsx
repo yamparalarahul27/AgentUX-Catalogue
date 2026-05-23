@@ -336,6 +336,11 @@ export function CatalogueVideosSection({
   // resolve the post (title, tweetId) inside the modal for the
   // message + the actual delete call.
   const [pendingDeleteXPostId, setPendingDeleteXPostId] = useState<string | null>(null);
+  // Sort mode for the Saved X Posts grid. Independent of tag filters
+  // — applies after filtering. 'newest' is the default; 'most-liked'
+  // falls back to addedAt order for posts whose metadata hasn't
+  // backfilled (likedCount is null).
+  const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'most-liked'>('newest');
 
   // Tag editor state is tied to the currently-open lightbox item. Reset
   // everything when the preview switches or closes — otherwise a draft
@@ -396,12 +401,28 @@ export function CatalogueVideosSection({
 
   // OR semantics: if any filter is selected, a video must have at
   // least one tag in the filter set to pass. No selection = all pass.
+  // Sort applies after filtering.
   const sortedXPosts = useMemo(() => {
     const filtered = selectedTagFilters.size === 0
       ? xPosts
       : xPosts.filter((post) => post.tags.some((tag) => selectedTagFilters.has(tag)));
-    return [...filtered].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
-  }, [xPosts, selectedTagFilters]);
+    const sorted = [...filtered];
+    switch (sortMode) {
+      case 'newest':
+        sorted.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+        break;
+      case 'oldest':
+        sorted.sort((a, b) => a.addedAt.localeCompare(b.addedAt));
+        break;
+      case 'most-liked':
+        // Posts without a liked_count (metadata not backfilled yet)
+        // sink to the bottom — they're indistinguishable from "0 likes"
+        // without the fetch, so leaving them at the top would be noisy.
+        sorted.sort((a, b) => (b.likedCount ?? -1) - (a.likedCount ?? -1));
+        break;
+    }
+    return sorted;
+  }, [xPosts, selectedTagFilters, sortMode]);
 
   // Persist a new tags array to the row. Optimistic — flip local
   // state, revert on error. All three mutations (add, rename, remove)
@@ -828,7 +849,21 @@ export function CatalogueVideosSection({
 
             {sortedXPosts.length > 0 && (
               <>
-                <h3 className="catalogue-videos__section-title">Saved X Posts</h3>
+                <div className="catalogue-videos__section-header">
+                  <h3 className="catalogue-videos__section-title">Saved X Posts</h3>
+                  <label className="catalogue-videos__sort">
+                    <span className="catalogue-videos__sort-label">Sort</span>
+                    <select
+                      className="catalogue-videos__sort-select"
+                      value={sortMode}
+                      onChange={(event) => setSortMode(event.target.value as typeof sortMode)}
+                    >
+                      <option value="newest">Newest first</option>
+                      <option value="oldest">Oldest first</option>
+                      <option value="most-liked">Most liked</option>
+                    </select>
+                  </label>
+                </div>
                 <div className="catalogue-videos__grid">
                   {sortedXPosts.map((post) => {
                     const handle = post.authorHandle ? `@${post.authorHandle}` : null;

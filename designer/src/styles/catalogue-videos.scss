@@ -90,6 +90,62 @@
   text-transform: uppercase;
 }
 
+// Section header bar — title on the left, controls (Sort dropdown)
+// on the right. Always renders when the saved-X-posts grid does, so
+// the sort is reachable regardless of whether any tags exist.
+.catalogue-videos__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .catalogue-videos__section-title { margin: 0; }
+}
+
+.catalogue-videos__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalogue-videos__sort-label {
+  font-size: 10px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+// Native <select> styled to read as a pill, matching the tag-filter
+// chip family. Custom indigo chevron via background-image so the
+// system arrow doesn't clash with the dark theme.
+.catalogue-videos__sort-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(17, 17, 19, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+  padding: 5px 26px 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23a5b4fc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover { border-color: rgba(99, 102, 241, 0.5); color: #fafafa; }
+  &:focus { outline: none; border-color: rgba(99, 102, 241, 0.6); color: #fafafa; }
+
+  option {
+    background: #16161a;
+    color: #fafafa;
+  }
+}
+
 .catalogue-videos__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
