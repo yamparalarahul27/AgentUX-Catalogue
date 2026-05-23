@@ -27,24 +27,6 @@
     font-size: 20px;
     color: #fafafa;
   }
-
-  p {
-    margin: 0;
-    font-size: 13px;
-    color: #a1a1aa;
-  }
-}
-
-.catalogue-videos__source {
-  color: #a5b4fc;
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-
-  &:hover {
-    color: #c7d2fe;
-    text-decoration: underline;
-  }
 }
 
 .catalogue-videos__add-row {
@@ -106,6 +88,62 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+// Section header bar — title on the left, controls (Sort dropdown)
+// on the right. Always renders when the saved-X-posts grid does, so
+// the sort is reachable regardless of whether any tags exist.
+.catalogue-videos__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .catalogue-videos__section-title { margin: 0; }
+}
+
+.catalogue-videos__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalogue-videos__sort-label {
+  font-size: 10px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+// Native <select> styled to read as a pill, matching the tag-filter
+// chip family. Custom indigo chevron via background-image so the
+// system arrow doesn't clash with the dark theme.
+.catalogue-videos__sort-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(17, 17, 19, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+  padding: 5px 26px 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23a5b4fc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover { border-color: rgba(99, 102, 241, 0.5); color: #fafafa; }
+  &:focus { outline: none; border-color: rgba(99, 102, 241, 0.6); color: #fafafa; }
+
+  option {
+    background: #16161a;
+    color: #fafafa;
+  }
 }
 
 .catalogue-videos__grid {
@@ -319,6 +357,116 @@
   display: inline-flex;
   gap: 10px;
   align-items: center;
+}
+
+// ── Filter strip (above the saved X posts grid) ────────────────
+// Multi-select tag chips with OR semantics. Clicking a chip toggles
+// it; the strip persists "Clear" once any chip is active so users
+// can reset in one move.
+.catalogue-videos__tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(17, 17, 19, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+.catalogue-videos__tag-filters-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #71717a;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.catalogue-videos__tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #fafafa;
+  }
+
+  &.is-active {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #c7d2fe;
+  }
+}
+
+.catalogue-videos__tag-chip-count {
+  font-size: 10px;
+  color: #71717a;
+  font-variant-numeric: tabular-nums;
+
+  .catalogue-videos__tag-chip.is-active & { color: rgba(199, 210, 254, 0.7); }
+}
+
+.catalogue-videos__tag-clear {
+  background: none;
+  border: none;
+  color: #71717a;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+  margin-left: auto;
+
+  &:hover { color: #fafafa; background: rgba(255, 255, 255, 0.04); }
+}
+
+// ── Per-card tag chips (display-only, filter shortcut) ──────────
+// Read-only pills shown inline with likes / saved-time. Clicking a
+// chip toggles the corresponding tag in the filter strip above the
+// grid (it doesn't open the lightbox — that's the rest of the card).
+// All add / edit / remove lives inside the lightbox.
+.catalogue-videos__x-card-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.catalogue-videos__x-card-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  color: #c7d2fe;
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  &.is-active {
+    background: rgba(99, 102, 241, 0.28);
+    border-color: rgba(99, 102, 241, 0.55);
+  }
 }
 
 .catalogue-videos__card {
@@ -578,6 +726,128 @@
     font-size: 11px;
     font-weight: 600;
   }
+}
+
+// ── Lightbox tag editor (top of sidebar, above comments) ─────────
+// Full add / rename / remove lives here. Click chip text → input
+// replaces label pre-filled (Option A pattern); × removes the chip.
+// The trailing `+ add tag` input commits on Enter, comma, or blur.
+.catalogue-videos-preview__tags-block {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.catalogue-videos-preview__tags-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+
+  h3 {
+    margin: 0;
+    color: #fafafa;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+}
+
+.catalogue-videos-preview__tags-count {
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.catalogue-videos-preview__tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.catalogue-videos-preview__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px 3px 10px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  color: #c7d2fe;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &.is-editing {
+    background: rgba(99, 102, 241, 0.26);
+    border-color: rgba(99, 102, 241, 0.5);
+    padding-left: 8px;
+  }
+}
+
+.catalogue-videos-preview__tag-label {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: text;
+  padding: 0;
+}
+
+.catalogue-videos-preview__tag-edit-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #c7d2fe;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 0;
+  min-width: 60px;
+  width: 80px;
+}
+
+.catalogue-videos-preview__tag-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: none;
+  border: none;
+  color: #c7d2fe;
+  opacity: 0.55;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.18);
+    color: #fecaca;
+  }
+}
+
+.catalogue-videos-preview__tag-add {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: #d4d4d8;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 4px 12px;
+  outline: none;
+  min-width: 100px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &::placeholder { color: #71717a; }
+  &:focus { border-color: rgba(99, 102, 241, 0.5); color: #fafafa; }
 }
 
 .catalogue-videos-preview__comments-list {

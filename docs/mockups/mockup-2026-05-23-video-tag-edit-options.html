@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Video tag — edit interactions</title>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --surface: #16161a;
+    --surface-2: #1c1c20;
+    --border: #27272a;
+    --border-soft: #3a3a44;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --text-soft: #d4d4d8;
+    --accent: #6366f1;
+    --accent-tinted: #c7d2fe;
+    --accent-soft: rgba(99, 102, 241, 0.16);
+    --accent-border: rgba(99, 102, 241, 0.4);
+    --danger: #ef4444;
+    --danger-soft: rgba(239, 68, 68, 0.16);
+  }
+  * { box-sizing: border-box; }
+  html { scrollbar-width: thin; scrollbar-color: rgba(99, 102, 241, 0.32) transparent; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    padding: 48px 32px 80px;
+  }
+  .intro { max-width: 1080px; margin: 0 auto 32px; }
+  .intro h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .intro p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.55; max-width: 680px; }
+
+  .grid {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+  .option {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .option__head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .option__label {
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .option__label .badge {
+    background: var(--accent-soft);
+    color: var(--accent-tinted);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+  }
+  .option__name {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 4px 0 6px;
+    letter-spacing: -0.015em;
+  }
+  .option__desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* ── mini video-card sandbox ───────────────────────── */
+  .card {
+    background: rgba(17, 17, 19, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+    margin: 14px 18px;
+    padding: 14px;
+  }
+  .card__thumb {
+    height: 100px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(34, 197, 94, 0.14));
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim);
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .card__author {
+    font-size: 13px;
+    color: var(--text);
+    margin: 0 0 4px;
+    font-weight: 500;
+  }
+  .card__author .handle {
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .card__excerpt {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin: 0;
+  }
+  .card__footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 10px;
+  }
+
+  /* ── tag row (shared base) ────────────────────────── */
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px 2px 8px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.22);
+    color: var(--accent-tinted);
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .tag-input {
+    flex: 1;
+    min-width: 80px;
+    border: none;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 11px;
+    font-family: inherit;
+    padding: 2px 4px;
+    outline: none;
+  }
+  .tag-input::placeholder { color: #52525b; }
+
+  /* ── Option A — click text to edit, × removes ─────── */
+  .opt-a .tag {
+    padding: 2px 4px 2px 8px;
+  }
+  .opt-a .tag-label {
+    cursor: text;
+  }
+  .opt-a .tag-x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: none;
+    border: none;
+    color: var(--accent-tinted);
+    opacity: 0.5;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 2px;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .opt-a .tag-x:hover {
+    opacity: 1;
+    background: var(--danger-soft);
+    color: #fecaca;
+  }
+  .opt-a .tag:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+  .opt-a .tag.is-editing {
+    background: rgba(99, 102, 241, 0.22);
+    border-color: var(--accent-border);
+    padding: 2px 6px 2px 6px;
+  }
+  .opt-a .tag-edit-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--accent-tinted);
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    width: 70px;
+    padding: 0;
+  }
+
+  /* ── Option B — pencil + × ────────────────────────── */
+  .opt-b .tag {
+    padding: 2px 4px 2px 8px;
+  }
+  .opt-b .tag-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 2px;
+    opacity: 0;
+    color: var(--accent-tinted);
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .opt-b .tag:hover .tag-action { opacity: 0.6; }
+  .opt-b .tag-action:hover {
+    opacity: 1;
+    background: rgba(99, 102, 241, 0.2);
+  }
+  .opt-b .tag-action.tag-x:hover {
+    background: var(--danger-soft);
+    color: #fecaca;
+  }
+  .opt-b .tag .tag-pencil { margin-left: 4px; }
+  .opt-b .tag.is-editing .tag-action { opacity: 1; }
+
+  /* ── caption labels ─────────────────────────────── */
+  .caption {
+    padding: 12px 18px 4px;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .caption::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    margin-left: 4px;
+  }
+
+  .note {
+    padding: 14px 18px 18px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    border-top: 1px solid var(--border);
+  }
+  .note code {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    background: var(--bg);
+    color: var(--text-soft);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .kbd {
+    display: inline-block;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    background: var(--bg);
+    color: var(--text-soft);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .key-list { margin: 6px 0 0; padding-left: 0; list-style: none; }
+  .key-list li { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<section class="intro">
+  <h1>Video tag — edit interactions</h1>
+  <p>Each option shows three states stacked: <strong>resting</strong>, <strong>hover</strong>, <strong>editing</strong>. The chip layout, type weights, and colours match the live videos section so what you see translates 1:1 to the real card.</p>
+</section>
+
+<div class="grid">
+
+  <!-- ─── Option A ─────────────────────────────────────── -->
+  <div class="option opt-a">
+    <div class="option__head">
+      <div class="option__label">Option A <span class="badge">recommended</span></div>
+      <h2 class="option__name">Click text to edit · separate × removes</h2>
+      <p class="option__desc">Single icon on the chip. Click the tag label to enter edit mode. The × button to the right is the explicit remove target.</p>
+    </div>
+
+    <!-- Resting -->
+    <div class="caption">Resting</div>
+    <div class="card">
+      <div class="card__thumb">VIDEO · A</div>
+      <p class="card__author">William Bout <span class="handle">@williambout</span></p>
+      <p class="card__excerpt">Secure your account — two-factor + passkey deep dive.</p>
+      <div class="tags">
+        <span class="tag">
+          <span class="tag-label">auth</span>
+          <button class="tag-x" title="Remove">×</button>
+        </span>
+        <span class="tag">
+          <span class="tag-label">crypto</span>
+          <button class="tag-x" title="Remove">×</button>
+        </span>
+        <input class="tag-input" placeholder="+ tag" />
+      </div>
+    </div>
+
+    <!-- Hover -->
+    <div class="caption">Hover (cursor over "crypto")</div>
+    <div class="card">
+      <div class="card__thumb">VIDEO · A</div>
+      <p class="card__author">William Bout <span class="handle">@williambout</span></p>
+      <div class="tags">
+        <span class="tag">
+          <span class="tag-label">auth</span>
+          <button class="tag-x" title="Remove">×</button>
+        </span>
+        <span class="tag" style="border-color: rgba(99,102,241,0.45);">
+          <span class="tag-label" style="cursor: text;">crypto</span>
+          <button class="tag-x" style="opacity: 1; background: rgba(239,68,68,0.16); color: #fecaca;">×</button>
+        </span>
+        <input class="tag-input" placeholder="+ tag" />
+      </div>
+    </div>
+
+    <!-- Editing -->
+    <div class="caption">Editing "crypto" → "blockchain"</div>
+    <div class="card">
+      <div class="card__thumb">VIDEO · A</div>
+      <p class="card__author">William Bout <span class="handle">@williambout</span></p>
+      <div class="tags">
+        <span class="tag">
+          <span class="tag-label">auth</span>
+          <button class="tag-x" title="Remove">×</button>
+        </span>
+        <span class="tag is-editing">
+          <input class="tag-edit-input" value="blockchain" autofocus />
+          <button class="tag-x" title="Remove">×</button>
+        </span>
+        <input class="tag-input" placeholder="+ tag" />
+      </div>
+    </div>
+
+    <div class="note">
+      <strong style="color: var(--text);">Behaviour</strong>
+      <ul class="key-list">
+        <li><kbd class="kbd">Click</kbd> the tag text → input replaces the label, pre-filled + select-all</li>
+        <li><kbd class="kbd">Enter</kbd> saves the new value (drops empty / duplicate)</li>
+        <li><kbd class="kbd">Esc</kbd> cancels the edit, restores the original tag</li>
+        <li><kbd class="kbd">Blur</kbd> saves (same as Enter)</li>
+        <li>Click the × → removes the tag immediately</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ─── Option B ─────────────────────────────────────── -->
+  <div class="option opt-b">
+    <div class="option__head">
+      <div class="option__label">Option B</div>
+      <h2 class="option__name">Pencil + × dual icons</h2>
+      <p class="option__desc">Two icons appear on hover — pencil (left) for edit, × (right) for remove. More discoverable, slightly busier chip.</p>
+    </div>
+
+    <!-- Resting -->
+    <div class="caption">Resting</div>
+    <div class="card">
+      <div class="card__thumb">VIDEO · B</div>
+      <p class="card__author">William Bout <span class="handle">@williambout</span></p>
+      <p class="card__excerpt">Secure your account — two-factor + passkey deep dive.</p>
+      <div class="tags">
+        <span class="tag">
+          <span>auth</span>
+          <button class="tag-action tag-pencil" title="Edit">✎</button>
+          <button class="tag-action tag-x" title="Remove">×</button>
+        </span>
+        <span class="tag">
+          <span>crypto</span>
+          <button class="tag-action tag-pencil" title="Edit">✎</button>
+          <button class="tag-action tag-x" title="Remove">×</button>
+        </span>
+        <input class="tag-input" placeholder="+ tag" />
+      </div>
+    </div>
+
+    <!-- Hover -->
+    <div class="caption">Hover (cursor over "crypto")</div>
+    <div class="card">
+      <div class="card__thumb">VIDEO · B</div>
+      <p class="card__author">William Bout <span class="handle">@williambout</span></p>
+      <div class="tags">
+        <span class="tag">
+          <span>auth</span>
+          <button class="tag-action tag-pencil" title="Edit">✎</button>
+          <button class="tag-action tag-x" title="Remove">×</button>
+        </span>
+        <span class="tag" style="border-color: rgba(99,102,241,0.45);">
+          <span>crypto</span>
+          <button class="tag-action tag-pencil" title="Edit" style="opacity: 0.7;">✎</button>
+          <button class="tag-action tag-x" title="Remove" style="opacity: 0.7;">×</button>
+        </span>
+        <input class="tag-input" placeholder="+ tag" />
+      </div>
+    </div>
+
+    <!-- Editing -->
+    <div class="caption">Editing "crypto" → "blockchain"</div>
+    <div class="card">
+      <div class="card__thumb">VIDEO · B</div>
+      <p class="card__author">William Bout <span class="handle">@williambout</span></p>
+      <div class="tags">
+        <span class="tag">
+          <span>auth</span>
+          <button class="tag-action tag-pencil" title="Edit">✎</button>
+          <button class="tag-action tag-x" title="Remove">×</button>
+        </span>
+        <span class="tag is-editing" style="background: rgba(99,102,241,0.22); border-color: var(--accent-border);">
+          <input class="tag-edit-input" value="blockchain" style="background: transparent; border: none; outline: none; color: var(--accent-tinted); font-size: 11px; font-weight: 500; font-family: inherit; width: 70px; padding: 0;" />
+          <button class="tag-action tag-pencil" style="opacity: 1;" title="Edit">✎</button>
+          <button class="tag-action tag-x" style="opacity: 1;" title="Remove">×</button>
+        </span>
+        <input class="tag-input" placeholder="+ tag" />
+      </div>
+    </div>
+
+    <div class="note">
+      <strong style="color: var(--text);">Behaviour</strong>
+      <ul class="key-list">
+        <li>Click <kbd class="kbd">✎</kbd> → input replaces the label, pre-filled + select-all</li>
+        <li>Click <kbd class="kbd">×</kbd> → remove immediately</li>
+        <li><kbd class="kbd">Enter</kbd> / blur saves · <kbd class="kbd">Esc</kbd> cancels</li>
+        <li>Both icons fade in on chip hover (0 → 0.6 opacity), full opacity on icon hover</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

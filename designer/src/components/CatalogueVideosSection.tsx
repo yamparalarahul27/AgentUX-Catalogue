@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Minus, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
+import { ConfirmModal } from './ConfirmModal';
 
 interface ReferenceVideo {
   id: string;
@@ -21,6 +22,7 @@ interface XPostReference {
   likedCount: number | null;
   postedAt: string | null;
   metadataFetchedAt: string | null;
+  tags: string[];
 }
 
 interface VideoComment {
@@ -42,6 +44,7 @@ interface CatalogueVideoReferenceRow {
   liked_count: number | null;
   posted_at: string | null;
   metadata_fetched_at: string | null;
+  tags: string[] | null;
 }
 
 interface CatalogueVideoCommentRow {
@@ -138,7 +141,15 @@ function toXPostReference(row: CatalogueVideoReferenceRow): XPostReference {
     likedCount: row.liked_count,
     postedAt: row.posted_at,
     metadataFetchedAt: row.metadata_fetched_at,
+    tags: Array.isArray(row.tags) ? row.tags : [],
   };
+}
+
+function normalizeTag(input: string): string {
+  // Lowercase + collapse internal whitespace to single spaces. Trim
+  // edge whitespace. Strip leading "#" so "#crypto" and "crypto" are
+  // the same tag.
+  return input.trim().toLowerCase().replace(/^#+/, '').replace(/\s+/g, ' ');
 }
 
 function formatCommentTime(value: string) {
@@ -308,6 +319,37 @@ export function CatalogueVideosSection({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [savingComment, setSavingComment] = useState(false);
   const [savingXPost, setSavingXPost] = useState(false);
+  // Currently active tag filters. Empty = no filter (show all videos).
+  // Multi-select: a video matches if it has at least one of the
+  // selected tags (OR semantics).
+  const [selectedTagFilters, setSelectedTagFilters] = useState<Set<string>>(() => new Set());
+  // Lightbox tag editor — only one lightbox is ever open so a single
+  // pair of state slots covers both add and edit. `editingTag` tracks
+  // which existing tag (if any) is being renamed; `tagDraft` is the
+  // input value (for both the rename input and the standalone "+ add
+  // tag" input).
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [tagDraft, setTagDraft] = useState('');
+  const [tagAddDraft, setTagAddDraft] = useState('');
+  // Pending-delete confirmation. The ⋯ button on a card sets this;
+  // the ConfirmModal renders when non-null. Using post.id so we can
+  // resolve the post (title, tweetId) inside the modal for the
+  // message + the actual delete call.
+  const [pendingDeleteXPostId, setPendingDeleteXPostId] = useState<string | null>(null);
+  // Sort mode for the Saved X Posts grid. Independent of tag filters
+  // — applies after filtering. 'newest' is the default; 'most-liked'
+  // falls back to addedAt order for posts whose metadata hasn't
+  // backfilled (likedCount is null).
+  const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'most-liked'>('newest');
+
+  // Tag editor state is tied to the currently-open lightbox item. Reset
+  // everything when the preview switches or closes — otherwise a draft
+  // typed for post A would surface unchanged on post B.
+  useEffect(() => {
+    setEditingTag(null);
+    setTagDraft('');
+    setTagAddDraft('');
+  }, [previewItemKey]);
 
   function ensureCanEdit() {
     if (canEdit) return true;
@@ -342,10 +384,107 @@ export function CatalogueVideosSection({
     return null;
   }, [previewItemKey, xPosts]);
 
-  const sortedXPosts = useMemo(
-    () => [...xPosts].sort((a, b) => b.addedAt.localeCompare(a.addedAt)),
-    [xPosts],
-  );
+  // All distinct tags across the loaded xPosts, with usage counts.
+  // Used to drive the filter strip above the grid. Sorted: most-used
+  // first so the popular tags lead.
+  const tagsWithCounts = useMemo<Array<{ tag: string; count: number }>>(() => {
+    const counts = new Map<string, number>();
+    for (const post of xPosts) {
+      for (const tag of post.tags) {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+  }, [xPosts]);
+
+  // OR semantics: if any filter is selected, a video must have at
+  // least one tag in the filter set to pass. No selection = all pass.
+  // Sort applies after filtering.
+  const sortedXPosts = useMemo(() => {
+    const filtered = selectedTagFilters.size === 0
+      ? xPosts
+      : xPosts.filter((post) => post.tags.some((tag) => selectedTagFilters.has(tag)));
+    const sorted = [...filtered];
+    switch (sortMode) {
+      case 'newest':
+        sorted.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+        break;
+      case 'oldest':
+        sorted.sort((a, b) => a.addedAt.localeCompare(b.addedAt));
+        break;
+      case 'most-liked':
+        // Posts without a liked_count (metadata not backfilled yet)
+        // sink to the bottom — they're indistinguishable from "0 likes"
+        // without the fetch, so leaving them at the top would be noisy.
+        sorted.sort((a, b) => (b.likedCount ?? -1) - (a.likedCount ?? -1));
+        break;
+    }
+    return sorted;
+  }, [xPosts, selectedTagFilters, sortMode]);
+
+  // Persist a new tags array to the row. Optimistic — flip local
+  // state, revert on error. All three mutations (add, rename, remove)
+  // funnel through here so the round-trip is consistent.
+  async function persistTagsForPost(postId: string, nextTags: string[]) {
+    const post = xPosts.find((p) => p.id === postId);
+    if (!post) return;
+    const previousTags = post.tags;
+    setXPosts((previous) => previous.map((p) => p.id === postId ? { ...p, tags: nextTags } : p));
+    const { error } = await supabase
+      .from('catalogue_video_references')
+      .update({ tags: nextTags })
+      .eq('source_type', 'x_post')
+      .eq('external_id', post.tweetId);
+    if (error) {
+      setXPosts((previous) => previous.map((p) => p.id === postId ? { ...p, tags: previousTags } : p));
+    }
+  }
+
+  async function addTagToPost(postId: string, rawTag: string) {
+    const tag = normalizeTag(rawTag);
+    if (!tag) return;
+    const post = xPosts.find((p) => p.id === postId);
+    if (!post) return;
+    if (post.tags.includes(tag)) return;
+    await persistTagsForPost(postId, [...post.tags, tag]);
+  }
+
+  async function removeTagFromPost(postId: string, tag: string) {
+    const post = xPosts.find((p) => p.id === postId);
+    if (!post) return;
+    await persistTagsForPost(postId, post.tags.filter((existing) => existing !== tag));
+  }
+
+  // Rename a tag in place — preserves array order so the edited chip
+  // doesn't jump to the end of the row. No-ops if the new value is
+  // empty, equal to the original, or collides with another existing tag.
+  async function renameTagOnPost(postId: string, originalTag: string, rawNext: string) {
+    const next = normalizeTag(rawNext);
+    if (!next || next === originalTag) return;
+    const post = xPosts.find((p) => p.id === postId);
+    if (!post) return;
+    if (post.tags.includes(next)) {
+      // Collision with an existing tag — fall back to a simple remove of
+      // the old one so the user doesn't end up with a duplicate row.
+      await persistTagsForPost(postId, post.tags.filter((t) => t !== originalTag));
+      return;
+    }
+    await persistTagsForPost(
+      postId,
+      post.tags.map((tag) => (tag === originalTag ? next : tag)),
+    );
+  }
+
+  function toggleTagFilter(tag: string) {
+    setSelectedTagFilters((previous) => {
+      const next = new Set(previous);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  }
 
   // Single flat list driving arrow-key navigation in the lightbox.
   // X posts first (since the section renders them first), then the
@@ -368,10 +507,13 @@ export function CatalogueVideosSection({
     const nextIndex = currentPreviewIndex + delta;
     if (nextIndex < 0 || nextIndex >= allPreviewKeys.length) return;
     setPreviewItemKey(allPreviewKeys[nextIndex]);
-    // Reset the comment composer when nav'ing — it's tied to a
-    // specific item, leaving stale draft text in the box across
-    // items is confusing.
+    // Reset the comment composer + tag drafts when nav'ing — they're
+    // tied to a specific item, leaving stale draft text in the box
+    // across items is confusing.
     setCommentDraft('');
+    setEditingTag(null);
+    setTagDraft('');
+    setTagAddDraft('');
   }
 
   useEffect(() => {
@@ -384,7 +526,7 @@ export function CatalogueVideosSection({
       const [xPostsResult, commentsResult] = await Promise.all([
         supabase
           .from('catalogue_video_references')
-          .select('source_type, external_id, url, created_at, author_handle, author_name, text_excerpt, poster_url, liked_count, posted_at, metadata_fetched_at')
+          .select('source_type, external_id, url, created_at, author_handle, author_name, text_excerpt, poster_url, liked_count, posted_at, metadata_fetched_at, tags')
           .eq('source_type', 'x_post')
           .order('created_at', { ascending: false }),
         supabase
@@ -632,20 +774,11 @@ export function CatalogueVideosSection({
 
   return (
     <>
-      <section className="catalogue-videos" aria-label="Reference videos">
+      <section className="catalogue-videos" aria-label="Videos as Medium">
         <header className="catalogue-videos__head">
           <div className="catalogue-videos__copy">
-            <h2>Reference Videos</h2>
-            <p>Streamed from benji.org for design inspiration and competitive UX study.</p>
+            <h2>Videos as Medium</h2>
           </div>
-          <a
-            className="catalogue-videos__source"
-            href="https://benji.org/family-values"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open source page
-          </a>
         </header>
 
         {loadError && <p className="catalogue-videos__error">{loadError}</p>}
@@ -680,9 +813,57 @@ export function CatalogueVideosSection({
           <p className="catalogue-videos__loading">Loading saved references...</p>
         ) : (
           <>
+            {tagsWithCounts.length > 0 && (
+              <div
+                className="catalogue-videos__tag-filters"
+                role="toolbar"
+                aria-label="Filter saved videos by tag"
+              >
+                <span className="catalogue-videos__tag-filters-label">Tags</span>
+                {tagsWithCounts.map(({ tag, count }) => {
+                  const isActive = selectedTagFilters.has(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={`catalogue-videos__tag-chip${isActive ? ' is-active' : ''}`}
+                      aria-pressed={isActive}
+                      onClick={() => toggleTagFilter(tag)}
+                    >
+                      <span>{tag}</span>
+                      <span className="catalogue-videos__tag-chip-count">{count}</span>
+                    </button>
+                  );
+                })}
+                {selectedTagFilters.size > 0 && (
+                  <button
+                    type="button"
+                    className="catalogue-videos__tag-clear"
+                    onClick={() => setSelectedTagFilters(new Set())}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
+
             {sortedXPosts.length > 0 && (
               <>
-                <h3 className="catalogue-videos__section-title">Saved X Posts</h3>
+                <div className="catalogue-videos__section-header">
+                  <h3 className="catalogue-videos__section-title">Saved X Posts</h3>
+                  <label className="catalogue-videos__sort">
+                    <span className="catalogue-videos__sort-label">Sort</span>
+                    <select
+                      className="catalogue-videos__sort-select"
+                      value={sortMode}
+                      onChange={(event) => setSortMode(event.target.value as typeof sortMode)}
+                    >
+                      <option value="newest">Newest first</option>
+                      <option value="oldest">Oldest first</option>
+                      <option value="most-liked">Most liked</option>
+                    </select>
+                  </label>
+                </div>
                 <div className="catalogue-videos__grid">
                   {sortedXPosts.map((post) => {
                     const handle = post.authorHandle ? `@${post.authorHandle}` : null;
@@ -719,18 +900,14 @@ export function CatalogueVideosSection({
                           <button
                             type="button"
                             className="catalogue-videos__x-menu"
-                            title="More actions"
-                            aria-label="More actions"
+                            title="Remove from saved references"
+                            aria-label="Remove from saved references"
                             onClick={(event) => {
                               event.stopPropagation();
-                              // Two-action menu — keep minimal until the
-                              // lightbox PR introduces a proper popover.
-                              if (window.confirm('Remove this X post from saved references?')) {
-                                void removeXPost(post.id);
-                              }
+                              setPendingDeleteXPostId(post.id);
                             }}
                           >
-                            ⋯
+                            <Minus size={14} aria-hidden="true" />
                           </button>
                           <div className="catalogue-videos__x-play" aria-hidden="true">▶</div>
                         </div>
@@ -749,6 +926,24 @@ export function CatalogueVideosSection({
                           )}
                           <div className="catalogue-videos__x-footer">
                             <span className="catalogue-videos__x-footer-left">
+                              {post.tags.length > 0 && (
+                                <span className="catalogue-videos__x-card-chips">
+                                  {post.tags.map((tag) => (
+                                    <button
+                                      key={tag}
+                                      type="button"
+                                      className={`catalogue-videos__x-card-chip${selectedTagFilters.has(tag) ? ' is-active' : ''}`}
+                                      title={`Filter by "${tag}"`}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        toggleTagFilter(tag);
+                                      }}
+                                    >
+                                      {tag}
+                                    </button>
+                                  ))}
+                                </span>
+                              )}
                               {likeLabel && <span>♥ {likeLabel}</span>}
                             </span>
                             {savedAgo && <span>Saved {savedAgo}</span>}
@@ -843,6 +1038,99 @@ export function CatalogueVideosSection({
             </div>
 
             <aside className="catalogue-videos-preview__comments">
+              {previewItem.kind === 'x-post' && (() => {
+                const xPost = xPosts.find((p) => p.id === previewItem.key);
+                if (!xPost) return null;
+                return (
+                  <section className="catalogue-videos-preview__tags-block" aria-label="Tags">
+                    <header className="catalogue-videos-preview__tags-head">
+                      <h3>Tags</h3>
+                      {xPost.tags.length > 0 && (
+                        <span className="catalogue-videos-preview__tags-count">{xPost.tags.length}</span>
+                      )}
+                    </header>
+                    <div className="catalogue-videos-preview__tags-row">
+                      {xPost.tags.map((tag) => {
+                        const isEditing = editingTag === tag;
+                        return (
+                          <span
+                            key={tag}
+                            className={`catalogue-videos-preview__tag${isEditing ? ' is-editing' : ''}`}
+                          >
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                className="catalogue-videos-preview__tag-edit-input"
+                                value={tagDraft}
+                                autoFocus
+                                onChange={(event) => setTagDraft(event.target.value)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    void renameTagOnPost(xPost.id, tag, tagDraft);
+                                    setEditingTag(null);
+                                    setTagDraft('');
+                                  } else if (event.key === 'Escape') {
+                                    event.preventDefault();
+                                    setEditingTag(null);
+                                    setTagDraft('');
+                                  }
+                                }}
+                                onBlur={() => {
+                                  if (tagDraft.trim()) void renameTagOnPost(xPost.id, tag, tagDraft);
+                                  setEditingTag(null);
+                                  setTagDraft('');
+                                }}
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                className="catalogue-videos-preview__tag-label"
+                                title="Click to rename"
+                                onClick={() => {
+                                  setEditingTag(tag);
+                                  setTagDraft(tag);
+                                }}
+                              >
+                                {tag}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className="catalogue-videos-preview__tag-x"
+                              title="Remove tag"
+                              aria-label={`Remove ${tag}`}
+                              onClick={() => void removeTagFromPost(xPost.id, tag)}
+                            >
+                              <X size={11} aria-hidden="true" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                      <input
+                        type="text"
+                        className="catalogue-videos-preview__tag-add"
+                        placeholder="+ add tag"
+                        value={tagAddDraft}
+                        onChange={(event) => setTagAddDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ',') {
+                            event.preventDefault();
+                            void addTagToPost(xPost.id, tagAddDraft);
+                            setTagAddDraft('');
+                          }
+                        }}
+                        onBlur={() => {
+                          if (tagAddDraft.trim()) {
+                            void addTagToPost(xPost.id, tagAddDraft);
+                            setTagAddDraft('');
+                          }
+                        }}
+                      />
+                    </div>
+                  </section>
+                );
+              })()}
               <header className="catalogue-videos-preview__comments-head">
                 <h3>Comments</h3>
                 <span>{previewItem.title}</span>
@@ -882,6 +1170,28 @@ export function CatalogueVideosSection({
           </div>
         </div>
       )}
+
+      {pendingDeleteXPostId && (() => {
+        const post = xPosts.find((p) => p.id === pendingDeleteXPostId);
+        const label = post?.authorName
+          || (post?.authorHandle ? `@${post.authorHandle}` : null)
+          || 'this X post';
+        return (
+          <ConfirmModal
+            title="Remove from saved references?"
+            message={`"${label}" will be removed from the Videos section. This can't be undone.`}
+            confirmLabel="Remove"
+            cancelLabel="Cancel"
+            danger
+            onConfirm={() => {
+              const id = pendingDeleteXPostId;
+              setPendingDeleteXPostId(null);
+              if (id) void removeXPost(id);
+            }}
+            onCancel={() => setPendingDeleteXPostId(null)}
+          />
+        );
+      })()}
     </>
   );
 }

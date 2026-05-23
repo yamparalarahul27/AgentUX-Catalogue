@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Video card + lightbox — tag display vs edit</title>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --surface: #16161a;
+    --surface-2: #1c1c20;
+    --border: #27272a;
+    --border-soft: #3a3a44;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --text-soft: #d4d4d8;
+    --accent: #6366f1;
+    --accent-tinted: #c7d2fe;
+    --accent-soft: rgba(99, 102, 241, 0.16);
+    --accent-border: rgba(99, 102, 241, 0.4);
+    --danger: #ef4444;
+    --danger-soft: rgba(239, 68, 68, 0.16);
+  }
+  * { box-sizing: border-box; }
+  html { scrollbar-width: thin; scrollbar-color: rgba(99, 102, 241, 0.32) transparent; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    padding: 48px 32px 80px;
+  }
+
+  .intro { max-width: 1100px; margin: 0 auto 28px; }
+  .intro h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .intro p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.55; max-width: 760px; }
+
+  .section {
+    max-width: 1100px;
+    margin: 32px auto 0;
+  }
+  .section__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .section__label {
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .section__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+  }
+
+  /* ── filter strip (above cards) ───────────────────── */
+  .filter-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    background: rgba(17, 17, 19, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .filter-strip__label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-soft);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .filter-chip.is-active {
+    background: var(--accent-soft);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: var(--accent-tinted);
+  }
+  .filter-chip__count {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .filter-chip.is-active .filter-chip__count { color: rgba(199, 210, 254, 0.7); }
+  .filter-clear {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: inherit;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  /* ── card grid ────────────────────────────────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+  .vcard {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+    background: rgba(17, 17, 19, 0.92);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .vcard__thumb {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(34, 197, 94, 0.18));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .vcard__source-pill {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .vcard__menu {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    border: none;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .vcard__play {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f0f10;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .vcard__body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .vcard__author {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text);
+    margin: 0;
+  }
+  .vcard__author-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #22c55e);
+    flex-shrink: 0;
+  }
+  .vcard__handle { color: var(--text-dim); font-weight: 400; }
+  .vcard__excerpt {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .vcard__footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+  }
+
+  /* ── read-only chips on card (filter shortcut) ────── */
+  .card-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.22);
+    color: var(--accent-tinted);
+    font-size: 10.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .card-chip:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+  .vcard__footer-sep {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--text-dim);
+  }
+  .vcard__footer-spacer { flex: 1; }
+
+  /* ── lightbox frame ───────────────────────────────── */
+  .lightbox-wrap {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox {
+    width: 640px;
+    max-width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  }
+  .lightbox__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .lightbox__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.005em;
+  }
+  .lightbox__close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 16px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+  .lightbox__body { padding: 18px 22px 22px; }
+
+  .lightbox__player {
+    height: 220px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(34, 197, 94, 0.14));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+  }
+  .lightbox__author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .lightbox__author-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #22c55e);
+  }
+  .lightbox__author-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .lightbox__author-handle {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .lightbox__excerpt {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 18px;
+  }
+  .lightbox__divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin: 16px 0 12px;
+  }
+  .lightbox__divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── editable tag row (inside lightbox) ───────────── */
+  .edit-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .edit-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 4px 4px 10px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.14);
+    border: 1px solid rgba(99, 102, 241, 0.28);
+    color: var(--accent-tinted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .edit-tag-label { cursor: text; }
+  .edit-tag-x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: none;
+    border: none;
+    color: var(--accent-tinted);
+    opacity: 0.55;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 2px;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .edit-tag-x:hover {
+    opacity: 1;
+    background: var(--danger-soft);
+    color: #fecaca;
+  }
+  .edit-tag.is-editing {
+    background: rgba(99, 102, 241, 0.24);
+    border-color: var(--accent-border);
+  }
+  .edit-tag-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--accent-tinted);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    width: 80px;
+    padding: 0;
+  }
+  .edit-tag-add {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: inherit;
+    padding: 4px 12px;
+    cursor: text;
+  }
+  .edit-tag-add::placeholder { color: var(--text-dim); }
+  .edit-tag-add-input {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    color: var(--text-soft);
+    font-size: 12px;
+    font-family: inherit;
+    padding: 4px 12px;
+    outline: none;
+    min-width: 100px;
+  }
+  .edit-tag-add-input::placeholder { color: var(--text-dim); }
+
+  .keys {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .kbd {
+    display: inline-block;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    background: var(--bg);
+    color: var(--text-soft);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    margin: 0 2px;
+  }
+
+  .placeholder-comment {
+    background: var(--surface-2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .placeholder-comment + .placeholder-comment { margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<section class="intro">
+  <h1>Video card → lightbox tag flow</h1>
+  <p>Top half: the new <strong>display-only</strong> card. Tags are visible as small pills next to the like + saved-time row; clicking one toggles it in the filter strip above the grid. Bottom half: the <strong>lightbox</strong>, opened when the card is clicked — full Option A edit pattern lives here (click chip text → inline rename, × removes).</p>
+</section>
+
+<!-- ─── Top: card grid in context ──────────────────────── -->
+<section class="section">
+  <div class="section__head">
+    <span class="section__label">Step 1</span>
+    <h2 class="section__name">Video grid — read-only chips, click chip = add to filter</h2>
+  </div>
+
+  <div class="filter-strip">
+    <span class="filter-strip__label">Tags</span>
+    <button class="filter-chip is-active">
+      <span>auth</span>
+      <span class="filter-chip__count">3</span>
+    </button>
+    <button class="filter-chip">
+      <span>crypto</span>
+      <span class="filter-chip__count">5</span>
+    </button>
+    <button class="filter-chip">
+      <span>onboarding</span>
+      <span class="filter-chip__count">2</span>
+    </button>
+    <button class="filter-chip">
+      <span>skeu</span>
+      <span class="filter-chip__count">1</span>
+    </button>
+    <button class="filter-clear">Clear</button>
+  </div>
+
+  <div class="grid">
+    <article class="vcard">
+      <div class="vcard__thumb">
+        <span class="vcard__source-pill">𝕏 Post</span>
+        <button class="vcard__menu">⋯</button>
+        <span class="vcard__play">▶</span>
+      </div>
+      <div class="vcard__body">
+        <p class="vcard__author">
+          <span class="vcard__author-avatar"></span>
+          William Bout
+          <span class="vcard__handle">@williambout</span>
+        </p>
+        <p class="vcard__excerpt">Secure your account — two-factor + passkey deep dive across projects.</p>
+        <div class="vcard__footer">
+          <span class="card-chip">auth</span>
+          <span class="card-chip">crypto</span>
+          <span class="vcard__footer-spacer"></span>
+          <span>♥ 12k</span>
+          <span class="vcard__footer-sep"></span>
+          <span>Saved 2d</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="vcard">
+      <div class="vcard__thumb">
+        <span class="vcard__source-pill">𝕏 Post</span>
+        <button class="vcard__menu">⋯</button>
+        <span class="vcard__play">▶</span>
+      </div>
+      <div class="vcard__body">
+        <p class="vcard__author">
+          <span class="vcard__author-avatar"></span>
+          Linear Design
+          <span class="vcard__handle">@linear</span>
+        </p>
+        <p class="vcard__excerpt">First-run onboarding flow rebuilt — three steps, no skip option.</p>
+        <div class="vcard__footer">
+          <span class="card-chip">onboarding</span>
+          <span class="vcard__footer-spacer"></span>
+          <span>♥ 4.2k</span>
+          <span class="vcard__footer-sep"></span>
+          <span>Saved 5d</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="vcard">
+      <div class="vcard__thumb">
+        <span class="vcard__source-pill">𝕏 Post</span>
+        <button class="vcard__menu">⋯</button>
+        <span class="vcard__play">▶</span>
+      </div>
+      <div class="vcard__body">
+        <p class="vcard__author">
+          <span class="vcard__author-avatar"></span>
+          Rauno
+          <span class="vcard__handle">@raunofreiberg</span>
+        </p>
+        <p class="vcard__excerpt">Tactile mode toggle — neumorphic, sub-100ms response.</p>
+        <div class="vcard__footer">
+          <span class="card-chip">skeu</span>
+          <span class="vcard__footer-spacer"></span>
+          <span>♥ 8.1k</span>
+          <span class="vcard__footer-sep"></span>
+          <span>Saved 1w</span>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ─── Bottom: lightbox with edit ──────────────────────── -->
+<section class="section">
+  <div class="section__head">
+    <span class="section__label">Step 2</span>
+    <h2 class="section__name">Lightbox (opens on card click) — full tag editor</h2>
+  </div>
+
+  <div class="lightbox-wrap">
+    <div class="lightbox">
+      <div class="lightbox__head">
+        <span class="lightbox__title">𝕏 Post · @williambout</span>
+        <button class="lightbox__close">✕</button>
+      </div>
+      <div class="lightbox__body">
+        <div class="lightbox__player">[TWEET EMBED — 560×220]</div>
+
+        <div class="lightbox__author">
+          <span class="lightbox__author-avatar"></span>
+          <span class="lightbox__author-name">William Bout</span>
+          <span class="lightbox__author-handle">@williambout</span>
+        </div>
+        <p class="lightbox__excerpt">Secure your account — two-factor + passkey deep dive across projects, domains, and tokens like passwords.</p>
+
+        <div class="lightbox__divider">Tags</div>
+        <div class="edit-tags">
+          <span class="edit-tag">
+            <span class="edit-tag-label">auth</span>
+            <button class="edit-tag-x" title="Remove">×</button>
+          </span>
+          <span class="edit-tag is-editing">
+            <input class="edit-tag-input" value="blockchain" autofocus />
+            <button class="edit-tag-x" title="Remove">×</button>
+          </span>
+          <input type="text" class="edit-tag-add-input" placeholder="+ add tag" />
+        </div>
+        <p class="keys">
+          <kbd class="kbd">Click chip</kbd> to edit ·
+          <kbd class="kbd">Enter</kbd> save ·
+          <kbd class="kbd">Esc</kbd> cancel ·
+          <kbd class="kbd">×</kbd> remove
+        </p>
+
+        <div class="lightbox__divider">Comments · 2</div>
+        <div class="placeholder-comment">
+          <strong style="color:var(--text);">Yamparala</strong> · 2d ago<br>
+          Great breakdown on the passkey side — the modal copy in the second frame is exactly the pattern we should adopt.
+        </div>
+        <div class="placeholder-comment">
+          <strong style="color:var(--text);">Yamparala</strong> · 5h ago<br>
+          Following up — looking at the Linear flow on the next card too.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
