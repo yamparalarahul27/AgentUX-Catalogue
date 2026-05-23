@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Minus, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
@@ -872,7 +872,7 @@ export function CatalogueVideosSection({
                               setPendingDeleteXPostId(post.id);
                             }}
                           >
-                            ⋯
+                            <Minus size={14} aria-hidden="true" />
                           </button>
                           <div className="catalogue-videos__x-play" aria-hidden="true">▶</div>
                         </div>
