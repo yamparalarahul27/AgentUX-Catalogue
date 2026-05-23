@@ -398,6 +398,23 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+// ---- Main-page scrollbar ----
+// Trim indigo bar on the page scroll. Container scrollbars (lightbox,
+// What's New, upload modal, etc.) keep their own per-surface styles.
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.32) transparent;
+}
+
+html::-webkit-scrollbar { width: 5px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.32);
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
+
 // ---- Buttons ----
 
 .btn-primary {

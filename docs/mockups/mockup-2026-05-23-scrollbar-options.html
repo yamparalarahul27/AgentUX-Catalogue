@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Scrollbar options — Main page</title>
+  <style>
+    :root {
+      --bg: #0f0f10;
+      --surface: #16161a;
+      --border: #27272a;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --accent: #6366f1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      padding: 32px;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .page-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0 0 28px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .option {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .option__head {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .option__label {
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+
+    .option__name {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 4px 0 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .option__desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    .scroll-demo {
+      height: 480px;
+      overflow-y: auto;
+      padding: 18px;
+      background: var(--bg);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .row__thumb {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(34, 197, 94, 0.18));
+      flex-shrink: 0;
+    }
+
+    .row__title {
+      font-size: 13px;
+      font-weight: 500;
+      margin: 0 0 2px;
+    }
+
+    .row__meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin: 0;
+    }
+
+    /* 6px — Slim */
+    .opt-a .scroll-demo {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99, 102, 241, 0.28) transparent;
+    }
+
+    .opt-a .scroll-demo::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .opt-a .scroll-demo::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .opt-a .scroll-demo::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.28);
+      border-radius: 999px;
+      transition: background 0.15s ease;
+    }
+
+    .opt-a .scroll-demo::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.48);
+    }
+
+    /* 5px — Trim (recommended) */
+    .opt-b .scroll-demo {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99, 102, 241, 0.32) transparent;
+    }
+
+    .opt-b .scroll-demo::-webkit-scrollbar {
+      width: 40px;
+    }
+
+    .opt-b .scroll-demo::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .opt-b .scroll-demo::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.32);
+      border-radius: 999px;
+      transition: background 0.15s ease;
+    }
+
+    .opt-b .scroll-demo::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.52);
+    }
+
+    /* 4px — Minimal */
+    .opt-c .scroll-demo {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99, 102, 241, 0.36) transparent;
+    }
+
+    .opt-c .scroll-demo::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .opt-c .scroll-demo::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .opt-c .scroll-demo::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.36);
+      border-radius: 999px;
+      transition: background 0.15s ease;
+    }
+
+    .opt-c .scroll-demo::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.55);
+    }
+
+    .specs {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.55;
+      font-family: 'SF Mono', Menlo, monospace;
+    }
+
+    .specs strong {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .hint {
+      margin-top: 28px;
+      padding: 14px 18px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1100px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .scroll-demo {
+        height: 280px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1 class="page-title">Indigo scrollbar — pick a width</h1>
+  <p class="page-sub">All three variants use the same brand-indigo thumb you liked. Only the width changes. Scroll
+    inside each column and hover the bar to compare. Bumped the resting opacity slightly on the thinner ones so they
+    don't disappear at narrow widths.</p>
+
+  <div class="grid">
+
+    <!-- 6px -->
+    <div class="option opt-a">
+      <div class="option__head">
+        <div class="option__label">Width 6px</div>
+        <div class="option__name">Slim</div>
+        <p class="option__desc">Half a notch thinner than the original 8px. Still has clear presence, less aggressive.
+        </p>
+      </div>
+      <div class="scroll-demo" id="demo-a"></div>
+      <div class="specs">
+        width: <strong>6px</strong><br>
+        thumb: <strong>rgba(99,102,241,0.28)</strong><br>
+        hover: <strong>rgba(99,102,241,0.48)</strong><br>
+        track: <strong>transparent</strong>
+      </div>
+    </div>
+
+    <!-- 5px -->
+    <div class="option opt-b">
+      <div class="option__head">
+        <div class="option__label">Width 5px &middot; recommended</div>
+        <div class="option__name">Trim</div>
+        <p class="option__desc">Right between slim and minimal. Stays visible without taking up gutter space. Bumped
+          opacity slightly so it doesn't read as too faint.</p>
+      </div>
+      <div class="scroll-demo" id="demo-b"></div>
+      <div class="specs">
+        width: <strong>5px</strong><br>
+        thumb: <strong>rgba(99,102,241,0.32)</strong><br>
+        hover: <strong>rgba(99,102,241,0.52)</strong><br>
+        track: <strong>transparent</strong>
+      </div>
+    </div>
+
+    <!-- 4px -->
+    <div class="option opt-c">
+      <div class="option__head">
+        <div class="option__label">Width 4px</div>
+        <div class="option__name">Minimal</div>
+        <p class="option__desc">Hairline scrollbar. Quietest, easy to miss. Pair with a hover-expand if you want it to
+          grow on demand.</p>
+      </div>
+      <div class="scroll-demo" id="demo-c"></div>
+      <div class="specs">
+        width: <strong>4px</strong><br>
+        thumb: <strong>rgba(99,102,241,0.36)</strong><br>
+        hover: <strong>rgba(99,102,241,0.55)</strong><br>
+        track: <strong>transparent</strong>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="hint">Hover each column to see thumb-hover colour. On Option C the bar widens when the area is hovered.
+    Firefox uses the <code
+      style="font-family: 'SF Mono', Menlo, monospace; color: var(--text-muted);">scrollbar-color</code> / <code
+      style="font-family: 'SF Mono', Menlo, monospace; color: var(--text-muted);">scrollbar-width</code> properties;
+    Webkit (Chrome/Safari/Edge) uses the <code
+      style="font-family: 'SF Mono', Menlo, monospace; color: var(--text-muted);">::-webkit-scrollbar*</code>
+    pseudo-elements. Both are set so the styling applies cross-browser.</p>
+
+  <script>
+    // Fake catalogue rows so there's something to scroll.
+    const rows = [
+      ['Auth', 'Sign in flow · 12 screens'],
+      ['Onboarding', 'First-run tour · 8 screens'],
+      ['Spot Trading', 'Order book + chart · 24 screens'],
+      ['Order History', 'Filters + detail · 9 screens'],
+      ['Wallet', 'Balances + assets · 14 screens'],
+      ['KYC', 'Document upload + selfie · 11 screens'],
+      ['Deposit', 'Crypto + INR rails · 7 screens'],
+      ['Withdraw', 'Whitelisting + 2FA · 10 screens'],
+      ['Referrals', 'Invite + tier · 6 screens'],
+      ['Profile', 'Account + security · 13 screens'],
+      ['Notifications', 'In-app + push · 5 screens'],
+      ['Markets', 'Listing + search · 18 screens'],
+      ['Convert', 'Quick swap · 6 screens'],
+      ['Futures', 'Perp UI · 21 screens'],
+      ['Settings', 'Preferences + locale · 9 screens'],
+    ];
+    function fillDemo(id) {
+      const root = document.getElementById(id);
+      rows.concat(rows).forEach(([t, m]) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `<div class="row__thumb"></div><div><div class="row__title">${t}</div><div class="row__meta">${m}</div></div>`;
+        root.appendChild(row);
+      });
+    }
+    ['demo-a', 'demo-b', 'demo-c'].forEach(fillDemo);
+  </script>
+
+</body>
+
+</html>
