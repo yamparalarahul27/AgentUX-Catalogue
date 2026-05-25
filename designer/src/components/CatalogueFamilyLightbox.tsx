@@ -297,7 +297,6 @@ export function CatalogueFamilyLightbox({
     setSessionUiElements([]);
     setImageSize(null);
     setMediaSize(null);
-    setImageLoaded(false);
     setCropMode(false);
     let cancelled = false;
     supabase
@@ -323,6 +322,16 @@ export function CatalogueFamilyLightbox({
       cancelled = true;
     };
   }, [isOpen, screenshot]);
+  // Reset imageLoaded only when the image URL actually changes — NOT
+  // when the screenshot reference changes due to a metadata edit
+  // (name / flow / group / etc). With the previous broader dependency
+  // on `screenshot`, editing details flipped imageLoaded to false but
+  // the cached <img src=…> never re-fired its onLoad, so the image
+  // stayed at opacity 0 → black media area until the user navigated
+  // to a different screenshot.
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [screenshot?.image_url]);
   useEffect(() => {
     if (!screenshot) return;
     setNameDraft(family.name);
