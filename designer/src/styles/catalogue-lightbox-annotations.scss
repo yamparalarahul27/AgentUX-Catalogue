@@ -59,6 +59,24 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
+// Blurhash placeholder — painted instantly from screenshot.thumb_hash
+// so the lightbox shows a recognisable preview while the full image
+// downloads. Positioned to match the real <img>'s rendered box (same
+// max-* + auto), blurred so it reads as "still loading".
+.catalogue-lightbox-img-placeholder {
+  position: absolute;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  filter: blur(8px);
+  transform: scale(1.04);
+  pointer-events: none;
+  user-select: none;
+}
+
 .catalogue-lightbox-pin-layer {
   position: absolute;
   inset: 0;

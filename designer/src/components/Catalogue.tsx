@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import type { WebPreset } from '../types';
@@ -18,7 +18,7 @@ import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
-import { buildCatalogueFamilies, CATALOGUE_FLOW_LABEL_KEY } from '../lib/catalogue-families';
+import { buildCatalogueFamilies, CATALOGUE_FLOW_LABEL_KEY, getActiveFamilyVariant } from '../lib/catalogue-families';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -73,6 +73,7 @@ import {
   type FlowPresentation,
 } from './CatalogueToolbar';
 import { WhatsNewPanel, getWhatsNewUnseenCount } from './WhatsNewPanel';
+import { useSaveTrashAnimation } from './SaveTrashAnimation';
 import { loadWhatsNewReleases } from '../data/whats-new';
 import { AppUpdateToast } from './AppUpdateToast';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
@@ -243,6 +244,7 @@ export function Catalogue({
   }, [appearanceMap, null, groupSortMode, groupStats]);
 
   const navigate = useNavigate();
+  const { triggerDelete } = useSaveTrashAnimation();
 
   // Group View redirect: when sortBy === 'name-asc' (Group View) AND a
   // single group becomes the active filter (via toolbar dropdown, search
@@ -629,11 +631,39 @@ export function Catalogue({
     persistGridDensity(gridDensity);
   }, [gridDensity]);
 
+  // Track the previewed family's last-known position in the filtered
+  // list so we can auto-advance the lightbox when the user deletes
+  // the currently-open family. Without this, the post-delete state
+  // would leave previewFamilyId pointing at a row that no longer
+  // exists, and the catch-all effect below would just close the
+  // lightbox — breaking the "delete + keep stepping" flow.
+  const previewIndexRef = useRef<number>(-1);
   useEffect(() => {
-    if (previewFamilyId && !familyById[previewFamilyId]) {
-      setPreviewFamilyId(null);
+    if (!previewFamilyId) {
+      previewIndexRef.current = -1;
+      return;
     }
-  }, [familyById, previewFamilyId]);
+    const idx = filteredFamilies.findIndex((family) => family.id === previewFamilyId);
+    if (idx >= 0) previewIndexRef.current = idx;
+  }, [previewFamilyId, filteredFamilies]);
+
+  // When the previewed family disappears from the data (deleted, or
+  // filtered out by an external state change), auto-advance to the
+  // family that took its slot (or the new last family, or close if
+  // the list is empty).
+  useEffect(() => {
+    if (!previewFamilyId) return;
+    if (familyById[previewFamilyId]) return; // still exists, no advance needed
+    if (filteredFamilies.length === 0) {
+      setPreviewFamilyId(null);
+      return;
+    }
+    const previousIndex = previewIndexRef.current;
+    const nextIndex = previousIndex < 0
+      ? 0
+      : Math.min(previousIndex, filteredFamilies.length - 1);
+    setPreviewFamilyId(filteredFamilies[nextIndex].id);
+  }, [familyById, previewFamilyId, filteredFamilies]);
   useEffect(() => {
     if (!canAdmin && (activeSection === 'team' || activeSection === 'studio')) {
       setActiveSection('catalogue');
@@ -857,10 +887,65 @@ export function Catalogue({
     setSelected((prev) => { const next = new Set(prev); const all = filteredFamilies.length > 0 && filteredFamilies.every((f) => next.has(f.id)); filteredFamilies.forEach((f) => { if (all) next.delete(f.id); else next.add(f.id); }); return next; });
   }
   function clearSelection() { setSelected(new Set()); setBulkAction(null); setBulkGroupValue(''); setBulkFlowValue(''); }
+  // Stagger between consecutive bulk-delete card animations (ms).
+  // Each card's trash overlay runs ~2.4s (DELETE_TOTAL_MS in
+  // SaveTrashAnimation), but we kick the NEXT one off after this
+  // short gap so the cascade reads as a flurry, not 2.4s × N of
+  // sequential theatre. Up to BULK_DELETE_ANIM_LIMIT cards animate;
+  // beyond that we bypass the animation (multiple corner-docked
+  // trashes stacked would just be visual chaos).
+  const BULK_DELETE_STAGGER_MS = 110;
+  const BULK_DELETE_ANIM_LIMIT = 8;
   async function handleBulkDelete() {
     if (!requireEditAccess() || selected.size === 0) return;
-    for (const id of selected) await handleDeleteFamily(id);
+    const ids = Array.from(selected);
+    // Capture the order + card rects + first screenshot URLs BEFORE
+    // we start mutating local state. As cards unmount, the DOM lookup
+    // below would otherwise miss them.
+    type Targeted = { id: string; rect: DOMRect | null; screenshotUrl: string | null; thumbHash: string | null };
+    const targets: Targeted[] = ids.map((id) => {
+      const node = document.querySelector(`[data-family-id="${id}"]`);
+      const rect = node instanceof HTMLElement ? node.getBoundingClientRect() : null;
+      const family = familyById[id];
+      const variant = family ? getActiveFamilyVariant(family, upload.activeVariantKeys[family.id]) : null;
+      const screenshot = variant?.screenshot ?? null;
+      return {
+        id,
+        rect,
+        screenshotUrl: screenshot?.image_url ?? null,
+        thumbHash: screenshot?.thumb_hash ?? null,
+      };
+    });
     clearSelection();
+
+    // Skip animation entirely if too many items selected — fall back
+    // to the legacy fast path (sequential delete, no theatre).
+    if (targets.length > BULK_DELETE_ANIM_LIMIT) {
+      for (const t of targets) await handleDeleteFamily(t.id);
+      return;
+    }
+
+    // Trigger each card's trash animation with a stagger. Each
+    // onComplete fires that card's soft-delete so rows fall off the
+    // grid in sequence as their balls land in the trash.
+    targets.forEach((target, index) => {
+      window.setTimeout(() => {
+        if (!target.rect) {
+          // No DOM rect (card not visible / already unmounted) — skip
+          // animation and just delete.
+          void handleDeleteFamily(target.id);
+          return;
+        }
+        triggerDelete({
+          sourceRect: target.rect,
+          screenshotUrl: target.screenshotUrl,
+          thumbHash: target.thumbHash,
+          onComplete: () => {
+            void handleDeleteFamily(target.id);
+          },
+        });
+      }, index * BULK_DELETE_STAGGER_MS);
+    });
   }
   async function handleBulkChangeGroup(group: string) {
     if (!requireEditAccess()) return;

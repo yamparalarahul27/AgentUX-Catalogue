@@ -11,6 +11,7 @@ import {
   type ScreenshotAnnotation,
 } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
+import { thumbHashToUrl } from '../lib/thumbhash';
 import type { MobileOs, WebPreset } from '../types';
 import { Check, Copy, Send, X } from 'lucide-react';
 
@@ -237,6 +238,10 @@ export function CatalogueFamilyLightbox({
   const [sessionUiElements, setSessionUiElements] = useState<string[]>([]);
   const [annotationEditAllowed, setAnnotationEditAllowed] = useState<boolean>(() => isAnnotationEditAllowedNow());
   const [imageSize, setImageSize] = useState<ImageSize | null>(null); const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
+  // Tracks whether the full image has finished loading so we can
+  // fade it in over the thumb-hash placeholder. Reset on each
+  // screenshot change in the same effect that resets imageSize.
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
@@ -290,6 +295,7 @@ export function CatalogueFamilyLightbox({
     setSessionUiElements([]);
     setImageSize(null);
     setMediaSize(null);
+    setImageLoaded(false);
     setCropMode(false);
     let cancelled = false;
     supabase
@@ -679,6 +685,7 @@ export function CatalogueFamilyLightbox({
     if (result.ok) {
       setCropMode(false);
       setImageSize(null);
+      setImageLoaded(false);
       const refreshed = await fetchAnnotationsForScreenshot(screenshot.id);
       const next = refreshed.map(toLightboxAnnotation);
       setAnnotations(next);
@@ -830,11 +837,36 @@ export function CatalogueFamilyLightbox({
             onClick={handleMediaClick}
             style={{ cursor: annotationMode && annotationEditAllowed ? 'crosshair' : 'default' }}
           >
+          {/* Thumb-hash blurhash placeholder — paints instantly so the
+              lightbox doesn't show a blank media area while the full
+              image downloads. Mirrors the grid card's ThumbHashImage
+              behaviour without restructuring the lightbox's pin-overlay
+              coordinate system. */}
+          {(() => {
+            const hash = activeVariant?.screenshot?.thumb_hash;
+            if (!hash || imageLoaded) return null;
+            let url: string | null = null;
+            try { url = thumbHashToUrl(hash); } catch { url = null; }
+            if (!url) return null;
+            return (
+              <img
+                src={url}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="catalogue-lightbox-img-placeholder"
+              />
+            );
+          })()}
           <img
             src={screenshot.image_url}
             alt={`${family.name} ${activeVariant.label}`}
             className="catalogue-lightbox-img"
-            onLoad={(event) => setImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
+            style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.2s ease-in' }}
+            onLoad={(event) => {
+              setImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
+              setImageLoaded(true);
+            }}
             draggable={false}
           />
           {mediaLayout && (
