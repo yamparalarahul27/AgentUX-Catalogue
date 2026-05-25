@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Capture Prototype - Session</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #111113;
+      --panel-2: #161618;
+      --panel-3: #1d1d20;
+      --border: #2b2b31;
+      --border-strong: #3f3f46;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --quiet: #71717a;
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.12);
+      --accent-border: rgba(34, 211, 238, 0.42);
+      --success: #34d399;
+      --success-soft: rgba(52, 211, 153, 0.12);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.12);
+      --danger: #fb7185;
+      --danger-soft: rgba(251, 113, 133, 0.12);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button { min-height: 40px; border: 0; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.52; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
+      align-items: center;
+      gap: 16px;
+      min-height: 64px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 9, 11, 0.96);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .brand strong, .brand span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand strong { font-size: 14px; }
+    .brand span { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .step-nav {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+    }
+    .step-nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .step-nav a.is-active { background: var(--panel-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--border-strong); }
+    .identity {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    .page {
+      width: min(1520px, 100%);
+      margin: 0 auto;
+      padding: 18px 24px 28px;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr) 390px;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+    .panel-head { padding: 16px; border-bottom: 1px solid var(--border); }
+    .panel-title { margin: 0; font-size: 14px; line-height: 1.25; }
+    .panel-copy { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .panel-body { padding: 16px; }
+    .sticky { position: sticky; top: 82px; }
+
+    .flow-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .metric { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); }
+    .metric strong { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+    .metric span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+
+    .flow-list { display: grid; gap: 8px; }
+    .step-button {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      min-height: 48px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      text-align: left;
+    }
+    .step-button.is-active { border-color: var(--accent-border); background: var(--accent-soft); }
+    .step-button.is-done .step-state { color: var(--success); }
+    .step-button.has-issue .step-state { color: var(--warning); }
+    .marker {
+      width: 18px;
+      height: 18px;
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      background: transparent;
+    }
+    .is-done .marker { border-color: rgba(52, 211, 153, 0.62); background: var(--success-soft); }
+    .step-copy { min-width: 0; }
+    .step-copy strong { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .step-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .step-state { color: var(--quiet); font-size: 11px; font-weight: 800; white-space: nowrap; }
+
+    .capture-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 16px;
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); line-height: 1.05; letter-spacing: 0; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge.accent { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent); }
+    .badge.warn { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: var(--warning); }
+    .preview-card {
+      min-height: 260px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      overflow: hidden;
+    }
+    .phone-shell {
+      width: min(220px, 100%);
+      margin: 16px auto;
+      border: 1px solid var(--border-strong);
+      border-radius: 28px;
+      background: #0d0d10;
+      padding: 10px;
+    }
+    .phone-screen {
+      aspect-ratio: 9 / 18.5;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--panel-3);
+      padding: 14px;
+      display: grid;
+      gap: 9px;
+      align-content: start;
+    }
+    .line { height: 8px; border-radius: 999px; background: #3f3f46; }
+    .line.short { width: 46%; }
+    .line.mid { width: 72%; }
+    .line.accent { background: var(--accent); opacity: 0.75; }
+    .mock-button { height: 34px; border-radius: var(--radius); background: var(--accent); opacity: 0.9; margin-top: 8px; }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 16px;
+      padding: 16px;
+    }
+    .section-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); padding: 14px; }
+    .section-card h2, .section-card h3 { margin: 0 0 10px; font-size: 13px; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .form-field { display: grid; gap: 6px; }
+    .form-field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .form-field input, .form-field select, .form-field textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+    }
+    .form-field textarea { min-height: 86px; padding-top: 10px; resize: vertical; }
+    .drop-zone {
+      display: grid;
+      place-items: center;
+      min-height: 170px;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--panel);
+      text-align: center;
+      padding: 16px;
+    }
+    .drop-zone strong { display: block; font-size: 14px; }
+    .drop-zone span { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .drop-zone.is-hot { border-color: var(--accent-border); background: var(--accent-soft); }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .btn-primary, .btn-secondary, .btn-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .btn-primary { border: 1px solid var(--accent-border); background: var(--accent); color: #041014; }
+    .btn-secondary { border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+    .btn-danger { border: 1px solid rgba(251, 113, 133, 0.5); background: var(--danger-soft); color: var(--danger); }
+
+    .queue-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .queue-item {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) 40px;
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+    .thumb { width: 36px; height: 36px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--panel-3); }
+    .queue-copy { min-width: 0; }
+    .queue-copy strong { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .queue-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .icon-button { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--muted); }
+    .hint, .empty-state, .error-state {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .error-state { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: #fde68a; }
+    .spaced { margin-top: 14px; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      max-width: min(520px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #18181b;
+      color: var(--text);
+      font-size: 13px;
+      z-index: 20;
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1180px) {
+      .page { grid-template-columns: 300px minmax(0, 1fr); }
+      .right-panel { grid-column: 1 / -1; position: static; }
+    }
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr; justify-items: stretch; }
+      .identity { justify-self: start; }
+      .step-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: var(--radius); }
+      .step-nav a { justify-content: center; min-width: 0; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .page { grid-template-columns: 1fr; padding: 14px; }
+      .sticky { position: static; }
+      .capture-hero, .work-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 540px) {
+      .topbar { padding: 12px; }
+      .page { padding: 10px; }
+      .panel-head, .panel-body, .capture-hero, .work-grid { padding-left: 12px; padding-right: 12px; }
+      .flow-summary, .field-grid { grid-template-columns: 1fr; }
+      .step-button { grid-template-columns: 22px minmax(0, 1fr); }
+      .step-state { grid-column: 2; justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="app-capture-specialist-workbench.html" aria-label="Back to Capture Workbench">
+      <span class="brand-mark" aria-hidden="true">UX</span>
+      <span>
+        <strong>Capture Prototype</strong>
+        <span>Capture session</span>
+      </span>
+    </a>
+    <nav class="step-nav" aria-label="Capture prototype steps">
+      <a href="capture-01-assignment-brief.html">1. Brief</a>
+      <a class="is-active" href="capture-02-session.html" aria-current="page">2. Session</a>
+      <a href="capture-03-submit-review.html">3. Submit</a>
+    </nav>
+    <div class="identity"><span class="dot" aria-hidden="true"></span>rahul@agentux.local</div>
+  </header>
+
+  <main class="page">
+    <aside class="panel sticky">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Signup and first run</h2>
+          <p class="panel-copy">Move through the flow, capture each required screen, and mark blockers inline.</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="flow-summary">
+          <div class="metric"><strong id="done-count">4</strong><span>Done</span></div>
+          <div class="metric"><strong id="missing-count">2</strong><span>Missing</span></div>
+          <div class="metric"><strong id="issue-count">0</strong><span>Issues</span></div>
+        </div>
+        <div class="flow-list" id="step-list">
+          <button class="step-button is-done" type="button" data-step="App landing" data-status="done">
+            <span class="marker" aria-hidden="true"></span>
+            <span class="step-copy"><strong>App landing</strong><span>Logged out - required</span></span>
+            <span class="step-state">Done</span>
+          </button>
+          <button class="step-button is-done" type="button" data-step="Create account" data-status="done">
+            <span class="marker" aria-hidden="true"></span>
+            <span class="step-copy"><strong>Create account</strong><span>Email entry - required</span></span>
+            <span class="step-state">Done</span>
+          </button>
+          <button class="step-button is-done" type="button" data-step="OTP verification" data-status="done">
+            <span class="marker" aria-hidden="true"></span>
+            <span class="step-copy"><strong>OTP verification</strong><span>Security - required</span></span>
+            <span class="step-state">Done</span>
+          </button>
+          <button class="step-button" type="button" data-step="KYC start" data-status="missing">
+            <span class="marker" aria-hidden="true"></span>
+            <span class="step-copy"><strong>KYC start</strong><span>Identity - required</span></span>
+            <span class="step-state">Missing</span>
+          </button>
+          <button class="step-button" type="button" data-step="KYC pending" data-status="missing">
+            <span class="marker" aria-hidden="true"></span>
+            <span class="step-copy"><strong>KYC pending</strong><span>Waiting state - required</span></span>
+            <span class="step-state">Missing</span>
+          </button>
+          <button class="step-button is-done" type="button" data-step="Home empty" data-status="done">
+            <span class="marker" aria-hidden="true"></span>
+            <span class="step-copy"><strong>Home empty</strong><span>First-run - required</span></span>
+            <span class="step-state">Done</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <div class="capture-hero">
+        <div>
+          <h1 id="current-title">KYC start</h1>
+          <p class="panel-copy" id="current-copy">Capture the first identity verification screen before any document upload starts.</p>
+          <div class="badge-row">
+            <span class="badge accent">Coinbase</span>
+            <span class="badge">Mobile</span>
+            <span class="badge">Light theme</span>
+            <span class="badge warn">Required</span>
+          </div>
+        </div>
+        <div class="preview-card" aria-label="Screen preview placeholder">
+          <div class="phone-shell">
+            <div class="phone-screen">
+              <div class="line accent short"></div>
+              <div class="line mid"></div>
+              <div class="line"></div>
+              <div class="line short"></div>
+              <div class="line mid"></div>
+              <div class="mock-button"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="work-grid">
+        <section class="section-card">
+          <h2>Capture intake</h2>
+          <div class="drop-zone" id="drop-zone">
+            <div>
+              <strong>Drop the current screenshot</strong>
+              <span>Use exact screen capture from the selected app state.</span>
+              <div class="btn-row">
+                <button class="btn-secondary" type="button" id="choose-file">Choose file</button>
+                <button class="btn-secondary" type="button" id="add-sample">Add sample capture</button>
+              </div>
+            </div>
+          </div>
+          <input class="visually-hidden" id="file-input" type="file" accept="image/*" multiple />
+
+          <div class="field-grid spaced">
+            <div class="form-field">
+              <label for="screen-name">Screen name</label>
+              <input id="screen-name" type="text" autocomplete="off" value="KYC start" />
+            </div>
+            <div class="form-field">
+              <label for="flow-name">Flow</label>
+              <select id="flow-name">
+                <option>Signup and first run</option>
+                <option>Money movement</option>
+                <option>Portfolio and settings</option>
+                <option>Edge states</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="screen-state">Screen state</label>
+              <select id="screen-state">
+                <option>Identity</option>
+                <option>Logged out</option>
+                <option>Security</option>
+                <option>Waiting state</option>
+                <option>Error</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="platform">Platform</label>
+              <select id="platform">
+                <option>iOS mobile</option>
+                <option>Android mobile</option>
+                <option>Web 1512 px</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field spaced">
+            <label for="capture-note">Capture note</label>
+            <textarea id="capture-note" spellcheck="true" placeholder="Example: signup blocked at document upload permission"></textarea>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-primary" type="button" id="mark-captured">Mark current captured</button>
+            <button class="btn-danger" type="button" id="mark-issue">Mark issue</button>
+          </div>
+        </section>
+
+        <aside class="section-card">
+          <h2>Session hints</h2>
+          <div class="hint">Capture before and after every modal transition. If the app blocks progress, capture the blocker and leave a note.</div>
+          <div class="error-state spaced" id="inline-warning">Missing KYC start and KYC pending before this flow can be submitted.</div>
+          <div class="btn-row">
+            <a class="btn-secondary" href="capture-01-assignment-brief.html">Back to brief</a>
+            <a class="btn-primary" href="capture-03-submit-review.html">Review batch</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <aside class="panel right-panel sticky">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Batch queue</h2>
+          <p class="panel-copy"><span id="queue-count">4</span> screenshots queued for upload.</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <ul class="queue-list" id="queue-list">
+          <li class="queue-item">
+            <span class="thumb" aria-hidden="true"></span>
+            <span class="queue-copy"><strong>01-app-landing.png</strong><span>Signup and first run - Mobile</span></span>
+            <button class="icon-button" type="button" aria-label="Remove 01-app-landing.png">x</button>
+          </li>
+          <li class="queue-item">
+            <span class="thumb" aria-hidden="true"></span>
+            <span class="queue-copy"><strong>02-create-account.png</strong><span>Signup and first run - Mobile</span></span>
+            <button class="icon-button" type="button" aria-label="Remove 02-create-account.png">x</button>
+          </li>
+          <li class="queue-item">
+            <span class="thumb" aria-hidden="true"></span>
+            <span class="queue-copy"><strong>03-otp-verification.png</strong><span>Signup and first run - Mobile</span></span>
+            <button class="icon-button" type="button" aria-label="Remove 03-otp-verification.png">x</button>
+          </li>
+          <li class="queue-item">
+            <span class="thumb" aria-hidden="true"></span>
+            <span class="queue-copy"><strong>04-home-empty.png</strong><span>Signup and first run - Mobile</span></span>
+            <button class="icon-button" type="button" aria-label="Remove 04-home-empty.png">x</button>
+          </li>
+        </ul>
+        <div class="btn-row">
+          <button class="btn-secondary" type="button" id="clear-queue">Clear queue</button>
+          <button class="btn-primary" type="button" id="upload-queue">Upload queue</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    const steps = Array.from(document.querySelectorAll(".step-button"));
+    const queueList = document.getElementById("queue-list");
+    const queueCount = document.getElementById("queue-count");
+    const toast = document.getElementById("toast");
+    const title = document.getElementById("current-title");
+    const copy = document.getElementById("current-copy");
+    const screenName = document.getElementById("screen-name");
+    const warning = document.getElementById("inline-warning");
+    let activeStep = steps.find((step) => step.dataset.status === "missing") || steps[0];
+    let toastTimer = null;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.hidden = false;
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.hidden = true;
+      }, 2800);
+    }
+
+    function selectStep(step) {
+      steps.forEach((item) => item.classList.remove("is-active"));
+      activeStep = step;
+      step.classList.add("is-active");
+      title.textContent = step.dataset.step;
+      screenName.value = step.dataset.step;
+      copy.textContent = step.dataset.status === "done"
+        ? "This screen is captured. Review metadata or recapture if quality is weak."
+        : "Capture this required screen before moving to final review.";
+    }
+
+    function updateCounts() {
+      const done = steps.filter((step) => step.dataset.status === "done").length;
+      const issues = steps.filter((step) => step.dataset.status === "issue").length;
+      const missing = steps.length - done - issues;
+      document.getElementById("done-count").textContent = done;
+      document.getElementById("missing-count").textContent = missing;
+      document.getElementById("issue-count").textContent = issues;
+      warning.textContent = missing === 0 && issues === 0
+        ? "This flow is ready for review."
+        : `${missing} missing screens and ${issues} issues remain in this flow.`;
+      warning.className = missing === 0 && issues === 0 ? "hint spaced" : "error-state spaced";
+    }
+
+    function queueItem(name) {
+      const li = document.createElement("li");
+      li.className = "queue-item";
+      li.innerHTML = `
+        <span class="thumb" aria-hidden="true"></span>
+        <span class="queue-copy"><strong>${name}</strong><span>Signup and first run - Mobile</span></span>
+        <button class="icon-button" type="button" aria-label="Remove ${name}">x</button>
+      `;
+      queueList.prepend(li);
+      queueCount.textContent = String(queueList.querySelectorAll(".queue-item").length);
+    }
+
+    steps.forEach((step) => {
+      step.addEventListener("click", () => selectStep(step));
+    });
+
+    document.getElementById("mark-captured").addEventListener("click", () => {
+      activeStep.dataset.status = "done";
+      activeStep.classList.add("is-done");
+      activeStep.classList.remove("has-issue");
+      activeStep.querySelector(".step-state").textContent = "Done";
+      queueItem(`${String(queueList.children.length + 1).padStart(2, "0")}-${activeStep.dataset.step.toLowerCase().replaceAll(" ", "-")}.png`);
+      updateCounts();
+      showToast(`${activeStep.dataset.step} marked captured`);
+    });
+
+    document.getElementById("mark-issue").addEventListener("click", () => {
+      activeStep.dataset.status = "issue";
+      activeStep.classList.add("has-issue");
+      activeStep.classList.remove("is-done");
+      activeStep.querySelector(".step-state").textContent = "Issue";
+      updateCounts();
+      showToast(`${activeStep.dataset.step} marked as issue`);
+    });
+
+    document.getElementById("choose-file").addEventListener("click", () => {
+      document.getElementById("file-input").click();
+    });
+
+    document.getElementById("file-input").addEventListener("change", (event) => {
+      for (const file of event.target.files) queueItem(file.name);
+      event.target.value = "";
+      showToast("Files added to batch");
+    });
+
+    document.getElementById("add-sample").addEventListener("click", () => {
+      queueItem(`${String(queueList.children.length + 1).padStart(2, "0")}-sample-capture.png`);
+      showToast("Sample capture added");
+    });
+
+    queueList.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      button.closest(".queue-item").remove();
+      queueCount.textContent = String(queueList.querySelectorAll(".queue-item").length);
+      showToast("Screenshot removed");
+    });
+
+    document.getElementById("clear-queue").addEventListener("click", () => {
+      queueList.innerHTML = "";
+      queueCount.textContent = "0";
+      showToast("Queue cleared");
+    });
+
+    document.getElementById("upload-queue").addEventListener("click", () => {
+      showToast("Prototype upload complete");
+    });
+
+    const dropZone = document.getElementById("drop-zone");
+    dropZone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropZone.classList.add("is-hot");
+    });
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("is-hot");
+    });
+    dropZone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropZone.classList.remove("is-hot");
+      for (const file of event.dataTransfer.files) queueItem(file.name);
+      showToast("Dropped files added");
+    });
+
+    selectStep(activeStep);
+    updateCounts();
+  </script>
+</body>
+</html>

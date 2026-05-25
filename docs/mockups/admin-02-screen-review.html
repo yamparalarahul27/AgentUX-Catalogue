@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Review Console - Screen Review</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #111113;
+      --panel-2: #161618;
+      --panel-3: #1d1d20;
+      --border: #2b2b31;
+      --border-strong: #3f3f46;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --quiet: #71717a;
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.12);
+      --accent-border: rgba(34, 211, 238, 0.42);
+      --success: #34d399;
+      --success-soft: rgba(52, 211, 153, 0.12);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.12);
+      --danger: #fb7185;
+      --danger-soft: rgba(251, 113, 133, 0.12);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button { min-height: 40px; border: 0; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.52; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+      align-items: center;
+      gap: 16px;
+      min-height: 64px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 9, 11, 0.96);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--panel-2); color: var(--accent); font-size: 13px; font-weight: 800; }
+    .brand strong, .brand span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand strong { font-size: 14px; }
+    .brand span { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .step-nav { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); }
+    .step-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 14px; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .step-nav a.is-active { background: var(--panel-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--border-strong); }
+    .identity { justify-self: end; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font-size: 13px; font-weight: 700; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    .page {
+      width: min(1600px, 100%);
+      margin: 0 auto;
+      padding: 18px 24px 28px;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr) 420px;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+    .panel-head { padding: 16px; border-bottom: 1px solid var(--border); }
+    .panel-title { margin: 0; font-size: 14px; line-height: 1.25; }
+    .panel-copy { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .panel-body { padding: 16px; }
+    .sticky { position: sticky; top: 82px; }
+
+    .flow-list, .thumb-grid, .feedback-list, .check-list { display: grid; gap: 8px; }
+    .flow-button {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      min-height: 48px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      text-align: left;
+    }
+    .flow-button.is-active { border-color: var(--accent-border); background: var(--accent-soft); }
+    .marker { width: 18px; height: 18px; border: 1px solid var(--border-strong); border-radius: 5px; }
+    .marker.done { border-color: rgba(52, 211, 153, 0.62); background: var(--success-soft); }
+    .marker.warn { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); }
+    .flow-copy { min-width: 0; }
+    .flow-copy strong { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .flow-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .flow-state { color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; }
+
+    .review-hero { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 16px; padding: 18px; border-bottom: 1px solid var(--border); }
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 36px); line-height: 1.05; letter-spacing: 0; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .badge { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .badge.accent { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent); }
+    .badge.warn { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: var(--warning); }
+    .badge.danger { border-color: rgba(251, 113, 133, 0.5); background: var(--danger-soft); color: var(--danger); }
+    .screen-score { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); padding: 14px; }
+    .screen-score strong { display: block; font-size: 28px; font-variant-numeric: tabular-nums; }
+    .screen-score span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+    .preview-zone { padding: 16px; border-bottom: 1px solid var(--border); }
+    .preview-frame {
+      display: grid;
+      place-items: center;
+      min-height: 470px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+    .phone { width: min(260px, 82%); border: 1px solid var(--border-strong); border-radius: 30px; background: #0d0d10; padding: 11px; }
+    .phone-screen { aspect-ratio: 9 / 18.5; border: 1px solid var(--border); border-radius: 22px; background: var(--panel-3); padding: 15px; display: grid; gap: 9px; align-content: start; }
+    .line { height: 8px; border-radius: 999px; background: #3f3f46; }
+    .line.short { width: 46%; }
+    .line.mid { width: 74%; }
+    .line.accent { background: var(--accent); opacity: 0.75; }
+    .mock-button { height: 34px; border-radius: var(--radius); background: var(--accent); opacity: 0.9; margin-top: 8px; }
+
+    .thumb-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 16px; }
+    .thumb-button {
+      min-height: 110px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      overflow: hidden;
+      text-align: left;
+    }
+    .thumb-button.is-active { border-color: var(--accent-border); background: var(--accent-soft); }
+    .thumb-top { height: 20px; border-bottom: 1px solid var(--border); background: var(--panel-3); }
+    .thumb-lines { display: grid; gap: 6px; padding: 10px; }
+    .thumb-button span { display: block; padding: 0 9px 9px; color: var(--muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .check-button {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: start;
+      min-height: 48px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      text-align: left;
+    }
+    .check-button.is-done .marker { border-color: rgba(52, 211, 153, 0.62); background: var(--success-soft); }
+    .check-copy strong { display: block; font-size: 13px; }
+    .check-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .check-state { color: var(--quiet); font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .check-button.is-done .check-state { color: var(--success); }
+
+    .form-field { display: grid; gap: 6px; margin-top: 12px; }
+    .form-field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .form-field input, .form-field select, .form-field textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 13px;
+    }
+    .form-field textarea { min-height: 86px; padding-top: 10px; resize: vertical; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .btn-primary, .btn-secondary, .btn-danger { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: var(--radius); font-size: 13px; font-weight: 800; }
+    .btn-primary { border: 1px solid var(--accent-border); background: var(--accent); color: #041014; }
+    .btn-secondary { border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+    .btn-danger { border: 1px solid rgba(251, 113, 133, 0.5); background: var(--danger-soft); color: var(--danger); }
+    .feedback-item { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); }
+    .feedback-item strong { display: block; font-size: 12px; line-height: 1.3; }
+    .feedback-item span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .toast { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); max-width: min(520px, calc(100vw - 32px)); padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: #18181b; color: var(--text); font-size: 13px; z-index: 20; }
+
+    @media (max-width: 1180px) {
+      .page { grid-template-columns: 300px minmax(0, 1fr); }
+      .right-panel { grid-column: 1 / -1; position: static; }
+    }
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr; justify-items: stretch; }
+      .identity { justify-self: start; }
+      .step-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: var(--radius); }
+      .step-nav a { min-width: 0; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .page { grid-template-columns: 1fr; padding: 14px; }
+      .sticky { position: static; }
+      .review-hero { grid-template-columns: 1fr; }
+      .thumb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 540px) {
+      .topbar { padding: 12px; }
+      .page { padding: 10px; }
+      .panel-head, .panel-body, .review-hero, .preview-zone, .thumb-grid { padding-left: 12px; padding-right: 12px; }
+      .flow-button, .check-button { grid-template-columns: 22px minmax(0, 1fr); }
+      .flow-state, .check-state { grid-column: 2; justify-self: start; }
+      .preview-frame { min-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="app-capture-specialist-workbench.html" aria-label="Back to Capture Workbench">
+      <span class="brand-mark" aria-hidden="true">UX</span>
+      <span>
+        <strong>Admin Review Console</strong>
+        <span>Screen inspection</span>
+      </span>
+    </a>
+    <nav class="step-nav" aria-label="Admin review prototype steps">
+      <a href="admin-01-review-queue.html">1. Queue</a>
+      <a class="is-active" href="admin-02-screen-review.html" aria-current="page">2. Inspect</a>
+      <a href="admin-03-feedback-handoff.html">3. Handoff</a>
+    </nav>
+    <div class="identity"><span class="dot" aria-hidden="true"></span>admin@agentux.local</div>
+  </header>
+
+  <main class="page">
+    <aside class="panel sticky">
+      <div class="panel-head">
+        <h2 class="panel-title">Coinbase screens</h2>
+        <p class="panel-copy">Jump between flagged screens and validate quality before sending feedback.</p>
+      </div>
+      <div class="panel-body">
+        <div class="flow-list" id="flow-list">
+          <button class="flow-button is-active" type="button" data-screen="Deposit success" data-flow="Money movement" data-state="Cropped top nav" data-severity="Must fix">
+            <span class="marker warn"></span>
+            <span class="flow-copy"><strong>Deposit success</strong><span>Money movement - success</span></span>
+            <span class="flow-state">Issue</span>
+          </button>
+          <button class="flow-button" type="button" data-screen="KYC pending" data-flow="Signup" data-state="Missing state" data-severity="Must fix">
+            <span class="marker warn"></span>
+            <span class="flow-copy"><strong>KYC pending</strong><span>Signup - waiting state</span></span>
+            <span class="flow-state">Missing</span>
+          </button>
+          <button class="flow-button" type="button" data-screen="Security settings" data-flow="Portfolio" data-state="Looks good" data-severity="None">
+            <span class="marker done"></span>
+            <span class="flow-copy"><strong>Security settings</strong><span>Portfolio - account</span></span>
+            <span class="flow-state">Good</span>
+          </button>
+          <button class="flow-button" type="button" data-screen="Offline state" data-flow="Edge states" data-state="Looks good" data-severity="None">
+            <span class="marker done"></span>
+            <span class="flow-copy"><strong>Offline state</strong><span>Edge states - error</span></span>
+            <span class="flow-state">Good</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <div class="review-hero">
+        <div>
+          <h1 id="screen-title">Deposit success</h1>
+          <p class="panel-copy" id="screen-copy">Money movement - cropped top nav. Add targeted feedback or mark the screen accepted.</p>
+          <div class="badge-row">
+            <span class="badge accent">Coinbase</span>
+            <span class="badge" id="flow-badge">Money movement</span>
+            <span class="badge danger" id="severity-badge">Must fix</span>
+            <span class="badge warn" id="state-badge">Cropped top nav</span>
+          </div>
+        </div>
+        <div class="screen-score">
+          <strong id="screen-score">2</strong>
+          <span>Feedback items attached to this submission.</span>
+        </div>
+      </div>
+
+      <div class="preview-zone">
+        <div class="preview-frame">
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="line accent short"></div>
+              <div class="line mid"></div>
+              <div class="line"></div>
+              <div class="line short"></div>
+              <div class="line mid"></div>
+              <div class="mock-button"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="thumb-grid">
+        <button class="thumb-button is-active" type="button" data-thumb="Deposit success">
+          <span class="thumb-top"></span>
+          <span class="thumb-lines"><span class="line accent short"></span><span class="line mid"></span><span class="line"></span></span>
+          <span>Deposit success</span>
+        </button>
+        <button class="thumb-button" type="button" data-thumb="KYC pending">
+          <span class="thumb-top"></span>
+          <span class="thumb-lines"><span class="line accent short"></span><span class="line mid"></span><span class="line"></span></span>
+          <span>KYC pending</span>
+        </button>
+        <button class="thumb-button" type="button" data-thumb="Security settings">
+          <span class="thumb-top"></span>
+          <span class="thumb-lines"><span class="line accent short"></span><span class="line mid"></span><span class="line"></span></span>
+          <span>Security settings</span>
+        </button>
+        <button class="thumb-button" type="button" data-thumb="Offline state">
+          <span class="thumb-top"></span>
+          <span class="thumb-lines"><span class="line accent short"></span><span class="line mid"></span><span class="line"></span></span>
+          <span>Offline state</span>
+        </button>
+      </div>
+    </section>
+
+    <aside class="panel right-panel sticky">
+      <div class="panel-head">
+        <h2 class="panel-title">Feedback composer</h2>
+        <p class="panel-copy">Attach precise feedback to a screen, flow, or whole submission.</p>
+      </div>
+      <div class="panel-body">
+        <div class="check-list" id="check-list">
+          <button class="check-button is-done" type="button">
+            <span class="marker"></span>
+            <span class="check-copy"><strong>Full chrome visible</strong><span>Status area, top nav, bottom nav, and modal bounds.</span></span>
+            <span class="check-state">Pass</span>
+          </button>
+          <button class="check-button" type="button">
+            <span class="marker"></span>
+            <span class="check-copy"><strong>No sensitive values</strong><span>Balance, identity, and contact data are masked.</span></span>
+            <span class="check-state">Open</span>
+          </button>
+          <button class="check-button is-done" type="button">
+            <span class="marker"></span>
+            <span class="check-copy"><strong>Correct flow order</strong><span>Screen appears in the expected user journey.</span></span>
+            <span class="check-state">Pass</span>
+          </button>
+        </div>
+
+        <form id="feedback-form">
+          <div class="form-field">
+            <label for="feedback-screen">Feedback target</label>
+            <input id="feedback-screen" type="text" autocomplete="off" value="Deposit success" />
+          </div>
+          <div class="form-field">
+            <label for="feedback-severity">Severity</label>
+            <select id="feedback-severity">
+              <option>Must fix</option>
+              <option>Should fix</option>
+              <option>Nice to fix</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="feedback-issue">Issue</label>
+            <textarea id="feedback-issue" spellcheck="true">Top nav is cropped in the success screen.</textarea>
+          </div>
+          <div class="form-field">
+            <label for="feedback-fix">Expected fix</label>
+            <textarea id="feedback-fix" spellcheck="true">Recapture the full screen with status area, top nav, and bottom nav visible.</textarea>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" type="submit">Add feedback</button>
+            <a class="btn-secondary" href="admin-03-feedback-handoff.html">Go to handoff</a>
+          </div>
+        </form>
+
+        <div class="feedback-list" id="feedback-list">
+          <div class="feedback-item"><strong>Deposit success - Must fix</strong><span>Top nav is cropped. Recapture full screen.</span></div>
+          <div class="feedback-item"><strong>KYC pending - Must fix</strong><span>Waiting state is missing from Signup.</span></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    const flowButtons = Array.from(document.querySelectorAll(".flow-button"));
+    const thumbButtons = Array.from(document.querySelectorAll(".thumb-button"));
+    const toast = document.getElementById("toast");
+    let toastTimer = null;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.hidden = false;
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.hidden = true;
+      }, 2800);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function selectScreen(button) {
+      flowButtons.forEach((item) => item.classList.remove("is-active"));
+      button.classList.add("is-active");
+      document.getElementById("screen-title").textContent = button.dataset.screen;
+      document.getElementById("screen-copy").textContent = `${button.dataset.flow} - ${button.dataset.state}. Add targeted feedback or mark the screen accepted.`;
+      document.getElementById("flow-badge").textContent = button.dataset.flow;
+      document.getElementById("state-badge").textContent = button.dataset.state;
+      document.getElementById("severity-badge").textContent = button.dataset.severity;
+      document.getElementById("severity-badge").className = button.dataset.severity === "None" ? "badge accent" : "badge danger";
+      document.getElementById("feedback-screen").value = button.dataset.screen;
+      document.getElementById("feedback-severity").value = button.dataset.severity === "None" ? "Should fix" : button.dataset.severity;
+      thumbButtons.forEach((thumb) => thumb.classList.toggle("is-active", thumb.dataset.thumb === button.dataset.screen));
+    }
+
+    flowButtons.forEach((button) => {
+      button.addEventListener("click", () => selectScreen(button));
+    });
+
+    thumbButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const match = flowButtons.find((flow) => flow.dataset.screen === button.dataset.thumb);
+        if (match) selectScreen(match);
+      });
+    });
+
+    document.getElementById("check-list").addEventListener("click", (event) => {
+      const row = event.target.closest(".check-button");
+      if (!row) return;
+      row.classList.toggle("is-done");
+      row.querySelector(".check-state").textContent = row.classList.contains("is-done") ? "Pass" : "Open";
+    });
+
+    document.getElementById("feedback-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const target = document.getElementById("feedback-screen").value.trim();
+      const severity = document.getElementById("feedback-severity").value;
+      const issue = document.getElementById("feedback-issue").value.trim();
+      if (!target || !issue) return;
+      document.getElementById("feedback-list").insertAdjacentHTML("afterbegin", `<div class="feedback-item"><strong>${escapeHtml(target)} - ${escapeHtml(severity)}</strong><span>${escapeHtml(issue)}</span></div>`);
+      const score = document.getElementById("screen-score");
+      score.textContent = String(Number(score.textContent) + 1);
+      showToast("Feedback added");
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Capture Prototype - Assignment Brief</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #111113;
+      --panel-2: #161618;
+      --panel-3: #1d1d20;
+      --border: #2b2b31;
+      --border-strong: #3f3f46;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --quiet: #71717a;
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.12);
+      --accent-border: rgba(34, 211, 238, 0.42);
+      --success: #34d399;
+      --success-soft: rgba(52, 211, 153, 0.12);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.12);
+      --danger: #fb7185;
+      --danger-soft: rgba(251, 113, 133, 0.12);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button { min-height: 40px; border: 0; cursor: pointer; }
+    button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    button:disabled { cursor: not-allowed; opacity: 0.52; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(210px, 1fr) auto minmax(210px, 1fr);
+      align-items: center;
+      gap: 16px;
+      min-height: 64px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 9, 11, 0.96);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .brand strong, .brand span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand strong { font-size: 14px; }
+    .brand span { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .step-nav {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+    }
+    .step-nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .step-nav a.is-active {
+      background: var(--panel-3);
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px var(--border-strong);
+    }
+    .identity {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    .page {
+      width: min(1520px, 100%);
+      margin: 0 auto;
+      padding: 18px 24px 28px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr) 360px;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title { margin: 0; font-size: 14px; line-height: 1.25; }
+    .panel-copy { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .panel-body { padding: 16px; }
+    .sticky { position: sticky; top: 82px; }
+
+    .search {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 13px;
+    }
+    .app-stack { display: grid; gap: 8px; margin-top: 12px; }
+    .app-card {
+      display: block;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+    .app-card.is-active { border-color: var(--accent-border); background: var(--accent-soft); }
+    .app-card strong { display: block; font-size: 13px; }
+    .app-card span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .mini-progress { margin-top: 10px; display: grid; gap: 6px; }
+    .mini-line { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .bar { height: 7px; border-radius: 999px; overflow: hidden; background: #27272a; }
+    .bar-fill { height: 100%; border-radius: inherit; background: var(--accent); }
+    .w-0 { width: 0%; }
+    .w-44 { width: 44%; }
+    .w-89 { width: 89%; }
+
+    .hero {
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 250px;
+      gap: 16px;
+    }
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 36px); line-height: 1.05; letter-spacing: 0; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge.accent { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent); }
+    .badge.warn { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: var(--warning); }
+    .summary-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); padding: 14px; }
+    .summary-card strong { display: block; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .summary-card span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+    .brief-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 0.55fr); gap: 16px; padding: 16px; }
+    .section-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); padding: 14px; }
+    .section-card h2, .section-card h3 { margin: 0 0 10px; font-size: 13px; }
+    .section-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .rule-list, .flow-list, .check-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .rule-list li, .flow-row {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+    .marker {
+      display: grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      color: var(--success);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .marker.is-done { border-color: rgba(52, 211, 153, 0.62); background: var(--success-soft); }
+    .rule-list strong, .flow-row strong { display: block; font-size: 13px; line-height: 1.3; }
+    .rule-list span, .flow-row span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .flow-count { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .fieldset {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      display: grid;
+      gap: 12px;
+    }
+    .fieldset legend {
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+    .form-field { display: grid; gap: 6px; }
+    .form-field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .form-field input, .form-field textarea, .form-field select {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+    }
+    .form-field textarea { min-height: 86px; padding-top: 10px; resize: vertical; }
+
+    .cta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .btn-primary, .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .btn-primary { border: 1px solid var(--accent-border); background: var(--accent); color: #041014; }
+    .btn-secondary { border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+    .empty-state, .error-state {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .error-state { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: #fde68a; }
+    .spaced { margin-top: 14px; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      max-width: min(520px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #18181b;
+      color: var(--text);
+      font-size: 13px;
+      z-index: 20;
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1180px) {
+      .page { grid-template-columns: 280px minmax(0, 1fr); }
+      .right-panel { grid-column: 1 / -1; position: static; }
+    }
+    @media (max-width: 860px) {
+      .topbar { grid-template-columns: 1fr; justify-items: stretch; }
+      .identity { justify-self: start; }
+      .step-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: var(--radius); }
+      .step-nav a { justify-content: center; min-width: 0; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .page { grid-template-columns: 1fr; padding: 14px; }
+      .sticky { position: static; }
+      .hero, .brief-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .topbar { padding: 12px; }
+      .page { padding: 10px; }
+      .panel-head, .panel-body, .hero, .brief-grid { padding-left: 12px; padding-right: 12px; }
+      .badge-row { gap: 7px; }
+      .flow-row { grid-template-columns: 20px minmax(0, 1fr); }
+      .flow-count { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="app-capture-specialist-workbench.html" aria-label="Back to Capture Workbench">
+      <span class="brand-mark" aria-hidden="true">UX</span>
+      <span>
+        <strong>Capture Prototype</strong>
+        <span>Assignment brief</span>
+      </span>
+    </a>
+    <nav class="step-nav" aria-label="Capture prototype steps">
+      <a class="is-active" href="capture-01-assignment-brief.html" aria-current="page">1. Brief</a>
+      <a href="capture-02-session.html">2. Session</a>
+      <a href="capture-03-submit-review.html">3. Submit</a>
+    </nav>
+    <div class="identity"><span class="dot" aria-hidden="true"></span>rahul@agentux.local</div>
+  </header>
+
+  <main class="page">
+    <aside class="panel sticky">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Assigned apps</h2>
+          <p class="panel-copy">Choose the app before starting a capture run.</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <label class="visually-hidden" for="app-search">Search apps</label>
+        <input class="search" id="app-search" type="search" autocomplete="off" placeholder="Search apps" />
+        <div class="app-stack" id="app-list">
+          <a class="app-card is-active" href="capture-01-assignment-brief.html">
+            <strong>Coinbase</strong>
+            <span>Global - Mobile + web</span>
+            <span>Due May 28</span>
+            <span class="mini-progress">
+              <span class="mini-line"><span>8/18 screens</span><span>44%</span></span>
+              <span class="bar"><span class="bar-fill w-44"></span></span>
+            </span>
+          </a>
+          <a class="app-card" href="capture-01-assignment-brief.html">
+            <strong>Robinhood</strong>
+            <span>US - Mobile</span>
+            <span>Signup required</span>
+            <span class="mini-progress">
+              <span class="mini-line"><span>0/12 screens</span><span>0%</span></span>
+              <span class="bar"><span class="bar-fill w-0"></span></span>
+            </span>
+          </a>
+          <a class="app-card" href="capture-01-assignment-brief.html">
+            <strong>Groww</strong>
+            <span>India - Mobile + web</span>
+            <span>Needs revisions</span>
+            <span class="mini-progress">
+              <span class="mini-line"><span>8/9 screens</span><span>89%</span></span>
+              <span class="bar"><span class="bar-fill w-89"></span></span>
+            </span>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <div class="hero">
+        <div>
+          <h1>Coinbase capture brief</h1>
+          <p class="panel-copy">Document the end-to-end consumer investing and wallet experience across mobile and web. Use a fresh account where possible so first-run and empty states are preserved.</p>
+          <div class="badge-row">
+            <span class="badge accent">In progress</span>
+            <span class="badge">Finance app</span>
+            <span class="badge">Mobile + web</span>
+            <span class="badge warn">Signup allowed</span>
+            <span class="badge">Due May 28</span>
+          </div>
+        </div>
+        <div class="summary-card">
+          <strong>18</strong>
+          <span>Required screens across 4 app sections. 8 are captured in the current run.</span>
+          <div class="mini-progress">
+            <span class="mini-line"><span>Capture coverage</span><span>44%</span></span>
+            <span class="bar"><span class="bar-fill w-44"></span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="brief-grid">
+        <section class="section-card">
+          <h2>Capture guidelines</h2>
+          <ul class="rule-list">
+            <li>
+              <span class="marker is-done" aria-hidden="true"></span>
+              <span><strong>Use a real account path</strong><span>Capture actual app screens, not marketing pages or app store previews.</span></span>
+              <span class="badge">Required</span>
+            </li>
+            <li>
+              <span class="marker is-done" aria-hidden="true"></span>
+              <span><strong>Keep full device chrome</strong><span>Status bars, top navigation, bottom navigation, and modal edges must be visible.</span></span>
+              <span class="badge">Required</span>
+            </li>
+            <li>
+              <span class="marker" aria-hidden="true"></span>
+              <span><strong>Mask sensitive values</strong><span>Balances, phone numbers, emails, names, addresses, and transaction identifiers must be safe.</span></span>
+              <span class="badge warn">Open</span>
+            </li>
+            <li>
+              <span class="marker" aria-hidden="true"></span>
+              <span><strong>Capture gaps and blockers</strong><span>If signup, KYC, or bank-linking blocks a flow, add a note and capture the blocking state.</span></span>
+              <span class="badge">Required</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="section-card">
+          <h2>Required flows</h2>
+          <ul class="flow-list">
+            <li class="flow-row">
+              <span class="marker is-done" aria-hidden="true"></span>
+              <span><strong>Signup and first run</strong><span>Landing, create account, OTP, KYC, home empty.</span></span>
+              <span class="flow-count">4/6</span>
+            </li>
+            <li class="flow-row">
+              <span class="marker is-done" aria-hidden="true"></span>
+              <span><strong>Money movement</strong><span>Link bank, deposit, withdraw, success, error.</span></span>
+              <span class="flow-count">2/6</span>
+            </li>
+            <li class="flow-row">
+              <span class="marker" aria-hidden="true"></span>
+              <span><strong>Portfolio and settings</strong><span>Watchlist, asset detail, transactions, security, help.</span></span>
+              <span class="flow-count">2/4</span>
+            </li>
+            <li class="flow-row">
+              <span class="marker" aria-hidden="true"></span>
+              <span><strong>Edge states</strong><span>Offline, permission denied, maintenance, rate limit if reachable.</span></span>
+              <span class="flow-count">0/2</span>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </section>
+
+    <aside class="panel right-panel sticky">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Access plan</h2>
+          <p class="panel-copy">Record service access and capture constraints before starting.</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <form id="access-form">
+          <fieldset class="fieldset">
+            <legend>Account and device</legend>
+            <div class="form-field">
+              <label for="capture-email">Specialist account</label>
+              <input id="capture-email" type="email" autocomplete="email" value="capture.coinbase@agentux.local" />
+            </div>
+            <div class="form-field">
+              <label for="device-plan">Primary capture device</label>
+              <select id="device-plan">
+                <option>iPhone 15 - iOS</option>
+                <option>Pixel 8 - Android</option>
+                <option>Desktop web - 1512 px</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="access-note">Access notes</label>
+              <textarea id="access-note" spellcheck="true">Signup is allowed. Avoid exposing real balance or identity data.</textarea>
+            </div>
+          </fieldset>
+          <div class="cta-row">
+            <button class="btn-secondary" type="button" id="save-brief">Save brief</button>
+            <a class="btn-primary" href="capture-02-session.html">Start capture</a>
+          </div>
+        </form>
+
+        <div class="empty-state spaced">
+          Admin hint: this app can be captured without asking for additional credentials.
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    const search = document.getElementById("app-search");
+    const list = document.getElementById("app-list");
+    const toast = document.getElementById("toast");
+    let toastTimer = null;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.hidden = false;
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.hidden = true;
+      }, 2800);
+    }
+
+    search.addEventListener("input", () => {
+      const query = search.value.trim().toLowerCase();
+      for (const card of list.querySelectorAll(".app-card")) {
+        card.hidden = !card.textContent.toLowerCase().includes(query);
+      }
+    });
+
+    document.getElementById("save-brief").addEventListener("click", () => {
+      showToast("Brief saved for this prototype");
+    });
+  </script>
+</body>
+</html>
