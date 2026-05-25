@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant, getVariantKey } from '../lib/catalogue-families';
 import { formatDateTime, getContainLayout, type ImageSize, type LightboxAnnotation } from '../lib/catalogue-lightbox';
@@ -977,13 +978,28 @@ export function CatalogueFamilyLightbox({
                   return (
                     <>
                       <span className="catalogue-lightbox-meta-sep">·</span>
-                      <time
-                        className="catalogue-lightbox-meta-time"
-                        dateTime={date.toISOString()}
-                        title={formatAbsoluteDateTime(date)}
-                      >
-                        {formatRelativeTime(date)}
-                      </time>
+                      <Tooltip.Provider delayDuration={150} skipDelayDuration={300}>
+                        <Tooltip.Root>
+                          <Tooltip.Trigger asChild>
+                            <time
+                              className="catalogue-lightbox-meta-time"
+                              dateTime={date.toISOString()}
+                            >
+                              {formatRelativeTime(date)}
+                            </time>
+                          </Tooltip.Trigger>
+                          <Tooltip.Portal>
+                            <Tooltip.Content
+                              className="catalogue-meta-tooltip"
+                              sideOffset={6}
+                              collisionPadding={8}
+                            >
+                              {formatAbsoluteDateTime(date)}
+                              <Tooltip.Arrow className="catalogue-meta-tooltip__arrow" width={8} height={4} />
+                            </Tooltip.Content>
+                          </Tooltip.Portal>
+                        </Tooltip.Root>
+                      </Tooltip.Provider>
                     </>
                   );
                 })()}

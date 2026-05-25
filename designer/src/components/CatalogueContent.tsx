@@ -139,7 +139,7 @@ export function CatalogueContent({
   if (filteredFamilies.length === 0) {
     return (
       <div className="empty-state">
-        <ImageIcon size={64} color="#3f3f46" strokeWidth={1.5} />
+        <ImageIcon size={64} strokeWidth={1.5} />
         <h2>{hasActiveFilters ? 'No matching screen families' : 'No screenshots yet'}</h2>
         <p>{hasActiveFilters ? 'Try adjusting your search or filters, or click below to explore the latest.' : 'Upload screenshots to get started.'}</p>
         {hasActiveFilters && (

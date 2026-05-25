@@ -744,15 +744,23 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
   padding: 80px 20px;
   text-align: center;
   color: $text-muted;
-  // Bottom-to-top fading gradient — anchors the empty state to the
-  // viewport floor without a hard edge. Scoped to the empty-state
-  // container so it doesn't bleed into the catalogue grid.
-  background: radial-gradient(
-    ellipse at 50% 100%,
-    rgba(99, 102, 241, 0.08) 0%,
-    rgba(99, 102, 241, 0.04) 35%,
-    transparent 75%
-  );
+  // Fill the available vertical space so the empty state reads as a
+  // full surface, not a centred paragraph. calc accounts for header
+  // chrome so the gradient meets the viewport floor without overflow.
+  min-height: calc(100vh - 160px);
+  border-radius: 16px;
+  // Subtle indigo glow anchored at the bottom — uses the app's
+  // $accent (#6366f1). Matches the rest of the indigo language
+  // (chips, CTAs, focus states) so the empty state reads as part of
+  // the page, not a one-off accent.
+  background:
+    radial-gradient(
+      ellipse 120% 90% at 50% 100%,
+      rgba(99, 102, 241, 0.20) 0%,
+      rgba(99, 102, 241, 0.10) 35%,
+      transparent 75%
+    ),
+    #0f0f10;
 
   h2 {
     margin-top: 16px;
@@ -765,6 +773,11 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
     font-size: 14px;
     max-width: 360px;
   }
+
+  // The Lucide image-icon used to be hardcoded #3f3f46 inline (set in
+  // CatalogueContent.tsx). After removing that, it inherits the
+  // parent `color: $text-muted` via currentColor — visible against
+  // the dark surface, soft against the green glow at the bottom.
 }
 
 // "Explore latest" CTA on the filtered-empty state — clears every

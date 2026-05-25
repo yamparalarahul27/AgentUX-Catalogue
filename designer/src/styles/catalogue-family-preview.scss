@@ -139,14 +139,42 @@
 }
 
 // Upload date — relative ("2d ago") with the absolute timestamp on
-// hover via the `title` attribute. Matches the meta chips visually,
-// dimmer colour so it reads as a secondary tag.
+// hover via a Radix tooltip (.catalogue-meta-tooltip). Matches the
+// meta chips visually, dimmer colour so it reads as a secondary tag.
 .catalogue-lightbox-meta-time {
   font-size: 12px;
   font-weight: 500;
   color: #71717a;
   white-space: nowrap;
   cursor: help;
+
+  &:hover { color: #d4d4d8; }
+}
+
+// Generic Radix tooltip skin — used by the lightbox upload-date for
+// now; safe to reuse for other meta-line tooltips later.
+.catalogue-meta-tooltip {
+  background: #1c1c20;
+  border: 1px solid #3a3a44;
+  color: #fafafa;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+  user-select: none;
+  letter-spacing: -0.005em;
+  animation: catalogue-meta-tooltip-in 0.12s ease-out;
+}
+
+.catalogue-meta-tooltip__arrow {
+  fill: #1c1c20;
+}
+
+@keyframes catalogue-meta-tooltip-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .catalogue-lightbox-meta-chip {
