@@ -106,7 +106,10 @@ interface AnimationStageProps {
 
 // Total durations — must match the keyframes in save-trash-animation.scss.
 const SAVE_TOTAL_MS = 1500;
-const DELETE_TOTAL_MS = 1600;
+// Delete keeps the ball/screenshot animation at 1.6s, but the trash
+// asset lingers visible after the impact for ~900ms (so the "full"
+// trash is a clear "you deleted this" moment) before sliding out.
+const DELETE_TOTAL_MS = 2400;
 // Commit at the moment the screenshot has visually arrived in the
 // corner asset — bookmark toggles / soft-delete fires.
 const SAVE_COMMIT_AT_MS = 1100;

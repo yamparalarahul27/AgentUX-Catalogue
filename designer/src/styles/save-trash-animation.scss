@@ -24,8 +24,9 @@
 //
 //   SAVE_TOTAL_MS            = 1500   matches save-* keyframes
 //   SAVE_COMMIT_AT_MS        = 1100
-//   DELETE_TOTAL_MS          = 1600   matches delete-* keyframes
-//   DELETE_TRASH_SWAP_AT_MS  = 1050
+//   DELETE_TOTAL_MS          = 2400   matches the TRASH keyframes
+//                                     (screenshot still finishes at 1.6s)
+//   DELETE_TRASH_SWAP_AT_MS  = 1050   ≈ 44% of the 2.4s trash timeline
 
 .save-trash-anim {
   pointer-events: none;
@@ -117,25 +118,38 @@
 // bin via an apex keyframe. The 3-key path (source → apex → target)
 // produces a smooth parabola with single ease-in-out — the previous
 // 7-key version's "kinks" came from forcing too many waypoints.
+// Note the asymmetric durations: the screenshot's flight finishes at
+// 1.6s (lands in the trash, fades to opacity 0). The trash itself
+// stays on stage for 2.4s — wobbling, lingering full, then sliding
+// out — so the "you deleted this" moment lands with weight.
 .save-trash-anim--delete {
   .save-trash-anim__screenshot {
     animation: delete-screenshot 1.6s cubic-bezier(0.4, 0.05, 0.2, 1) forwards;
   }
   .save-trash-anim__trash {
-    animation: corner-asset-enter-right 1.6s cubic-bezier(0.4, 0.5, 0.25, 1) forwards;
+    animation: corner-asset-enter-right 2.4s cubic-bezier(0.4, 0.5, 0.25, 1) forwards;
   }
 }
 
 @keyframes corner-asset-enter-right {
+  // 0–12% (0–288ms): slide in from off-screen right.
   0%   { transform: translateX(220%) rotate(0deg); opacity: 0; }
-  18%  { transform: translateX(0)    rotate(0deg); opacity: 1; }
-  // Hold docked while the ball arcs in. Impact wobble at ~66%
-  // matches DELETE_TRASH_SWAP_AT_MS in the React component.
-  64%  { transform: translateX(0) translateY(0)   rotate(0deg)  scaleY(1);    opacity: 1; }
-  68%  { transform: translateX(0) translateY(3px) rotate(-3deg) scaleY(0.94); opacity: 1; }
-  74%  { transform: translateX(0) translateY(0)   rotate(4deg)  scaleY(1.03); opacity: 1; }
-  80%  { transform: translateX(0) translateY(0)   rotate(-1deg) scaleY(1);    opacity: 1; }
-  100% { transform: translateX(0) translateY(0)   rotate(0deg)  scaleY(1);    opacity: 1; }
+  12%  { transform: translateX(0)    rotate(0deg); opacity: 1; }
+  // 12–44% (288–1056ms): hold docked while the ball arcs in.
+  // 44% matches DELETE_TRASH_SWAP_AT_MS = 1050 — the moment the
+  // React component swaps empty.png → full.png. Wobble starts here.
+  44%  { transform: translateX(0) translateY(0)   rotate(0deg)  scaleY(1);    opacity: 1; }
+  46%  { transform: translateX(0) translateY(3px) rotate(-3deg) scaleY(0.94); opacity: 1; }
+  49%  { transform: translateX(0) translateY(0)   rotate(4deg)  scaleY(1.03); opacity: 1; }
+  52%  { transform: translateX(0) translateY(0)   rotate(-1deg) scaleY(1);    opacity: 1; }
+  // 55–90% (1320–2160ms): linger as a full trash. ~840ms of static
+  // presence so the user reads "deleted" before the trash leaves.
+  55%  { transform: translateX(0) translateY(0)   rotate(0deg)  scaleY(1);    opacity: 1; }
+  90%  { transform: translateX(0) translateY(0)   rotate(0deg)  scaleY(1);    opacity: 1; }
+  // 90–100% (2160–2400ms): slide out back to the right, fading. The
+  // exit mirrors the entrance direction so the metaphor reads as
+  // "the trash takes this item away".
+  100% { transform: translateX(60%) translateY(0) rotate(2deg)  scaleY(1);    opacity: 0; }
 }
 
 @keyframes delete-screenshot {
