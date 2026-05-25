@@ -40,6 +40,7 @@ import './styles/catalogue-magnified-dock.scss';
 import './styles/catalogue-group-detail.scss';
 import './styles/catalogue-not-found.scss';
 import './styles/welcome-modal.scss';
+import './styles/save-trash-animation.scss';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

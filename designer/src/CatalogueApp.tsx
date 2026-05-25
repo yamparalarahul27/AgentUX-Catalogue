@@ -6,6 +6,7 @@ import { Catalogue } from './components/Catalogue';
 import { CatalogueGroupDetail } from './components/CatalogueGroupDetail';
 import { CatalogueNotFound } from './components/CatalogueNotFound';
 import { PasscodeLogin } from './components/PasscodeLogin';
+import { SaveTrashAnimationProvider } from './components/SaveTrashAnimation';
 import { SharePage } from './components/SharePage';
 import { WelcomeModal } from './components/WelcomeModal';
 import { isSharePath } from './lib/share-url';
@@ -40,7 +41,7 @@ export function CatalogueApp() {
   }
 
   return (
-    <>
+    <SaveTrashAnimationProvider>
       <Routes>
         <Route
           path="/"
@@ -75,6 +76,6 @@ export function CatalogueApp() {
       </Routes>
       <WelcomeModal />
       {import.meta.env.DEV && <Agentation />}
-    </>
+    </SaveTrashAnimationProvider>
   );
 }

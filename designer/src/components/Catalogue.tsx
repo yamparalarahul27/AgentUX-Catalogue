@@ -72,7 +72,6 @@ import {
   parseFlowPresentation,
   type FlowPresentation,
 } from './CatalogueToolbar';
-import { SaveAnimationProvider } from './SaveAnimation';
 import { WhatsNewPanel, getWhatsNewUnseenCount } from './WhatsNewPanel';
 import { loadWhatsNewReleases } from '../data/whats-new';
 import { AppUpdateToast } from './AppUpdateToast';
@@ -897,7 +896,6 @@ export function Catalogue({
     });
   }
   return (
-    <SaveAnimationProvider>
     <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
@@ -1443,6 +1441,5 @@ export function Catalogue({
         }}
       />
     </div>
-    </SaveAnimationProvider>
   );
 }

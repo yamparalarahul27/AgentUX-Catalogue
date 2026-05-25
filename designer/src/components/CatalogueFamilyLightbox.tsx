@@ -29,6 +29,8 @@ import {
 import { UiElementComposerExtras } from './CatalogueLightboxUiElementExtras';
 import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib/feature-flags';
 import { ConfirmModal } from './ConfirmModal';
+import { useSaveTrashAnimation } from './SaveTrashAnimation';
+import { getSkipDeleteConfirm, setSkipDeleteConfirm } from '../lib/delete-confirm-pref';
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
   // Non-guest gate (existing). Drives ensureCanEdit() and existing
@@ -158,6 +160,49 @@ export function CatalogueFamilyLightbox({
   const fileRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const annotationInputRef = useRef<HTMLInputElement>(null);
+  const { triggerSave, triggerDelete } = useSaveTrashAnimation();
+  // When the delete animation is choreographing, hide the lightbox
+  // media area so the ghost overlay doesn't double with the live image.
+  const [isAnimatingDelete, setIsAnimatingDelete] = useState(false);
+
+  // Save flow — floppy slides in from left of the lightbox image,
+  // screenshot crumples into it. Mutation commits mid-flight so the
+  // bookmarked state flips before the floppy exits.
+  function fireSaveAnimation() {
+    if (!screenshot || !onToggleBookmark) return;
+    const rect = mediaRef.current?.getBoundingClientRect();
+    if (!rect) {
+      onToggleBookmark(screenshot.id);
+      return;
+    }
+    triggerSave({
+      sourceRect: rect,
+      screenshotUrl: screenshot.image_url ?? null,
+      thumbHash: screenshot.thumb_hash ?? null,
+      onComplete: () => onToggleBookmark(screenshot.id),
+    });
+  }
+
+  // Delete flow — screenshot crumples, trash slides in from right,
+  // ball arcs into it. onComplete fires the actual soft-delete so the
+  // family drops from the grid right as the ball lands.
+  function fireDeleteAnimation() {
+    if (!screenshot) return;
+    const rect = mediaRef.current?.getBoundingClientRect();
+    if (!rect) {
+      void onDeleteFamily(family.id);
+      return;
+    }
+    setIsAnimatingDelete(true);
+    triggerDelete({
+      sourceRect: rect,
+      screenshotUrl: screenshot.image_url ?? null,
+      thumbHash: screenshot.thumb_hash ?? null,
+      onComplete: () => {
+        void onDeleteFamily(family.id);
+      },
+    });
+  }
   const [lightboxPanel, setLightboxPanel] = useState<LightboxPanel>(showLabelTab ? 'label' : 'comments');
   const [promptCopied, setPromptCopied] = useState(false);
 
@@ -399,7 +444,12 @@ export function CatalogueFamilyLightbox({
       if (key === 'b') {
         if (!onToggleBookmark || !screenshot) return;
         event.preventDefault();
-        onToggleBookmark(screenshot.id);
+        const isBookmarked = bookmarkedIds?.has(screenshot.id) ?? false;
+        if (isBookmarked) {
+          onToggleBookmark(screenshot.id);
+        } else {
+          fireSaveAnimation();
+        }
         return;
       }
       if (key === 'c') {
@@ -589,11 +639,18 @@ export function CatalogueFamilyLightbox({
   }
   function requestDeleteFamily() {
     if (!ensureCanEdit()) return;
+    // Skip the confirm modal if the user previously ticked "Don't
+    // show again". Go straight to the trash animation.
+    if (getSkipDeleteConfirm()) {
+      fireDeleteAnimation();
+      return;
+    }
     setConfirmDeleteOpen(true);
   }
-  async function performDeleteFamily() {
+  function performDeleteFamily(options?: { dontShowAgain: boolean }) {
+    if (options?.dontShowAgain) setSkipDeleteConfirm(true);
     setConfirmDeleteOpen(false);
-    await onDeleteFamily(family.id);
+    fireDeleteAnimation();
   }
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -764,7 +821,7 @@ export function CatalogueFamilyLightbox({
             />
           ) : (
           <div
-            className="catalogue-lightbox-media-inner"
+            className={`catalogue-lightbox-media-inner${isAnimatingDelete ? ' is-animating-delete' : ''}`}
             ref={mediaRef}
             onMouseDown={handleMediaMouseDown}
             onMouseMove={handleMediaMouseMove}
@@ -910,8 +967,14 @@ export function CatalogueFamilyLightbox({
                 commentsCount={comments.length}
                 hideCatalogueActions={showLabelTab}
                 isBookmarked={Boolean(screenshot && bookmarkedIds?.has(screenshot.id))}
-                onToggleBookmark={onToggleBookmark && screenshot ? () => onToggleBookmark(screenshot.id) : undefined}
-                saveAnimationImageUrl={screenshot?.image_url}
+                onToggleBookmark={onToggleBookmark && screenshot ? () => {
+                  // Already saved → instant unsave, no animation.
+                  if (bookmarkedIds?.has(screenshot.id)) {
+                    onToggleBookmark(screenshot.id);
+                  } else {
+                    fireSaveAnimation();
+                  }
+                } : undefined}
                 onShareLink={onShareLink && screenshot ? () => onShareLink(screenshot.id) : undefined}
                 existingFlows={existingFlows}
                 existingGroups={existingGroups}
@@ -1184,7 +1247,9 @@ export function CatalogueFamilyLightbox({
       <ConfirmModal
         title="Move to Trash"
         message={`Move "${family.name}" to Trash? Recoverable for 15 days from Settings → Team → Trash.`}
-        onConfirm={() => void performDeleteFamily()}
+        confirmLabel="Move to Trash"
+        dontShowAgainLabel="Don't show this confirmation again"
+        onConfirm={(options) => performDeleteFamily(options)}
         onCancel={() => setConfirmDeleteOpen(false)}
       />
     )}
