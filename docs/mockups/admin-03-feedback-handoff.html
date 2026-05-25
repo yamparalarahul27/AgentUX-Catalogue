@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Review Console - Feedback Handoff</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #111113;
+      --panel-2: #161618;
+      --panel-3: #1d1d20;
+      --border: #2b2b31;
+      --border-strong: #3f3f46;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --quiet: #71717a;
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.12);
+      --accent-border: rgba(34, 211, 238, 0.42);
+      --success: #34d399;
+      --success-soft: rgba(52, 211, 153, 0.12);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.12);
+      --danger: #fb7185;
+      --danger-soft: rgba(251, 113, 133, 0.12);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button { min-height: 40px; border: 0; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.52; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+      align-items: center;
+      gap: 16px;
+      min-height: 64px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 9, 11, 0.96);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--panel-2); color: var(--accent); font-size: 13px; font-weight: 800; }
+    .brand strong, .brand span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand strong { font-size: 14px; }
+    .brand span { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .step-nav { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); }
+    .step-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 14px; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .step-nav a.is-active { background: var(--panel-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--border-strong); }
+    .identity { justify-self: end; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); font-size: 13px; font-weight: 700; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    .page {
+      width: min(1520px, 100%);
+      margin: 0 auto;
+      padding: 18px 24px 28px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 420px;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+    .panel-head { display: flex; justify-content: space-between; gap: 14px; padding: 16px; border-bottom: 1px solid var(--border); }
+    .panel-title { margin: 0; font-size: 14px; line-height: 1.25; }
+    .panel-copy { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .panel-body { padding: 16px; }
+    .sticky { position: sticky; top: 82px; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 16px;
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 36px); line-height: 1.05; letter-spacing: 0; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .badge { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel-2); color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .badge.accent { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent); }
+    .badge.good { border-color: rgba(52, 211, 153, 0.5); background: var(--success-soft); color: var(--success); }
+    .badge.warn { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: var(--warning); }
+    .score-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); padding: 14px; }
+    .score-card strong { display: block; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .score-card span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr); gap: 16px; padding: 16px; }
+    .section-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); padding: 14px; }
+    .section-card h2, .section-card h3 { margin: 0 0 10px; font-size: 13px; }
+    .feedback-list, .decision-list, .timeline { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .feedback-item, .decision-row, .timeline li {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+    .feedback-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+    .feedback-item.is-resolved { opacity: 0.6; }
+    .feedback-copy strong, .decision-copy strong { display: block; font-size: 13px; line-height: 1.35; }
+    .feedback-copy span, .decision-copy span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .decision-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 9px; align-items: start; }
+    .marker { width: 18px; height: 18px; margin-top: 1px; border: 1px solid var(--border-strong); border-radius: 5px; background: transparent; }
+    .decision-row.is-done .marker { border-color: rgba(52, 211, 153, 0.62); background: var(--success-soft); }
+    .decision-state { color: var(--quiet); font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .decision-row.is-done .decision-state { color: var(--success); }
+    .timeline li { color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+    .form-field { display: grid; gap: 6px; margin-top: 14px; }
+    .form-field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .form-field textarea, .form-field select {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+    }
+    .form-field textarea { min-height: 100px; padding-top: 10px; resize: vertical; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .btn-primary, .btn-secondary, .btn-danger { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: var(--radius); font-size: 13px; font-weight: 800; }
+    .btn-primary { border: 1px solid var(--accent-border); background: var(--accent); color: #041014; }
+    .btn-secondary { border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+    .btn-danger { border: 1px solid rgba(251, 113, 133, 0.5); background: var(--danger-soft); color: var(--danger); }
+    .state-box, .error-state, .success-state {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .error-state { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: #fde68a; }
+    .success-state { border-color: rgba(52, 211, 153, 0.5); background: var(--success-soft); color: #bbf7d0; }
+    .spaced { margin-top: 14px; }
+    .toast { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); max-width: min(520px, calc(100vw - 32px)); padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: #18181b; color: var(--text); font-size: 13px; z-index: 20; }
+
+    @media (max-width: 1080px) {
+      .page { grid-template-columns: 1fr; }
+      .sticky { position: static; }
+    }
+    @media (max-width: 860px) {
+      .topbar { grid-template-columns: 1fr; justify-items: stretch; }
+      .identity { justify-self: start; }
+      .step-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: var(--radius); }
+      .step-nav a { min-width: 0; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .page { padding: 14px; }
+      .hero, .content-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 540px) {
+      .topbar { padding: 12px; }
+      .page { padding: 10px; }
+      .panel-head, .panel-body, .hero, .content-grid { padding-left: 12px; padding-right: 12px; }
+      .feedback-item, .decision-row { grid-template-columns: 22px minmax(0, 1fr); }
+      .feedback-item .btn-secondary, .decision-state { grid-column: 2; justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="app-capture-specialist-workbench.html" aria-label="Back to Capture Workbench">
+      <span class="brand-mark" aria-hidden="true">UX</span>
+      <span>
+        <strong>Admin Review Console</strong>
+        <span>Feedback handoff</span>
+      </span>
+    </a>
+    <nav class="step-nav" aria-label="Admin review prototype steps">
+      <a href="admin-01-review-queue.html">1. Queue</a>
+      <a href="admin-02-screen-review.html">2. Inspect</a>
+      <a class="is-active" href="admin-03-feedback-handoff.html" aria-current="page">3. Handoff</a>
+    </nav>
+    <div class="identity"><span class="dot" aria-hidden="true"></span>admin@agentux.local</div>
+  </header>
+
+  <main class="page">
+    <section class="panel">
+      <div class="hero">
+        <div>
+          <h1>Send review decision</h1>
+          <p class="panel-copy">Bundle targeted feedback into a clear handoff for the Capturer. Admin can approve, request fixes, or send another revision pass.</p>
+          <div class="badge-row">
+            <span class="badge accent" id="decision-badge">Needs fixes</span>
+            <span class="badge">Coinbase</span>
+            <span class="badge">Rahul</span>
+            <span class="badge warn" id="gap-badge">2 open feedback items</span>
+          </div>
+        </div>
+        <div class="score-card">
+          <strong id="decision-score">Fixes</strong>
+          <span id="decision-copy">The capture is not ready for approval until the handoff feedback is sent.</span>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <section class="section-card">
+          <h2>Feedback package</h2>
+          <ul class="feedback-list" id="feedback-list">
+            <li class="feedback-item">
+              <span class="feedback-copy"><strong>Deposit success - Must fix</strong><span>Top nav is cropped. Recapture with status area, top nav, and bottom nav visible.</span></span>
+              <button class="btn-secondary" type="button">Resolve</button>
+            </li>
+            <li class="feedback-item">
+              <span class="feedback-copy"><strong>KYC pending - Must fix</strong><span>Waiting state is missing from Signup. Capture it or document the blocker.</span></span>
+              <button class="btn-secondary" type="button">Resolve</button>
+            </li>
+          </ul>
+
+          <div class="form-field">
+            <label for="admin-note">Admin note to Capturer</label>
+            <textarea id="admin-note" spellcheck="true">Good structure overall. Please recapture deposit success with full chrome and add either KYC pending or the exact blocker screen.</textarea>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-danger" type="button" id="request-fixes">Request fixes</button>
+            <button class="btn-primary" type="button" id="approve-capture" disabled>Approve capture</button>
+            <a class="btn-secondary" href="admin-02-screen-review.html">Back to inspect</a>
+          </div>
+        </section>
+
+        <aside class="section-card">
+          <h2>Decision requirements</h2>
+          <div class="decision-list" id="decision-list">
+            <button class="decision-row is-done" type="button">
+              <span class="marker"></span>
+              <span class="decision-copy"><strong>Completeness reviewed</strong><span>Required flows and app sections have been inspected.</span></span>
+              <span class="decision-state">Done</span>
+            </button>
+            <button class="decision-row is-done" type="button">
+              <span class="marker"></span>
+              <span class="decision-copy"><strong>Quality reviewed</strong><span>Cropping, sensitive data, duplicates, and ordering checked.</span></span>
+              <span class="decision-state">Done</span>
+            </button>
+            <button class="decision-row" type="button">
+              <span class="marker"></span>
+              <span class="decision-copy"><strong>Feedback resolved</strong><span>All must-fix feedback items are resolved or sent back.</span></span>
+              <span class="decision-state">Open</span>
+            </button>
+          </div>
+          <div class="error-state spaced" id="state-box">Approval blocked. Send fixes or resolve every must-fix item.</div>
+        </aside>
+      </div>
+    </section>
+
+    <aside class="panel sticky">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Handoff history</h2>
+          <p class="panel-copy">What the Capturer and Admin will both see after the decision.</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <ul class="timeline" id="timeline">
+          <li>Capture submitted by Rahul.</li>
+          <li>Admin added two targeted feedback items.</li>
+          <li>Decision is pending.</li>
+        </ul>
+        <div class="state-box spaced">This view becomes the source of truth for the revision pass.</div>
+        <div class="btn-row">
+          <a class="btn-secondary" href="admin-01-review-queue.html">Back to queue</a>
+          <a class="btn-secondary" href="capture-03-submit-review.html">Capturer view</a>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    const feedbackList = document.getElementById("feedback-list");
+    const decisionRows = Array.from(document.querySelectorAll(".decision-row"));
+    const approveButton = document.getElementById("approve-capture");
+    const requestButton = document.getElementById("request-fixes");
+    const stateBox = document.getElementById("state-box");
+    const decisionBadge = document.getElementById("decision-badge");
+    const decisionScore = document.getElementById("decision-score");
+    const decisionCopy = document.getElementById("decision-copy");
+    const gapBadge = document.getElementById("gap-badge");
+    const timeline = document.getElementById("timeline");
+    const toast = document.getElementById("toast");
+    let toastTimer = null;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.hidden = false;
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.hidden = true;
+      }, 2800);
+    }
+
+    function updateState() {
+      const openItems = feedbackList.querySelectorAll(".feedback-item:not(.is-resolved)").length;
+      const allDecisionDone = decisionRows.every((row) => row.classList.contains("is-done"));
+      gapBadge.textContent = `${openItems} open feedback ${openItems === 1 ? "item" : "items"}`;
+      approveButton.disabled = !(openItems === 0 && allDecisionDone);
+      if (approveButton.disabled) {
+        stateBox.className = "error-state spaced";
+        stateBox.textContent = "Approval blocked. Send fixes or resolve every must-fix item.";
+      } else {
+        stateBox.className = "success-state spaced";
+        stateBox.textContent = "All must-fix items are resolved. Approval is available.";
+      }
+    }
+
+    feedbackList.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      const item = button.closest(".feedback-item");
+      item.classList.toggle("is-resolved");
+      button.textContent = item.classList.contains("is-resolved") ? "Reopen" : "Resolve";
+      updateState();
+      showToast(item.classList.contains("is-resolved") ? "Feedback resolved" : "Feedback reopened");
+    });
+
+    document.getElementById("decision-list").addEventListener("click", (event) => {
+      const row = event.target.closest(".decision-row");
+      if (!row) return;
+      row.classList.toggle("is-done");
+      row.querySelector(".decision-state").textContent = row.classList.contains("is-done") ? "Done" : "Open";
+      updateState();
+    });
+
+    requestButton.addEventListener("click", () => {
+      decisionBadge.textContent = "Fixes sent";
+      decisionBadge.className = "badge warn";
+      decisionScore.textContent = "Sent";
+      decisionCopy.textContent = "The Capturer now sees the feedback package and can resubmit after revisions.";
+      timeline.insertAdjacentHTML("afterbegin", "<li>Admin requested fixes and sent feedback to Rahul.</li>");
+      stateBox.className = "success-state spaced";
+      stateBox.textContent = "Fix request sent. The submission moved to Needs fixes.";
+      showToast("Fix request sent");
+    });
+
+    approveButton.addEventListener("click", () => {
+      decisionBadge.textContent = "Approved";
+      decisionBadge.className = "badge good";
+      decisionScore.textContent = "Approved";
+      decisionCopy.textContent = "The capture is approved and can be promoted into the catalogue.";
+      timeline.insertAdjacentHTML("afterbegin", "<li>Admin approved the capture.</li>");
+      stateBox.className = "success-state spaced";
+      stateBox.textContent = "Approved. The batch can move into the catalogue.";
+      showToast("Capture approved");
+    });
+
+    updateState();
+  </script>
+</body>
+</html>

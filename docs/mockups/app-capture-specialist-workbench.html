@@ -1,0 +1,2249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentUX Capture Workbench Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #111113;
+      --panel-2: #161618;
+      --panel-3: #1d1d20;
+      --border: #2b2b31;
+      --border-strong: #3f3f46;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --quiet: #71717a;
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.12);
+      --accent-border: rgba(34, 211, 238, 0.42);
+      --success: #34d399;
+      --success-soft: rgba(52, 211, 153, 0.12);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.12);
+      --danger: #fb7185;
+      --danger-soft: rgba(251, 113, 133, 0.12);
+      --radius: 8px;
+      --shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      min-height: 40px;
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .app-shell {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+      align-items: center;
+      gap: 16px;
+      min-height: 64px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 9, 11, 0.96);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .brand-title strong {
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-title span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+    }
+
+    .header-tab {
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .header-tab.is-active {
+      background: var(--panel-3);
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px var(--border-strong);
+    }
+
+    .identity {
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .identity-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--success);
+    }
+
+    .workbench {
+      width: min(1680px, 100%);
+      margin: 0 auto;
+      padding: 18px 24px 28px;
+      display: grid;
+      grid-template-columns: 300px minmax(520px, 1fr) 420px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .panel-subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .app-list-panel {
+      position: sticky;
+      top: 82px;
+    }
+
+    .search-field {
+      display: block;
+      width: 100%;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .search-field::placeholder,
+    textarea::placeholder,
+    input::placeholder {
+      color: var(--quiet);
+      opacity: 1;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .chip {
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .chip.is-active {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+      color: var(--text);
+    }
+
+    .app-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .app-card {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      text-align: left;
+    }
+
+    .app-card.is-active {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+    }
+
+    .app-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .app-name {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .app-name strong {
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .app-name span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      padding: 0 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .badge.new {
+      border-color: var(--border-strong);
+      background: var(--panel-3);
+      color: var(--text);
+    }
+
+    .badge.in-progress {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .badge.needs-fix {
+      border-color: rgba(251, 191, 36, 0.48);
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .badge.submitted {
+      border-color: rgba(52, 211, 153, 0.46);
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .badge.reviewed {
+      border-color: rgba(52, 211, 153, 0.46);
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .progress-mini {
+      margin-top: 12px;
+    }
+
+    .progress-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar {
+      display: block;
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #27272a;
+    }
+
+    .bar-svg {
+      display: block;
+      width: 100%;
+      height: 7px;
+    }
+
+    .bar-fill {
+      fill: var(--accent);
+    }
+
+    .details-panel {
+      min-height: calc(100dvh - 110px);
+    }
+
+    .details-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: start;
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .app-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .app-heading h1 {
+      margin: 0;
+      font-size: clamp(22px, 2vw, 30px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .capture-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .summary-card {
+      min-width: 210px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .summary-number {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .summary-number strong {
+      font-size: 30px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-number span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .summary-card p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .access-box,
+    .review-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      padding: 14px;
+    }
+
+    .small-heading {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .access-row,
+    .quality-row {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      width: 100%;
+      min-height: 40px;
+      padding: 8px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+    }
+
+    .access-row:hover,
+    .quality-row:hover {
+      background: var(--panel-3);
+    }
+
+    .check {
+      display: grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      color: transparent;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .is-done .check,
+    .check.is-done {
+      border-color: rgba(52, 211, 153, 0.68);
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .access-copy,
+    .quality-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .access-copy strong,
+    .quality-copy strong {
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .access-copy span,
+    .quality-copy span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .flow-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 16px 16px 0;
+    }
+
+    .segmented {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel-2);
+    }
+
+    .segmented button {
+      min-height: 32px;
+      padding: 0 11px;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .segmented button.is-active {
+      background: var(--panel-3);
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px var(--border-strong);
+    }
+
+    .flow-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .flow-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      overflow: hidden;
+    }
+
+    .flow-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .flow-card-head strong {
+      min-width: 0;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .flow-card-head span {
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .step-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .step-button {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      width: 100%;
+      min-height: 44px;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(43, 43, 49, 0.75);
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+    }
+
+    .step-button:last-child {
+      border-bottom: 0;
+    }
+
+    .step-button:hover {
+      background: var(--panel-3);
+    }
+
+    .step-title {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .step-title strong {
+      font-size: 13px;
+      font-weight: 650;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .step-title span {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .step-state {
+      font-size: 11px;
+      font-weight: 750;
+      color: var(--quiet);
+      white-space: nowrap;
+    }
+
+    .step-button.is-done .step-state {
+      color: var(--success);
+    }
+
+    .step-button.has-issue .step-state {
+      color: var(--warning);
+    }
+
+    .evidence-strip {
+      padding: 0 16px 16px;
+    }
+
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .screen-thumb {
+      min-height: 132px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      overflow: hidden;
+    }
+
+    .screen-thumb-top {
+      height: 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-3);
+    }
+
+    .screen-lines {
+      display: grid;
+      gap: 7px;
+      padding: 12px;
+    }
+
+    .line {
+      height: 7px;
+      border-radius: 999px;
+      background: #3f3f46;
+    }
+
+    .line.short {
+      width: 48%;
+    }
+
+    .line.mid {
+      width: 72%;
+    }
+
+    .line.accent {
+      background: var(--accent);
+      opacity: 0.7;
+    }
+
+    .screen-thumb figcaption {
+      padding: 0 9px 9px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .right-panel {
+      position: sticky;
+      top: 82px;
+    }
+
+    .upload-zone {
+      display: grid;
+      place-items: center;
+      min-height: 148px;
+      padding: 16px;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      text-align: center;
+    }
+
+    .upload-zone.is-hot {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+    }
+
+    .upload-zone strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .upload-zone span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 13px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .btn-primary {
+      border: 1px solid var(--accent-border);
+      background: var(--accent);
+      color: #041014;
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+    }
+
+    .btn-danger {
+      border: 1px solid rgba(251, 113, 133, 0.48);
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .field textarea {
+      min-height: 76px;
+      padding: 10px 11px;
+      resize: vertical;
+    }
+
+    .queue {
+      margin-top: 18px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .queue-item {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .queue-thumb {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      background: var(--panel-3);
+    }
+
+    .queue-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .queue-copy strong {
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .queue-copy span {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .icon-button:hover {
+      background: var(--panel-3);
+      color: var(--text);
+    }
+
+    .empty-state,
+    .error-state {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .error-state {
+      border-color: rgba(251, 191, 36, 0.48);
+      background: var(--warning-soft);
+      color: #fde68a;
+    }
+
+    .quality-list,
+    .note-list,
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .quality {
+      margin-top: 18px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .quality-result {
+      margin-top: 12px;
+    }
+
+    .notes {
+      margin-top: 18px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .note-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .note-item.is-resolved {
+      opacity: 0.68;
+    }
+
+    .note-copy {
+      min-width: 0;
+    }
+
+    .note-copy strong {
+      display: block;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .note-copy span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .timeline {
+      margin-top: 12px;
+    }
+
+    .timeline li {
+      display: grid;
+      grid-template-columns: 9px minmax(0, 1fr);
+      gap: 9px;
+      align-items: start;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .timeline-dot {
+      width: 8px;
+      height: 8px;
+      margin-top: 5px;
+      border-radius: 999px;
+      background: var(--border-strong);
+    }
+
+    .timeline li:first-child .timeline-dot {
+      background: var(--accent);
+    }
+
+    .footer-bar {
+      width: min(1680px, 100%);
+      margin: 0 auto;
+      padding: 0 24px 24px;
+    }
+
+    .footer-inner {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 12px;
+    }
+
+    .metric {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 20;
+      max-width: min(560px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #18181b;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      font-size: 13px;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1280px) {
+      .workbench {
+        grid-template-columns: 280px minmax(0, 1fr);
+      }
+
+      .right-panel {
+        position: static;
+        grid-column: 1 / -1;
+      }
+
+      .app-list-panel {
+        top: 82px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .topbar {
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+      }
+
+      .header-tabs,
+      .identity {
+        justify-self: start;
+      }
+
+      .workbench {
+        grid-template-columns: 1fr;
+        padding: 14px;
+      }
+
+      .app-list-panel {
+        position: static;
+      }
+
+      .section-grid,
+      .flow-list,
+      .field-grid,
+      .footer-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .details-hero {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card {
+        min-width: 0;
+      }
+
+      .evidence-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 540px) {
+      .topbar {
+        padding: 12px;
+        max-width: 100vw;
+        overflow: hidden;
+      }
+
+      .header-tabs {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+        border-radius: var(--radius);
+      }
+
+      .header-tab {
+        min-width: 0;
+        padding: 0 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .workbench,
+      .footer-bar {
+        width: 100%;
+        max-width: 100vw;
+        padding-left: 10px;
+        padding-right: 10px;
+        overflow: hidden;
+      }
+
+      .panel {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      .identity,
+      .identity-pill {
+        max-width: 100%;
+      }
+
+      .identity-pill span:last-child {
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .app-card {
+        overflow: hidden;
+      }
+
+      .app-card-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .app-card .badge {
+        justify-self: start;
+        max-width: 100%;
+      }
+
+      .capture-meta,
+      .filter-row {
+        flex-wrap: wrap;
+        overflow: visible;
+        padding-bottom: 0;
+      }
+
+      .capture-meta > *,
+      .filter-row > * {
+        flex: 0 0 auto;
+      }
+
+      .flow-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .flow-toolbar .segmented {
+        overflow-x: auto;
+      }
+
+      .step-button {
+        grid-template-columns: 22px minmax(0, 1fr);
+      }
+
+      .step-state {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .queue-item {
+        grid-template-columns: 36px minmax(0, 1fr) 40px;
+      }
+
+      .details-hero,
+      .panel-header,
+      .panel-body,
+      .section-grid,
+      .flow-toolbar,
+      .flow-list,
+      .evidence-strip {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .evidence-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">UX</div>
+        <div class="brand-title">
+          <strong>AgentUX Capture Workbench</strong>
+          <span>App Capture Specialist</span>
+        </div>
+      </div>
+      <nav class="header-tabs" aria-label="Prototype sections">
+        <button class="header-tab" type="button">Catalogue</button>
+        <button class="header-tab is-active" type="button" aria-current="page">Capture</button>
+        <button class="header-tab" type="button">Review Queue</button>
+        <button class="header-tab" type="button">Guidelines</button>
+      </nav>
+      <div class="identity">
+        <div class="identity-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>rahul@agentux.local</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="workbench" id="workbench"></main>
+    <section class="footer-bar" id="footer"></section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    const nowLabel = "May 24, 2026";
+
+    const apps = [
+      {
+        id: "coinbase",
+        name: "Coinbase",
+        companyType: "Finance app",
+        market: "Global",
+        platform: "Mobile + web",
+        status: "in-progress",
+        due: "May 28",
+        assignee: "Rahul",
+        access: "Signup allowed",
+        target: "Consumer investing and wallet flows",
+        accessChecks: [
+          { id: "signup", title: "Service access confirmed", detail: "Account can be created with specialist email", done: true },
+          { id: "login", title: "Fresh session available", detail: "Logged-out and first-run states are capturable", done: true },
+          { id: "data", title: "Sensitive data masked", detail: "Balances and profile fields use test values", done: false }
+        ],
+        flows: [
+          {
+            id: "onboarding",
+            name: "Signup and first run",
+            steps: [
+              { id: "landing", name: "App landing", state: "Logged out", required: true, captured: true },
+              { id: "signup-start", name: "Create account", state: "Email entry", required: true, captured: true },
+              { id: "otp", name: "OTP verification", state: "Security", required: true, captured: true },
+              { id: "kyc-start", name: "KYC start", state: "Identity", required: true, captured: false },
+              { id: "kyc-pending", name: "KYC pending", state: "Waiting state", required: true, captured: false },
+              { id: "home-empty", name: "Home empty", state: "First-run", required: true, captured: true }
+            ]
+          },
+          {
+            id: "money",
+            name: "Money movement",
+            steps: [
+              { id: "link-bank", name: "Link bank", state: "Permission", required: true, captured: true },
+              { id: "deposit-amount", name: "Deposit amount", state: "Form", required: true, captured: true },
+              { id: "deposit-review", name: "Deposit review", state: "Confirmation", required: true, captured: false },
+              { id: "deposit-success", name: "Deposit success", state: "Success", required: true, captured: false, issue: true },
+              { id: "withdraw-preview", name: "Withdraw preview", state: "Preview", required: true, captured: false },
+              { id: "withdraw-error", name: "Withdraw error", state: "Error", required: true, captured: false }
+            ]
+          },
+          {
+            id: "portfolio",
+            name: "Portfolio and settings",
+            steps: [
+              { id: "watchlist", name: "Watchlist", state: "Market list", required: true, captured: true },
+              { id: "asset-detail", name: "Asset detail", state: "Price page", required: true, captured: true },
+              { id: "transactions", name: "Transactions", state: "History", required: true, captured: false },
+              { id: "notifications", name: "Notifications", state: "Preferences", required: false, captured: false },
+              { id: "security", name: "Security settings", state: "Account", required: true, captured: false },
+              { id: "help", name: "Help center", state: "Support", required: false, captured: false }
+            ]
+          },
+          {
+            id: "edge",
+            name: "Edge states",
+            steps: [
+              { id: "offline", name: "Offline state", state: "Connectivity", required: true, captured: false },
+              { id: "rate-limit", name: "Rate limit", state: "Error", required: false, captured: false },
+              { id: "permission-denied", name: "Permission denied", state: "System", required: true, captured: false },
+              { id: "maintenance", name: "Maintenance", state: "Service", required: false, captured: false }
+            ]
+          }
+        ],
+        notes: [
+          { id: "n1", title: "KYC pending state is missing", detail: "Reviewer needs the waiting state after document submission.", resolved: false },
+          { id: "n2", title: "Deposit success top nav is cropped", detail: "Recapture with full device chrome and status area.", resolved: false }
+        ],
+        timeline: [
+          "Capture assigned by Admin on May 24",
+          "12 mobile screens uploaded",
+          "Reviewer gap pass pending"
+        ]
+      },
+      {
+        id: "robinhood",
+        name: "Robinhood",
+        companyType: "Finance app",
+        market: "US",
+        platform: "Mobile",
+        status: "new",
+        due: "May 30",
+        assignee: "Rahul",
+        access: "Signup required",
+        target: "Brokerage onboarding and funding flows",
+        accessChecks: [
+          { id: "signup", title: "Service access confirmed", detail: "Specialist has not started signup", done: false },
+          { id: "login", title: "Fresh session available", detail: "Logged-out and first-run states are pending", done: false },
+          { id: "data", title: "Sensitive data masked", detail: "Use test values before upload", done: true }
+        ],
+        flows: [
+          {
+            id: "onboarding",
+            name: "Signup and eligibility",
+            steps: [
+              { id: "landing", name: "App landing", state: "Logged out", required: true, captured: false },
+              { id: "signup-start", name: "Create account", state: "Email entry", required: true, captured: false },
+              { id: "identity", name: "Identity questions", state: "KYC", required: true, captured: false },
+              { id: "approval", name: "Approval pending", state: "Waiting state", required: true, captured: false }
+            ]
+          },
+          {
+            id: "funding",
+            name: "Funding",
+            steps: [
+              { id: "link-bank", name: "Link bank", state: "Permission", required: true, captured: false },
+              { id: "transfer", name: "Transfer amount", state: "Form", required: true, captured: false },
+              { id: "review", name: "Transfer review", state: "Confirmation", required: true, captured: false },
+              { id: "success", name: "Transfer success", state: "Success", required: true, captured: false }
+            ]
+          },
+          {
+            id: "trading",
+            name: "Trading",
+            steps: [
+              { id: "watchlist", name: "Watchlist", state: "Market list", required: true, captured: false },
+              { id: "stock-detail", name: "Stock detail", state: "Price page", required: true, captured: false },
+              { id: "buy-ticket", name: "Buy ticket", state: "Order form", required: true, captured: false },
+              { id: "order-error", name: "Order error", state: "Error", required: true, captured: false }
+            ]
+          }
+        ],
+        notes: [],
+        timeline: ["Capture assigned by Admin on May 24"]
+      },
+      {
+        id: "groww",
+        name: "Groww",
+        companyType: "Finance app",
+        market: "India",
+        platform: "Mobile + web",
+        status: "needs-fix",
+        due: "May 26",
+        assignee: "Rahul",
+        access: "Account available",
+        target: "Investing, payments, and support flows",
+        accessChecks: [
+          { id: "signup", title: "Service access confirmed", detail: "Account is available", done: true },
+          { id: "login", title: "Fresh session available", detail: "Logged-out states captured", done: true },
+          { id: "data", title: "Sensitive data masked", detail: "One profile screen still needs masking", done: false }
+        ],
+        flows: [
+          {
+            id: "onboarding",
+            name: "Signup and first run",
+            steps: [
+              { id: "landing", name: "App landing", state: "Logged out", required: true, captured: true },
+              { id: "otp", name: "OTP verification", state: "Security", required: true, captured: true },
+              { id: "home", name: "Home", state: "First-run", required: true, captured: true }
+            ]
+          },
+          {
+            id: "invest",
+            name: "Investing",
+            steps: [
+              { id: "search", name: "Search asset", state: "Discovery", required: true, captured: true },
+              { id: "asset", name: "Asset detail", state: "Price page", required: true, captured: true },
+              { id: "buy", name: "Buy order", state: "Order form", required: true, captured: true },
+              { id: "success", name: "Order success", state: "Success", required: true, captured: true }
+            ]
+          },
+          {
+            id: "support",
+            name: "Support and settings",
+            steps: [
+              { id: "profile", name: "Profile", state: "Account", required: true, captured: true, issue: true },
+              { id: "help", name: "Help center", state: "Support", required: true, captured: false },
+              { id: "logout", name: "Logout", state: "Account", required: false, captured: true }
+            ]
+          }
+        ],
+        notes: [
+          { id: "n3", title: "Profile screen exposes personal phone number", detail: "Mask phone number and re-upload.", resolved: false },
+          { id: "n4", title: "Help center missing", detail: "Add at least entry, search results, and article detail.", resolved: false }
+        ],
+        timeline: [
+          "Initial capture submitted on May 23",
+          "Reviewer requested 2 fixes",
+          "Awaiting revised upload"
+        ]
+      },
+      {
+        id: "zerodha",
+        name: "Zerodha Kite",
+        companyType: "Finance app",
+        market: "India",
+        platform: "Web",
+        status: "submitted",
+        due: "May 25",
+        assignee: "Rahul",
+        access: "Account available",
+        target: "Trading, watchlist, and order flows",
+        accessChecks: [
+          { id: "signup", title: "Service access confirmed", detail: "Account available", done: true },
+          { id: "login", title: "Fresh session available", detail: "Login variants captured", done: true },
+          { id: "data", title: "Sensitive data masked", detail: "All uploaded screens are safe", done: true }
+        ],
+        flows: [
+          {
+            id: "login",
+            name: "Login",
+            steps: [
+              { id: "login-start", name: "Login start", state: "Logged out", required: true, captured: true },
+              { id: "pin", name: "PIN entry", state: "Security", required: true, captured: true },
+              { id: "home", name: "Dashboard", state: "Signed in", required: true, captured: true }
+            ]
+          },
+          {
+            id: "orders",
+            name: "Orders",
+            steps: [
+              { id: "watchlist", name: "Watchlist", state: "Market list", required: true, captured: true },
+              { id: "ticket", name: "Order ticket", state: "Form", required: true, captured: true },
+              { id: "review", name: "Order review", state: "Confirmation", required: true, captured: true },
+              { id: "rejected", name: "Order rejected", state: "Error", required: true, captured: true }
+            ]
+          }
+        ],
+        notes: [],
+        timeline: [
+          "Capture submitted on May 24",
+          "Reviewer queue position 2"
+        ]
+      }
+    ];
+
+    const state = {
+      activeAppId: "coinbase",
+      filter: "all",
+      query: "",
+      selectedPlatform: "mobile",
+      selectedTheme: "light",
+      selectedFlow: "onboarding",
+      queue: [
+        { id: "q1", name: "01-onboarding-landing.png", flowId: "onboarding", screen: "App landing", platform: "mobile", theme: "light" },
+        { id: "q2", name: "02-onboarding-create-account.png", flowId: "onboarding", screen: "Create account", platform: "mobile", theme: "light" },
+        { id: "q3", name: "03-onboarding-otp.png", flowId: "onboarding", screen: "OTP verification", platform: "mobile", theme: "light" },
+        { id: "q4", name: "04-home-empty.png", flowId: "onboarding", screen: "Home empty", platform: "mobile", theme: "light" }
+      ],
+      quality: {
+        naming: true,
+        chrome: true,
+        grouping: false,
+        sensitive: false
+      },
+      qualityResult: null,
+      toastTimer: null
+    };
+
+    const qualityItems = [
+      { id: "naming", title: "Filename sequence is clean", detail: "Screen names use ordered flow prefixes" },
+      { id: "chrome", title: "Navigation and device chrome are complete", detail: "No cropped status bars, browser bars, or bottom nav" },
+      { id: "grouping", title: "Screens are organized by app section", detail: "Every upload has app group and flow metadata" },
+      { id: "sensitive", title: "Sensitive values are masked", detail: "Balances, phone numbers, and addresses are safe" }
+    ];
+
+    function activeApp() {
+      return apps.find((app) => app.id === state.activeAppId) || apps[0];
+    }
+
+    function allSteps(app) {
+      return app.flows.flatMap((flow) => flow.steps.map((step) => ({ flow, step })));
+    }
+
+    function requiredSteps(app) {
+      return allSteps(app).filter(({ step }) => step.required);
+    }
+
+    function progressFor(app) {
+      const required = requiredSteps(app);
+      const done = required.filter(({ step }) => step.captured).length;
+      const percent = required.length > 0 ? Math.round((done / required.length) * 100) : 0;
+      return { done, total: required.length, percent };
+    }
+
+    function statusText(status) {
+      if (status === "new") return "New";
+      if (status === "in-progress") return "In progress";
+      if (status === "needs-fix") return "Needs fixes";
+      if (status === "submitted") return "Submitted";
+      if (status === "reviewed") return "Reviewed";
+      return status;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function shortId() {
+      return Math.random().toString(36).slice(2, 8);
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.hidden = false;
+      if (state.toastTimer) window.clearTimeout(state.toastTimer);
+      state.toastTimer = window.setTimeout(() => {
+        toast.hidden = true;
+      }, 3200);
+    }
+
+    function render() {
+      const app = activeApp();
+      document.getElementById("workbench").innerHTML = [
+        renderAssignedApps(),
+        renderCapturePlan(app),
+        renderUploadPanel(app)
+      ].join("");
+      document.getElementById("footer").innerHTML = renderFooter();
+    }
+
+    function renderAssignedApps() {
+      const filtered = apps.filter((app) => {
+        const matchesFilter = state.filter === "all" || app.status === state.filter;
+        const query = state.query.trim().toLowerCase();
+        const matchesQuery = !query || [app.name, app.market, app.platform, app.target].join(" ").toLowerCase().includes(query);
+        return matchesFilter && matchesQuery;
+      });
+
+      return `
+        <aside class="panel app-list-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Assigned apps</h2>
+              <p class="panel-subtitle">${apps.length} captures in this sprint</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <label class="visually-hidden" for="app-search">Search assigned apps</label>
+            <input id="app-search" class="search-field" type="search" autocomplete="off" placeholder="Search apps" value="${escapeHtml(state.query)}" data-action="search-apps" />
+            <div class="filter-row" role="tablist" aria-label="Assignment status">
+              ${["all", "new", "in-progress", "needs-fix", "submitted"].map((filter) => `
+                <button class="chip ${state.filter === filter ? "is-active" : ""}" type="button" data-action="filter" data-filter="${filter}" role="tab" aria-selected="${state.filter === filter}">
+                  ${filter === "all" ? "All" : statusText(filter)}
+                </button>
+              `).join("")}
+            </div>
+            <div class="app-list">
+              ${filtered.length === 0 ? `<div class="empty-state">No assigned apps match this view.</div>` : filtered.map(renderAppCard).join("")}
+            </div>
+          </div>
+        </aside>
+      `;
+    }
+
+    function renderAppCard(app) {
+      const progress = progressFor(app);
+      return `
+        <button class="app-card ${app.id === state.activeAppId ? "is-active" : ""}" type="button" data-action="select-app" data-app-id="${app.id}" aria-pressed="${app.id === state.activeAppId}">
+          <span class="app-card-top">
+            <span class="app-name">
+              <strong>${escapeHtml(app.name)}</strong>
+              <span>${escapeHtml(app.market)} - ${escapeHtml(app.platform)}</span>
+            </span>
+            <span class="badge ${app.status}">${statusText(app.status)}</span>
+          </span>
+          <span class="progress-mini">
+            <span class="progress-line">
+              <span>${progress.done}/${progress.total} required</span>
+              <span>${progress.percent}%</span>
+            </span>
+            <span class="bar" aria-hidden="true"><svg class="bar-svg" viewBox="0 0 100 7" preserveAspectRatio="none"><rect class="bar-fill" width="${progress.percent}" height="7" rx="3.5"></rect></svg></span>
+          </span>
+        </button>
+      `;
+    }
+
+    function renderCapturePlan(app) {
+      const progress = progressFor(app);
+      const missing = requiredSteps(app).filter(({ step }) => !step.captured).length;
+      const unresolved = app.notes.filter((note) => !note.resolved).length;
+
+      return `
+        <section class="panel details-panel">
+          <div class="details-hero">
+            <div>
+              <div class="app-heading">
+                <h1>${escapeHtml(app.name)}</h1>
+                <span class="badge ${app.status}">${statusText(app.status)}</span>
+              </div>
+              <p class="panel-subtitle">${escapeHtml(app.target)}</p>
+              <div class="capture-meta">
+                <span class="meta-pill">Due ${escapeHtml(app.due)}</span>
+                <span class="meta-pill">${escapeHtml(app.access)}</span>
+                <span class="meta-pill">${escapeHtml(app.companyType)}</span>
+                <span class="meta-pill">${escapeHtml(nowLabel)}</span>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-number">
+                <strong>${progress.percent}%</strong>
+                <span>${progress.done}/${progress.total}</span>
+              </div>
+              <p>${missing} required screens missing. ${unresolved} reviewer ${unresolved === 1 ? "gap" : "gaps"} open.</p>
+              <div class="progress-mini" aria-label="Capture progress">
+                <div class="bar"><svg class="bar-svg" viewBox="0 0 100 7" preserveAspectRatio="none"><rect class="bar-fill" width="${progress.percent}" height="7" rx="3.5"></rect></svg></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-grid">
+            <div class="access-box">
+              <h3 class="small-heading">Access readiness</h3>
+              ${app.accessChecks.map((item) => `
+                <button class="access-row ${item.done ? "is-done" : ""}" type="button" data-action="toggle-access" data-check-id="${item.id}">
+                  <span class="check" aria-hidden="true"></span>
+                  <span class="access-copy">
+                    <strong>${escapeHtml(item.title)}</strong>
+                    <span>${escapeHtml(item.detail)}</span>
+                  </span>
+                </button>
+              `).join("")}
+            </div>
+            <div class="review-box">
+              <h3 class="small-heading">Review state</h3>
+              <div class="badge ${app.status}">${statusText(app.status)}</div>
+              <ul class="timeline">
+                ${app.timeline.map((item) => `<li><span class="timeline-dot"></span><span>${escapeHtml(item)}</span></li>`).join("")}
+              </ul>
+            </div>
+          </div>
+
+          <div class="flow-toolbar">
+            <div>
+              <h2 class="panel-title">Capture plan</h2>
+              <p class="panel-subtitle">${app.flows.length} sections, ${allSteps(app).length} total screens</p>
+            </div>
+            <div class="segmented" role="tablist" aria-label="Flow focus">
+              ${app.flows.map((flow) => `
+                <button type="button" class="${state.selectedFlow === flow.id ? "is-active" : ""}" data-action="select-flow" data-flow-id="${flow.id}" role="tab" aria-selected="${state.selectedFlow === flow.id}">
+                  ${escapeHtml(flow.name.split(" ")[0])}
+                </button>
+              `).join("")}
+            </div>
+          </div>
+
+          <div class="flow-list">
+            ${app.flows.map((flow) => renderFlowCard(flow)).join("")}
+          </div>
+
+          <div class="evidence-strip">
+            <h3 class="small-heading">Captured evidence</h3>
+            <div class="evidence-grid">
+              ${state.queue.slice(0, 6).map((item) => `
+                <figure class="screen-thumb">
+                  <div class="screen-thumb-top"></div>
+                  <div class="screen-lines" aria-hidden="true">
+                    <div class="line accent short"></div>
+                    <div class="line mid"></div>
+                    <div class="line"></div>
+                    <div class="line short"></div>
+                    <div class="line mid"></div>
+                  </div>
+                  <figcaption>${escapeHtml(item.screen)}</figcaption>
+                </figure>
+              `).join("") || `<div class="empty-state">No screenshots queued for this app yet.</div>`}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderFlowCard(flow) {
+      const done = flow.steps.filter((step) => step.captured && step.required).length;
+      const total = flow.steps.filter((step) => step.required).length;
+      return `
+        <article class="flow-card">
+          <div class="flow-card-head">
+            <strong>${escapeHtml(flow.name)}</strong>
+            <span>${done}/${total}</span>
+          </div>
+          <div class="step-list">
+            ${flow.steps.map((step) => `
+              <button class="step-button ${step.captured ? "is-done" : ""} ${step.issue ? "has-issue" : ""}" type="button" data-action="toggle-step" data-flow-id="${flow.id}" data-step-id="${step.id}">
+                <span class="check ${step.captured ? "is-done" : ""}" aria-hidden="true"></span>
+                <span class="step-title">
+                  <strong>${escapeHtml(step.name)}</strong>
+                  <span>${escapeHtml(step.state)}${step.required ? " - required" : " - optional"}</span>
+                </span>
+                <span class="step-state">${step.issue ? "Issue" : step.captured ? "Done" : "Missing"}</span>
+              </button>
+            `).join("")}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderUploadPanel(app) {
+      const selectedFlow = app.flows.find((flow) => flow.id === state.selectedFlow) || app.flows[0];
+      const missing = requiredSteps(app).filter(({ step }) => !step.captured);
+      const uncheckedQuality = qualityItems.filter((item) => !state.quality[item.id]);
+      const unresolved = app.notes.filter((note) => !note.resolved);
+      const canSubmit = missing.length === 0 && uncheckedQuality.length === 0 && unresolved.length === 0 && app.status !== "submitted";
+
+      return `
+        <aside class="panel right-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Upload and review</h2>
+              <p class="panel-subtitle">${escapeHtml(app.name)} - ${escapeHtml(selectedFlow.name)}</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="upload-zone" id="dropzone">
+              <div>
+                <strong>Screenshot intake</strong>
+                <span>${state.queue.length} files queued for ${escapeHtml(app.name)}</span>
+                <div class="action-row">
+                  <button class="btn-secondary" type="button" data-action="browse-files">Choose files</button>
+                  <button class="btn-secondary" type="button" data-action="add-sample">Add sample batch</button>
+                </div>
+              </div>
+              <input class="visually-hidden" id="file-input" type="file" accept="image/*" multiple data-action="file-input" />
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="metadata-flow">Flow</label>
+                <select id="metadata-flow" data-action="metadata-flow">
+                  ${app.flows.map((flow) => `<option value="${flow.id}" ${flow.id === state.selectedFlow ? "selected" : ""}>${escapeHtml(flow.name)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="field">
+                <label for="metadata-group">Group</label>
+                <input id="metadata-group" type="text" autocomplete="off" value="${escapeHtml(app.name)}" readonly />
+              </div>
+              <div class="field">
+                <label for="metadata-platform">Platform</label>
+                <select id="metadata-platform" data-action="metadata-platform">
+                  <option value="mobile" ${state.selectedPlatform === "mobile" ? "selected" : ""}>Mobile</option>
+                  <option value="web" ${state.selectedPlatform === "web" ? "selected" : ""}>Web</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="metadata-theme">Theme</label>
+                <select id="metadata-theme" data-action="metadata-theme">
+                  <option value="light" ${state.selectedTheme === "light" ? "selected" : ""}>Light</option>
+                  <option value="dark" ${state.selectedTheme === "dark" ? "selected" : ""}>Dark</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="queue">
+              <h3 class="small-heading">Queued screenshots</h3>
+              ${state.queue.length === 0 ? `<div class="empty-state">Queue is empty. Add a sample batch or choose screenshots.</div>` : `
+                <ul class="queue-list">
+                  ${state.queue.map((item) => `
+                    <li class="queue-item">
+                      <span class="queue-thumb" aria-hidden="true"></span>
+                      <span class="queue-copy">
+                        <strong>${escapeHtml(item.name)}</strong>
+                        <span>${escapeHtml(flowNameById(app, item.flowId))} - ${escapeHtml(item.platform)} - ${escapeHtml(item.theme)}</span>
+                      </span>
+                      <button class="icon-button" type="button" data-action="remove-queue" data-queue-id="${item.id}" aria-label="Remove ${escapeHtml(item.name)}">x</button>
+                    </li>
+                  `).join("")}
+                </ul>
+              `}
+            </div>
+
+            <div class="quality">
+              <h3 class="small-heading">Quality gate</h3>
+              <div class="quality-list">
+                ${qualityItems.map((item) => `
+                  <button class="quality-row ${state.quality[item.id] ? "is-done" : ""}" type="button" data-action="toggle-quality" data-quality-id="${item.id}">
+                    <span class="check" aria-hidden="true"></span>
+                    <span class="quality-copy">
+                      <strong>${escapeHtml(item.title)}</strong>
+                      <span>${escapeHtml(item.detail)}</span>
+                    </span>
+                  </button>
+                `).join("")}
+              </div>
+              <div class="action-row">
+                <button class="btn-secondary" type="button" data-action="run-quality">Run quality check</button>
+              </div>
+              ${state.qualityResult ? `<div class="${state.qualityResult.ok ? "empty-state" : "error-state"} quality-result">${escapeHtml(state.qualityResult.message)}</div>` : ""}
+            </div>
+
+            <div class="notes">
+              <h3 class="small-heading">Reviewer gaps</h3>
+              ${app.notes.length === 0 ? `<div class="empty-state">No reviewer gaps for this app.</div>` : `
+                <ul class="note-list">
+                  ${app.notes.map((note) => `
+                    <li class="note-item ${note.resolved ? "is-resolved" : ""}">
+                      <span class="note-copy">
+                        <strong>${escapeHtml(note.title)}</strong>
+                        <span>${escapeHtml(note.detail)}</span>
+                      </span>
+                      <button class="chip ${note.resolved ? "is-active" : ""}" type="button" data-action="toggle-note" data-note-id="${note.id}">
+                        ${note.resolved ? "Resolved" : "Resolve"}
+                      </button>
+                    </li>
+                  `).join("")}
+                </ul>
+              `}
+            </div>
+
+            <div class="action-row">
+              <button class="btn-primary" type="button" data-action="submit" ${canSubmit ? "" : "disabled"}>
+                ${app.status === "needs-fix" ? "Resubmit capture" : "Submit capture"}
+              </button>
+              <button class="btn-secondary" type="button" data-action="simulate-review" ${app.status === "submitted" ? "" : "disabled"}>Simulate reviewer pass</button>
+              <button class="btn-danger" type="button" data-action="reset-app">Reset app</button>
+            </div>
+          </div>
+        </aside>
+      `;
+    }
+
+    function flowNameById(app, flowId) {
+      return app.flows.find((flow) => flow.id === flowId)?.name || "Unassigned";
+    }
+
+    function renderFooter() {
+      const totalRequired = apps.reduce((sum, app) => sum + progressFor(app).total, 0);
+      const doneRequired = apps.reduce((sum, app) => sum + progressFor(app).done, 0);
+      const openNotes = apps.reduce((sum, app) => sum + app.notes.filter((note) => !note.resolved).length, 0);
+      const submitted = apps.filter((app) => app.status === "submitted" || app.status === "reviewed").length;
+      return `
+        <div class="footer-inner">
+          <div class="metric"><strong>${doneRequired}/${totalRequired}</strong><span>Required screens captured</span></div>
+          <div class="metric"><strong>${state.queue.length}</strong><span>Queued uploads in active batch</span></div>
+          <div class="metric"><strong>${openNotes}</strong><span>Open reviewer gaps</span></div>
+          <div class="metric"><strong>${submitted}/${apps.length}</strong><span>Submitted assignments</span></div>
+        </div>
+      `;
+    }
+
+    function toggleStep(flowId, stepId) {
+      const app = activeApp();
+      const flow = app.flows.find((item) => item.id === flowId);
+      const step = flow?.steps.find((item) => item.id === stepId);
+      if (!step) return;
+      step.captured = !step.captured;
+      if (step.captured) {
+        step.issue = false;
+        if (app.status === "new") app.status = "in-progress";
+        state.queue.unshift({
+          id: `q-${shortId()}`,
+          name: `${String(state.queue.length + 1).padStart(2, "0")}-${flow.id}-${step.id}.png`,
+          flowId: flow.id,
+          screen: step.name,
+          platform: state.selectedPlatform,
+          theme: state.selectedTheme
+        });
+      }
+      render();
+      showToast(`${step.name} marked ${step.captured ? "captured" : "missing"}`);
+    }
+
+    function addSampleBatch(files) {
+      const app = activeApp();
+      const flow = app.flows.find((item) => item.id === state.selectedFlow) || app.flows[0];
+      const missing = flow.steps.filter((step) => !step.captured).slice(0, 6);
+      const additions = [];
+
+      if (files && files.length > 0) {
+        Array.from(files).forEach((file, index) => {
+          const fallbackStep = flow.steps[index % flow.steps.length];
+          additions.push({
+            id: `q-${shortId()}`,
+            name: file.name,
+            flowId: flow.id,
+            screen: fallbackStep.name,
+            platform: state.selectedPlatform,
+            theme: state.selectedTheme
+          });
+        });
+      } else {
+        const source = missing.length > 0 ? missing : flow.steps.slice(0, 4);
+        source.forEach((step, index) => {
+          step.captured = true;
+          step.issue = false;
+          additions.push({
+            id: `q-${shortId()}`,
+            name: `${String(state.queue.length + index + 1).padStart(2, "0")}-${flow.id}-${step.id}.png`,
+            flowId: flow.id,
+            screen: step.name,
+            platform: state.selectedPlatform,
+            theme: state.selectedTheme
+          });
+        });
+      }
+
+      if (additions.length > 0) {
+        state.queue = [...additions, ...state.queue];
+        if (app.status === "new") app.status = "in-progress";
+        app.timeline.unshift(`${additions.length} screenshots added to ${flow.name}`);
+      }
+      render();
+      showToast(`${additions.length} screenshot${additions.length === 1 ? "" : "s"} added`);
+    }
+
+    function runQualityCheck() {
+      const app = activeApp();
+      const missing = requiredSteps(app).filter(({ step }) => !step.captured);
+      const unchecked = qualityItems.filter((item) => !state.quality[item.id]);
+      const unresolved = app.notes.filter((note) => !note.resolved);
+      if (missing.length === 0 && unchecked.length === 0 && unresolved.length === 0) {
+        state.qualityResult = { ok: true, message: "Quality check passed. Capture is ready for review." };
+      } else {
+        state.qualityResult = {
+          ok: false,
+          message: `${missing.length} required screens missing, ${unchecked.length} quality checks open, ${unresolved.length} reviewer gaps unresolved.`
+        };
+      }
+      render();
+    }
+
+    function submitCapture() {
+      const app = activeApp();
+      const missing = requiredSteps(app).filter(({ step }) => !step.captured);
+      const unchecked = qualityItems.filter((item) => !state.quality[item.id]);
+      const unresolved = app.notes.filter((note) => !note.resolved);
+      if (missing.length > 0 || unchecked.length > 0 || unresolved.length > 0) {
+        runQualityCheck();
+        showToast("Resolve open gaps before submitting");
+        return;
+      }
+      app.status = "submitted";
+      app.timeline.unshift(`Submitted by ${app.assignee} on ${nowLabel}`);
+      state.qualityResult = { ok: true, message: "Capture submitted. Reviewer can now accept or request fixes." };
+      render();
+      showToast(`${app.name} submitted for review`);
+    }
+
+    function simulateReview() {
+      const app = activeApp();
+      if (app.status !== "submitted") return;
+      app.status = "needs-fix";
+      app.notes = [
+        { id: `n-${shortId()}`, title: "Error state coverage is thin", detail: "Add one failed deposit or permission-denied state.", resolved: false },
+        { id: `n-${shortId()}`, title: "Settings flow needs one more screen", detail: "Add security settings or notification preferences.", resolved: false }
+      ];
+      app.timeline.unshift("Reviewer requested fixes");
+      const target = allSteps(app).find(({ step }) => step.required && !step.captured);
+      if (target) target.step.issue = true;
+      render();
+      showToast("Reviewer pass created 2 gaps");
+    }
+
+    function resetActiveApp() {
+      const app = activeApp();
+      app.flows.forEach((flow) => {
+        flow.steps.forEach((step) => {
+          step.captured = false;
+          step.issue = false;
+        });
+      });
+      app.notes.forEach((note) => {
+        note.resolved = false;
+      });
+      app.status = "new";
+      state.queue = [];
+      state.quality = { naming: false, chrome: false, grouping: false, sensitive: false };
+      state.qualityResult = null;
+      app.timeline.unshift("Prototype reset");
+      render();
+      showToast(`${app.name} reset`);
+    }
+
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest("[data-action]");
+      if (!trigger) return;
+      const action = trigger.dataset.action;
+
+      if (action === "select-app") {
+        state.activeAppId = trigger.dataset.appId;
+        state.qualityResult = null;
+        const app = activeApp();
+        state.selectedFlow = app.flows[0]?.id || "";
+        render();
+        return;
+      }
+
+      if (action === "filter") {
+        state.filter = trigger.dataset.filter;
+        render();
+        return;
+      }
+
+      if (action === "toggle-access") {
+        const app = activeApp();
+        const check = app.accessChecks.find((item) => item.id === trigger.dataset.checkId);
+        if (check) check.done = !check.done;
+        render();
+        return;
+      }
+
+      if (action === "select-flow") {
+        state.selectedFlow = trigger.dataset.flowId;
+        render();
+        return;
+      }
+
+      if (action === "toggle-step") {
+        toggleStep(trigger.dataset.flowId, trigger.dataset.stepId);
+        return;
+      }
+
+      if (action === "browse-files") {
+        document.getElementById("file-input")?.click();
+        return;
+      }
+
+      if (action === "add-sample") {
+        addSampleBatch();
+        return;
+      }
+
+      if (action === "remove-queue") {
+        state.queue = state.queue.filter((item) => item.id !== trigger.dataset.queueId);
+        render();
+        showToast("Screenshot removed from queue");
+        return;
+      }
+
+      if (action === "toggle-quality") {
+        const id = trigger.dataset.qualityId;
+        state.quality[id] = !state.quality[id];
+        state.qualityResult = null;
+        render();
+        return;
+      }
+
+      if (action === "run-quality") {
+        runQualityCheck();
+        return;
+      }
+
+      if (action === "toggle-note") {
+        const app = activeApp();
+        const note = app.notes.find((item) => item.id === trigger.dataset.noteId);
+        if (note) note.resolved = !note.resolved;
+        state.qualityResult = null;
+        render();
+        return;
+      }
+
+      if (action === "submit") {
+        submitCapture();
+        return;
+      }
+
+      if (action === "simulate-review") {
+        simulateReview();
+        return;
+      }
+
+      if (action === "reset-app") {
+        resetActiveApp();
+      }
+    });
+
+    document.addEventListener("input", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.dataset.action === "search-apps") {
+        state.query = target.value;
+        render();
+      }
+    });
+
+    document.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) return;
+      if (target.dataset.action === "metadata-flow") {
+        state.selectedFlow = target.value;
+        render();
+      }
+      if (target.dataset.action === "metadata-platform") {
+        state.selectedPlatform = target.value;
+        render();
+      }
+      if (target.dataset.action === "metadata-theme") {
+        state.selectedTheme = target.value;
+        render();
+      }
+      if (target.dataset.action === "file-input" && target.files) {
+        addSampleBatch(target.files);
+        target.value = "";
+      }
+    });
+
+    document.addEventListener("dragover", (event) => {
+      if (event.target.closest("#dropzone")) {
+        event.preventDefault();
+        document.getElementById("dropzone")?.classList.add("is-hot");
+      }
+    });
+
+    document.addEventListener("dragleave", (event) => {
+      if (event.target.closest("#dropzone")) {
+        document.getElementById("dropzone")?.classList.remove("is-hot");
+      }
+    });
+
+    document.addEventListener("drop", (event) => {
+      if (!event.target.closest("#dropzone")) return;
+      event.preventDefault();
+      document.getElementById("dropzone")?.classList.remove("is-hot");
+      const files = event.dataTransfer?.files;
+      if (files && files.length > 0) {
+        addSampleBatch(files);
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

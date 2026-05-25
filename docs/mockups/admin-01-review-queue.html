@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Review Console - Queue</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #111113;
+      --panel-2: #161618;
+      --panel-3: #1d1d20;
+      --border: #2b2b31;
+      --border-strong: #3f3f46;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --quiet: #71717a;
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.12);
+      --accent-border: rgba(34, 211, 238, 0.42);
+      --success: #34d399;
+      --success-soft: rgba(52, 211, 153, 0.12);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.12);
+      --danger: #fb7185;
+      --danger-soft: rgba(251, 113, 133, 0.12);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; overflow-x: hidden; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button { min-height: 40px; border: 0; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.52; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+      align-items: center;
+      gap: 16px;
+      min-height: 64px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 9, 11, 0.96);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .brand strong, .brand span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand strong { font-size: 14px; }
+    .brand span { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .step-nav {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+    }
+    .step-nav a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .step-nav a.is-active { background: var(--panel-3); color: var(--text); box-shadow: inset 0 0 0 1px var(--border-strong); }
+    .identity {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    .page {
+      width: min(1600px, 100%);
+      margin: 0 auto;
+      padding: 18px 24px 28px;
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr) 380px;
+      gap: 16px;
+      align-items: start;
+    }
+    .panel { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+    .panel-head { display: flex; justify-content: space-between; gap: 14px; padding: 16px; border-bottom: 1px solid var(--border); }
+    .panel-title { margin: 0; font-size: 14px; line-height: 1.25; }
+    .panel-copy { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .panel-body { padding: 16px; }
+    .sticky { position: sticky; top: 82px; }
+
+    .search {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 13px;
+    }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .chip {
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .chip.is-active { border-color: var(--accent-border); background: var(--accent-soft); color: var(--text); }
+    .queue-list { display: grid; gap: 8px; margin-top: 14px; }
+    .queue-card {
+      width: 100%;
+      display: block;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--text);
+      text-align: left;
+    }
+    .queue-card.is-active { border-color: var(--accent-border); background: var(--accent-soft); }
+    .queue-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .queue-title { min-width: 0; }
+    .queue-title strong { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .queue-title span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .badge.accent { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent); }
+    .badge.good { border-color: rgba(52, 211, 153, 0.5); background: var(--success-soft); color: var(--success); }
+    .badge.warn { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: var(--warning); }
+    .badge.danger { border-color: rgba(251, 113, 133, 0.5); background: var(--danger-soft); color: var(--danger); }
+    .mini-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+    .mini { padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); }
+    .mini strong { display: block; font-size: 15px; font-variant-numeric: tabular-nums; }
+    .mini span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 16px;
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 36px); line-height: 1.05; letter-spacing: 0; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .score-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); padding: 14px; }
+    .score-card strong { display: block; font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .score-card span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .bar { height: 7px; border-radius: 999px; overflow: hidden; background: #27272a; margin-top: 10px; }
+    .bar-fill { height: 100%; border-radius: inherit; background: var(--accent); }
+    .w-89 { width: 89%; }
+
+    .overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); }
+    .metric { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); }
+    .metric strong { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+    .metric span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+
+    .flow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px; }
+    .flow-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); overflow: hidden; }
+    .flow-head { display: flex; justify-content: space-between; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border); }
+    .flow-head strong { font-size: 13px; }
+    .flow-head span { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .step-list { display: grid; }
+    .step-row {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      min-height: 44px;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(43, 43, 49, 0.75);
+    }
+    .step-row:last-child { border-bottom: 0; }
+    .marker { width: 18px; height: 18px; border: 1px solid var(--border-strong); border-radius: 5px; }
+    .marker.done { border-color: rgba(52, 211, 153, 0.62); background: var(--success-soft); }
+    .marker.warn { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); }
+    .step-row strong { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .step-row span { color: var(--muted); font-size: 11px; white-space: nowrap; }
+
+    .action-card, .empty-state, .error-state, .success-state {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .error-state { border-color: rgba(251, 191, 36, 0.5); background: var(--warning-soft); color: #fde68a; }
+    .success-state { border-color: rgba(52, 211, 153, 0.5); background: var(--success-soft); color: #bbf7d0; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .btn-primary, .btn-secondary, .btn-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .btn-primary { border: 1px solid var(--accent-border); background: var(--accent); color: #041014; }
+    .btn-secondary { border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+    .btn-danger { border: 1px solid rgba(251, 113, 133, 0.5); background: var(--danger-soft); color: var(--danger); }
+    .timeline { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .timeline li { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-2); color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      max-width: min(520px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #18181b;
+      color: var(--text);
+      font-size: 13px;
+      z-index: 20;
+    }
+
+    @media (max-width: 1180px) {
+      .page { grid-template-columns: 340px minmax(0, 1fr); }
+      .right-panel { grid-column: 1 / -1; position: static; }
+    }
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr; justify-items: stretch; }
+      .identity { justify-self: start; }
+      .step-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: var(--radius); }
+      .step-nav a { min-width: 0; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .page { grid-template-columns: 1fr; padding: 14px; }
+      .sticky { position: static; }
+      .hero, .flow-grid { grid-template-columns: 1fr; }
+      .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 540px) {
+      .topbar { padding: 12px; }
+      .page { padding: 10px; }
+      .panel-head, .panel-body, .hero, .overview-grid, .flow-grid { padding-left: 12px; padding-right: 12px; }
+      .overview-grid, .mini-grid { grid-template-columns: 1fr; }
+      .queue-top { display: grid; }
+      .step-row { grid-template-columns: 20px minmax(0, 1fr); }
+      .step-row span:last-child { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="app-capture-specialist-workbench.html" aria-label="Back to Capture Workbench">
+      <span class="brand-mark" aria-hidden="true">UX</span>
+      <span>
+        <strong>Admin Review Console</strong>
+        <span>Queue triage</span>
+      </span>
+    </a>
+    <nav class="step-nav" aria-label="Admin review prototype steps">
+      <a class="is-active" href="admin-01-review-queue.html" aria-current="page">1. Queue</a>
+      <a href="admin-02-screen-review.html">2. Inspect</a>
+      <a href="admin-03-feedback-handoff.html">3. Handoff</a>
+    </nav>
+    <div class="identity"><span class="dot" aria-hidden="true"></span>admin@agentux.local</div>
+  </header>
+
+  <main class="page">
+    <aside class="panel sticky">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Review queue</h2>
+          <p class="panel-copy">Triage submitted capture batches by status and risk.</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <label class="panel-copy" for="queue-search">Search submissions</label>
+        <input class="search" id="queue-search" type="search" autocomplete="off" placeholder="Coinbase, Rahul, finance" />
+        <div class="filter-row" role="tablist" aria-label="Review queue filter">
+          <button class="chip is-active" type="button" data-filter="all">All</button>
+          <button class="chip" type="button" data-filter="review">Needs review</button>
+          <button class="chip" type="button" data-filter="fixes">Needs fixes</button>
+          <button class="chip" type="button" data-filter="approved">Approved</button>
+        </div>
+
+        <div class="queue-list" id="queue-list">
+          <button class="queue-card is-active" type="button" data-status="review" data-name="Coinbase" data-owner="Rahul" data-screens="16/18" data-gaps="2" data-risk="Medium">
+            <span class="queue-top">
+              <span class="queue-title"><strong>Coinbase</strong><span>Rahul - submitted 22 min ago</span></span>
+              <span class="badge accent">Needs review</span>
+            </span>
+            <span class="mini-grid">
+              <span class="mini"><strong>16/18</strong><span>Screens</span></span>
+              <span class="mini"><strong>2</strong><span>Gaps</span></span>
+              <span class="mini"><strong>2</strong><span>Revisions</span></span>
+            </span>
+          </button>
+          <button class="queue-card" type="button" data-status="fixes" data-name="Groww" data-owner="Rahul" data-screens="8/9" data-gaps="2" data-risk="High">
+            <span class="queue-top">
+              <span class="queue-title"><strong>Groww</strong><span>Rahul - waiting for fixes</span></span>
+              <span class="badge warn">Needs fixes</span>
+            </span>
+            <span class="mini-grid">
+              <span class="mini"><strong>8/9</strong><span>Screens</span></span>
+              <span class="mini"><strong>2</strong><span>Gaps</span></span>
+              <span class="mini"><strong>1</strong><span>Revision</span></span>
+            </span>
+          </button>
+          <button class="queue-card" type="button" data-status="review" data-name="Robinhood" data-owner="Meera" data-screens="12/12" data-gaps="0" data-risk="Low">
+            <span class="queue-top">
+              <span class="queue-title"><strong>Robinhood</strong><span>Meera - submitted today</span></span>
+              <span class="badge accent">Needs review</span>
+            </span>
+            <span class="mini-grid">
+              <span class="mini"><strong>12/12</strong><span>Screens</span></span>
+              <span class="mini"><strong>0</strong><span>Gaps</span></span>
+              <span class="mini"><strong>0</strong><span>Revisions</span></span>
+            </span>
+          </button>
+          <button class="queue-card" type="button" data-status="approved" data-name="Zerodha Kite" data-owner="Rahul" data-screens="7/7" data-gaps="0" data-risk="Low">
+            <span class="queue-top">
+              <span class="queue-title"><strong>Zerodha Kite</strong><span>Rahul - approved yesterday</span></span>
+              <span class="badge good">Approved</span>
+            </span>
+            <span class="mini-grid">
+              <span class="mini"><strong>7/7</strong><span>Screens</span></span>
+              <span class="mini"><strong>0</strong><span>Gaps</span></span>
+              <span class="mini"><strong>0</strong><span>Revisions</span></span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <div class="hero">
+        <div>
+          <h1 id="submission-name">Coinbase</h1>
+          <p class="panel-copy" id="submission-copy">Submitted by Rahul for Admin review. Inspect completeness, screenshot quality, and feedback history before deciding.</p>
+          <div class="badge-row">
+            <span class="badge accent" id="submission-status">Needs review</span>
+            <span class="badge" id="submission-owner">Owner: Rahul</span>
+            <span class="badge" id="submission-risk">Risk: Medium</span>
+            <span class="badge warn" id="submission-gap">2 open gaps</span>
+          </div>
+        </div>
+        <div class="score-card">
+          <strong id="submission-score">89%</strong>
+          <span id="submission-score-copy">16 of 18 required screens are present. Review two flagged issues before approval.</span>
+          <div class="bar"><div class="bar-fill w-89"></div></div>
+        </div>
+      </div>
+
+      <div class="overview-grid">
+        <div class="metric"><strong id="metric-screens">16/18</strong><span>Required screens</span></div>
+        <div class="metric"><strong>4</strong><span>App sections</span></div>
+        <div class="metric"><strong id="metric-gaps">2</strong><span>Open feedback items</span></div>
+        <div class="metric"><strong>22m</strong><span>Waiting in queue</span></div>
+      </div>
+
+      <div class="flow-grid">
+        <article class="flow-card">
+          <div class="flow-head"><strong>Signup and first run</strong><span>4/6</span></div>
+          <div class="step-list">
+            <div class="step-row"><span class="marker done"></span><strong>App landing</strong><span>Done</span></div>
+            <div class="step-row"><span class="marker done"></span><strong>Create account</strong><span>Done</span></div>
+            <div class="step-row"><span class="marker warn"></span><strong>KYC pending</strong><span>Missing</span></div>
+          </div>
+        </article>
+        <article class="flow-card">
+          <div class="flow-head"><strong>Money movement</strong><span>5/6</span></div>
+          <div class="step-list">
+            <div class="step-row"><span class="marker done"></span><strong>Link bank</strong><span>Done</span></div>
+            <div class="step-row"><span class="marker done"></span><strong>Deposit amount</strong><span>Done</span></div>
+            <div class="step-row"><span class="marker warn"></span><strong>Deposit success</strong><span>Cropped</span></div>
+          </div>
+        </article>
+        <article class="flow-card">
+          <div class="flow-head"><strong>Portfolio and settings</strong><span>5/5</span></div>
+          <div class="step-list">
+            <div class="step-row"><span class="marker done"></span><strong>Watchlist</strong><span>Done</span></div>
+            <div class="step-row"><span class="marker done"></span><strong>Asset detail</strong><span>Done</span></div>
+            <div class="step-row"><span class="marker done"></span><strong>Security settings</strong><span>Done</span></div>
+          </div>
+        </article>
+        <article class="flow-card">
+          <div class="flow-head"><strong>Edge states</strong><span>2/2</span></div>
+          <div class="step-list">
+            <div class="step-row"><span class="marker done"></span><strong>Offline state</strong><span>Done</span></div>
+            <div class="step-row"><span class="marker done"></span><strong>Permission denied</strong><span>Done</span></div>
+            <div class="step-row"><span class="marker done"></span><strong>Notes attached</strong><span>Done</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <aside class="panel right-panel sticky">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Admin decision</h2>
+          <p class="panel-copy">Make a fast queue decision or inspect individual screens.</p>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="error-state" id="decision-state">Review required. Two issues are already flagged for inspection.</div>
+        <div class="btn-row">
+          <a class="btn-primary" href="admin-02-screen-review.html">Inspect screens</a>
+          <button class="btn-secondary" type="button" id="quick-pass">Mark reviewed</button>
+          <button class="btn-danger" type="button" id="quick-fix">Request fixes</button>
+        </div>
+        <ul class="timeline">
+          <li>Rahul submitted Coinbase 22 minutes ago.</li>
+          <li>System flagged 2 quality risks.</li>
+          <li>Admin review is the next step.</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    const cards = Array.from(document.querySelectorAll(".queue-card"));
+    const chips = Array.from(document.querySelectorAll("[data-filter]"));
+    const search = document.getElementById("queue-search");
+    const toast = document.getElementById("toast");
+    let toastTimer = null;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.hidden = false;
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.hidden = true;
+      }, 2800);
+    }
+
+    function selectCard(card) {
+      cards.forEach((item) => item.classList.remove("is-active"));
+      card.classList.add("is-active");
+      document.getElementById("submission-name").textContent = card.dataset.name;
+      document.getElementById("submission-owner").textContent = `Owner: ${card.dataset.owner}`;
+      document.getElementById("submission-risk").textContent = `Risk: ${card.dataset.risk}`;
+      document.getElementById("submission-gap").textContent = `${card.dataset.gaps} open gaps`;
+      document.getElementById("metric-screens").textContent = card.dataset.screens;
+      document.getElementById("metric-gaps").textContent = card.dataset.gaps;
+      const statusText = card.querySelector(".badge").textContent;
+      const status = document.getElementById("submission-status");
+      status.textContent = statusText;
+      status.className = card.querySelector(".badge").className;
+      document.getElementById("decision-state").className = card.dataset.status === "approved" ? "success-state" : "error-state";
+      document.getElementById("decision-state").textContent = card.dataset.status === "approved"
+        ? "This capture is approved and ready for catalogue promotion."
+        : "Review required. Inspect screens before sending the decision.";
+    }
+
+    function applyFilter(filter) {
+      const query = search.value.trim().toLowerCase();
+      cards.forEach((card) => {
+        const statusMatch = filter === "all" || card.dataset.status === filter;
+        const queryMatch = !query || card.textContent.toLowerCase().includes(query);
+        card.hidden = !(statusMatch && queryMatch);
+      });
+    }
+
+    cards.forEach((card) => {
+      card.addEventListener("click", () => selectCard(card));
+    });
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        chips.forEach((item) => item.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        applyFilter(chip.dataset.filter);
+      });
+    });
+
+    search.addEventListener("input", () => {
+      const active = document.querySelector("[data-filter].is-active").dataset.filter;
+      applyFilter(active);
+    });
+
+    document.getElementById("quick-pass").addEventListener("click", () => {
+      document.getElementById("decision-state").className = "success-state";
+      document.getElementById("decision-state").textContent = "Marked reviewed in this prototype. Continue to handoff for final decision.";
+      showToast("Marked reviewed");
+    });
+
+    document.getElementById("quick-fix").addEventListener("click", () => {
+      document.getElementById("decision-state").className = "error-state";
+      document.getElementById("decision-state").textContent = "Fix request started. Inspect screens to attach targeted feedback.";
+      showToast("Fix request started");
+    });
+  </script>
+</body>
+</html>
