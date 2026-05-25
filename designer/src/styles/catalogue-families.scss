@@ -89,6 +89,16 @@
                 opacity 200ms ease-in,
                 transform 280ms ease-in;
   }
+
+  // While the trash animation overlay is choreographing the
+  // screenshot's crumple-and-toss, hide the underlying card image so
+  // the ghost doesn't double with the original. Card chrome stays
+  // visible so the row doesn't collapse mid-animation; it dissolves
+  // out naturally when the row unmounts on data update.
+  &.is-animating-delete {
+    pointer-events: none;
+    .catalogue-card-image { opacity: 0; }
+  }
 }
 
 .catalogue-family-card__media {

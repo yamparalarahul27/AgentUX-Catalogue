@@ -3,7 +3,6 @@ import { Check, Copy, Crop, MapPin, MessageCircle, Pencil, RefreshCw, Save, Tras
 import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
-import { useSaveAnimation } from './SaveAnimation';
 import { CopyMorphIcon, useCopyConfirmation } from './CopyMorphIcon';
 
 interface CatalogueFamilyLightboxActionsProps {
@@ -32,11 +31,10 @@ interface CatalogueFamilyLightboxActionsProps {
   canCrop: boolean;
   hideCatalogueActions?: boolean;
   isBookmarked?: boolean;
+  // The parent owns the save animation now — this just toggles state.
+  // When toggling from unsaved → saved, the parent fires the floppy
+  // animation before calling its underlying state mutation.
   onToggleBookmark?: () => void;
-  // Source image for the parabolic save-to-Saved animation. The
-  // animation only fires when toggling INTO the saved state (not on
-  // unsave). Omit to skip the animation.
-  saveAnimationImageUrl?: string;
   // Single-screenshot share. Optional — if omitted, the Share icon
   // isn't rendered (e.g., when the lightbox shows a non-shareable
   // surface like the Labelling Studio context).
@@ -82,7 +80,6 @@ export function CatalogueFamilyLightboxActions({
   hideCatalogueActions = false,
   isBookmarked,
   onToggleBookmark,
-  saveAnimationImageUrl,
   onShareLink,
   onDelete,
   onFlowChange,
@@ -103,7 +100,6 @@ export function CatalogueFamilyLightboxActions({
   canEdit,
   canDelete,
 }: CatalogueFamilyLightboxActionsProps) {
-  const { flyFromButton } = useSaveAnimation();
   const { justCopied: justShared, confirm: confirmShareCopy } = useCopyConfirmation();
   return (
     <div className="catalogue-family-lightbox__summary" style={{ borderTop: 0, borderRadius: '0 0 16px 16px' }}>
@@ -127,12 +123,7 @@ export function CatalogueFamilyLightboxActions({
           <button
             type="button"
             className={`catalogue-lightbox-icon-btn ${isBookmarked ? 'is-bookmarked' : ''}`}
-            onClick={(event) => {
-              if (!isBookmarked && saveAnimationImageUrl) {
-                flyFromButton(event.currentTarget, saveAnimationImageUrl);
-              }
-              onToggleBookmark();
-            }}
+            onClick={onToggleBookmark}
             title={isBookmarked ? 'Unsave' : 'Save'}
             aria-pressed={Boolean(isBookmarked)}
           >

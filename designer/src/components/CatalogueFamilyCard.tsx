@@ -9,8 +9,9 @@ import { REFERENCE_IMAGES_ENABLED, REUPLOAD_ENABLED } from '../lib/feature-flags
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { ThumbHashImage } from './ThumbHashImage';
-import { useSaveAnimation } from './SaveAnimation';
+import { useSaveTrashAnimation } from './SaveTrashAnimation';
 import { CopyMorphIcon, useCopyConfirmation } from './CopyMorphIcon';
+import { getSkipDeleteConfirm, setSkipDeleteConfirm } from '../lib/delete-confirm-pref';
 
 interface CatalogueFamilyCardProps {
   family: CatalogueFamilyView;
@@ -52,12 +53,16 @@ export function CatalogueFamilyCard({
   onShareLink,
   canDelete,
 }: CatalogueFamilyCardProps) {
-  const { flyFromButton } = useSaveAnimation();
+  const { triggerSave, triggerDelete } = useSaveTrashAnimation();
   const { justCopied: justShared, confirm: confirmShareCopy } = useCopyConfirmation();
   const fileRef = useRef<HTMLInputElement>(null);
+  const imageWrapRef = useRef<HTMLDivElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+  // When the delete animation is running, hide the underlying card
+  // image so it doesn't double with the animation overlay's ghost.
+  const [isAnimatingDelete, setIsAnimatingDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(family.name);
   const activeVariant = useMemo(
@@ -93,24 +98,43 @@ export function CatalogueFamilyCard({
     setHasImageError(false);
   }, [imageUrl, screenshot?.id]);
 
-  async function confirmDelete() {
-    setIsDeleting(true);
-    setIsRemoving(true);
-    setShowDeleteConfirm(false);
-    // Let the dissolve animation play, then run the actual delete.
-    // The card unmounts when the parent filters this family out, so
-    // setIsDeleting(false) in finally fires on an unmounted node — no-op.
-    await new Promise((resolve) => setTimeout(resolve, 340));
-    try {
-      await onDeleteFamily(family.id);
-    } finally {
-      setIsDeleting(false);
+  function confirmDelete() {
+    if (isDeleting) return;
+    const rect = imageWrapRef.current?.getBoundingClientRect();
+    if (!rect) {
+      // Fallback — no DOM rect (shouldn't happen). Skip the animation
+      // and just dissolve the card the legacy way.
+      setIsDeleting(true);
+      setIsRemoving(true);
+      setShowDeleteConfirm(false);
+      void (async () => {
+        await new Promise((resolve) => setTimeout(resolve, 340));
+        try { await onDeleteFamily(family.id); } finally { setIsDeleting(false); }
+      })();
+      return;
     }
+    setIsDeleting(true);
+    setShowDeleteConfirm(false);
+    setIsAnimatingDelete(true);
+    // The animation overlay drives the visuals. onComplete fires
+    // partway through (when the ball lands in the trash) — that's when
+    // we commit the underlying soft-delete so the row drops from the
+    // grid in sync with the visual landing.
+    triggerDelete({
+      sourceRect: rect,
+      screenshotUrl: screenshot?.image_url ?? null,
+      thumbHash: screenshot?.thumb_hash ?? null,
+      onComplete: () => {
+        // Mutation runs after the visual lands. Card unmounts when
+        // parent re-renders the filtered list.
+        void onDeleteFamily(family.id).finally(() => setIsDeleting(false));
+      },
+    });
   }
 
   return (
     <>
-      <article className={`catalogue-card catalogue-family-card ${isSelected ? 'catalogue-card--selected is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} data-family-id={family.id}>
+      <article className={`catalogue-card catalogue-family-card ${isSelected ? 'catalogue-card--selected is-selected' : ''} ${isRemoving ? 'is-removing' : ''} ${isAnimatingDelete ? 'is-animating-delete' : ''}`} data-family-id={family.id}>
         <div className="catalogue-family-card__media">
           <button
             type="button"
@@ -130,7 +154,7 @@ export function CatalogueFamilyCard({
           )}
 
           <button type="button" className="catalogue-family-card__preview" onClick={() => onOpenPreview(family.id)}>
-            <div className="catalogue-card-image">
+            <div ref={imageWrapRef} className="catalogue-card-image">
               {imageUrl && !hasImageError ? (
                 <>
                   {isImageLoading && (
@@ -208,10 +232,27 @@ export function CatalogueFamilyCard({
                   // doesn't also open the lightbox.
                   event.stopPropagation();
                   const wasBookmarked = bookmarkedIds?.has(screenshot.id) ?? false;
-                  onToggleBookmark(screenshot.id);
-                  if (!wasBookmarked && screenshot.image_url) {
-                    flyFromButton(event.currentTarget, screenshot.image_url);
+                  if (wasBookmarked) {
+                    // Unsave — no animation needed, just toggle.
+                    onToggleBookmark(screenshot.id);
+                    return;
                   }
+                  const rect = imageWrapRef.current?.getBoundingClientRect();
+                  if (!rect) {
+                    // No DOM rect — graceful skip of the animation.
+                    onToggleBookmark(screenshot.id);
+                    return;
+                  }
+                  // Floppy slides in from the left, screenshot jumps
+                  // into it, both fly off up-right. Mutation commits
+                  // mid-flight via onComplete so the saved-state
+                  // indicator flips before the floppy exits.
+                  triggerSave({
+                    sourceRect: rect,
+                    screenshotUrl: screenshot.image_url || null,
+                    thumbHash: screenshot.thumb_hash ?? null,
+                    onComplete: () => onToggleBookmark(screenshot.id),
+                  });
                 }}
               >
                 <Save size={14} />
@@ -245,7 +286,16 @@ export function CatalogueFamilyCard({
                 className="catalogue-card-action catalogue-card-action-danger"
                 title="Delete screenshot"
                 aria-label="Delete screenshot"
-                onClick={() => setShowDeleteConfirm(true)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  // Skip the modal if the user previously ticked "Don't
+                  // show again" — go straight to the trash animation.
+                  if (getSkipDeleteConfirm()) {
+                    confirmDelete();
+                  } else {
+                    setShowDeleteConfirm(true);
+                  }
+                }}
               >
                 <Trash2 size={14} />
               </button>
@@ -341,8 +391,12 @@ export function CatalogueFamilyCard({
         <ConfirmModal
           title="Move to Trash"
           message={`Move "${family.name}" to Trash? Recoverable for 15 days from Settings → Team → Trash.`}
-          onConfirm={() => {
-            if (!isDeleting) void confirmDelete();
+          confirmLabel="Move to Trash"
+          dontShowAgainLabel="Don't show this confirmation again"
+          onConfirm={(options) => {
+            if (isDeleting) return;
+            if (options?.dontShowAgain) setSkipDeleteConfirm(true);
+            confirmDelete();
           }}
           onCancel={() => {
             if (!isDeleting) setShowDeleteConfirm(false);

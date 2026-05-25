@@ -32,6 +32,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  // Trash animation is choreographing — hide the underlying media so
+  // the overlay ghost doesn't double with the live image. The
+  // surrounding chrome stays so the lightbox doesn't collapse
+  // mid-animation; it closes naturally when the data updates.
+  &.is-animating-delete {
+    pointer-events: none;
+    > * { opacity: 0; }
+  }
 }
 
 // Auto-size to the image's natural bounds (capped to the container).

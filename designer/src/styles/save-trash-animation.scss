@@ -1,0 +1,194 @@
+// Save + Trash micro-animations. Triggered by the catalogue grid
+// card and the family lightbox on bookmark / delete. Portal-mounted
+// at document.body, runs purely via CSS keyframes (no animation
+// library).
+//
+// Choreography:
+//   1. The asset (floppy for save, trash for delete) slides in from
+//      off-screen and parks at the viewport bottom-corner (left for
+//      save, right for delete). It stays there.
+//   2. The screenshot shrinks proportionally (uniform scale,
+//      preserves aspect ratio) and travels to the corner — still
+//      rendered as a small rectangular thumbnail, not a ball.
+//   3. Three keyframes per animation — no kinks from over-keyed
+//      waypoints. Delete uses an apex keyframe to lift the path
+//      into a parabolic arc; save uses a direct curve.
+//   4. For delete, the trash swaps empty → full at the moment of
+//      impact (driven by React state).
+//
+// JS / CSS contract — must match between SaveTrashAnimation.tsx
+// and this file:
+//   --anim-dx / --anim-dy   target translation
+//   --apex-dx / --apex-dy   apex of the delete arc
+//   --thumb-scale           uniform shrink factor (THUMB_SIZE/longestSide)
+//
+//   SAVE_TOTAL_MS            = 1500   matches save-* keyframes
+//   SAVE_COMMIT_AT_MS        = 1100
+//   DELETE_TOTAL_MS          = 1600   matches delete-* keyframes
+//   DELETE_TRASH_SWAP_AT_MS  = 1050
+
+.save-trash-anim {
+  pointer-events: none;
+  z-index: 9999;
+
+  &__screenshot {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+    background: #16161a;
+    transform-origin: center;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  &__screenshot-fallback {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(34, 197, 94, 0.18));
+  }
+
+  &__floppy,
+  &__trash {
+    will-change: transform, opacity;
+  }
+}
+
+// ── Save ───────────────────────────────────────────────────────
+// Floppy slides in from off-screen-left and docks at bottom-left,
+// stays there. Screenshot crumples to a small square (via
+// --ball-sx / --ball-sy), then travels in a single smooth curve to
+// the floppy and absorbs in. No over-keying — 3 keyframes drive the
+// motion so the interpolated path reads as one continuous arc.
+.save-trash-anim--save {
+  .save-trash-anim__screenshot {
+    animation: save-screenshot 1.5s cubic-bezier(0.45, 0.05, 0.2, 1) forwards;
+  }
+  .save-trash-anim__floppy {
+    animation: corner-asset-enter-left 1.5s cubic-bezier(0.4, 0.5, 0.25, 1) forwards;
+  }
+}
+
+@keyframes corner-asset-enter-left {
+  0%   { transform: translateX(-200%) rotate(-8deg); opacity: 0; }
+  20%  { transform: translateX(0)     rotate(-2deg); opacity: 1; }
+  28%  { transform: translateX(0)     rotate(0deg);  opacity: 1; }
+  // Holds docked through the rest of the animation. Quick 'received'
+  // bob when the screenshot lands inside.
+  74%  { transform: translateX(0) translateY(0) rotate(0deg) scale(1);     opacity: 1; }
+  80%  { transform: translateX(0) translateY(-6px) rotate(-1deg) scale(1.04); opacity: 1; }
+  88%  { transform: translateX(0) translateY(0) rotate(0deg) scale(1);     opacity: 1; }
+  100% { transform: translateX(0) translateY(0) rotate(0deg) scale(1);     opacity: 1; }
+}
+
+@keyframes save-screenshot {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  // Brief readiness lift before launching — same scale, tiny tilt
+  // so the start of the path feels intentional, not abrupt.
+  12% {
+    transform: translate(0, -4px) scale(1) rotate(-1deg);
+    opacity: 1;
+  }
+  // Travel + shrink in one smooth curve. Uniform scale preserves
+  // the source's aspect ratio so it reads as a real thumbnail.
+  85% {
+    transform: translate(var(--anim-dx), var(--anim-dy)) scale(var(--thumb-scale)) rotate(-10deg);
+    opacity: 1;
+  }
+  // Absorbed into the floppy.
+  100% {
+    transform: translate(var(--anim-dx), var(--anim-dy)) scale(var(--thumb-scale)) rotate(-10deg);
+    opacity: 0;
+  }
+}
+
+// ── Delete ────────────────────────────────────────────────────
+// Trash slides in from off-screen-right and docks at bottom-right.
+// Screenshot crumples (same true-circle trick), then arcs into the
+// bin via an apex keyframe. The 3-key path (source → apex → target)
+// produces a smooth parabola with single ease-in-out — the previous
+// 7-key version's "kinks" came from forcing too many waypoints.
+.save-trash-anim--delete {
+  .save-trash-anim__screenshot {
+    animation: delete-screenshot 1.6s cubic-bezier(0.4, 0.05, 0.2, 1) forwards;
+  }
+  .save-trash-anim__trash {
+    animation: corner-asset-enter-right 1.6s cubic-bezier(0.4, 0.5, 0.25, 1) forwards;
+  }
+}
+
+@keyframes corner-asset-enter-right {
+  0%   { transform: translateX(220%) rotate(0deg); opacity: 0; }
+  18%  { transform: translateX(0)    rotate(0deg); opacity: 1; }
+  // Hold docked while the ball arcs in. Impact wobble at ~66%
+  // matches DELETE_TRASH_SWAP_AT_MS in the React component.
+  64%  { transform: translateX(0) translateY(0)   rotate(0deg)  scaleY(1);    opacity: 1; }
+  68%  { transform: translateX(0) translateY(3px) rotate(-3deg) scaleY(0.94); opacity: 1; }
+  74%  { transform: translateX(0) translateY(0)   rotate(4deg)  scaleY(1.03); opacity: 1; }
+  80%  { transform: translateX(0) translateY(0)   rotate(-1deg) scaleY(1);    opacity: 1; }
+  100% { transform: translateX(0) translateY(0)   rotate(0deg)  scaleY(1);    opacity: 1; }
+}
+
+@keyframes delete-screenshot {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  // Brief readiness lift in place before launching toward the bin.
+  12% {
+    transform: translate(0, -4px) scale(1) rotate(-2deg);
+    opacity: 1;
+  }
+  // Apex of the arc — halfway across, lifted up. Uniform scale so
+  // the thumbnail keeps its aspect ratio while rotating into the
+  // toss. One apex keyframe + cubic-bezier easing gives a smooth
+  // parabolic curve without piecewise linear "kinks".
+  55% {
+    transform: translate(var(--apex-dx), var(--apex-dy)) scale(var(--thumb-scale)) rotate(-22deg);
+    opacity: 1;
+  }
+  // Lands inside the trash.
+  68% {
+    transform: translate(var(--anim-dx), var(--anim-dy)) scale(var(--thumb-scale)) rotate(-30deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(var(--anim-dx), var(--anim-dy)) scale(var(--thumb-scale)) rotate(-30deg);
+    opacity: 0;
+  }
+}
+
+// ── Reduced motion ─────────────────────────────────────────────
+.save-trash-anim.is-reduced {
+  .save-trash-anim__screenshot {
+    animation: save-trash-reduced 0.28s ease forwards;
+  }
+  .save-trash-anim__floppy,
+  .save-trash-anim__trash {
+    display: none;
+  }
+}
+
+@keyframes save-trash-reduced {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: scale(0.92); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save-trash-anim__screenshot {
+    animation: save-trash-reduced 0.28s ease forwards !important;
+  }
+  .save-trash-anim__floppy,
+  .save-trash-anim__trash {
+    display: none;
+  }
+}

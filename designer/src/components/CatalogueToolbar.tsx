@@ -15,7 +15,6 @@ import { CatalogueFilterSheet } from './CatalogueFilterSheet';
 import { CataloguePlatformDropdown } from './CataloguePlatformDropdown';
 import { CatalogueViewToggle } from './CatalogueViewToggle';
 import { Dropdown } from './Dropdown';
-import { useSaveAnimation } from './SaveAnimation';
 
 interface CatalogueToolbarProps {
   allFlows: string[];
@@ -222,16 +221,10 @@ export function CatalogueToolbar({
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
 
-  // Register this toolbar's Saved button as the animation target so
-  // a parabolic save-to-Saved animation can fly to it. The provider
-  // exposes a no-op stub when unmounted (share page, etc.) so no
-  // explicit null-check needed at the callsite.
-  const { registerTarget } = useSaveAnimation();
+  // savedFilterButtonRef stays for layout/positioning needs; the save
+  // animation no longer flies to it (it now uses the floppy +
+  // screenshot crumple choreography anchored at the source rect).
   const savedFilterButtonRef = useRef<HTMLButtonElement | null>(null);
-  useEffect(() => {
-    registerTarget(savedFilterButtonRef.current);
-    return () => registerTarget(null);
-  }, [registerTarget]);
   const [visibleFilters, setVisibleFilters] = useState<Set<ToolbarFilterKey>>(() => {
     try {
       return parseVisibleFilters(window.localStorage.getItem(TOOLBAR_FILTER_KEY));
