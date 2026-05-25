@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant, getVariantKey } from '../lib/catalogue-families';
 import { formatDateTime, getContainLayout, type ImageSize, type LightboxAnnotation } from '../lib/catalogue-lightbox';
+import { formatAbsoluteDateTime, formatRelativeTime } from '../lib/relative-time';
 import { getGroupColor } from '../lib/naming';
 import {
   deleteAnnotation as deleteAnnotationApi,
@@ -418,6 +420,31 @@ export function CatalogueFamilyLightbox({
     window.addEventListener('keydown', handleEscapeKey);
     return () => window.removeEventListener('keydown', handleEscapeKey);
   }, [isOpen, selectedAnnotationId]);
+
+  // ESC closes the lightbox when nothing else needs the key first.
+  // Order of precedence:
+  //   1. typing in an input / textarea / contentEditable — let the
+  //      field handle it (no close)
+  //   2. confirm modal open — its own ESC handler runs
+  //   3. crop mode — has its own escape path (Cancel button)
+  //   4. an annotation is selected — the effect above clears it
+  //   5. otherwise → close the lightbox
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      if (confirmDeleteOpen || cropMode || selectedAnnotationId) return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
+      event.preventDefault();
+      onClose();
+    }
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose, confirmDeleteOpen, cropMode, selectedAnnotationId]);
   // Single-letter lightbox shortcuts. Letter → action mapping mirrors
   // the icon-bar buttons; each shortcut respects the same permission
   // gates the corresponding button does. Skip everything when the
@@ -976,6 +1003,38 @@ export function CatalogueFamilyLightbox({
                 {family.group && <span className="catalogue-lightbox-meta-chip" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={null} linkTo={`/g/${encodeURIComponent(family.group.trim().toLowerCase())}`} /></span>}
                 {flowName && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--flow">{flowName}</span></>}
                 {activeVariant.label && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--variant">{activeVariant.label}</span></>}
+                {(activeVariant.screenshot?.created_at || family.created_at) && (() => {
+                  const raw = activeVariant.screenshot?.created_at || family.created_at;
+                  const date = raw ? new Date(raw) : null;
+                  if (!date || Number.isNaN(date.getTime())) return null;
+                  return (
+                    <>
+                      <span className="catalogue-lightbox-meta-sep">·</span>
+                      <Tooltip.Provider delayDuration={150} skipDelayDuration={300}>
+                        <Tooltip.Root>
+                          <Tooltip.Trigger asChild>
+                            <time
+                              className="catalogue-lightbox-meta-time"
+                              dateTime={date.toISOString()}
+                            >
+                              {formatRelativeTime(date)}
+                            </time>
+                          </Tooltip.Trigger>
+                          <Tooltip.Portal>
+                            <Tooltip.Content
+                              className="catalogue-meta-tooltip"
+                              sideOffset={6}
+                              collisionPadding={8}
+                            >
+                              {formatAbsoluteDateTime(date)}
+                              <Tooltip.Arrow className="catalogue-meta-tooltip__arrow" width={8} height={4} />
+                            </Tooltip.Content>
+                          </Tooltip.Portal>
+                        </Tooltip.Root>
+                      </Tooltip.Provider>
+                    </>
+                  );
+                })()}
               </div>
               {family.variants.length > 1 && (
                 <div className="catalogue-lightbox-variant-dots">

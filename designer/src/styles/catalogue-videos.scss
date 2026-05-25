@@ -703,6 +703,13 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  // Constrain to the modal's height so the comments column scrolls
+  // internally instead of stretching to match a tall tweet embed.
+  // Previously a long X post (replies / media carousel) made this
+  // column stretch and left a big empty dark area below the
+  // composer. With max-height + the comments-list's overflow-y, the
+  // column's interior scrolls and the composer stays pinned.
+  max-height: calc(100vh - 48px);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   background: #121217;
 }
