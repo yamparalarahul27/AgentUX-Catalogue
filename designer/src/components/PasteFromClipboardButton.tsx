@@ -14,12 +14,16 @@ type Feedback =
   | { kind: 'success'; count: number }
   | { kind: 'empty' };
 
-// A click-to-focus paste target. The visible element is a contenteditable
-// div styled like a button — clicking focuses it (cursor lands inside),
-// then the user pastes via ⌘V on desktop or long-press → Paste on iOS.
-// The native `paste` event delivers the clipboard bytes (including
-// images transferred via macOS Universal Clipboard), which the
-// `navigator.clipboard.read()` API doesn't reliably provide.
+// Compact paste-from-clipboard link, rendered beneath the drop zone in
+// the Quick Upload panel. The visible element is a contenteditable
+// surface styled as a text link — clicking focuses it (cursor lands
+// inside), then the user pastes via ⌘V on desktop or long-press →
+// Paste on iOS Universal Clipboard.
+//
+// The contenteditable mechanic is what makes iOS work — the native
+// `paste` event delivers the clipboard bytes (including images
+// transferred via Universal Clipboard), which `navigator.clipboard.read()`
+// doesn't reliably provide on iOS Safari.
 //
 // Child elements are marked `contentEditable={false}` so the icon and
 // labels are not editable — only the outer surface accepts paste.
@@ -27,7 +31,7 @@ export function PasteFromClipboardButton({ onFilesSelected, disabled = false }: 
   const [feedback, setFeedback] = useState<Feedback>({ kind: 'idle' });
   const editableRef = useRef<HTMLDivElement>(null);
 
-  // Auto-fade success/empty states so the button returns to its resting
+  // Auto-fade success / empty states so the link returns to its resting
   // copy after the user moves on.
   useEffect(() => {
     if (feedback.kind === 'idle' || feedback.kind === 'focused') return;
@@ -47,9 +51,9 @@ export function PasteFromClipboardButton({ onFilesSelected, disabled = false }: 
       return;
     }
 
-    // Extract image files the same way UploadZone's window paste
-    // handler does — DataTransferItemList first, then clipboardData.files
-    // as a fallback. Filter to image MIME types.
+    // Extract image files the same way UploadZone's window paste handler
+    // does — DataTransferItemList first, then clipboardData.files as a
+    // fallback. Filter to image MIME types.
     const itemFiles = Array.from(clipboardData.items)
       .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
       .map((item) => item.getAsFile())
@@ -96,7 +100,7 @@ export function PasteFromClipboardButton({ onFilesSelected, disabled = false }: 
     : feedback.kind === 'focused' ? 'active'
     : 'idle';
 
-  const label = feedback.kind === 'success' ? 'Pasted' : 'Paste';
+  const label = feedback.kind === 'success' ? 'Pasted' : 'Paste from clipboard';
   const hint = (() => {
     switch (feedback.kind) {
       case 'focused':
@@ -106,7 +110,7 @@ export function PasteFromClipboardButton({ onFilesSelected, disabled = false }: 
       case 'empty':
         return 'No image in clipboard';
       default:
-        return 'Click then ⌘V';
+        return 'iPhone supported · long-press → Paste';
     }
   })();
 
@@ -118,35 +122,35 @@ export function PasteFromClipboardButton({ onFilesSelected, disabled = false }: 
       tabIndex={disabled ? -1 : 0}
       contentEditable={!disabled}
       suppressContentEditableWarning
-      className={`catalogue-paste-clipboard catalogue-paste-clipboard--${variant}`}
+      className={`catalogue-paste-link catalogue-paste-link--${variant}`}
       onClick={handleClick}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onPaste={handlePaste}
       onKeyDown={(event) => {
         // Strip every typed character that isn't paste — keep the
-        // contenteditable empty so it visually behaves like a button.
+        // contenteditable empty so it visually behaves like a link.
         // The browser's default paste keystroke (⌘V / Ctrl+V) reaches
         // the onPaste handler before this onKeyDown fires.
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'v') return;
         if (event.key === 'Enter' || event.key === ' ') {
-          // Allow space/enter as visual click — but don't insert chars.
+          // Allow space / enter as visual click — but don't insert chars.
           event.preventDefault();
           return;
         }
         event.preventDefault();
       }}
-      // No spell-check / autocorrect surface — this is a button, not a doc.
       spellCheck={false}
       data-disabled={disabled || undefined}
     >
-      <span className="catalogue-paste-clipboard__icon" contentEditable={false} aria-hidden="true">
-        {variant === 'success' ? <Check size={18} /> : <Clipboard size={18} />}
+      <span className="catalogue-paste-link__icon" contentEditable={false} aria-hidden="true">
+        {variant === 'success' ? <Check size={14} /> : <Clipboard size={14} />}
       </span>
-      <span className="catalogue-paste-clipboard__label" contentEditable={false}>
+      <span className="catalogue-paste-link__label" contentEditable={false}>
         {label}
       </span>
-      <span className="catalogue-paste-clipboard__hint" contentEditable={false}>
+      <span className="catalogue-paste-link__sep" contentEditable={false} aria-hidden="true" />
+      <span className="catalogue-paste-link__hint" contentEditable={false}>
         {hint}
       </span>
     </div>

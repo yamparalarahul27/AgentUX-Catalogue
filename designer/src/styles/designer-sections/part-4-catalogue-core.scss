@@ -745,70 +745,72 @@
   min-width: 0;
 }
 
-// Side-by-side row containing the drop zone + Paste-from-clipboard
-// button. nowrap keeps them on the same line on desktop; the drop
-// zone gets `flex: 1` + `min-width: 0` so it shrinks to make room
-// for the fixed paste pill instead of pushing it below.
-//
-// On very narrow viewports (<= 480px) we let it wrap — at that
-// width even a shrunken drop zone gets cramped, and stacking is
-// more usable than a tiny squashed row.
+// Stacked row containing the drop zone (top) + paste-from-clipboard
+// link (below). Vertical layout — paste is now a secondary affordance,
+// not a co-equal sibling. Drop zone shrinks naturally to its content;
+// the link sits under it as a low-weight text link.
 .catalogue-quick-upload-drop-row {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
   align-items: stretch;
-  flex-wrap: nowrap;
+  gap: 12px;
 
   > :first-child {
-    flex: 1 1 0;
-    min-width: 0;
+    width: 100%;
     max-width: none;
-  }
-
-  @media (max-width: 480px) {
-    flex-wrap: wrap;
-
-    > :first-child { flex: 1 1 100%; }
   }
 }
 
-// Paste-from-clipboard target. Visually a button, but technically a
-// contenteditable div — that's the only DOM surface that can receive a
-// native `paste` event with image bytes (including iOS Universal
-// Clipboard transfers). Outer caret + selection are hidden by the
-// child structure (icon/labels are contenteditable=false).
-.catalogue-paste-clipboard {
+// Shorter Upload Zone variant — only when nested under the quick
+// upload row. The global .upload-zone (used in CatalogueUploadModal)
+// keeps its 40px padding. Quick Upload's compact context wants the
+// drop zone to take less vertical space.
+.catalogue-quick-upload-drop-row .upload-zone {
+  padding: 22px 20px;
+
+  // Smaller icon + tighter type at this height.
+  > svg { width: 26px; height: 26px; }
+
+  p { font-size: 13.5px; }
+  .upload-zone-hint { font-size: 11.5px; }
+}
+
+// Paste-from-clipboard link. Visually a compact text link, but
+// technically a contenteditable div — that's the only DOM surface
+// that can receive a native `paste` event with image bytes
+// (including iOS Universal Clipboard transfers). The icon + labels
+// are contenteditable=false so they're not editable; only the outer
+// surface accepts paste. Sits below the drop zone in the Quick
+// Upload panel.
+.catalogue-paste-link {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 124px;
-  flex: 0 0 124px;
-  padding: 16px 12px;
-  background: rgba(99, 102, 241, 0.05);
-  border: 1px dashed rgba(99, 102, 241, 0.35);
-  border-radius: 10px;
-  color: #c7d2fe;
-  cursor: pointer;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 6px 8px;
+  margin-left: -8px; // align icon flush with the left edge of the panel
+  border-radius: 6px;
+  background: transparent;
+  color: $text-muted;
+  font-size: 13px;
   font-family: inherit;
   caret-color: transparent;
+  cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 
   &:hover {
-    background: rgba(99, 102, 241, 0.10);
-    border-color: rgba(99, 102, 241, 0.55);
-    color: #e0e7ff;
+    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.06);
+
+    .catalogue-paste-link__label {
+      border-bottom-color: rgba(199, 210, 254, 0.55);
+    }
   }
 
-  &:active {
-    transform: scale(0.98);
-  }
-
-  &:focus-visible,
-  &:focus {
+  &:focus,
+  &:focus-visible {
     outline: 2px solid rgba(99, 102, 241, 0.55);
     outline-offset: 2px;
   }
@@ -820,45 +822,64 @@
   }
 }
 
-// Focused state — the surface is primed to receive ⌘V. Solid border,
-// brighter accent so the user sees the prompt to paste.
-.catalogue-paste-clipboard--active {
-  background: rgba(99, 102, 241, 0.14);
-  border-style: solid;
-  border-color: rgba(99, 102, 241, 0.65);
-  color: #e0e7ff;
+.catalogue-paste-link__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $accent;
+  flex-shrink: 0;
 }
 
-.catalogue-paste-clipboard__label {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+.catalogue-paste-link__label {
+  font-weight: 500;
+  border-bottom: 1px dashed transparent;
+  padding-bottom: 1px;
+  transition: border-color 0.15s ease;
 }
 
-.catalogue-paste-clipboard__hint {
-  font-size: 11px;
-  color: #71717a;
-  text-align: center;
-  line-height: 1.3;
-  min-height: 14px;
+.catalogue-paste-link__sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: $text-dim;
+  flex-shrink: 0;
 }
 
-// Success state — transient green flash after files are pasted.
-.catalogue-paste-clipboard--success {
-  background: rgba(34, 197, 94, 0.08);
-  border-color: rgba(34, 197, 94, 0.45);
+.catalogue-paste-link__hint {
+  font-size: 12px;
+  color: $text-dim;
+}
+
+// Focused — surface is armed to receive ⌘V. Indigo border-bottom on
+// the label so the user sees the prompt without a heavy button shape.
+.catalogue-paste-link--active {
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.10);
+
+  .catalogue-paste-link__label {
+    border-bottom-color: rgba(199, 210, 254, 0.65);
+    border-bottom-style: solid;
+  }
+}
+
+// Success — transient green flash after files are pasted.
+.catalogue-paste-link--success {
   color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.08);
 
-  .catalogue-paste-clipboard__hint { color: #86efac; }
+  .catalogue-paste-link__icon { color: #22c55e; }
+  .catalogue-paste-link__hint { color: #86efac; }
+  .catalogue-paste-link__label { border-bottom-color: transparent; }
 }
 
-// Warning / error state — amber for empty clipboard / permission denied / unsupported / generic error.
-.catalogue-paste-clipboard--warn {
-  background: rgba(245, 158, 11, 0.06);
-  border-color: rgba(245, 158, 11, 0.35);
+// Warning — amber for empty clipboard / permission denied.
+.catalogue-paste-link--warn {
   color: #fcd34d;
+  background: rgba(245, 158, 11, 0.06);
 
-  .catalogue-paste-clipboard__hint { color: #fcd34d; }
+  .catalogue-paste-link__icon { color: #f59e0b; }
+  .catalogue-paste-link__hint { color: #fcd34d; }
+  .catalogue-paste-link__label { border-bottom-color: transparent; }
 }
 
 .catalogue-quick-upload-right .catalogue-upload-hint {
