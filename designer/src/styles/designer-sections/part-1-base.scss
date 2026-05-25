@@ -736,6 +736,7 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
 }
 
 .empty-state {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -743,6 +744,15 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
   padding: 80px 20px;
   text-align: center;
   color: $text-muted;
+  // Bottom-to-top fading gradient — anchors the empty state to the
+  // viewport floor without a hard edge. Scoped to the empty-state
+  // container so it doesn't bleed into the catalogue grid.
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    rgba(99, 102, 241, 0.08) 0%,
+    rgba(99, 102, 241, 0.04) 35%,
+    transparent 75%
+  );
 
   h2 {
     margin-top: 16px;

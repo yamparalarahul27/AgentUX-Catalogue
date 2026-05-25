@@ -40,6 +40,9 @@
   align-items: center;
   justify-content: center;
   width: 32px;
+  // Height matches width so the button renders as a true circle
+  // alongside the other 34×34 icon-buttons in `.catalogue-header__right`.
+  height: 32px;
   padding: 0;
 }
 

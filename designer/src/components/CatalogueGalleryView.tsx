@@ -21,7 +21,6 @@ interface CatalogueGalleryViewProps {
   onRequireAuth?: () => void;
   onRenameFamily: (familyId: string, name: string) => Promise<void>;
   onRemoveReference: (screenshotId: string) => Promise<boolean>;
-  onReplaceVariantImage: (screenshotId: string, file: File) => Promise<void>;
   onSetFlowLabel: (familyId: string, flowLabel: string | null) => Promise<boolean>;
   onUpdateVariantDetails: (
     screenshotId: string,
@@ -85,7 +84,6 @@ export function CatalogueGalleryView({
   onRequireAuth,
   onRenameFamily,
   onRemoveReference,
-  onReplaceVariantImage,
   onSetFlowLabel,
   onUpdateVariantDetails,
   userEmail,
@@ -93,7 +91,6 @@ export function CatalogueGalleryView({
 }: CatalogueGalleryViewProps) {
   const previewRef = useRef<HTMLDivElement>(null);
   const previewStageRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const panStateRef = useRef<GalleryPanState | null>(null);
   const panMovedRef = useRef(false);
   const lastActiveIndexRef = useRef(0);
@@ -433,19 +430,6 @@ export function CatalogueGalleryView({
   }
   return (
     <div className="catalogue-gallery">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) {
-            void onReplaceVariantImage(activeScreenshot.id, file);
-          }
-          event.target.value = '';
-        }}
-      />
       <div className="catalogue-gallery-main">
         <div
           ref={previewRef}
@@ -674,9 +658,6 @@ export function CatalogueGalleryView({
               Edit
             </button>
           )}
-          <button type="button" className="catalogue-list-action" onClick={() => fileInputRef.current?.click()}>
-            Reupload
-          </button>
           <button type="button" className="catalogue-list-action is-danger" onClick={() => void requestDeleteCurrent()}>
             Delete
           </button>

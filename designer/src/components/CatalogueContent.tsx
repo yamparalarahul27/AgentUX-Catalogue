@@ -183,7 +183,6 @@ export function CatalogueContent({
         onRequireAuth={onRequireAuth}
         onRenameFamily={onRenameFamily}
         onRemoveReference={onRemoveReference}
-        onReplaceVariantImage={onReplaceVariantImage}
         onSetFlowLabel={onSetFlowLabel}
         onUpdateVariantDetails={onUpdateVariantDetails}
         userEmail={userEmail}

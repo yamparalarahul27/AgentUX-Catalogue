@@ -138,6 +138,17 @@
   font-size: 12px;
 }
 
+// Upload date — relative ("2d ago") with the absolute timestamp on
+// hover via the `title` attribute. Matches the meta chips visually,
+// dimmer colour so it reads as a secondary tag.
+.catalogue-lightbox-meta-time {
+  font-size: 12px;
+  font-weight: 500;
+  color: #71717a;
+  white-space: nowrap;
+  cursor: help;
+}
+
 .catalogue-lightbox-meta-chip {
   font-size: 12px;
   font-weight: 500;
