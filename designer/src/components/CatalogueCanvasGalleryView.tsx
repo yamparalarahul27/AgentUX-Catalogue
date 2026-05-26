@@ -43,11 +43,15 @@ interface DensityPreset {
 }
 
 // COLS is constant across all densities — density only changes cell
-// SIZE (zoom). Keeps the loop seam at a consistent "8 cells from the
+// SIZE (zoom). Keeps the marker at a consistent "8 cells from the
 // start" regardless of which density is active.
+//
+// BATCH_SIZE is a multiple of COLS so every non-final tile has a
+// completely filled bottom row — no ragged edge of empty slots above
+// the "Placing more amazing references" marker.
 const COLS = 8;
-const BATCH_SIZE = 50;
-const TILE_ROWS = Math.ceil(BATCH_SIZE / COLS);    // 7
+const TILE_ROWS = 7;
+const BATCH_SIZE = COLS * TILE_ROWS; // 56
 const DENSITY_PRESETS: Record<Density, DensityPreset> = {
   atom:     { w: 640, h: 400 },   // ~2 visible per row in a typical viewport
   molecule: { w: 320, h: 200 },   // ~4 visible per row (default)
