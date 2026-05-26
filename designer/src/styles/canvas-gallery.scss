@@ -103,13 +103,14 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
-// Newly-revealed cells (streaming batch arrivals) fade in from blur.
-// Class is removed after ~420 ms so subsequent renders don't re-blur.
+// Newly-revealed cells fade in from blur. The per-cell stagger comes
+// from `--reveal-delay`, set as inline style on each fresh cell so the
+// 50 items in a batch appear one after another (~24 ms apart).
 .canvas-gallery-cell.is-fresh img {
-  animation: canvas-gallery-cell-reveal 380ms ease-out;
+  animation: canvas-gallery-cell-reveal 380ms ease-out var(--reveal-delay, 0ms) backwards;
 }
 @keyframes canvas-gallery-cell-reveal {
-  from { filter: blur(8px); opacity: 0.2; }
+  from { filter: blur(8px); opacity: 0; }
   to   { filter: blur(0);    opacity: 1; }
 }
 
@@ -125,19 +126,21 @@
   -webkit-user-drag: none;
 }
 
-// ── Loop seam markers (wallpaper phase) ──────────────
-// Each tile carries TWO seams — one on its right edge (vertical,
-// reads top-to-bottom) and one on its bottom edge (horizontal, reads
-// left-to-right). Combined with the next tile's neighbouring seams,
-// every boundary in both axes shows a marker.
-.canvas-gallery-tile__seam {
+// ── Tile boundary markers ────────────────────────────
+// Sits on the trailing right + bottom edges of every tile. Pure text,
+// no visible line under it — just a hint to the user that more
+// content is being placed in that direction. Same copy on both axes
+// ("Placing more amazing references"), rotated to read along each
+// axis. Compatible with line-style seams from earlier mockups; we
+// chose text-only for the live implementation.
+.canvas-gallery-tile__marker {
   position: absolute;
   pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.canvas-gallery-tile__seam span {
+.canvas-gallery-tile__marker span {
   font-size: 8.5px;
   font-weight: 600;
   letter-spacing: 0.22em;
@@ -148,42 +151,24 @@
   text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
 }
 
-// Vertical seam on the RIGHT edge of every tile.
-.canvas-gallery-tile__seam--v {
+// Vertical marker on the RIGHT edge of every tile (straddles boundary).
+.canvas-gallery-tile__marker--v {
   top: 0;
   bottom: 0;
-  right: -28px;        // half of seam-gap so the marker straddles the boundary
+  right: -28px;
   width: 56px;
 }
-.canvas-gallery-tile__seam--v::before {
-  content: "";
-  position: absolute;
-  top: 18px;
-  bottom: 18px;
-  left: 50%;
-  width: 1px;
-  background: linear-gradient(180deg, transparent 0%, rgba(99, 102, 241, 0.4) 50%, transparent 100%);
-}
-.canvas-gallery-tile__seam--v span {
+.canvas-gallery-tile__marker--v span {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
 }
 
-// Horizontal seam on the BOTTOM edge of every tile.
-.canvas-gallery-tile__seam--h {
+// Horizontal marker on the BOTTOM edge of every tile.
+.canvas-gallery-tile__marker--h {
   left: 0;
   right: 0;
   bottom: -28px;
   height: 56px;
-}
-.canvas-gallery-tile__seam--h::before {
-  content: "";
-  position: absolute;
-  left: 18px;
-  right: 18px;
-  top: 50%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.4) 50%, transparent 100%);
 }
 
 // ── Bottom controls (Exit + Density) ─────────────────

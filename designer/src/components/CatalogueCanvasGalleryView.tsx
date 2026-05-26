@@ -2,34 +2,33 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState } fr
 
 import { getActiveFamilyVariant, type CatalogueFamilyView } from '../lib/catalogue-families';
 
-// Canvas Gallery view — DOM-based pannable canvas with two phases:
+// Canvas Gallery view — demand-driven tile placement.
 //
-//   Phase 1 · STREAMING
-//     A single finite grid. Cols are density-driven (2 / 4 / 8). Rows
-//     auto-grow as items are revealed in batches of 50. As the user
-//     pans within ~1 viewport of the bottom edge of the loaded items,
-//     the next 50 reveal in place with a blur-to-sharp fade-in.
+// Items are chunked into batches of 50. Each batch lives in a finite
+// "tile" rectangle (8 cols × ceil(50/8) rows). Tiles are positioned in
+// a 2D grid keyed by camera position: the first tile sits at (0, 0);
+// every other tile is allocated the moment the camera enters its
+// position. So:
 //
-//   Phase 2 · WALLPAPER  (after every filtered item has been revealed)
-//     The fully-populated grid becomes a tile. 9 copies render in a
-//     3×3 block that re-anchors to the camera, so the canvas repeats
-//     infinitely in both directions. Seam markers appear at every
-//     tile boundary — vertical on X axis, horizontal on Y axis.
+//   - Pan right past tile 1's right edge → tile 2 spawns to the right
+//     with items 51-100.
+//   - Pan down from tile 2 → tile 3 spawns below with items 101-150.
 //
-// Spec discussion lives in conversation; mockup preserved at
-// `docs/mockups/mockup-2026-05-26-canvas-gallery.html`.
+// Items always flow in catalogue order; the user's pan history only
+// determines spatial layout, not which screenshots appear next.
+//
+// Server pagination wires through `onLoadMore` + `hasMore`. When the
+// user crosses a tile boundary into a position that needs more items
+// than `families` currently has, the canvas calls `onLoadMore()` and
+// allocates the new tile placement once items arrive.
+//
+// Spec mockup: docs/mockups/mockup-2026-05-26-canvas-gallery.html.
 
 interface CatalogueCanvasGalleryViewProps {
   families: CatalogueFamilyView[];
   activeVariantKeys: Record<string, string>;
   onSelectFamily: (familyId: string) => void;
   onExit: () => void;
-  // Cursor pagination from the catalogue data layer — when the
-  // streaming phase exhausts the locally-loaded families, the canvas
-  // calls `onLoadMore()` to fetch the next page from Supabase. Without
-  // this the wallpaper phase would engage with whatever page-1 had
-  // (~50 items) and the rest of the user's screenshots would never
-  // appear.
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
@@ -37,36 +36,48 @@ interface CatalogueCanvasGalleryViewProps {
 
 type Density = 'atom' | 'molecule' | 'compound';
 type LoaderState = 'enter' | 'exit' | 'idle';
-type Phase = 'streaming' | 'wallpaper';
 
 interface DensityPreset {
   w: number;
   h: number;
 }
 
-// COLS is locked across all densities — only cell SIZE changes per
-// density (it's effectively a zoom level). Locking the column count
-// gives the wallpaper-phase loop seam a consistent visual proximity
-// to the edge regardless of density: the seam is always "8 cells from
-// the start", whether each cell is huge (Atom) or thumbnail (Compound).
+// COLS is constant across all densities — density only changes cell
+// SIZE (zoom). Keeps the loop seam at a consistent "8 cells from the
+// start" regardless of which density is active.
 const COLS = 8;
+const BATCH_SIZE = 50;
+const TILE_ROWS = Math.ceil(BATCH_SIZE / COLS);    // 7
 const DENSITY_PRESETS: Record<Density, DensityPreset> = {
   atom:     { w: 640, h: 400 },   // ~2 visible per row in a typical viewport
-  molecule: { w: 320, h: 200 },   // ~4 visible per row
+  molecule: { w: 320, h: 200 },   // ~4 visible per row (default)
   compound: { w: 170, h: 106 },   // ~8 visible per row
 };
-
 const GAP = 18;
 const SEAM_GAP = 56;
 const LOADER_HOLD_MS = 1400;
-const REVEAL_FADE_MS = 420;     // matches CSS animation duration + slack
-const INITIAL_BATCH = 50;
-const STREAM_INCREMENT = 50;
+const REVEAL_FADE_MS = 600;
+const STAGGER_PER_CELL_MS = 24;
 
-interface VisibleItem {
+interface TilePosition { x: number; y: number; }
+interface VisibleCell {
   familyId: string;
   name: string;
   imageUrl: string;
+  // Staggered animation delay applied via inline style on .is-fresh
+  // cells. Lets each item in a freshly-revealed batch pop in
+  // ~24 ms after the one before it.
+  staggerMs: number;
+  isFresh: boolean;
+}
+interface RenderedTile {
+  position: TilePosition;
+  batchIdx: number;
+  cells: VisibleCell[];
+}
+
+function positionKey(p: TilePosition): string {
+  return `${p.x},${p.y}`;
 }
 
 export function CatalogueCanvasGalleryView({
@@ -78,20 +89,18 @@ export function CatalogueCanvasGalleryView({
   loadingMore,
   onLoadMore,
 }: CatalogueCanvasGalleryViewProps) {
-  const [density, setDensity] = useState<Density>('compound');
-  const [loadedCount, setLoadedCount] = useState<number>(INITIAL_BATCH);
-  const [recentlyRevealed, setRecentlyRevealed] = useState<Set<string>>(() => new Set());
+  const [density, setDensity] = useState<Density>('molecule');
+  const [batchPositions, setBatchPositions] = useState<TilePosition[]>(() => [{ x: 0, y: 0 }]);
+  const [recentlyRevealedBatches, setRecentlyRevealedBatches] = useState<Set<number>>(() => new Set([0]));
   const [loaderState, setLoaderState] = useState<LoaderState>('enter');
 
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const streamGridRef = useRef<HTMLDivElement>(null);
-  const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const prevLoadedCountRef = useRef(INITIAL_BATCH);
   const prevFamiliesKeyRef = useRef<string>('');
+  // Tracks the highest batch index we've actually populated with
+  // items — so the reveal effect fires only on growth.
+  const prevPopulatedBatchesRef = useRef(0);
 
-  // Pan state in a ref so the inertia rAF tick can mutate it without
-  // forcing a re-render every frame.
   const panRef = useRef({
     panX: 0,
     panY: 0,
@@ -108,50 +117,15 @@ export function CatalogueCanvasGalleryView({
   const preset = DENSITY_PRESETS[density];
   const cellW = preset.w;
   const cellH = preset.h;
-
-  // Build the visible items list — first `loadedCount` families that
-  // have a usable image url. We filter for url here because a family
-  // without an active screenshot would render a broken empty cell.
-  const visibleItems = useMemo<VisibleItem[]>(() => {
-    const items: VisibleItem[] = [];
-    const limit = Math.min(loadedCount, families.length);
-    for (let i = 0; i < limit; i++) {
-      const family = families[i];
-      const variant = getActiveFamilyVariant(family, activeVariantKeys[family.id]);
-      const url = variant?.screenshot?.image_url;
-      if (!url) continue;
-      items.push({ familyId: family.id, name: family.name, imageUrl: url });
-    }
-    return items;
-  }, [families, loadedCount, activeVariantKeys]);
-
-  const totalCount = families.length;
-  // Wallpaper phase only engages when every item has been revealed
-  // AND the server has nothing more to offer. While `hasMore` is true,
-  // we stay in streaming and call `onLoadMore()` at the edge.
-  const phase: Phase = (loadedCount >= totalCount && !hasMore) ? 'wallpaper' : 'streaming';
-
-  // Grid geometry (the streaming grid, or one wallpaper tile's content).
-  const rows = Math.max(1, Math.ceil(visibleItems.length / COLS));
-  const gridContentW = COLS * cellW + (COLS - 1) * GAP;
-  const gridContentH = rows * cellH + (rows - 1) * GAP;
-  const tileW = gridContentW + SEAM_GAP;
-  const tileH = gridContentH + SEAM_GAP;
+  const tileContentW = COLS * cellW + (COLS - 1) * GAP;
+  const tileContentH = TILE_ROWS * cellH + (TILE_ROWS - 1) * GAP;
+  const tileW = tileContentW + SEAM_GAP;
+  const tileH = tileContentH + SEAM_GAP;
 
   // ── Reset on filter change (NOT on server pagination) ──
-  // Two reasons the families array might change:
-  //   1. Filter / search / sort changed → completely different items
-  //      → reset loadedCount + recenter pan.
-  //   2. Server returned the next paginated page → existing items at
-  //      the start are unchanged, new items appended → DON'T reset.
-  //
-  // We detect (2) by checking whether the new family-id list extends
-  // the previous one as a strict prefix. If yes, it's pagination;
-  // otherwise treat as a filter change.
-  const familyIdList = useMemo(
-    () => families.map((f) => f.id),
-    [families],
-  );
+  // Append (new ids extend the existing prefix) = pagination — keep
+  // pan + batch positions. Anything else = filter / sort change → reset.
+  const familyIdList = useMemo(() => families.map((f) => f.id), [families]);
   const familiesKey = familyIdList.join('|');
   useEffect(() => {
     if (familiesKey === prevFamiliesKeyRef.current) return;
@@ -160,112 +134,143 @@ export function CatalogueCanvasGalleryView({
       familyIdList.length >= prev.length
       && prev.every((id, i) => familyIdList[i] === id);
     prevFamiliesKeyRef.current = familiesKey;
-    if (isAppend) return; // server pagination — keep pan + reveal progress
-    setLoadedCount(INITIAL_BATCH);
-    setRecentlyRevealed(new Set());
-    prevLoadedCountRef.current = INITIAL_BATCH;
+    if (isAppend) return;
+    setBatchPositions([{ x: 0, y: 0 }]);
+    setRecentlyRevealedBatches(new Set([0]));
+    prevPopulatedBatchesRef.current = 0;
     panRef.current.panX = 0;
     panRef.current.panY = 0;
     panRef.current.velX = 0;
     panRef.current.velY = 0;
   }, [familiesKey, familyIdList]);
 
-  // ── Blur-fade-in for newly revealed batches ─────────
+  // ── Build the rendered tile list ───────────────────
+  // Each batchPosition produces one tile. The items for batch N are
+  // `families[N*50 .. (N+1)*50]` — if fewer than 50 are available,
+  // the tile renders a partial grid (no padding cells).
+  const renderedTiles = useMemo<RenderedTile[]>(() => {
+    const tiles: RenderedTile[] = [];
+    for (let batchIdx = 0; batchIdx < batchPositions.length; batchIdx++) {
+      const start = batchIdx * BATCH_SIZE;
+      const end = Math.min(start + BATCH_SIZE, families.length);
+      if (end <= start) continue; // no items yet for this batch
+      const cells: VisibleCell[] = [];
+      const isFreshBatch = recentlyRevealedBatches.has(batchIdx);
+      let cellOrder = 0;
+      for (let i = start; i < end; i++) {
+        const family = families[i];
+        const variant = getActiveFamilyVariant(family, activeVariantKeys[family.id]);
+        const url = variant?.screenshot?.image_url;
+        if (!url) continue;
+        cells.push({
+          familyId: family.id,
+          name: family.name,
+          imageUrl: url,
+          // Stagger only fires for freshly-revealed batches.
+          staggerMs: isFreshBatch ? cellOrder * STAGGER_PER_CELL_MS : 0,
+          isFresh: isFreshBatch,
+        });
+        cellOrder += 1;
+      }
+      tiles.push({
+        position: batchPositions[batchIdx],
+        batchIdx,
+        cells,
+      });
+    }
+    return tiles;
+  }, [batchPositions, families, activeVariantKeys, recentlyRevealedBatches]);
+
+  // ── Detect "newly populated" batches (cells arrive) ─
+  // A batch is "populated" when its slice of families becomes non-empty.
+  // When a batch flips from empty to populated, mark it for fresh fade-in.
   useEffect(() => {
-    const prev = prevLoadedCountRef.current;
-    if (loadedCount > prev) {
-      const newIds = families
-        .slice(prev, loadedCount)
-        .map((f) => f.id);
-      if (newIds.length > 0) {
-        setRecentlyRevealed((current) => {
+    const populatedCount = renderedTiles.length;
+    if (populatedCount > prevPopulatedBatchesRef.current) {
+      const newBatchIdxs: number[] = [];
+      for (let i = prevPopulatedBatchesRef.current; i < populatedCount; i++) {
+        newBatchIdxs.push(renderedTiles[i].batchIdx);
+      }
+      if (newBatchIdxs.length > 0) {
+        setRecentlyRevealedBatches((current) => {
           const next = new Set(current);
-          for (const id of newIds) next.add(id);
+          for (const idx of newBatchIdxs) next.add(idx);
           return next;
         });
+        const lastBatchSize = renderedTiles[renderedTiles.length - 1].cells.length;
+        const clearAfter = REVEAL_FADE_MS + lastBatchSize * STAGGER_PER_CELL_MS;
         const timer = window.setTimeout(() => {
-          setRecentlyRevealed((current) => {
+          setRecentlyRevealedBatches((current) => {
             const next = new Set(current);
-            for (const id of newIds) next.delete(id);
+            for (const idx of newBatchIdxs) next.delete(idx);
             return next;
           });
-        }, REVEAL_FADE_MS);
-        prevLoadedCountRef.current = loadedCount;
+        }, clearAfter);
+        prevPopulatedBatchesRef.current = populatedCount;
         return () => window.clearTimeout(timer);
       }
     }
-    prevLoadedCountRef.current = loadedCount;
-  }, [loadedCount, families]);
+    prevPopulatedBatchesRef.current = populatedCount;
+  }, [renderedTiles]);
 
-  // ── Apply pan transforms (called on every state mutation) ─
-  // Streaming phase: just one grid, anchored at origin (its centre at
-  //                 (0, 0) in canvas coords).
-  // Wallpaper phase: 9 tile copies in a 3×3 block re-anchored each
-  //                 frame to the tile the camera is currently inside.
+  // ── Pan transform ──────────────────────────────────
+  // Single transform on the canvas — every tile is positioned inside
+  // canvas-space at (batchPos.x * tileW, batchPos.y * tileH).
   const applyTransforms = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const { panX, panY } = panRef.current;
     canvas.style.transform = `translate3d(${-panX}px, ${-panY}px, 0)`;
+  }, []);
 
-    if (phase === 'wallpaper') {
-      const cx = Math.round(panX / tileW);
-      const cy = Math.round(panY / tileH);
-      for (let j = 0; j < 3; j++) {
-        for (let i = 0; i < 3; i++) {
-          const idx = j * 3 + i;
-          const tile = tileRefs.current[idx];
-          if (!tile) continue;
-          const tx = (cx + i - 1) * tileW;
-          const ty = (cy + j - 1) * tileH;
-          tile.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
-        }
-      }
-    }
-  }, [phase, tileW, tileH]);
+  // ── Camera-into-new-tile detection ────────────────
+  // The camera is at (panX, panY) in canvas space. The tile that
+  // contains the camera centre is (floor((panX + tileW/2) / tileW),
+  // floor((panY + tileH/2) / tileH))... but our tiles are centred on
+  // grid positions (a tile at (1, 0) covers canvas x ∈ [tileW/2, 3·tileW/2]).
+  // Simpler: round the camera position to the nearest tile centre.
+  const cameraTilePosition = useCallback((): TilePosition => {
+    const { panX, panY } = panRef.current;
+    return {
+      x: Math.round(panX / tileW),
+      y: Math.round(panY / tileH),
+    };
+  }, [tileW, tileH]);
 
-  // ── Edge-load detection during streaming phase ──────
-  // Grid is centred at (0, 0). Bottom edge of loaded items is at
-  // `gridContentH / 2`. When the camera's bottom-of-viewport approaches
-  // that line by less than one viewport height, reveal the next batch.
-  //
-  // `startTransition` marks the state change as low priority — React
-  // keeps pointer / wheel events responsive while the new batch of 50
-  // <img> elements is reconciled in the background. Pan stays smooth;
-  // the newly-arrived cells fade in via the `.is-fresh` animation.
-  const maybeLoadMore = useCallback(() => {
-    if (phase !== 'streaming') return;
-    const stage = stageRef.current;
-    if (!stage) return;
-    const viewportH = stage.clientHeight;
-    if (viewportH === 0) return;
-    const bottomEdge = gridContentH / 2;
-    const cameraBottom = panRef.current.panY + viewportH / 2;
-    if (cameraBottom <= bottomEdge - viewportH) return;
-
-    if (loadedCount < totalCount) {
-      // Reveal next local batch.
+  const maybeAllocateTile = useCallback(() => {
+    const cam = cameraTilePosition();
+    const key = positionKey(cam);
+    const existing = batchPositions.some((p) => positionKey(p) === key);
+    if (existing) return;
+    const nextBatchIdx = batchPositions.length;
+    const itemsNeededTotal = (nextBatchIdx + 1) * BATCH_SIZE;
+    if (families.length >= nextBatchIdx * BATCH_SIZE + 1) {
+      // At least one item available for this batch — allocate now.
       startTransition(() => {
-        setLoadedCount((current) => Math.min(current + STREAM_INCREMENT, totalCount));
+        setBatchPositions((prev) => {
+          if (prev.some((p) => positionKey(p) === key)) return prev;
+          return [...prev, cam];
+        });
       });
-      return;
     }
-    // Local list exhausted. Ask the data layer for the next server
-    // page; it'll append families, which our reset effect treats as a
-    // prefix-extension (no view reset). The next maybeLoadMore call
-    // after the new items arrive will reveal them locally.
-    if (hasMore && !loadingMore) {
+    // If we'll need more items than we have, ask the server.
+    if (families.length < itemsNeededTotal && hasMore && !loadingMore) {
       onLoadMore();
     }
-  }, [phase, loadedCount, totalCount, gridContentH, hasMore, loadingMore, onLoadMore]);
+  }, [batchPositions, cameraTilePosition, families.length, hasMore, loadingMore, onLoadMore]);
 
-  // Initial paint + reapply on geometry / phase change.
+  // After paginated items arrive, allocate any pending position
+  // automatically. (Camera might still be in the same un-tiled spot.)
+  useEffect(() => {
+    maybeAllocateTile();
+  }, [maybeAllocateTile]);
+
+  // Initial paint + reapply on geometry change.
   useEffect(() => {
     applyTransforms();
-  }, [applyTransforms]);
+  }, [applyTransforms, tileW, tileH]);
 
-  // Inertia rAF. Also probes the edge-load condition each frame so
-  // streaming reveals trigger smoothly during momentum scroll.
+  // Inertia rAF.
   useEffect(() => {
     let raf = 0;
     function tick() {
@@ -276,16 +281,15 @@ export function CatalogueCanvasGalleryView({
         state.velX *= 0.92;
         state.velY *= 0.92;
         applyTransforms();
-        maybeLoadMore();
+        maybeAllocateTile();
       }
       raf = requestAnimationFrame(tick);
     }
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [applyTransforms, maybeLoadMore]);
+  }, [applyTransforms, maybeAllocateTile]);
 
-  // Pointer + wheel handlers (no pointer capture so `click` still
-  // synthesises on cells).
+  // Pointer + wheel handlers.
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -318,7 +322,7 @@ export function CatalogueCanvasGalleryView({
         state.velX = state.panX - prevPanX;
         state.velY = state.panY - prevPanY;
         applyTransforms();
-        maybeLoadMore();
+        maybeAllocateTile();
       }
     }
     function onPointerEnd() {
@@ -329,14 +333,14 @@ export function CatalogueCanvasGalleryView({
     }
     function onWheel(event: WheelEvent) {
       event.preventDefault();
-      if (event.ctrlKey) return; // pinch-zoom — ignore
+      if (event.ctrlKey) return;
       const state = panRef.current;
       state.velX = 0;
       state.velY = 0;
       state.panX += event.deltaX;
       state.panY += event.deltaY;
       applyTransforms();
-      maybeLoadMore();
+      maybeAllocateTile();
     }
 
     stage.addEventListener('pointerdown', onPointerDown);
@@ -354,7 +358,7 @@ export function CatalogueCanvasGalleryView({
       stage.removeEventListener('pointerleave', onPointerEnd);
       stage.removeEventListener('wheel', onWheel);
     };
-  }, [applyTransforms, maybeLoadMore]);
+  }, [applyTransforms, maybeAllocateTile]);
 
   function handleCanvasClick(event: React.MouseEvent<HTMLDivElement>) {
     if (panRef.current.dragMoved) return;
@@ -387,81 +391,58 @@ export function CatalogueCanvasGalleryView({
     '--canvas-cols': String(COLS),
   } as React.CSSProperties;
 
-  // ── Render the grid inner content ──────────────────
-  // Shared by both streaming (one instance) and wallpaper (9 copies).
-  function renderGrid() {
-    return visibleItems.map((cell) => {
-      const isFresh = recentlyRevealed.has(cell.familyId);
-      return (
-        <div
-          key={cell.familyId}
-          className={`canvas-gallery-cell${isFresh ? ' is-fresh' : ''}`}
-          data-family-id={cell.familyId}
-        >
-          <img src={cell.imageUrl} alt={cell.name} loading="lazy" draggable={false} />
-        </div>
-      );
-    });
-  }
-
   return (
     <>
       <div
         ref={stageRef}
-        className={`canvas-gallery canvas-gallery-stage canvas-gallery-stage--${phase}`}
+        className="canvas-gallery canvas-gallery-stage"
         style={stageStyle}
         onClick={handleCanvasClick}
       >
         <div ref={canvasRef} className="canvas-gallery-canvas">
-          {phase === 'streaming' ? (
-            // Single grid, anchored at the canvas origin (its centre at
-            // (0, 0)). Negative margins centre the grid box on the
-            // anchor point so the user lands on the middle of the
-            // loaded items rather than a corner.
-            <div
-              ref={streamGridRef}
-              className="canvas-gallery-grid"
-              style={{
-                width: gridContentW,
-                height: gridContentH,
-                marginTop: -gridContentH / 2,
-                marginLeft: -gridContentW / 2,
-              }}
-            >
-              {renderGrid()}
-            </div>
-          ) : (
-            // 9 tile copies. Each tile carries its own pair of seam
-            // markers (right + bottom edges) — combined with the
-            // adjacent tile's neighbouring markers, every tile boundary
-            // ends up with both a vertical and horizontal seam line.
-            Array.from({ length: 9 }).map((_, t) => (
+          {renderedTiles.map((tile) => {
+            const left = tile.position.x * tileW;
+            const top = tile.position.y * tileH;
+            return (
               <div
-                key={t}
-                ref={(el) => { tileRefs.current[t] = el; }}
+                key={`${tile.position.x},${tile.position.y}`}
                 className="canvas-gallery-tile"
                 style={{
                   width: tileW,
                   height: tileH,
-                  marginTop: -tileH / 2,
+                  transform: `translate3d(${left}px, ${top}px, 0)`,
                   marginLeft: -tileW / 2,
+                  marginTop: -tileH / 2,
                 }}
               >
-                <div className="canvas-gallery-tile__seam canvas-gallery-tile__seam--v">
-                  <span>Approaching end · hereafter it loops</span>
-                </div>
-                <div className="canvas-gallery-tile__seam canvas-gallery-tile__seam--h">
-                  <span>Approaching end · hereafter it loops</span>
-                </div>
                 <div
                   className="canvas-gallery-grid"
-                  style={{ width: gridContentW, height: gridContentH }}
+                  style={{ width: tileContentW, height: tileContentH }}
                 >
-                  {renderGrid()}
+                  {tile.cells.map((cell) => (
+                    <div
+                      key={cell.familyId}
+                      className={`canvas-gallery-cell${cell.isFresh ? ' is-fresh' : ''}`}
+                      data-family-id={cell.familyId}
+                      style={cell.isFresh ? ({ '--reveal-delay': `${cell.staggerMs}ms` } as React.CSSProperties) : undefined}
+                    >
+                      <img src={cell.imageUrl} alt={cell.name} loading="lazy" draggable={false} />
+                    </div>
+                  ))}
+                </div>
+                {/* Trailing-edge marker text on right + bottom of every
+                    tile. Text only — no visible line under it. Tells
+                    the user "more is being placed" if they keep panning
+                    in that direction. */}
+                <div className="canvas-gallery-tile__marker canvas-gallery-tile__marker--v">
+                  <span>Placing more amazing references</span>
+                </div>
+                <div className="canvas-gallery-tile__marker canvas-gallery-tile__marker--h">
+                  <span>Placing more amazing references</span>
                 </div>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
 
         <div className="canvas-gallery-bottom-row">
