@@ -202,8 +202,14 @@ export function useCatalogueFamilyActions({
     },
   ): ScreenshotNode => {
     const next: ScreenshotNode = { ...screenshot, ...patch };
+    const patchHasPlatform = Object.prototype.hasOwnProperty.call(patch, 'platform');
 
-    if (Object.prototype.hasOwnProperty.call(patch, 'platform')) {
+    // When platform is in the patch it drives the variant identity —
+    // it picks one of web_preset_key / mobile_os and clears the other.
+    // The lightbox save sends all four fields together, so without this
+    // mutual-exclusion the mobile_os branch below would clobber the
+    // web_preset_key we just set (and vice versa).
+    if (patchHasPlatform) {
       if (patch.platform === 'web') {
         next.web_preset_key = patch.web_preset_key ?? screenshot.web_preset_key ?? webPresets[0]?.key ?? null;
         next.mobile_os = null;
@@ -214,18 +220,19 @@ export function useCatalogueFamilyActions({
         next.web_preset_key = null;
         next.mobile_os = null;
       }
-    }
-
-    if (Object.prototype.hasOwnProperty.call(patch, 'web_preset_key')) {
-      next.web_preset_key = patch.web_preset_key ?? null;
-      next.mobile_os = null;
-      if (next.platform === null) next.platform = 'web';
-    }
-
-    if (Object.prototype.hasOwnProperty.call(patch, 'mobile_os')) {
-      next.mobile_os = patch.mobile_os ?? null;
-      next.web_preset_key = null;
-      if (next.platform === null) next.platform = 'mobile';
+    } else {
+      // Platform absent — caller is patching just one of the
+      // variant-identity fields. Infer platform if it's currently null.
+      if (Object.prototype.hasOwnProperty.call(patch, 'web_preset_key')) {
+        next.web_preset_key = patch.web_preset_key ?? null;
+        next.mobile_os = null;
+        if (next.platform === null) next.platform = 'web';
+      }
+      if (Object.prototype.hasOwnProperty.call(patch, 'mobile_os')) {
+        next.mobile_os = patch.mobile_os ?? null;
+        next.web_preset_key = null;
+        if (next.platform === null) next.platform = 'mobile';
+      }
     }
 
     if (next.platform === 'web') {
