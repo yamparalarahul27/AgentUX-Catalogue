@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lightbox comments — border options</title>
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #16161a;
+    --border: #27272a;
+    --border-soft: #3a3a44;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --text-soft: #d4d4d8;
+    --accent: #6366f1;
+    --accent-tint: #c7d2fe;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── header ───────────────────────────────────────── */
+  .intro { max-width: 1200px; margin: 0 auto 32px; }
+  .intro h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .intro p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.55; max-width: 720px; }
+
+  /* ── stage panel (4 side-by-side) ───────────────── */
+  .stage {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  .opt {
+    background: #050507;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .opt__head { padding: 14px 18px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+  .opt__label { font-size: 10.5px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .opt__name { font-size: 14px; font-weight: 600; margin: 3px 0 0; letter-spacing: -0.012em; }
+  .opt__desc { font-size: 11.5px; color: var(--text-muted); margin: 4px 0 0; line-height: 1.5; }
+  .opt__body { padding: 18px; }
+
+  /* ── miniature lightbox-body ─────────────────────── */
+  .mini-body {
+    display: flex;
+    height: 380px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0c0c10;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .mini-media {
+    flex: 1;
+    background:
+      linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05)),
+      radial-gradient(circle at 40% 60%, rgba(255,255,255,0.04) 0%, transparent 60%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* ── comments column shared base ─────────────────── */
+  .mini-comments {
+    width: 240px;
+    flex-shrink: 0;
+    padding: 12px;
+    background: #141418;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* card shared base */
+  .mini-card {
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(18,18,24,0.96), rgba(15,15,20,0.96));
+    color: var(--text-soft);
+    font-size: 11px;
+    line-height: 1.55;
+  }
+  .mini-card strong { display: block; color: var(--text); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .mini-card__row { display: flex; gap: 6px; margin-top: 6px; }
+  .mini-chip {
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(99,102,241,0.45);
+    color: var(--accent-tint);
+    font-size: 10px;
+  }
+  .mini-tab-strip {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    background: rgba(24,24,28,0.9);
+    font-size: 10.5px;
+    color: var(--text-muted);
+  }
+  .mini-tab-strip span.is-active { color: var(--text); font-weight: 600; }
+  .mini-card-body {
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(18,18,24,0.98), rgba(15,15,20,0.98));
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    min-height: 120px;
+  }
+
+  /* ── A · CURRENT STATE ────────────────────────────
+     - comments: border-left only
+     - summary card: full border + radius 16
+     - panel card: full border + radius 16 (separate from summary)
+     - actions card: borderTop:0 + radius 0 0 16 16 (the "cut-off" look)
+  */
+  .opt--current .mini-comments {
+    border-left: 1px solid var(--border);
+  }
+  .opt--current .summary {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .opt--current .panel {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .opt--current .actions {
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 16px 16px;
+  }
+
+  /* ── B · 4-side border on outer + flat inside ───── */
+  .opt--outer .mini-comments {
+    border: 1px solid var(--border);
+    margin: 10px 10px 10px 0; /* visible inset so all 4 sides show */
+    border-radius: 10px;
+  }
+  .opt--outer .summary,
+  .opt--outer .panel,
+  .opt--outer .actions {
+    border: 0;
+    border-radius: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .opt--outer .panel { flex: 1; display: flex; flex-direction: column; }
+  .opt--outer .summary + .panel,
+  .opt--outer .panel + .actions { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 0; }
+
+  /* ── C · Inner cards consistent, no outer rules ── */
+  .opt--cards-only .summary,
+  .opt--cards-only .panel {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .opt--cards-only .panel {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .opt--cards-only .actions {
+    border: 1px solid var(--border);
+    border-radius: 12px;       /* full radius, NOT cropped on top */
+    margin-top: 10px;          /* breathing room from panel above */
+  }
+
+  /* ── D · Single continuous panel, no inner cards ── */
+  .opt--flat .mini-comments {
+    border: 1px solid var(--border);
+    margin: 10px 10px 10px 0;
+    border-radius: 10px;
+    gap: 0;
+  }
+  .opt--flat .summary,
+  .opt--flat .panel,
+  .opt--flat .actions {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .opt--flat .summary { border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  .opt--flat .actions { border-top: 1px solid var(--border); padding-top: 12px; }
+  .opt--flat .panel { flex: 1; display: flex; flex-direction: column; padding: 0; }
+  .opt--flat .mini-tab-strip { background: transparent; }
+
+  .annotate {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .annotate strong { color: var(--text-soft); }
+  .opt--rec { box-shadow: 0 0 0 1px rgba(99,102,241,0.45); }
+  .rec-badge {
+    display: inline-block;
+    background: rgba(99,102,241,0.16);
+    color: var(--accent-tint);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 8px;
+    vertical-align: 2px;
+  }
+</style>
+</head>
+<body>
+
+<section class="intro">
+  <h1>Lightbox right-side panel — border options</h1>
+  <p>Current state has the outer comments panel with only a <code>border-left</code>, and the actions card explicitly kills its top border + only rounds its bottom corners. Result: from outside it reads "cut off"; from inside the actions card looks orphaned. Four ways to land this.</p>
+</section>
+
+<div class="stage">
+
+  <!-- A — current state -->
+  <article class="opt opt--current">
+    <header class="opt__head">
+      <span class="opt__label">A · Current</span>
+      <h2 class="opt__name">Border-left + nested cards + cut-off actions</h2>
+      <p class="opt__desc">What ships today. Outer column has only a left edge; actions card has no top border + only bottom-rounded corners.</p>
+    </header>
+    <div class="opt__body">
+      <div class="mini-body">
+        <div class="mini-media">Media area</div>
+        <div class="mini-comments">
+          <div class="mini-card summary">
+            <strong>Screenshot title</strong>
+            <span style="color: var(--text-muted)">light · web · desktop</span>
+            <div class="mini-card__row">
+              <span class="mini-chip">Coinbase</span>
+              <span class="mini-chip">Deposit</span>
+            </div>
+          </div>
+          <div class="mini-card panel">
+            <div class="mini-tab-strip">
+              <span class="is-active">Comments</span>
+              <span>Label</span>
+            </div>
+            <div class="mini-card-body">2 comments threaded here</div>
+          </div>
+          <div class="mini-card actions">
+            <strong>Actions</strong>
+            <span style="color: var(--text-muted)">Replace · Crop · Annotate · Share</span>
+          </div>
+        </div>
+      </div>
+      <p class="annotate"><strong>Symptoms:</strong> right + top + bottom of the comments column have no edge (rounded outer lightbox clips them); actions card visually floats below the panel without a top edge.</p>
+    </div>
+  </article>
+
+  <!-- B — 4-side outer + flat inside -->
+  <article class="opt opt--outer">
+    <header class="opt__head">
+      <span class="opt__label">B · Wrap outer</span>
+      <h2 class="opt__name">Full 4-side border on comments column, flat inside</h2>
+      <p class="opt__desc">Comments column becomes a single rounded card with a 4-side border. Inner cards are flattened to subtle dividers.</p>
+    </header>
+    <div class="opt__body">
+      <div class="mini-body">
+        <div class="mini-media">Media area</div>
+        <div class="mini-comments">
+          <div class="mini-card summary"><strong>Screenshot title</strong><span style="color:var(--text-muted)">light · web · desktop</span><div class="mini-card__row"><span class="mini-chip">Coinbase</span><span class="mini-chip">Deposit</span></div></div>
+          <div class="mini-card panel"><div class="mini-tab-strip"><span class="is-active">Comments</span><span>Label</span></div><div class="mini-card-body">2 comments threaded here</div></div>
+          <div class="mini-card actions"><strong>Actions</strong><span style="color:var(--text-muted)">Replace · Crop · Annotate · Share</span></div>
+        </div>
+      </div>
+      <p class="annotate"><strong>Effect:</strong> right column reads as one bounded panel. Cleaner. Loses the "stack of cards" texture from today's design.</p>
+    </div>
+  </article>
+
+  <!-- C — cards consistent, actions gets full radius -->
+  <article class="opt opt--cards-only opt--rec">
+    <header class="opt__head">
+      <span class="opt__label">C · Refined cards<span class="rec-badge">Recommend</span></span>
+      <h2 class="opt__name">Keep card stack, fix the cut-off actions card</h2>
+      <p class="opt__desc">Smallest delta. Keep the "stack of cards" texture but give the actions card its own top border + matching radius — no more cut-off look.</p>
+    </header>
+    <div class="opt__body">
+      <div class="mini-body">
+        <div class="mini-media">Media area</div>
+        <div class="mini-comments">
+          <div class="mini-card summary"><strong>Screenshot title</strong><span style="color:var(--text-muted)">light · web · desktop</span><div class="mini-card__row"><span class="mini-chip">Coinbase</span><span class="mini-chip">Deposit</span></div></div>
+          <div class="mini-card panel"><div class="mini-tab-strip"><span class="is-active">Comments</span><span>Label</span></div><div class="mini-card-body">2 comments threaded here</div></div>
+          <div class="mini-card actions"><strong>Actions</strong><span style="color:var(--text-muted)">Replace · Crop · Annotate · Share</span></div>
+        </div>
+      </div>
+      <p class="annotate"><strong>Change:</strong> drop the inline <code>borderTop: 0</code> + <code>borderRadius: '0 0 16px 16px'</code> on the actions card. It becomes a normal bordered + 12px-rounded card matching the others, with a 10px gap above. Minimal touch to ship.</p>
+    </div>
+  </article>
+
+  <!-- D — flat continuous panel -->
+  <article class="opt opt--flat">
+    <header class="opt__head">
+      <span class="opt__label">D · Flat panel</span>
+      <h2 class="opt__name">One continuous panel, no inner cards</h2>
+      <p class="opt__desc">Drop the inner cards entirely. Sections separated by 1 px lines. Most minimal look.</p>
+    </header>
+    <div class="opt__body">
+      <div class="mini-body">
+        <div class="mini-media">Media area</div>
+        <div class="mini-comments">
+          <div class="mini-card summary"><strong>Screenshot title</strong><span style="color:var(--text-muted)">light · web · desktop</span><div class="mini-card__row"><span class="mini-chip">Coinbase</span><span class="mini-chip">Deposit</span></div></div>
+          <div class="mini-card panel"><div class="mini-tab-strip"><span class="is-active">Comments</span><span>Label</span></div><div class="mini-card-body">2 comments threaded here</div></div>
+          <div class="mini-card actions"><strong>Actions</strong><span style="color:var(--text-muted)">Replace · Crop · Annotate · Share</span></div>
+        </div>
+      </div>
+      <p class="annotate"><strong>Effect:</strong> maximum minimalism. Subtle dividers instead of cards. Loses density visual cue ("which section am I in?") that the card-stack provides.</p>
+    </div>
+  </article>
+
+</div>
+
+</body>
+</html>

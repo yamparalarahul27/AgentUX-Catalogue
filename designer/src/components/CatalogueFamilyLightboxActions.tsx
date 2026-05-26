@@ -102,7 +102,7 @@ export function CatalogueFamilyLightboxActions({
 }: CatalogueFamilyLightboxActionsProps) {
   const { justCopied: justShared, confirm: confirmShareCopy } = useCopyConfirmation();
   return (
-    <div className="catalogue-family-lightbox__summary" style={{ borderTop: 0, borderRadius: '0 0 16px 16px' }}>
+    <div className="catalogue-family-lightbox__summary">
       <div className="catalogue-lightbox-icon-bar">
         {canEdit && (
           <button type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
