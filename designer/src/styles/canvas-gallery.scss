@@ -1,26 +1,14 @@
-// Canvas gallery view — infinite pannable wallpaper that replaces the
-// DOM-based gallery when the "Canvas view" setting is enabled. This
-// stylesheet covers BOTH:
+// Canvas gallery view — streaming-then-wallpaper pannable canvas.
+// Spec: docs/mockups/mockup-2026-05-26-canvas-gallery.html.
+//
+// This stylesheet covers BOTH:
 //   1. The canvas component itself (.canvas-gallery-*)
 //   2. The chrome adjustments toggled via the `.is-canvas-gallery-active`
 //      class on the page root (header floats, dock hides, etc.)
 
-// ── Geometry tokens. Cell dimensions are overridden per density
-//    preset via inline style on the stage; the rest are constants.
-.canvas-gallery {
-  --canvas-cell-w: 170px;
-  --canvas-cell-h: 106px;
-  --canvas-gap: 18px;
-  --canvas-seam-gap: 56px;
-  --canvas-cols: 5;
-  --canvas-rows: 4;
-}
-
 // ── Stage + canvas ────────────────────────────────────
 // Fixed-positioned so the canvas always fills the viewport regardless
-// of the ancestor flex chain. Sits below the floating header (z-index
-// 70 under `.is-canvas-gallery-active`) so logo / tabs / pill / cog
-// stay on top. Other surrounding chrome is hidden via the page class.
+// of ancestor flex chain. Sits below the floating header (z-index 70).
 .canvas-gallery-stage {
   position: fixed;
   inset: 0;
@@ -43,7 +31,24 @@
   will-change: transform;
 }
 
-// ── Tile (one full set of items, repeated 9 times in a 3×3 block) ─
+// ── Grid (used by both streaming + wallpaper phases) ──
+// The cell dimensions and column count come from inline CSS vars set
+// by the component on the stage: --canvas-cell-w, --canvas-cell-h,
+// --canvas-cols.
+.canvas-gallery-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--canvas-cols, 8), var(--canvas-cell-w, 170px));
+  grid-auto-rows: var(--canvas-cell-h, 106px);
+  gap: 18px;
+  pointer-events: auto;
+}
+
+// ── Tile (wallpaper phase only) ───────────────────────
+// Contains the inner grid, two seam markers (right + bottom edges).
+// Sized + positioned via inline style by the component.
 .canvas-gallery-tile {
   position: absolute;
   top: 0;
@@ -53,17 +58,14 @@
   justify-content: center;
   will-change: transform;
 }
-.canvas-gallery-tile__inner {
-  display: grid;
-  grid-template-columns: repeat(var(--canvas-cols), var(--canvas-cell-w));
-  grid-auto-rows: var(--canvas-cell-h);
-  gap: var(--canvas-gap);
+.canvas-gallery-tile .canvas-gallery-grid {
+  position: relative;
 }
 
-// ── Cell ─────────────────────────────────────────────
-// Image inside auto-sizes to its natural aspect (max-width/height 100%,
-// width/height auto) so border-radius rounds the actual screenshot
-// corners — not the surrounding letterbox space.
+// ── Cell ──────────────────────────────────────────────
+// Image inside auto-sizes to its natural aspect (max-w/h 100%, w/h
+// auto) so border-radius rounds the actual screenshot corners — not
+// the surrounding letterbox space.
 .canvas-gallery-cell {
   position: relative;
   width: 100%;
@@ -96,6 +98,17 @@
   from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
 }
+
+// Newly-revealed cells (streaming batch arrivals) fade in from blur.
+// Class is removed after ~420 ms so subsequent renders don't re-blur.
+.canvas-gallery-cell.is-fresh img {
+  animation: canvas-gallery-cell-reveal 380ms ease-out;
+}
+@keyframes canvas-gallery-cell-reveal {
+  from { filter: blur(8px); opacity: 0.2; }
+  to   { filter: blur(0);    opacity: 1; }
+}
+
 .canvas-gallery-cell img {
   max-width: 100%;
   max-height: 100%;
@@ -108,31 +121,19 @@
   -webkit-user-drag: none;
 }
 
-// ── Loop seam (vertical "approaching end" marker at every tile
-//    boundary on the X axis) ─────────────────────────
+// ── Loop seam markers (wallpaper phase) ──────────────
+// Each tile carries TWO seams — one on its right edge (vertical,
+// reads top-to-bottom) and one on its bottom edge (horizontal, reads
+// left-to-right). Combined with the next tile's neighbouring seams,
+// every boundary in both axes shows a marker.
 .canvas-gallery-tile__seam {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(var(--canvas-seam-gap) / -2);
-  width: var(--canvas-seam-gap);
+  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
-}
-.canvas-gallery-tile__seam::before {
-  content: "";
-  position: absolute;
-  top: 18px;
-  bottom: 18px;
-  left: 50%;
-  width: 1px;
-  background: linear-gradient(180deg, transparent 0%, rgba(99, 102, 241, 0.4) 50%, transparent 100%);
 }
 .canvas-gallery-tile__seam span {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
   font-size: 8.5px;
   font-weight: 600;
   letter-spacing: 0.22em;
@@ -141,6 +142,44 @@
   white-space: nowrap;
   padding: 0 4px;
   text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+// Vertical seam on the RIGHT edge of every tile.
+.canvas-gallery-tile__seam--v {
+  top: 0;
+  bottom: 0;
+  right: -28px;        // half of seam-gap so the marker straddles the boundary
+  width: 56px;
+}
+.canvas-gallery-tile__seam--v::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0%, rgba(99, 102, 241, 0.4) 50%, transparent 100%);
+}
+.canvas-gallery-tile__seam--v span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+// Horizontal seam on the BOTTOM edge of every tile.
+.canvas-gallery-tile__seam--h {
+  left: 0;
+  right: 0;
+  bottom: -28px;
+  height: 56px;
+}
+.canvas-gallery-tile__seam--h::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.4) 50%, transparent 100%);
 }
 
 // ── Bottom controls (Exit + Density) ─────────────────
@@ -292,7 +331,7 @@
   }
   .catalogue-header > * { pointer-events: auto; }
 
-  // Section tabs: absolute centre on the viewport midline. Beats any
+  // Section tabs absolute-centre on the viewport midline. Beats any
   // flex margin-auto centring that would skew with asymmetric flanks.
   .catalogue-header__tabs {
     position: absolute;
@@ -302,14 +341,12 @@
     margin: 0;
   }
 
-  // Hide:
-  //   - What's New star button (sparkles)
+  // Hidden in Canvas mode:
+  //   - What's New star button
   //   - Links section tab (icon-only)
-  //   - The catalogue toolbar (filters / sort / upload / view modes)
-  //   - The magnified bottom dock
-  // The existing View-mode segmented + Filter / Group / Flow chips
-  // live inside the catalogue toolbar — hiding that one bar covers
-  // them all.
+  //   - Toolbar wrapper (filters / view-mode / sort / upload)
+  //   - Magnified bottom dock
+  //   - Flow strip
   .catalogue-header__sparkles-btn { display: none; }
   .catalogue-header__tab[aria-label="Links"] { display: none; }
   .catalogue-toolbar-wrapper { display: none; }
