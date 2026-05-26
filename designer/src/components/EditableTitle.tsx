@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { TypingKeycap, type TypingKeycapHandle } from './TypingKeycap';
+
 // EditableTitle — click-to-edit text. Shared by the lightbox header,
 // stack card, and gallery view.
 //
@@ -52,6 +54,7 @@ export function EditableTitle({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+  const keycapRef = useRef<TypingKeycapHandle>(null);
   // Guard against double-save when blur + Enter fire back-to-back.
   // The keydown handler triggers blur (to lose focus); the blur
   // handler is the single source of truth for committing the save.
@@ -107,27 +110,31 @@ export function EditableTitle({
 
   if (isEditing) {
     return (
-      <input
-        ref={inputRef}
-        // editable-title__input resets browser input defaults
-        // (white background, system font, border, padding) so the
-        // input visually matches the surrounding title text. The
-        // parent's className still flows through for size/colour
-        // inheritance via `font: inherit`.
-        className={`editable-title__input${className ? ` ${className}` : ''}`}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={() => void commit()}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            event.currentTarget.blur();
-          } else if (event.key === 'Escape') {
-            event.preventDefault();
-            cancel();
-          }
-        }}
-      />
+      <>
+        <input
+          ref={inputRef}
+          // editable-title__input resets browser input defaults
+          // (white background, system font, border, padding) so the
+          // input visually matches the surrounding title text. The
+          // parent's className still flows through for size/colour
+          // inheritance via `font: inherit`.
+          className={`editable-title__input${className ? ` ${className}` : ''}`}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={() => void commit()}
+          onKeyDown={(event) => {
+            keycapRef.current?.press(event.key);
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              event.currentTarget.blur();
+            } else if (event.key === 'Escape') {
+              event.preventDefault();
+              cancel();
+            }
+          }}
+        />
+        <TypingKeycap ref={keycapRef} />
+      </>
     );
   }
 

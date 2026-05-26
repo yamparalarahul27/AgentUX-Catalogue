@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
+  Keyboard,
   Link as LinkIcon,
   LogIn,
   LogOut,
@@ -15,6 +16,7 @@ import {
 import agentuxLogo from '../assets/agentux-logo.svg';
 import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
 import { useViewportWidth } from '../hooks/use-viewport-width';
+import { useTypingKeycapEnabled } from './TypingKeycap';
 
 type CatalogueSection =
   | 'catalogue'
@@ -62,6 +64,7 @@ export function CatalogueHeader({
 }: CatalogueHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutMoreOpen, setLogoutMoreOpen] = useState(false);
+  const [typingKeycapEnabled, setTypingKeycapEnabled] = useTypingKeycapEnabled();
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLButtonElement>(null);
   const viewportWidth = useViewportWidth();
@@ -262,6 +265,20 @@ export function CatalogueHeader({
           >
             <Save size={14} aria-hidden="true" />
             Saved
+          </button>
+
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--row catalogue-header-menu__item--toggle"
+            role="menuitemcheckbox"
+            aria-checked={typingKeycapEnabled}
+            onClick={() => setTypingKeycapEnabled(!typingKeycapEnabled)}
+          >
+            <Keyboard size={14} aria-hidden="true" />
+            <span>Typing key feedback</span>
+            <span className={`catalogue-header-menu__switch${typingKeycapEnabled ? ' is-on' : ''}`} aria-hidden="true">
+              <span className="catalogue-header-menu__switch-thumb" />
+            </span>
           </button>
 
           <div className="catalogue-header-menu__divider" role="presentation" />
