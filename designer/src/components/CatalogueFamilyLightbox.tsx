@@ -23,6 +23,7 @@ import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { EditableTitle } from './EditableTitle';
+import { TypingKeycap, type TypingKeycapHandle } from './TypingKeycap';
 import { LabelEditor } from './labeling/LabelEditor';
 import { AI_LABELING_PROMPT } from '../lib/labeling/ai-prompt';
 import {
@@ -163,6 +164,22 @@ export function CatalogueFamilyLightbox({
   const fileRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const annotationInputRef = useRef<HTMLInputElement>(null);
+  const keycapRef = useRef<TypingKeycapHandle>(null);
+
+  // Fires the typing-feedback keycap for any text input inside the
+  // lightbox. EditableTitle handles its own keycap (it's used outside
+  // the lightbox too) — we skip its inputs here to avoid double-press.
+  function handleTypingFeedback(event: React.KeyboardEvent<HTMLDivElement>) {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.classList.contains('editable-title__input')) return;
+    const isTextInput =
+      target.tagName === 'INPUT'
+      || target.tagName === 'TEXTAREA'
+      || target.isContentEditable;
+    if (!isTextInput) return;
+    keycapRef.current?.press(event.key);
+  }
   const { triggerSave, triggerDelete } = useSaveTrashAnimation();
   // When the delete animation is choreographing, hide the lightbox
   // media area so the ghost overlay doesn't double with the live image.
@@ -831,7 +848,8 @@ export function CatalogueFamilyLightbox({
   }
   return createPortal(
     <>
-    <div className="catalogue-lightbox" onClick={onClose}>
+    <div className="catalogue-lightbox" onClick={onClose} onKeyDownCapture={handleTypingFeedback}>
+      <TypingKeycap ref={keycapRef} />
       <div className="catalogue-lightbox-header" onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-name-wrap">
           <EditableTitle
