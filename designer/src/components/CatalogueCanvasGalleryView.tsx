@@ -24,6 +24,15 @@ interface CatalogueCanvasGalleryViewProps {
   activeVariantKeys: Record<string, string>;
   onSelectFamily: (familyId: string) => void;
   onExit: () => void;
+  // Cursor pagination from the catalogue data layer — when the
+  // streaming phase exhausts the locally-loaded families, the canvas
+  // calls `onLoadMore()` to fetch the next page from Supabase. Without
+  // this the wallpaper phase would engage with whatever page-1 had
+  // (~50 items) and the rest of the user's screenshots would never
+  // appear.
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
 }
 
 type Density = 'atom' | 'molecule' | 'compound';
@@ -65,6 +74,9 @@ export function CatalogueCanvasGalleryView({
   activeVariantKeys,
   onSelectFamily,
   onExit,
+  hasMore,
+  loadingMore,
+  onLoadMore,
 }: CatalogueCanvasGalleryViewProps) {
   const [density, setDensity] = useState<Density>('compound');
   const [loadedCount, setLoadedCount] = useState<number>(INITIAL_BATCH);
@@ -114,7 +126,10 @@ export function CatalogueCanvasGalleryView({
   }, [families, loadedCount, activeVariantKeys]);
 
   const totalCount = families.length;
-  const phase: Phase = loadedCount >= totalCount ? 'wallpaper' : 'streaming';
+  // Wallpaper phase only engages when every item has been revealed
+  // AND the server has nothing more to offer. While `hasMore` is true,
+  // we stay in streaming and call `onLoadMore()` at the edge.
+  const phase: Phase = (loadedCount >= totalCount && !hasMore) ? 'wallpaper' : 'streaming';
 
   // Grid geometry (the streaming grid, or one wallpaper tile's content).
   const rows = Math.max(1, Math.ceil(visibleItems.length / COLS));
@@ -123,27 +138,37 @@ export function CatalogueCanvasGalleryView({
   const tileW = gridContentW + SEAM_GAP;
   const tileH = gridContentH + SEAM_GAP;
 
-  // ── Reset on filter / family-list change ─────────────
-  // We key on family-id concatenation, NOT array identity, because
-  // Catalogue.tsx rebuilds the families array on most state changes
-  // even when the underlying ids are the same.
-  const familiesKey = useMemo(
-    () => families.map((f) => f.id).join('|'),
+  // ── Reset on filter change (NOT on server pagination) ──
+  // Two reasons the families array might change:
+  //   1. Filter / search / sort changed → completely different items
+  //      → reset loadedCount + recenter pan.
+  //   2. Server returned the next paginated page → existing items at
+  //      the start are unchanged, new items appended → DON'T reset.
+  //
+  // We detect (2) by checking whether the new family-id list extends
+  // the previous one as a strict prefix. If yes, it's pagination;
+  // otherwise treat as a filter change.
+  const familyIdList = useMemo(
+    () => families.map((f) => f.id),
     [families],
   );
+  const familiesKey = familyIdList.join('|');
   useEffect(() => {
     if (familiesKey === prevFamiliesKeyRef.current) return;
+    const prev = prevFamiliesKeyRef.current.split('|').filter(Boolean);
+    const isAppend =
+      familyIdList.length >= prev.length
+      && prev.every((id, i) => familyIdList[i] === id);
     prevFamiliesKeyRef.current = familiesKey;
+    if (isAppend) return; // server pagination — keep pan + reveal progress
     setLoadedCount(INITIAL_BATCH);
     setRecentlyRevealed(new Set());
     prevLoadedCountRef.current = INITIAL_BATCH;
-    // Snap back to origin so the user lands on the freshly-filtered
-    // top of the grid, not stranded in empty space.
     panRef.current.panX = 0;
     panRef.current.panY = 0;
     panRef.current.velX = 0;
     panRef.current.velY = 0;
-  }, [familiesKey]);
+  }, [familiesKey, familyIdList]);
 
   // ── Blur-fade-in for newly revealed batches ─────────
   useEffect(() => {
@@ -210,19 +235,29 @@ export function CatalogueCanvasGalleryView({
   // the newly-arrived cells fade in via the `.is-fresh` animation.
   const maybeLoadMore = useCallback(() => {
     if (phase !== 'streaming') return;
-    if (loadedCount >= totalCount) return;
     const stage = stageRef.current;
     if (!stage) return;
     const viewportH = stage.clientHeight;
     if (viewportH === 0) return;
     const bottomEdge = gridContentH / 2;
     const cameraBottom = panRef.current.panY + viewportH / 2;
-    if (cameraBottom > bottomEdge - viewportH) {
+    if (cameraBottom <= bottomEdge - viewportH) return;
+
+    if (loadedCount < totalCount) {
+      // Reveal next local batch.
       startTransition(() => {
         setLoadedCount((current) => Math.min(current + STREAM_INCREMENT, totalCount));
       });
+      return;
     }
-  }, [phase, loadedCount, totalCount, gridContentH]);
+    // Local list exhausted. Ask the data layer for the next server
+    // page; it'll append families, which our reset effect treats as a
+    // prefix-extension (no view reset). The next maybeLoadMore call
+    // after the new items arrive will reveal them locally.
+    if (hasMore && !loadingMore) {
+      onLoadMore();
+    }
+  }, [phase, loadedCount, totalCount, gridContentH, hasMore, loadingMore, onLoadMore]);
 
   // Initial paint + reapply on geometry / phase change.
   useEffect(() => {

@@ -185,6 +185,9 @@ export function CatalogueContent({
           activeVariantKeys={activeVariantKeys}
           onSelectFamily={onOpenPreview}
           onExit={onExitCanvasGallery}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={onLoadMore}
         />
       );
     }
