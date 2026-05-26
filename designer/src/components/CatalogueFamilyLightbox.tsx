@@ -13,7 +13,7 @@ import {
   type ScreenshotAnnotation,
 } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
-import { thumbHashToUrl } from '../lib/thumbhash';
+import { thumbHashToPixelatedUrl } from '../lib/thumbhash';
 import type { MobileOs, WebPreset } from '../types';
 import { Check, Copy, Send, X } from 'lucide-react';
 
@@ -882,7 +882,7 @@ export function CatalogueFamilyLightbox({
             const hash = activeVariant?.screenshot?.thumb_hash;
             if (!hash || imageLoaded) return null;
             let url: string | null = null;
-            try { url = thumbHashToUrl(hash); } catch { url = null; }
+            try { url = thumbHashToPixelatedUrl(hash); } catch { url = null; }
             if (!url) return null;
             return (
               <img

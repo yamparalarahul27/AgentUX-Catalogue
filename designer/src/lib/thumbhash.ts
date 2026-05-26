@@ -1,4 +1,4 @@
-import { rgbaToThumbHash, thumbHashToDataURL } from 'thumbhash';
+import { rgbaToThumbHash, thumbHashToDataURL, thumbHashToRGBA } from 'thumbhash';
 
 const THUMB_SIZE = 100;
 
@@ -21,6 +21,48 @@ export async function generateThumbHash(file: File | Blob): Promise<string> {
 export function thumbHashToUrl(base64Hash: string): string {
   const hash = base64ToUint8(base64Hash);
   return thumbHashToDataURL(hash);
+}
+
+// Re-rasterizes the thumbhash through a coarse grid (default 20 cells
+// along the longer dimension, shorter dim derived from aspect) so an
+// upscale with `image-rendering: pixelated` shows discrete chunky
+// cells — not the smooth DCT decode that `thumbHashToUrl` returns at
+// its native ~32px size. Used by the lightbox placeholder.
+//
+// Sizing off the longer dimension keeps grid density consistent across
+// portrait (mobile) and landscape (web) — fixing cols-only would give
+// wide screenshots too few rows and lose the visible grid texture.
+export function thumbHashToPixelatedUrl(base64Hash: string, targetLong = 20): string {
+  const hash = base64ToUint8(base64Hash);
+  const { w, h, rgba } = thumbHashToRGBA(hash);
+
+  const srcCanvas = document.createElement('canvas');
+  srcCanvas.width = w;
+  srcCanvas.height = h;
+  const srcCtx = srcCanvas.getContext('2d')!;
+  const imageData = srcCtx.createImageData(w, h);
+  imageData.data.set(rgba);
+  srcCtx.putImageData(imageData, 0, 0);
+
+  const aspect = w / h;
+  let targetW: number;
+  let targetH: number;
+  if (w >= h) {
+    targetW = targetLong;
+    targetH = Math.max(2, Math.round(targetLong / aspect));
+  } else {
+    targetH = targetLong;
+    targetW = Math.max(2, Math.round(targetLong * aspect));
+  }
+
+  const dstCanvas = document.createElement('canvas');
+  dstCanvas.width = targetW;
+  dstCanvas.height = targetH;
+  const dstCtx = dstCanvas.getContext('2d')!;
+  dstCtx.imageSmoothingEnabled = true;
+  dstCtx.drawImage(srcCanvas, 0, 0, targetW, targetH);
+
+  return dstCanvas.toDataURL('image/png');
 }
 
 function uint8ToBase64(bytes: Uint8Array): string {

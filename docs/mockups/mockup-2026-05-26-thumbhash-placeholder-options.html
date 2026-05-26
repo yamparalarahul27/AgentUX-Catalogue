@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thumbhash placeholder — visualisation</title>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --surface: #16161a;
+    --surface-2: #1c1c20;
+    --border: #27272a;
+    --border-soft: #3a3a44;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --text-soft: #d4d4d8;
+    --accent: #6366f1;
+    --accent-tint: #c7d2fe;
+  }
+  * { box-sizing: border-box; }
+  html { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.32) transparent; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── intro ─────────────────────────────────────────── */
+  .intro { max-width: 1120px; margin: 0 auto 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .intro h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .intro p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.55; max-width: 720px; }
+  .replay-all {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter 0.15s ease;
+  }
+  .replay-all:hover { filter: brightness(1.1); }
+
+  /* ── grid ──────────────────────────────────────────── */
+  .grid {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── card ──────────────────────────────────────────── */
+  .opt {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .opt__head { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .opt__label {
+    font-size: 10.5px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .opt__name { font-size: 15px; font-weight: 600; margin: 3px 0 0; letter-spacing: -0.012em; }
+  .opt__desc { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; line-height: 1.5; }
+
+  /* The lightbox-like dark surface. Black background so we can see
+     placeholder edges + vignette behaviour clearly. */
+  .stage {
+    position: relative;
+    background: #050507;
+    aspect-ratio: 3 / 2;
+    width: 100%;
+    overflow: hidden;
+  }
+  .stage__inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stage img.real {
+    max-width: 92%;
+    max-height: 92%;
+    width: auto;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
+    opacity: 0;
+    transition: opacity 0.25s ease-in;
+    position: relative;
+    z-index: 2;
+  }
+  .stage img.real.is-loaded { opacity: 1; }
+
+  /* ── shared placeholder positioning ────────────────── */
+  .ph {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ── A: blur fill (just shipped) ───────────────────── */
+  .opt-a .ph img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: blur(8px);
+    transform: scale(1.04);
+  }
+
+  /* ── B: blur + radial vignette ─────────────────────── */
+  .opt-b .ph img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: blur(10px);
+    transform: scale(1.06);
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 55%, rgba(0,0,0,0.4) 80%, transparent 100%);
+            mask-image: radial-gradient(ellipse at center, #000 55%, rgba(0,0,0,0.4) 80%, transparent 100%);
+  }
+
+  /* ── C: pixelated crisp ────────────────────────────── */
+  .opt-c .ph img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    filter: none;
+    transform: none;
+  }
+
+  /* ── D: choreographed blur → sharp ─────────────────── */
+  .opt-d .ph img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: blur(10px);
+    transform: scale(1.04);
+    transition: filter 220ms ease, transform 220ms ease;
+  }
+  .opt-d .ph.is-resolving img {
+    filter: blur(0);
+    transform: scale(1);
+  }
+  .opt-d .stage img.real { transition: opacity 0.35s ease-in 0.18s; }
+
+  /* ── E: average colour + sweep shimmer ─────────────── */
+  .opt-e .ph {
+    background: linear-gradient(180deg, #2a2738 0%, #1e1e2a 100%);
+  }
+  .opt-e .ph::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.06) 45%,
+      rgba(255, 255, 255, 0.12) 50%,
+      rgba(255, 255, 255, 0.06) 55%,
+      transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+
+  /* Hide placeholder once the real image is in. The fade-out is short
+     so it doesn't overlap with the real image's fade-in. */
+  .ph { transition: opacity 0.2s ease-out; }
+  .ph.is-gone { opacity: 0; }
+
+  /* ── footer per-card ───────────────────────────────── */
+  .opt__foot {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .opt__tradeoff { font-size: 11.5px; color: var(--text-dim); line-height: 1.5; }
+  .opt__tradeoff strong { color: var(--text-soft); font-weight: 500; }
+  .replay {
+    background: transparent;
+    color: var(--text-soft);
+    border: 1px solid var(--border-soft);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .replay:hover { color: var(--accent-tint); border-color: rgba(99, 102, 241, 0.55); }
+
+  /* Recommended badge */
+  .opt--rec .opt__head { background: linear-gradient(180deg, rgba(99,102,241,0.08), transparent 80%); }
+  .opt__rec-badge {
+    display: inline-block;
+    background: rgba(99,102,241,0.16);
+    color: var(--accent-tint);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 8px;
+    vertical-align: 2px;
+  }
+
+  .note {
+    max-width: 1120px;
+    margin: 22px auto 0;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+</style>
+</head>
+<body>
+
+<section class="intro">
+  <div>
+    <h1>Thumb-hash placeholder — visualisation</h1>
+    <p>Five rendering strategies for the same thumb-hash blob. Hit <em>Replay</em> on any card (or the global one) — the cached real image is forced to refetch so you can watch the placeholder → image handoff. To slow the network down further, open DevTools and throttle to Slow 3G.</p>
+  </div>
+  <button class="replay-all" onclick="replayAll()">Replay all</button>
+</section>
+
+<div class="grid">
+
+  <!-- A: blur fill (the just-shipped baseline) -->
+  <article class="opt opt-a" data-opt="a">
+    <header class="opt__head">
+      <span class="opt__label">Option A · baseline</span>
+      <h2 class="opt__name">Blur fill</h2>
+      <p class="opt__desc">Thumbhash filled to the image's rendered box, blurred 8px. The state shipped in the lightbox fix.</p>
+    </header>
+    <div class="stage">
+      <div class="ph" data-ph><img alt="" data-ph-src="https://picsum.photos/id/180/32/22"></div>
+      <div class="stage__inner">
+        <img class="real" alt="" data-real-src="https://picsum.photos/id/180/1200/800">
+      </div>
+    </div>
+    <footer class="opt__foot">
+      <p class="opt__tradeoff"><strong>Cheap, shows shape</strong> · hard rectangle edges sit on the dark bg.</p>
+      <button class="replay" onclick="replayOne(this)">Replay</button>
+    </footer>
+  </article>
+
+  <!-- B: blur + radial vignette (recommended) -->
+  <article class="opt opt-b opt--rec" data-opt="b">
+    <header class="opt__head">
+      <span class="opt__label">Option B · refined<span class="opt__rec-badge">Recommended</span></span>
+      <h2 class="opt__name">Blur + radial vignette</h2>
+      <p class="opt__desc">Same blur, plus a radial mask so the placeholder fades into the dark lightbox bg — no hard rectangle.</p>
+    </header>
+    <div class="stage">
+      <div class="ph" data-ph><img alt="" data-ph-src="https://picsum.photos/id/180/32/22"></div>
+      <div class="stage__inner">
+        <img class="real" alt="" data-real-src="https://picsum.photos/id/180/1200/800">
+      </div>
+    </div>
+    <footer class="opt__foot">
+      <p class="opt__tradeoff"><strong>Premium, edges-don't-exist feel</strong> · slight loss of edge preview.</p>
+      <button class="replay" onclick="replayOne(this)">Replay</button>
+    </footer>
+  </article>
+
+  <!-- C: pixelated -->
+  <article class="opt opt-c" data-opt="c">
+    <header class="opt__head">
+      <span class="opt__label">Option C · stylised</span>
+      <h2 class="opt__name">Pixelated crisp</h2>
+      <p class="opt__desc">Raw 32-pixel decode rendered with <code>image-rendering: pixelated</code>. Retro mosaic that reads as "obviously loading".</p>
+    </header>
+    <div class="stage">
+      <div class="ph" data-ph><img alt="" data-ph-src="https://picsum.photos/id/180/32/22"></div>
+      <div class="stage__inner">
+        <img class="real" alt="" data-real-src="https://picsum.photos/id/180/1200/800">
+      </div>
+    </div>
+    <footer class="opt__foot">
+      <p class="opt__tradeoff"><strong>Distinctive, playful</strong> · clashes with a premium / muted theme.</p>
+      <button class="replay" onclick="replayOne(this)">Replay</button>
+    </footer>
+  </article>
+
+  <!-- D: choreographed handoff (recommended pair with B) -->
+  <article class="opt opt-d opt--rec" data-opt="d">
+    <header class="opt__head">
+      <span class="opt__label">Option D · refined<span class="opt__rec-badge">Recommended pair w/ B</span></span>
+      <h2 class="opt__name">Choreographed handoff</h2>
+      <p class="opt__desc">Placeholder animates from blur(10px) → blur(0) over ~220ms, then the real image cross-fades. The blur "resolves" into the photo.</p>
+    </header>
+    <div class="stage">
+      <div class="ph" data-ph><img alt="" data-ph-src="https://picsum.photos/id/180/32/22"></div>
+      <div class="stage__inner">
+        <img class="real" alt="" data-real-src="https://picsum.photos/id/180/1200/800">
+      </div>
+    </div>
+    <footer class="opt__foot">
+      <p class="opt__tradeoff"><strong>Feels intentional</strong> · only visible when the image isn't cached.</p>
+      <button class="replay" onclick="replayOne(this)">Replay</button>
+    </footer>
+  </article>
+
+  <!-- E: average colour + sweep -->
+  <article class="opt opt-e" data-opt="e">
+    <header class="opt__head">
+      <span class="opt__label">Option E · minimal</span>
+      <h2 class="opt__name">Avg-colour flood + shimmer</h2>
+      <p class="opt__desc">Single muted colour (here a hand-picked stand-in for thumbhash's mean) with a slow horizontal shimmer sweep — closer to skeleton than preview.</p>
+    </header>
+    <div class="stage">
+      <div class="ph" data-ph></div>
+      <div class="stage__inner">
+        <img class="real" alt="" data-real-src="https://picsum.photos/id/180/1200/800">
+      </div>
+    </div>
+    <footer class="opt__foot">
+      <p class="opt__tradeoff"><strong>Calmest, neutral</strong> · loses shape preview entirely.</p>
+      <button class="replay" onclick="replayOne(this)">Replay</button>
+    </footer>
+  </article>
+
+</div>
+
+<p class="note">
+  In production the placeholder is decoded synchronously from the stored thumbhash bytes (no network), so it paints on the first frame. Here we approximate that by giving the placeholder a 32×22 image with the same picsum seed as the full image — same artistic effect, just a real fetch instead of an inline decode.
+</p>
+
+<script>
+  // Boot: pre-load every placeholder and trigger an initial replay on
+  // every card so the user sees the loaded state on arrival.
+  document.querySelectorAll('.ph img[data-ph-src]').forEach((img) => {
+    img.src = img.dataset.phSrc;
+  });
+
+  function replayOne(btn) {
+    const card = btn.closest('.opt');
+    runReplay(card);
+  }
+
+  function replayAll() {
+    document.querySelectorAll('.opt').forEach(runReplay);
+  }
+
+  function runReplay(card) {
+    const opt = card.dataset.opt;
+    const ph = card.querySelector('.ph');
+    const real = card.querySelector('.real');
+
+    // Reset to "loading" state.
+    real.classList.remove('is-loaded');
+    ph.classList.remove('is-gone', 'is-resolving');
+    real.removeAttribute('src');
+
+    // Force a fresh fetch each replay.
+    const src = real.dataset.realSrc + '?t=' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+
+    real.onload = () => {
+      // Option D — animate the placeholder blur out FIRST, then fade the real image in.
+      if (opt === 'd') {
+        ph.classList.add('is-resolving');
+        // Stage the real-image fade behind the blur-resolve so it lands at the same time.
+        requestAnimationFrame(() => {
+          real.classList.add('is-loaded');
+        });
+        // Remove the placeholder once the cross-fade settles.
+        setTimeout(() => ph.classList.add('is-gone'), 420);
+        return;
+      }
+      // All other options — placeholder dissolves as the real image fades in.
+      real.classList.add('is-loaded');
+      ph.classList.add('is-gone');
+    };
+
+    real.src = src;
+  }
+
+  // First paint — show the loaded state on arrival.
+  window.addEventListener('load', replayAll);
+</script>
+
+</body>
+</html>
