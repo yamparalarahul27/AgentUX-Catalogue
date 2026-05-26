@@ -59,20 +59,27 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
-// Blurhash placeholder — painted instantly from screenshot.thumb_hash
+// Thumbhash placeholder — painted instantly from screenshot.thumb_hash
 // so the lightbox shows a recognisable preview while the full image
-// downloads. Positioned to match the real <img>'s rendered box (same
-// max-* + auto), blurred so it reads as "still loading".
+// downloads. Fills the media inner via inset/100% (thumbhash decodes
+// to a ~32px image; without these the element would render at its
+// natural size — a tiny "dot in the centre"). `object-fit: contain`
+// keeps the aspect equal to the real image's letterboxed bounds, so
+// the fade lands in the same rectangle.
+//
+// `image-rendering: pixelated` renders the upscale as a chunky mosaic
+// instead of a blur — distinct "obviously loading, here's the shape"
+// signal, with no soft-edge smearing.
 .catalogue-lightbox-img-placeholder {
   position: absolute;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
   border-radius: 8px;
-  filter: blur(8px);
-  transform: scale(1.04);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
   pointer-events: none;
   user-select: none;
 }
