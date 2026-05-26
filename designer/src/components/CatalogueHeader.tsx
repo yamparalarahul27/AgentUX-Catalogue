@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
+  Frame,
   Keyboard,
   Link as LinkIcon,
   LogIn,
@@ -16,6 +17,7 @@ import {
 import agentuxLogo from '../assets/agentux-logo.svg';
 import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
 import { useViewportWidth } from '../hooks/use-viewport-width';
+import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
 import { useTypingKeycapEnabled } from './TypingKeycap';
 
 type CatalogueSection =
@@ -65,6 +67,7 @@ export function CatalogueHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutMoreOpen, setLogoutMoreOpen] = useState(false);
   const [typingKeycapEnabled, setTypingKeycapEnabled] = useTypingKeycapEnabled();
+  const [canvasGalleryEnabled, setCanvasGalleryEnabled] = useCanvasGalleryEnabled();
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLButtonElement>(null);
   const viewportWidth = useViewportWidth();
@@ -277,6 +280,21 @@ export function CatalogueHeader({
             <Keyboard size={14} aria-hidden="true" />
             <span>Typing key feedback</span>
             <span className={`catalogue-header-menu__switch${typingKeycapEnabled ? ' is-on' : ''}`} aria-hidden="true">
+              <span className="catalogue-header-menu__switch-thumb" />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--row catalogue-header-menu__item--toggle"
+            role="menuitemcheckbox"
+            aria-checked={canvasGalleryEnabled}
+            onClick={() => setCanvasGalleryEnabled(!canvasGalleryEnabled)}
+            title="Use the infinite pannable canvas when Gallery view is active"
+          >
+            <Frame size={14} aria-hidden="true" />
+            <span>Canvas view</span>
+            <span className={`catalogue-header-menu__switch${canvasGalleryEnabled ? ' is-on' : ''}`} aria-hidden="true">
               <span className="catalogue-header-menu__switch-thumb" />
             </span>
           </button>

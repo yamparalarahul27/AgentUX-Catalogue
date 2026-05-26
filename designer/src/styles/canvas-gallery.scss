@@ -1,0 +1,344 @@
+// Canvas gallery view — streaming-then-wallpaper pannable canvas.
+// Spec: docs/mockups/mockup-2026-05-26-canvas-gallery.html.
+//
+// This stylesheet covers BOTH:
+//   1. The canvas component itself (.canvas-gallery-*)
+//   2. The chrome adjustments toggled via the `.is-canvas-gallery-active`
+//      class on the page root (header floats, dock hides, etc.)
+
+// ── Stage + canvas ────────────────────────────────────
+// Fixed-positioned so the canvas always fills the viewport regardless
+// of ancestor flex chain. Sits below the floating header (z-index 70).
+.canvas-gallery-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  cursor: grab;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 60%),
+    #0a0a0c;
+  touch-action: none;
+}
+.canvas-gallery-stage.is-dragging { cursor: grabbing; }
+
+.canvas-gallery-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+
+// ── Grid (used by both streaming + wallpaper phases) ──
+// The cell dimensions and column count come from inline CSS vars set
+// by the component on the stage: --canvas-cell-w, --canvas-cell-h,
+// --canvas-cols.
+.canvas-gallery-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--canvas-cols, 8), var(--canvas-cell-w, 170px));
+  grid-auto-rows: var(--canvas-cell-h, 106px);
+  gap: 18px;
+  pointer-events: auto;
+}
+
+// ── Tile (wallpaper phase only) ───────────────────────
+// Contains the inner grid, two seam markers (right + bottom edges).
+// Sized + positioned via inline style by the component.
+.canvas-gallery-tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+.canvas-gallery-tile .canvas-gallery-grid {
+  position: relative;
+}
+
+// ── Cell ──────────────────────────────────────────────
+// Image inside auto-sizes to its natural aspect (max-w/h 100%, w/h
+// auto) so border-radius rounds the actual screenshot corners — not
+// the surrounding letterbox space.
+.canvas-gallery-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.18s ease;
+  // `contain: layout style` isolates each cell's layout — when a new
+  // batch of 50 cells is appended below, the existing cells above
+  // don't reflow. Keeps pan smooth while new cells decode.
+  contain: layout style;
+}
+.canvas-gallery-cell:hover {
+  transform: scale(1.03);
+  z-index: 2;
+}
+.canvas-gallery-cell.is-flying {
+  transform: scale(1.08);
+  z-index: 3;
+  transition: transform 0.25s ease;
+}
+.canvas-gallery-cell.is-flying::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.6), 0 12px 32px rgba(99, 102, 241, 0.3);
+  pointer-events: none;
+  animation: canvas-gallery-ring-pulse 0.4s ease;
+}
+@keyframes canvas-gallery-ring-pulse {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+// Newly-revealed cells fade in from blur. The per-cell stagger comes
+// from `--reveal-delay`, set as inline style on each fresh cell so the
+// 50 items in a batch appear one after another (~24 ms apart).
+.canvas-gallery-cell.is-fresh img {
+  animation: canvas-gallery-cell-reveal 380ms ease-out var(--reveal-delay, 0ms) backwards;
+}
+@keyframes canvas-gallery-cell-reveal {
+  from { filter: blur(8px); opacity: 0; }
+  to   { filter: blur(0);    opacity: 1; }
+}
+
+.canvas-gallery-cell img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+  user-select: none;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+// ── Tile boundary markers ────────────────────────────
+// Sits on the trailing right + bottom edges of every tile. Pure text,
+// no visible line under it — just a hint to the user that more
+// content is being placed in that direction. Same copy on both axes
+// ("Placing more amazing references"), rotated to read along each
+// axis. Compatible with line-style seams from earlier mockups; we
+// chose text-only for the live implementation.
+.canvas-gallery-tile__marker {
+  position: absolute;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.canvas-gallery-tile__marker span {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: rgba(199, 210, 254, 0.55);
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0 4px;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+// Vertical marker on the RIGHT edge of every tile (straddles boundary).
+.canvas-gallery-tile__marker--v {
+  top: 0;
+  bottom: 0;
+  right: -28px;
+  width: 56px;
+}
+.canvas-gallery-tile__marker--v span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+// Horizontal marker on the BOTTOM edge of every tile.
+.canvas-gallery-tile__marker--h {
+  left: 0;
+  right: 0;
+  bottom: -28px;
+  height: 56px;
+}
+
+// ── Bottom controls (Exit + Density) ─────────────────
+.canvas-gallery-bottom-row {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.canvas-gallery-exit {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(22, 22, 26, 0.85);
+  color: #d4d4d8;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.canvas-gallery-exit:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+}
+
+.canvas-gallery-density {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.canvas-gallery-density button {
+  border: none;
+  background: transparent;
+  color: #a1a1aa;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.canvas-gallery-density button:hover { color: #fafafa; }
+.canvas-gallery-density button.is-active {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fafafa;
+}
+
+// ── Enter / exit loading transition ─────────────────
+.canvas-gallery-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(10, 10, 12, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+.canvas-gallery-loader.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.canvas-gallery-loader__tiles {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  width: 200px;
+}
+.canvas-gallery-loader__tile {
+  aspect-ratio: 16 / 10;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(139, 92, 246, 0.12));
+  border: 1px solid rgba(99, 102, 241, 0.32);
+  opacity: 0;
+  animation: canvas-gallery-loader-tile 1.2s ease-in-out infinite;
+}
+.canvas-gallery-loader__tile:nth-child(1)  { animation-delay: 0.00s; }
+.canvas-gallery-loader__tile:nth-child(2)  { animation-delay: 0.07s; }
+.canvas-gallery-loader__tile:nth-child(3)  { animation-delay: 0.14s; }
+.canvas-gallery-loader__tile:nth-child(4)  { animation-delay: 0.21s; }
+.canvas-gallery-loader__tile:nth-child(5)  { animation-delay: 0.28s; }
+.canvas-gallery-loader__tile:nth-child(6)  { animation-delay: 0.35s; }
+.canvas-gallery-loader__tile:nth-child(7)  { animation-delay: 0.42s; }
+.canvas-gallery-loader__tile:nth-child(8)  { animation-delay: 0.49s; }
+.canvas-gallery-loader__tile:nth-child(9)  { animation-delay: 0.56s; }
+.canvas-gallery-loader__tile:nth-child(10) { animation-delay: 0.63s; }
+@keyframes canvas-gallery-loader-tile {
+  0%, 100% { opacity: 0.1; transform: scale(0.96); }
+  50%      { opacity: 1;   transform: scale(1); }
+}
+.canvas-gallery-loader__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #d4d4d8;
+}
+.canvas-gallery-loader__direction {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+
+// ── Chrome adjustments when Canvas view is active ──
+// These selectors live on the catalogue page root via a class toggle.
+// Existing header / dock / toolbar markup stays in the DOM; CSS-only
+// changes hide what shouldn't show and float what should.
+
+.is-canvas-gallery-active {
+  // Header: transparent, no border, items float over the canvas.
+  .catalogue-header {
+    background: transparent;
+    border-bottom: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 70;
+    pointer-events: none;
+  }
+  .catalogue-header > * { pointer-events: auto; }
+
+  // Section tabs absolute-centre on the viewport midline. Beats any
+  // flex margin-auto centring that would skew with asymmetric flanks.
+  .catalogue-header__tabs {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+  }
+
+  // Hidden in Canvas mode:
+  //   - What's New star button
+  //   - Links section tab (icon-only)
+  //   - Toolbar wrapper (filters / view-mode / sort / upload)
+  //   - Magnified bottom dock
+  //   - Flow strip
+  .catalogue-header__sparkles-btn { display: none; }
+  .catalogue-header__tab[aria-label="Links"] { display: none; }
+  .catalogue-toolbar-wrapper { display: none; }
+  .catalogue-dock-region { display: none; }
+  .catalogue-flow-strip { display: none; }
+}

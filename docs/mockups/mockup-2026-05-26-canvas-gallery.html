@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Canvas Gallery — AgentUX mockup with surrounding UI</title>
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --bg-elev: #16161a;
+    --surface: rgba(22, 22, 26, 0.85);
+    --surface-2: #1c1c20;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-soft: rgba(255, 255, 255, 0.12);
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --text-soft: #d4d4d8;
+    --accent: #6366f1;
+    --accent-tint: #c7d2fe;
+
+    /* Cell + tile geometry. 5 cols × 4 rows = 20 demo items per tile.
+       Cell aspect locked to 16:10 — every screenshot fits inside,
+       portrait shots letterbox horizontally. */
+    --cell-w: 170px;
+    --cell-h: 106px;
+    --gap: 18px;         /* +6 over the previous draft for breathing room */
+    --seam-gap: 56px;    /* extra horizontal space at the loop boundary */
+    --cols: 5;
+    --rows: 4;
+    --tile-content-w: calc(var(--cell-w) * var(--cols) + var(--gap) * (var(--cols) - 1));
+    --tile-content-h: calc(var(--cell-h) * var(--rows) + var(--gap) * (var(--rows) - 1));
+    --tile-w: calc(var(--tile-content-w) + var(--seam-gap));
+    --tile-h: var(--tile-content-h);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.005em;
+    overflow: hidden;
+    touch-action: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── App header in Gallery view ──────────────────
+     No bar fill, no border — items float over the canvas so the
+     pannable surface extends all the way to the top. Per the
+     Gallery spec, 1-5 stay but the bar chrome is gone. */
+  .app-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 70;
+    height: 52px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: transparent;
+    border-bottom: none;
+    pointer-events: none; /* let canvas drags pass through gaps */
+  }
+  .app-header > * { pointer-events: auto; }
+  .app-header__logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  }
+  /* Section tabs use the absolute-centre trick so they sit on the
+     viewport midline regardless of the widths of the flanking
+     groups. Flex margin-auto would centre between the flanks, not
+     on the midline.
+     The selector includes [data-el] so it beats the generic
+     [data-el] { position: relative; } legend-helper rule. */
+  .app-header__tabs,
+  .app-header__tabs[data-el] {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .app-header__tab {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .app-header__tab.is-active {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--text);
+  }
+  .app-header__star,
+  .app-header__settings {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .app-header__pill {
+    height: 30px;
+    padding: 0 12px;
+    margin-left: auto; /* pushes the right group to the trailing edge
+                          since tabs are absolute-centred */
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-soft);
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .app-header__pill::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #34d399;
+  }
+
+  /* ── Bottom controls in Gallery view ─────────────
+     Exit (icon-only) sits to the LEFT of the density pill, both as
+     separate floating elements grouped by a flex row so they stay
+     centred together at the bottom of the canvas. */
+  .gallery-bottom-row {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  /* Exit + density pill share the same 36 px height so they read
+     as a paired bottom-bar control. */
+  .exit-button {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-soft);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .exit-button:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(99, 102, 241, 0.16);
+    color: var(--accent-tint);
+  }
+  /* Single translucent pill (glass-morphism). No inner container —
+     the buttons sit directly inside, and only the active one carries
+     a subtle fill so the segmentation reads from state, not chrome. */
+  .density-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 36px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .density-pill button {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .density-pill button:hover {
+    color: var(--text);
+  }
+  .density-pill button.is-active {
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--text);
+  }
+
+  /* ── stage (the visible viewport) + canvas (the pannable surface) ── */
+  .gallery-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    cursor: grab;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 60%),
+      var(--bg);
+  }
+  .gallery-stage.is-dragging { cursor: grabbing; }
+  .gallery-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    will-change: transform;
+  }
+
+  /* ── tile (one full set of 20 items) ─────────────── */
+  .gallery-tile {
+    position: absolute;
+    top: calc(var(--tile-h) / -2);
+    left: calc(var(--tile-w) / -2);
+    width: var(--tile-w);
+    height: var(--tile-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform;
+  }
+  .gallery-tile__inner {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--cell-w));
+    grid-auto-rows: var(--cell-h);
+    gap: var(--gap);
+  }
+
+  /* ── cell ──────────────────────────────────────────
+     Cell is a flex-centred slot in the grid. The image inside
+     auto-sizes to its natural aspect (max-width/height 100%, width/
+     height auto) so the image element's box matches the rendered
+     image rect — that lets `border-radius` round the screenshot's
+     actual corners, not the surrounding letterbox space. */
+  .gallery-cell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.18s ease;
+  }
+  .gallery-cell:hover {
+    transform: scale(1.03);
+    z-index: 2;
+  }
+  .gallery-cell.is-flying {
+    transform: scale(1.08);
+    z-index: 3;
+    transition: transform 0.25s ease;
+  }
+  .gallery-cell.is-flying::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 10px;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.6), 0 12px 32px rgba(99, 102, 241, 0.3);
+    pointer-events: none;
+    animation: ring-pulse 0.4s ease;
+  }
+  @keyframes ring-pulse {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .gallery-cell img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+    border-radius: 6px;
+    user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  /* ── tile loop seam ──────────────────────────────
+     Sits straddling the boundary between this tile and the tile to
+     its left. Total span = --seam-gap (28 px on each side of the
+     boundary line). Comfortable breathing room. */
+  .gallery-tile__seam {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--seam-gap) / -2);
+    width: var(--seam-gap);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .gallery-tile__seam::before {
+    content: "";
+    position: absolute;
+    top: 18px;
+    bottom: 18px;
+    left: 50%;
+    width: 1px;
+    background: linear-gradient(180deg, transparent 0%, rgba(99, 102, 241, 0.4) 50%, transparent 100%);
+  }
+  .gallery-tile__seam span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: rgba(199, 210, 254, 0.55);
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 0 4px;
+  }
+
+  /* ── HUD chip (top-left of the stage) ──────────── */
+  .gallery-hud {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 50;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-size: 11.5px;
+    color: var(--text-soft);
+    letter-spacing: 0.01em;
+    pointer-events: none;
+  }
+  .gallery-hud strong { color: var(--text); font-weight: 600; }
+  .gallery-hud .sep { color: var(--text-dim); }
+
+  /* ── Magnified bottom dock — HIDDEN in Gallery view ── */
+  .app-dock { display: none; }
+
+  .app-dock__chip {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border-soft);
+    background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.18s ease;
+  }
+  .app-dock__chip:hover { transform: translateY(-4px) scale(1.18); }
+  .app-dock__chip:nth-child(2) { background: linear-gradient(135deg, #ec4899, #f97316); }
+  .app-dock__chip:nth-child(3) { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+  .app-dock__chip:nth-child(4) { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  .app-dock__chip:nth-child(5) { background: linear-gradient(135deg, #10b981, #06b6d4); }
+  .app-dock__chip:nth-child(6) { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+  .app-dock__chip:nth-child(7) { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+  .app-dock__chip:nth-child(8) { background: linear-gradient(135deg, #ef4444, #f59e0b); }
+
+  /* ── element name tags + side legend ───────────── */
+  /* Every named UI piece carries a `data-el` attribute with its number
+     + label. A pseudo-element renders that as an amber chip pinned to
+     the element. Legend on the right cross-references the same
+     numbers so you can say "shrink 3" or "hide 14". */
+  [data-el] {
+    position: relative;
+  }
+  [data-el]::after {
+    content: attr(data-el);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 6px);
+    z-index: 80;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #fde68a;
+    background: rgba(120, 53, 15, 0.85);
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    text-transform: uppercase;
+  }
+  /* Anchor variants for elements that can't drop a tag below
+     (toolbar items would land inside the canvas; dock has nowhere
+     to go below). */
+  [data-el-anchor="above"]::after {
+    top: auto;
+    bottom: 100%;
+    transform: translate(-50%, -6px);
+  }
+  [data-el-anchor="right"]::after {
+    top: 50%;
+    left: 100%;
+    transform: translate(6px, -50%);
+  }
+
+  .ui-legend {
+    position: fixed;
+    top: 70px;
+    right: 14px;
+    z-index: 90;
+    width: 220px;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(120, 53, 15, 0.18);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    backdrop-filter: blur(10px);
+    font-size: 11.5px;
+    color: rgba(253, 230, 138, 0.95);
+    line-height: 1.55;
+  }
+  .ui-legend h4 {
+    margin: 0 0 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(253, 230, 138, 1);
+  }
+  .ui-legend ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: legend;
+  }
+  .ui-legend li {
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+  }
+  .ui-legend .ui-num {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: rgba(251, 191, 36, 0.18);
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    color: #fde68a;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ui-legend .group {
+    margin-top: 6px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(253, 230, 138, 0.55);
+    padding: 4px 0 2px;
+  }
+  /* State badges for legend items — green stay/float, red hidden,
+     blue moved. Compact 9px chips appended to each row. */
+  .ui-legend .state {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .ui-legend .state--float { background: rgba(34, 197, 94, 0.18); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.35); }
+  .ui-legend .state--move  { background: rgba(59, 130, 246, 0.18); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); }
+  .ui-legend .state--hide  { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35); }
+  .ui-legend .state--stay  { background: rgba(212, 212, 216, 0.12); color: #e4e4e7; border: 1px solid rgba(212, 212, 216, 0.25); }
+  .ui-legend li.is-hidden span:not(.ui-num):not(.state) { text-decoration: line-through; opacity: 0.55; }
+
+  /* ── Gallery enter/exit loading transition ──────
+     Same overlay covers both directions — fade in, hold ~600ms while
+     the canvas shaders compile / first images decode, fade out. The
+     held middle frame shows a cascade of small tiles building up,
+     which echoes the gallery's grid pattern. */
+  .gallery-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: rgba(10, 10, 12, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+  .gallery-loader.is-active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .gallery-loader__tiles {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    width: 200px;
+  }
+  .gallery-loader__tile {
+    aspect-ratio: 16 / 10;
+    border-radius: 4px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(139, 92, 246, 0.12));
+    border: 1px solid rgba(99, 102, 241, 0.32);
+    opacity: 0;
+    animation: gallery-loader-tile 1.2s ease-in-out infinite;
+  }
+  /* 10 tiles, staggered. Each tile uses an animation-delay so the
+     cascade reads as a sweep across the grid. */
+  .gallery-loader__tile:nth-child(1)  { animation-delay: 0.00s; }
+  .gallery-loader__tile:nth-child(2)  { animation-delay: 0.07s; }
+  .gallery-loader__tile:nth-child(3)  { animation-delay: 0.14s; }
+  .gallery-loader__tile:nth-child(4)  { animation-delay: 0.21s; }
+  .gallery-loader__tile:nth-child(5)  { animation-delay: 0.28s; }
+  .gallery-loader__tile:nth-child(6)  { animation-delay: 0.35s; }
+  .gallery-loader__tile:nth-child(7)  { animation-delay: 0.42s; }
+  .gallery-loader__tile:nth-child(8)  { animation-delay: 0.49s; }
+  .gallery-loader__tile:nth-child(9)  { animation-delay: 0.56s; }
+  .gallery-loader__tile:nth-child(10) { animation-delay: 0.63s; }
+  @keyframes gallery-loader-tile {
+    0%, 100% { opacity: 0.1; transform: scale(0.96); }
+    50%      { opacity: 1;   transform: scale(1); }
+  }
+  .gallery-loader__label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .gallery-loader__direction {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* Replay controls — two buttons so each direction can be tested
+     independently. Also: clicking Grid / Stack on the view-modes
+     pill triggers the exit transition for free. */
+  .replay-controls {
+    position: fixed;
+    bottom: 14px;
+    right: 14px;
+    z-index: 70;
+    display: flex;
+    gap: 8px;
+  }
+  .replay-btn {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .replay-btn:hover { border-color: rgba(99, 102, 241, 0.5); color: var(--accent-tint); }
+
+  /* ── lightbox overlay (click to open) ──────────── */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .lightbox.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .lightbox__inner {
+    position: relative;
+    max-width: min(92vw, 1200px);
+    max-height: 86vh;
+    transform: scale(0.96);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .lightbox.is-open .lightbox__inner {
+    transform: scale(1);
+  }
+  .lightbox__inner img {
+    max-width: 100%;
+    max-height: 86vh;
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+  .lightbox__close {
+    position: absolute;
+    top: -14px;
+    right: -14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox__close:hover { background: rgba(99, 102, 241, 0.2); }
+  .lightbox__meta {
+    position: absolute;
+    bottom: -36px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- Surrounding UI so you can point at what should change ─────────── -->
+
+<header class="app-header">
+  <div class="app-header__logo" aria-hidden="true" data-el="1 · Logo"></div>
+  <div class="app-header__tabs" data-el="2 · Section tabs">
+    <button class="app-header__tab is-active">Catalogue</button>
+    <button class="app-header__tab">Videos</button>
+  </div>
+  <button class="app-header__pill" data-el="5 · Account pill">rahul</button>
+  <button class="app-header__settings" aria-label="Settings" title="Settings" data-el="4 · Settings">⚙</button>
+</header>
+
+<!-- Toolbar is hidden in Gallery view. Only View mode survives — see
+     the floating bottom-toolbar inside the stage. Filter / Group / Flow
+     / Sort / Upload (6, 7, 8, 10, 11) are gone in this mode. -->
+
+<!-- Stage ─────────────────────────────────────────────────────────── -->
+
+<div class="gallery-stage" id="stage">
+  <div class="gallery-canvas" id="canvas"></div>
+
+  <!-- HUD chip removed per review. -->
+
+  <!-- Bottom row — Exit (icon-only, left) + Density pill (right),
+       parked where the dock used to be. Two separate floating
+       elements, grouped by a flex row so they stay centred together. -->
+  <div class="gallery-bottom-row">
+    <button type="button" class="exit-button" id="exit-gallery" aria-label="Exit Gallery" title="Exit Gallery" data-el="17 · Exit" data-el-anchor="above">←</button>
+    <div class="density-pill" id="density-buttons" data-el="9 · Density" data-el-anchor="above">
+      <button data-density="atom" title="Atom · 2 per row" aria-label="Atom — 2 per row">A</button>
+      <button data-density="molecule" title="Molecule · 4 per row" aria-label="Molecule — 4 per row">M</button>
+      <button class="is-active" data-density="compound" title="Compound · 8 per row" aria-label="Compound — 8 per row">C</button>
+    </div>
+  </div>
+</div>
+
+<aside class="ui-legend" aria-label="UI element legend">
+  <h4>Gallery view state</h4>
+  <ol>
+    <li class="group">Header (no bar fill)</li>
+    <li><span class="ui-num">1</span><span>Logo</span><span class="state state--float">Float</span></li>
+    <li><span class="ui-num">2</span><span>Section tabs</span><span class="state state--float">Float</span></li>
+    <li class="is-hidden"><span class="ui-num">3</span><span>What's new (★)</span><span class="state state--hide">Removed</span></li>
+    <li><span class="ui-num">4</span><span>Settings (⚙)</span><span class="state state--float">Float</span></li>
+    <li><span class="ui-num">5</span><span>Account pill</span><span class="state state--float">Float</span></li>
+    <li class="group">Toolbar</li>
+    <li class="is-hidden"><span class="ui-num">6</span><span>Filter</span><span class="state state--hide">Hide</span></li>
+    <li class="is-hidden"><span class="ui-num">7</span><span>Group</span><span class="state state--hide">Hide</span></li>
+    <li class="is-hidden"><span class="ui-num">8</span><span>Flow</span><span class="state state--hide">Hide</span></li>
+    <li><span class="ui-num">9</span><span>View mode → Density</span><span class="state state--move">→ Bottom</span></li>
+    <li class="is-hidden"><span class="ui-num">10</span><span>Sort</span><span class="state state--hide">Hide</span></li>
+    <li class="is-hidden"><span class="ui-num">11</span><span>Upload</span><span class="state state--hide">Hide</span></li>
+    <li class="group">Canvas stage</li>
+    <li><span class="ui-num">12</span><span>Gallery canvas</span><span class="state state--stay">Full</span></li>
+    <li class="is-hidden"><span class="ui-num">13</span><span>HUD chip</span><span class="state state--hide">Removed</span></li>
+    <li><span class="ui-num">14</span><span>Loop seam</span><span class="state state--stay">Stay</span></li>
+    <li class="is-hidden"><span class="ui-num">15</span><span>Magnified dock</span><span class="state state--hide">Hide</span></li>
+    <li class="group">New in Gallery</li>
+    <li><span class="ui-num">16</span><span>Loader (enter / exit)</span><span class="state state--stay">New</span></li>
+    <li><span class="ui-num">17</span><span>Exit (next to Density)</span><span class="state state--stay">New</span></li>
+  </ol>
+</aside>
+
+<!-- Loading transition (enter + exit) ───────────────────────────── -->
+
+<div class="gallery-loader is-active" id="loader" aria-hidden="true">
+  <div class="gallery-loader__tiles" aria-hidden="true">
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+    <div class="gallery-loader__tile"></div>
+  </div>
+  <div class="gallery-loader__label" id="loader-label">Entering Gallery</div>
+  <div class="gallery-loader__direction" id="loader-direction">Preparing canvas …</div>
+</div>
+
+<div class="replay-controls">
+  <button type="button" class="replay-btn" id="replay-enter">↻ Replay enter</button>
+  <button type="button" class="replay-btn" id="replay-exit">↻ Replay exit</button>
+</div>
+
+<!-- Lightbox ──────────────────────────────────────────────────────── -->
+
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <div class="lightbox__inner">
+    <button type="button" class="lightbox__close" id="lightbox-close" aria-label="Close">×</button>
+    <img id="lightbox-img" alt="" />
+    <div class="lightbox__meta" id="lightbox-meta"></div>
+  </div>
+</div>
+
+<script>
+  // ── Demo data: 20 items, mixed aspect ratios ────────
+  const items = [];
+  const mobileSeeds = ['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10'];
+  const webSeeds    = ['w1','w2','w3','w4','w5','w6','w7','w8','w9','w10'];
+  for (let i = 0; i < 10; i++) {
+    items.push({ id: 'web-' + i,    image: `https://picsum.photos/seed/${webSeeds[i]}/1280/720`,  kind: 'web' });
+    items.push({ id: 'mobile-' + i, image: `https://picsum.photos/seed/${mobileSeeds[i]}/400/712`, kind: 'mobile' });
+  }
+
+  // ── Geometry — let, not const, so the density control can swap
+  //    cell dimensions live and the pan math re-anchors with them.
+  //    Initial values match the default density preset (8 per row). ─
+  let CELL_W = 170;
+  let CELL_H = 106;
+  const GAP = 18;
+  const SEAM_GAP = 56;
+  const COLS = 5;
+  const ROWS = 4;
+  let TILE_CONTENT_W = CELL_W * COLS + GAP * (COLS - 1);
+  let TILE_CONTENT_H = CELL_H * ROWS + GAP * (ROWS - 1);
+  let TILE_W = TILE_CONTENT_W + SEAM_GAP;
+  let TILE_H = TILE_CONTENT_H;
+
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('canvas');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxMeta = document.getElementById('lightbox-meta');
+  const lightboxClose = document.getElementById('lightbox-close');
+  const loader = document.getElementById('loader');
+  const loaderLabel = document.getElementById('loader-label');
+  const loaderDirection = document.getElementById('loader-direction');
+  const replayEnterBtn = document.getElementById('replay-enter');
+  const replayExitBtn = document.getElementById('replay-exit');
+
+  // Loading transition — shown on first mount + via the Replay
+  // buttons + when the user clicks a different view-mode chip
+  // (Grid / Stack → exit, Gallery → enter). In the real app the
+  // hold ends when the canvas-ready signal fires (shaders compiled,
+  // first 50 images decoded); here we mock with a 1400 ms hold.
+  const LOADER_HOLD_MS = 1400;
+  function runLoadingTransition(direction = 'enter') {
+    loaderLabel.textContent = direction === 'enter' ? 'Entering Gallery' : 'Exiting Gallery';
+    loaderDirection.textContent = direction === 'enter' ? 'Preparing canvas …' : 'Restoring previous view …';
+    loader.classList.add('is-active');
+    loader.setAttribute('aria-hidden', 'false');
+    setTimeout(() => {
+      loader.classList.remove('is-active');
+      loader.setAttribute('aria-hidden', 'true');
+    }, LOADER_HOLD_MS);
+  }
+  replayEnterBtn.addEventListener('click', () => runLoadingTransition('enter'));
+  replayExitBtn.addEventListener('click', () => runLoadingTransition('exit'));
+
+  // ── Density control: swap cell size + re-anchor pan ─
+  // Cell dimensions map to a target "per row in viewport" — assuming
+  // a ~1400 px wide stage. Values picked so the layout reads as
+  // comfortable / default / dense without the cells getting unusably
+  // small at the dense end.
+  // Density presets — chemistry-metaphor labels in the UI, math here:
+  //   Atom     · 2 per viewport row  → ~640 px per cell (focused)
+  //   Molecule · 4 per viewport row  → ~320 px per cell
+  //   Compound · 8 per viewport row  → ~170 px per cell (default)
+  const DENSITY_PRESETS = {
+    atom:     { w: 640, h: 400 },  // 2 per viewport row
+    molecule: { w: 320, h: 200 },  // 4 per viewport row
+    compound: { w: 170, h: 106 },  // 8 per viewport row (default)
+  };
+  function setDensity(level) {
+    const preset = DENSITY_PRESETS[level] || DENSITY_PRESETS.default;
+    CELL_W = preset.w;
+    CELL_H = preset.h;
+    TILE_CONTENT_W = CELL_W * COLS + GAP * (COLS - 1);
+    TILE_CONTENT_H = CELL_H * ROWS + GAP * (ROWS - 1);
+    TILE_W = TILE_CONTENT_W + SEAM_GAP;
+    TILE_H = TILE_CONTENT_H;
+    document.documentElement.style.setProperty('--cell-w', CELL_W + 'px');
+    document.documentElement.style.setProperty('--cell-h', CELL_H + 'px');
+    applyTransforms();
+  }
+  document.querySelectorAll('#density-buttons button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#density-buttons button').forEach((b) => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      setDensity(btn.dataset.density);
+    });
+  });
+
+  // ── Exit button: triggers exit loading transition ──
+  document.getElementById('exit-gallery').addEventListener('click', () => {
+    runLoadingTransition('exit');
+  });
+
+  // First paint — hold the loader for the same duration so on-arrival
+  // matches what users will see when entering the Gallery for real.
+  setTimeout(() => {
+    loader.classList.remove('is-active');
+    loader.setAttribute('aria-hidden', 'true');
+  }, LOADER_HOLD_MS);
+
+  // ── Build the 9 tiles ──────────────────────────────
+  const tiles = [];
+  for (let t = 0; t < 9; t++) {
+    const tile = document.createElement('div');
+    tile.className = 'gallery-tile';
+
+    // Loop-seam marker on the leading edge, straddling the boundary.
+    const seam = document.createElement('div');
+    seam.className = 'gallery-tile__seam';
+    const seamText = document.createElement('span');
+    seamText.textContent = 'Approaching end · hereafter it loops';
+    seam.appendChild(seamText);
+    tile.appendChild(seam);
+
+    // Cells in an inner grid (centered inside the tile via flex on
+    // the wrapper). The seam gap shows as breathing room on the left.
+    const inner = document.createElement('div');
+    inner.className = 'gallery-tile__inner';
+    items.forEach((item) => {
+      const cell = document.createElement('div');
+      cell.className = 'gallery-cell';
+      cell.dataset.itemId = item.id;
+      const img = document.createElement('img');
+      img.src = item.image;
+      img.loading = 'lazy';
+      img.alt = '';
+      cell.appendChild(img);
+      inner.appendChild(cell);
+    });
+    tile.appendChild(inner);
+
+    canvas.appendChild(tile);
+    tiles.push(tile);
+  }
+
+  // ── Pan state ──────────────────────────────────────
+  const state = {
+    panX: 0,
+    panY: 0,
+    velX: 0,
+    velY: 0,
+    isPointerDown: false,
+    dragMoved: false,
+    startPointerX: 0,
+    startPointerY: 0,
+    startPanX: 0,
+    startPanY: 0,
+  };
+
+  function applyTransforms() {
+    const cx = Math.round(state.panX / TILE_W);
+    const cy = Math.round(state.panY / TILE_H);
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        const idx = j * 3 + i;
+        const tx = (cx + i - 1) * TILE_W;
+        const ty = (cy + j - 1) * TILE_H;
+        tiles[idx].style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      }
+    }
+    canvas.style.transform = `translate3d(${-state.panX}px, ${-state.panY}px, 0)`;
+  }
+
+  function tick() {
+    if (!state.isPointerDown) {
+      if (Math.abs(state.velX) > 0.05 || Math.abs(state.velY) > 0.05) {
+        state.panX += state.velX;
+        state.panY += state.velY;
+        state.velX *= 0.92;
+        state.velY *= 0.92;
+        applyTransforms();
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+  applyTransforms();
+
+  // ── Pointer handlers ───────────────────────────────
+  // Previous draft used setPointerCapture, which rerouted pointerup to
+  // the stage and prevented `click` from synthesising on the cell.
+  // Capture removed. Click handler lives directly on cells.
+  stage.addEventListener('pointerdown', (event) => {
+    state.isPointerDown = true;
+    state.dragMoved = false;
+    state.startPointerX = event.clientX;
+    state.startPointerY = event.clientY;
+    state.startPanX = state.panX;
+    state.startPanY = state.panY;
+    state.velX = 0;
+    state.velY = 0;
+  });
+  stage.addEventListener('pointermove', (event) => {
+    if (!state.isPointerDown) return;
+    const dx = event.clientX - state.startPointerX;
+    const dy = event.clientY - state.startPointerY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      if (!state.dragMoved) {
+        state.dragMoved = true;
+        stage.classList.add('is-dragging');
+      }
+    }
+    if (state.dragMoved) {
+      const prevPanX = state.panX;
+      const prevPanY = state.panY;
+      state.panX = state.startPanX - dx;
+      state.panY = state.startPanY - dy;
+      state.velX = state.panX - prevPanX;
+      state.velY = state.panY - prevPanY;
+      applyTransforms();
+    }
+  });
+  function endDrag() {
+    if (!state.isPointerDown) return;
+    state.isPointerDown = false;
+    stage.classList.remove('is-dragging');
+  }
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('pointerleave', endDrag);
+
+  // Wheel = pan. macOS trackpads send pixel-mode wheel events for
+  // both 2-finger swipes and momentum decay, so a direct
+  // `delta → pan` mapping feels native — the OS handles momentum on
+  // its own by emitting decaying wheel events after the flick.
+  // We don't add velocity from wheel (the inertia tick would then
+  // double-pan during the OS's own decay). Pinch-zoom (`ctrlKey`) is
+  // ignored per the pan-only design.
+  stage.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    if (event.ctrlKey) return; // pinch-zoom gesture; ignore
+    // Kill any pointer-drag inertia so it doesn't fight a wheel input.
+    state.velX = 0;
+    state.velY = 0;
+    state.panX += event.deltaX;
+    state.panY += event.deltaY;
+    applyTransforms();
+  }, { passive: false });
+
+  // Cell click — fires naturally since pointer capture is gone.
+  canvas.addEventListener('click', (event) => {
+    if (state.dragMoved) return;
+    const cell = event.target.closest('.gallery-cell');
+    if (!cell) return;
+    const itemId = cell.dataset.itemId;
+    const item = items.find((it) => it.id === itemId);
+    if (item) flyAndOpen(cell, item);
+  });
+
+  // ── Click → fly-and-open ────────────────────────────
+  function flyAndOpen(cell, item) {
+    cell.classList.add('is-flying');
+    setTimeout(() => cell.classList.remove('is-flying'), 280);
+    lightboxImg.src = item.image;
+    lightboxMeta.textContent = `${item.kind.toUpperCase()} · ${item.id}`;
+    lightbox.classList.add('is-open');
+    lightbox.setAttribute('aria-hidden', 'false');
+  }
+  function closeLightbox() {
+    lightbox.classList.remove('is-open');
+    lightbox.setAttribute('aria-hidden', 'true');
+  }
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeLightbox();
+  });
+</script>
+
+</body>
+</html>
