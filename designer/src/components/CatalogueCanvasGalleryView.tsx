@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getActiveFamilyVariant, type CatalogueFamilyView } from '../lib/catalogue-families';
 
@@ -33,16 +33,18 @@ type Phase = 'streaming' | 'wallpaper';
 interface DensityPreset {
   w: number;
   h: number;
-  cols: number;
 }
 
-// At density C (Compound) the user sees ~8 per row in viewport.
-// First batch of 50 = ~7 rows. Trigger next batch when camera is one
-// viewport away from the bottom edge of currently-loaded items.
+// COLS is locked across all densities — only cell SIZE changes per
+// density (it's effectively a zoom level). Locking the column count
+// gives the wallpaper-phase loop seam a consistent visual proximity
+// to the edge regardless of density: the seam is always "8 cells from
+// the start", whether each cell is huge (Atom) or thumbnail (Compound).
+const COLS = 8;
 const DENSITY_PRESETS: Record<Density, DensityPreset> = {
-  atom:     { w: 640, h: 400, cols: 2 },
-  molecule: { w: 320, h: 200, cols: 4 },
-  compound: { w: 170, h: 106, cols: 8 },
+  atom:     { w: 640, h: 400 },   // ~2 visible per row in a typical viewport
+  molecule: { w: 320, h: 200 },   // ~4 visible per row
+  compound: { w: 170, h: 106 },   // ~8 visible per row
 };
 
 const GAP = 18;
@@ -94,7 +96,6 @@ export function CatalogueCanvasGalleryView({
   const preset = DENSITY_PRESETS[density];
   const cellW = preset.w;
   const cellH = preset.h;
-  const COLS = preset.cols;
 
   // Build the visible items list — first `loadedCount` families that
   // have a usable image url. We filter for url here because a family
@@ -202,6 +203,11 @@ export function CatalogueCanvasGalleryView({
   // Grid is centred at (0, 0). Bottom edge of loaded items is at
   // `gridContentH / 2`. When the camera's bottom-of-viewport approaches
   // that line by less than one viewport height, reveal the next batch.
+  //
+  // `startTransition` marks the state change as low priority — React
+  // keeps pointer / wheel events responsive while the new batch of 50
+  // <img> elements is reconciled in the background. Pan stays smooth;
+  // the newly-arrived cells fade in via the `.is-fresh` animation.
   const maybeLoadMore = useCallback(() => {
     if (phase !== 'streaming') return;
     if (loadedCount >= totalCount) return;
@@ -212,7 +218,9 @@ export function CatalogueCanvasGalleryView({
     const bottomEdge = gridContentH / 2;
     const cameraBottom = panRef.current.panY + viewportH / 2;
     if (cameraBottom > bottomEdge - viewportH) {
-      setLoadedCount((current) => Math.min(current + STREAM_INCREMENT, totalCount));
+      startTransition(() => {
+        setLoadedCount((current) => Math.min(current + STREAM_INCREMENT, totalCount));
+      });
     }
   }, [phase, loadedCount, totalCount, gridContentH]);
 
@@ -431,9 +439,9 @@ export function CatalogueCanvasGalleryView({
           >
             ←
           </button>
-          <div className="canvas-gallery-density" role="radiogroup" aria-label="Cell density">
+          <div className="canvas-gallery-density" role="radiogroup" aria-label="Cell zoom">
             {(['atom', 'molecule', 'compound'] as const).map((level) => {
-              const perRow = DENSITY_PRESETS[level].cols;
+              const visibleApprox = level === 'atom' ? 2 : level === 'molecule' ? 4 : 8;
               const labelName = `${level[0].toUpperCase()}${level.slice(1)}`;
               return (
                 <button
@@ -442,8 +450,8 @@ export function CatalogueCanvasGalleryView({
                   role="radio"
                   aria-checked={density === level}
                   className={density === level ? 'is-active' : ''}
-                  title={`${labelName} · ${perRow} per row`}
-                  aria-label={`${labelName} — ${perRow} per row`}
+                  title={`${labelName} · ~${visibleApprox} visible per row`}
+                  aria-label={`${labelName} — about ${visibleApprox} visible per row`}
                   onClick={() => setDensity(level)}
                 >
                   {level[0].toUpperCase()}

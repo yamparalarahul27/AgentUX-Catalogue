@@ -75,6 +75,10 @@
   justify-content: center;
   cursor: pointer;
   transition: transform 0.18s ease;
+  // `contain: layout style` isolates each cell's layout — when a new
+  // batch of 50 cells is appended below, the existing cells above
+  // don't reflow. Keeps pan smooth while new cells decode.
+  contain: layout style;
 }
 .canvas-gallery-cell:hover {
   transform: scale(1.03);
