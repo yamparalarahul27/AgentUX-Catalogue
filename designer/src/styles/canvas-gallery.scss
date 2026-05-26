@@ -17,11 +17,14 @@
 }
 
 // ── Stage + canvas ────────────────────────────────────
+// Fixed-positioned so the canvas always fills the viewport regardless
+// of the ancestor flex chain. Sits below the floating header (z-index
+// 70 under `.is-canvas-gallery-active`) so logo / tabs / pill / cog
+// stay on top. Other surrounding chrome is hidden via the page class.
 .canvas-gallery-stage {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
   overflow: hidden;
   cursor: grab;
   background:
