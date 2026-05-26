@@ -5,6 +5,7 @@ import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import type { ScreenshotNode } from '../types';
+import { CatalogueCanvasGalleryView } from './CatalogueCanvasGalleryView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
@@ -74,6 +75,11 @@ interface CatalogueContentProps {
   // Empty-state escape hatch — clears every filter + search + resets
   // sort so the user lands on the unfiltered "Latest" view.
   onClearFilters: () => void;
+  // When true, the Gallery view renders the new Canvas (pannable
+  // wallpaper) component instead of the DOM-based CatalogueGalleryView.
+  // Toggle lives in the account menu; default on.
+  canvasGalleryEnabled?: boolean;
+  onExitCanvasGallery?: () => void;
 }
 
 export function CatalogueContent({
@@ -119,6 +125,8 @@ export function CatalogueContent({
   canDeleteFamily,
   canEditFamily,
   onClearFilters,
+  canvasGalleryEnabled,
+  onExitCanvasGallery,
 }: CatalogueContentProps) {
   const hasActiveFilters = Boolean(
     searchQuery ||
@@ -170,6 +178,16 @@ export function CatalogueContent({
   }
 
   if (viewMode === 'gallery') {
+    if (canvasGalleryEnabled && onExitCanvasGallery) {
+      return (
+        <CatalogueCanvasGalleryView
+          families={filteredFamilies}
+          activeVariantKeys={activeVariantKeys}
+          onSelectFamily={onOpenPreview}
+          onExit={onExitCanvasGallery}
+        />
+      );
+    }
     return (
       <CatalogueGalleryView
         activeVariantKeys={activeVariantKeys}

@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import type { WebPreset } from '../types';
 import { useBookmarks } from '../hooks/use-bookmarks';
+import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
 import { useIsAdmin } from '../lib/auth-passcode';
 import { useCapability, useMyRole } from '../hooks/use-role-capabilities';
 import { MARKETING_BUCKET_GROUP } from '../lib/marketing-bucket';
@@ -395,6 +396,11 @@ export function Catalogue({
   const [bulkGroupValue, setBulkGroupValue] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [viewMode, setViewMode] = useState<CatalogueViewMode>(defaultViewMode);
+  const [canvasGalleryEnabled] = useCanvasGalleryEnabled();
+  // Canvas-gallery is active only when the user is in Gallery view AND
+  // the personal "Canvas view" setting is on. Drives the chrome class
+  // that hides toolbar / dock / sparkles + floats the header items.
+  const canvasGalleryActive = viewMode === 'gallery' && canvasGalleryEnabled;
   const [gridDensity, setGridDensity] = useState<GridDensity>(defaultGridDensity);
 
   // Flow presentation (dropdown vs strip) — owned here so both the
@@ -981,7 +987,7 @@ export function Catalogue({
     });
   }
   return (
-    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}`}>
+    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}${canvasGalleryActive ? ' is-canvas-gallery-active' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
         canAdmin={canAdmin}
@@ -1246,6 +1252,8 @@ export function Catalogue({
                     onUpdateVariantDetails={handleGuestAwareUpdateVariantDetails}
                     userEmail={user.email || 'Designer'}
                     webPresets={webPresets}
+                    canvasGalleryEnabled={canvasGalleryEnabled}
+                    onExitCanvasGallery={() => setViewMode('grid')}
                     bookmarkedIds={bookmarks.bookmarkedIds}
                     onToggleBookmark={(screenshotId) => {
                       if (!user.email) {
