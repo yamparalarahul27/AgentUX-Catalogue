@@ -494,6 +494,20 @@ export function Catalogue({
     () => Object.fromEntries(allFamilies.map((family) => [family.id, family])),
     [allFamilies],
   );
+  // Parallel family map built from the FULL catalogue (not the
+  // filter-scoped subset). The lightbox preview uses this so that
+  // every variant of the previewed family is available — without
+  // this, a screenshot opened from the search modal (which searches
+  // full scope) may resolve to a family whose loaded variants don't
+  // include the specific one the user clicked, falling back to
+  // whichever variant happens to be `variants[0]`.
+  const fullScopeFamilyById = useMemo(
+    () => Object.fromEntries(
+      buildCatalogueFamilies(fullScopeScreenshots, scopedScreenFamilies, presetByKey)
+        .map((family) => [family.id, family]),
+    ),
+    [fullScopeScreenshots, scopedScreenFamilies, presetByKey],
+  );
   const screenshotIdToFamilyId = useMemo(() => {
     const map = new Map<string, string>();
     for (const family of allFamilies) {
@@ -524,7 +538,13 @@ export function Catalogue({
     () => filteredFamilies.filter((family) => selected.has(family.id)).length,
     [filteredFamilies, selected],
   );
-  const previewFamily = previewFamilyId ? familyById[previewFamilyId] ?? null : null;
+  // Prefer the full-scope family for the lightbox so every variant is
+  // present (search-result clicks can target screenshots outside the
+  // current filter or pagination window). Falls back to the scoped
+  // map if for some reason the full scope hasn't hydrated yet.
+  const previewFamily = previewFamilyId
+    ? (fullScopeFamilyById[previewFamilyId] ?? familyById[previewFamilyId] ?? null)
+    : null;
   const {
     handleAnnotationStateChange,
     handleChangeFamilyGroup,
