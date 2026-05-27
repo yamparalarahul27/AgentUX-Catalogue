@@ -3,6 +3,7 @@ import { ChevronRight, Plus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatRelative } from '../lib/catalogue-relative-time';
 import { useLinkMetadata, type LinkMetadata } from '../hooks/use-link-metadata';
+import { DotLoader } from './DotLoader';
 
 interface LinkReference {
   id: string;
@@ -297,8 +298,8 @@ export function CatalogueLinksSection({
           onClick={() => void addLink()}
           disabled={savingLink}
         >
-          <Plus size={14} aria-hidden="true" />
-          {savingLink ? 'Saving...' : 'Add link'}
+          {savingLink ? <DotLoader size="sm" ariaLabel="Saving" /> : <Plus size={14} aria-hidden="true" />}
+          Add link
         </button>
       </div>
       {linkError && <p className="catalogue-links__error">{linkError}</p>}

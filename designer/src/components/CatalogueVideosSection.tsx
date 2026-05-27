@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Minus, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
+import { DotLoader } from './DotLoader';
 
 interface ReferenceVideo {
   id: string;
@@ -804,7 +805,8 @@ export function CatalogueVideosSection({
             onClick={() => void addXPost()}
             disabled={savingXPost}
           >
-            {savingXPost ? 'Saving...' : 'Add X Post'}
+            {savingXPost && <DotLoader size="sm" ariaLabel="Saving" />}
+            Add X Post
           </button>
         </div>
         {xPostError && <p className="catalogue-videos__error">{xPostError}</p>}
@@ -1163,7 +1165,8 @@ export function CatalogueVideosSection({
                   onClick={() => void addComment()}
                   disabled={!commentDraft.trim() || savingComment}
                 >
-                  {savingComment ? 'Saving...' : 'Save'}
+                  {savingComment && <DotLoader size="sm" ariaLabel="Saving" />}
+                  Save
                 </button>
               </div>
             </aside>

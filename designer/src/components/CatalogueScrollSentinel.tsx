@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 
+import { DotLoader } from './DotLoader';
+
 interface CatalogueScrollSentinelProps {
   hasMore: boolean;
   loadingMore: boolean;
@@ -54,7 +56,7 @@ export function CatalogueScrollSentinel({
     <div className="catalogue-scroll-sentinel" aria-hidden="true" ref={sentinelRef}>
       {loadingMore && (
         <div className="catalogue-scroll-sentinel__spinner">
-          <div className="loading-spinner" />
+          <DotLoader size="md" ariaLabel="Loading more" />
           <span>Loading more…</span>
         </div>
       )}

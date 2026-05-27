@@ -7,6 +7,7 @@ import type { MobileOs, WebPreset } from '../types';
 import { CatalogueGalleryFeedbackPanel } from './CatalogueGalleryFeedbackPanel';
 import { CatalogueGalleryInlineEditor, type CatalogueGalleryInlineDraft } from './CatalogueGalleryInlineEditor';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { DotLoader } from './DotLoader';
 import { EditableTitle } from './EditableTitle';
 
 interface CatalogueGalleryViewProps {
@@ -642,7 +643,8 @@ export function CatalogueGalleryView({
                 onClick={() => void saveInlineEdit()}
                 disabled={!canSaveInline}
               >
-                {isSavingInline ? 'Saving...' : 'Save'}
+                {isSavingInline && <DotLoader size="sm" ariaLabel="Saving" />}
+                Save
               </button>
               <button
                 type="button"

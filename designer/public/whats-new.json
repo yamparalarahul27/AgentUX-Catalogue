@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-05-27-echo-ring-loader",
+    "date": "May 27, 2026",
+    "title": "New loading indicator across buttons + spinners",
+    "bullets": [
+      { "kind": "improved", "text": "Loading states now show an Echo Ring — concentric diamond ripple — in place of the old ring spinner and the \"Saving...\" text. Save buttons keep their label, the loader just appears beside it" }
+    ]
+  },
+  {
     "id": "2026-05-27-mobile-viewport-fix",
     "date": "May 27, 2026",
     "title": "Mobile viewport fits properly now",
