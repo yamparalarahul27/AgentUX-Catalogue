@@ -28,10 +28,21 @@ const SIZE_PX: Record<DotLoaderSize, number> = {
   lg: 32,
 };
 
+// 5×5 grid math: matrixSpan = dotSize·5 + gap·4. The loader's default
+// dotSize=5 wants a 29px wrapper minimum — at sm/md our wrapper is
+// smaller, so the dots overflow and clip to a rectangle. Pair each
+// preset with a dotSize that keeps the grid inside the wrapper.
+const DOT_PX: Record<DotLoaderSize, number> = {
+  sm: 2,
+  md: 3,
+  lg: 4,
+};
+
 export function DotLoader({ size = 'md', ariaLabel = 'Loading', className }: DotLoaderProps) {
   return (
     <DotmSquare11
       size={SIZE_PX[size]}
+      dotSize={DOT_PX[size]}
       ariaLabel={ariaLabel}
       className={className}
       color="currentColor"
