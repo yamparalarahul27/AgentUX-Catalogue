@@ -478,7 +478,7 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  height: 100dvh;
   gap: 16px;
   color: $text-muted;
 }
@@ -503,7 +503,7 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 20px;
   overflow: hidden; // contain the fixed-positioned bokeh layer
 }
@@ -657,7 +657,7 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
 // ---- Project List ----
 
 .project-list-page {
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .project-list-header {
@@ -747,7 +747,7 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
   // Fill the available vertical space so the empty state reads as a
   // full surface, not a centred paragraph. calc accounts for header
   // chrome so the gradient meets the viewport floor without overflow.
-  min-height: calc(100vh - 160px);
+  min-height: calc(100dvh - 160px);
   border-radius: 16px;
   // Subtle indigo glow anchored at the bottom — uses the app's
   // $accent (#6366f1). Matches the rest of the indigo language

@@ -13,7 +13,7 @@
 }
 
 .catalogue-upload-modal {
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
   overflow-y: auto;
   margin: 0 auto;
 }
@@ -87,7 +87,7 @@
 
 .catalogue-family-detail-modal {
   width: min(760px, 100%);
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
   overflow: auto;
   padding: 24px;
   border-radius: 18px;

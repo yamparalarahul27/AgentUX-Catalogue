@@ -343,7 +343,7 @@
 
 .catalogue-family-preview__dialog {
   width: min(1080px, 100%);
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid #27272a;
@@ -388,7 +388,7 @@
 .catalogue-family-preview__body {
   padding: 20px;
   overflow: auto;
-  max-height: calc(100vh - 150px);
+  max-height: calc(100dvh - 150px);
 
   img {
     display: block;
@@ -426,7 +426,7 @@
 
 .catalogue-settings-modal {
   width: min(760px, 100%);
-  max-height: calc(100vh - 64px);
+  max-height: calc(100dvh - 64px);
   overflow: auto;
   display: flex;
   flex-direction: column;

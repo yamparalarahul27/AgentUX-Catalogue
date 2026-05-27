@@ -3,7 +3,7 @@
 .canvas-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh;
 }
 
 .canvas-container {
@@ -462,7 +462,7 @@
 // ---- Mobile Flow View ----
 
 .mobile-flow {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: $bg;
 }
 

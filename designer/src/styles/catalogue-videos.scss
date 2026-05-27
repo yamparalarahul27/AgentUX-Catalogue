@@ -593,7 +593,7 @@
 
 .catalogue-videos-preview__modal {
   width: min(1240px, 100%);
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -611,7 +611,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
   background: #050507;
 }
 
@@ -621,7 +621,7 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: min(760px, calc(100vh - 48px));
+  min-height: min(760px, calc(100dvh - 48px));
   border: none;
   background: #050507;
   padding: 16px;
@@ -709,7 +709,7 @@
   // column stretch and left a big empty dark area below the
   // composer. With max-height + the comments-list's overflow-y, the
   // column's interior scrolls and the composer stays pinned.
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   background: #121217;
 }
@@ -970,9 +970,9 @@
   }
 
   .catalogue-videos-preview__modal {
-    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(220px, 42vh) minmax(0, 1fr);
+    grid-template-rows: minmax(220px, 42dvh) minmax(0, 1fr);
   }
 
   .catalogue-videos-preview__comments {
