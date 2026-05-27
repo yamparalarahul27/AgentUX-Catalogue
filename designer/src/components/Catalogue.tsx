@@ -1239,6 +1239,29 @@ export function Catalogue({
                 />
               )}
 
+              {searchQuery.trim().length > 0 && (
+                <div className="catalogue-search-banner" role="region" aria-label="Search results">
+                  <div className="catalogue-search-banner__title">
+                    <h2>
+                      Search results for <span className="catalogue-search-banner__query">{searchQuery}</span>
+                    </h2>
+                    <span className="catalogue-search-banner__count">
+                      {filteredFamilies.length} {filteredFamilies.length === 1 ? 'match' : 'matches'} in catalogue
+                    </span>
+                  </div>
+                  <div className="catalogue-search-banner__hint">
+                    Press <kbd>/</kbd> to refine · <kbd>Esc</kbd>
+                    <button
+                      type="button"
+                      className="catalogue-search-banner__clear"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      or clear search
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="catalogue-body-layout">
                 <div className="catalogue-body-main">
                   <CatalogueContent
@@ -1566,6 +1589,13 @@ export function Catalogue({
           upload.updateActiveVariant(familyId, getVariantKey(screenshot));
           setPreviewScreenshotHint(screenshot.id);
           setPreviewFamilyId(familyId);
+        }}
+        onCommitQuery={(committed) => {
+          // Push the search into the catalogue's actual filter
+          // pipeline so the grid scopes to results + a "Search: <q>"
+          // pill appears in the toolbar. Skips other filters; this
+          // is purely additive to the existing chip state.
+          setSearchQuery(committed);
         }}
       />
     </div>

@@ -7,7 +7,11 @@
 import { CATALOGUE_FLOW_LABEL_KEY } from './catalogue-families';
 import type { ScreenshotNode } from '../types';
 
-export const SEARCH_PREVIEW_PER_CATEGORY = 5;
+// Preview cap per bucket inside the search modal. Tight so the modal
+// stays a glanceable jump-to-result view; users hitting Enter (or
+// the "View all" CTA) commit the query into the catalogue scope to
+// see every match in the grid.
+export const SEARCH_PREVIEW_PER_CATEGORY = 3;
 
 export type SearchResultType = 'group' | 'flow' | 'screenshot';
 

@@ -348,6 +348,62 @@
   flex-shrink: 0;
 }
 
+// Commit bar shown when results exist — clicking it (or pressing
+// Enter with no manual selection) closes the modal and scopes the
+// catalogue to the current query.
+.catalogue-search-modal__commit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 0;
+  border-top: 1px solid #27272a;
+  background: rgba(99, 102, 241, 0.07);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: background 0.12s ease;
+
+  &:hover { background: rgba(99, 102, 241, 0.13); }
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: -2px;
+  }
+}
+.catalogue-search-modal__commit-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 500;
+}
+.catalogue-search-modal__commit-arrow {
+  font-size: 12px;
+  color: #a5b4fc;
+}
+.catalogue-search-modal__commit-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #71717a;
+  font-size: 11.5px;
+
+  kbd {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid #2a2a31;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #d4d4d8;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
 .catalogue-search-modal__footer {
   display: flex;
   align-items: center;
@@ -479,4 +535,71 @@
     border-radius: 0;
     border: none;
   }
+}
+
+// ── Catalogue search-results banner ──────────────────────────
+// Sits above the catalogue grid when `searchQuery` is set, telling
+// the user what they're viewing + how to escape it. Indigo wash
+// reuses the visual language of the search highlight.
+.catalogue-search-banner {
+  padding: 14px 0 10px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.18);
+  background: rgba(99, 102, 241, 0.04);
+  margin: 0 0 12px;
+}
+.catalogue-search-banner__title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+
+  h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #e4e4e7;
+  }
+}
+.catalogue-search-banner__query {
+  background: rgba(99, 102, 241, 0.28);
+  color: #eef2ff;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.catalogue-search-banner__count {
+  color: #9499a3;
+  font-size: 12.5px;
+}
+.catalogue-search-banner__hint {
+  color: #9499a3;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  kbd {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #d4d4d8;
+  }
+}
+.catalogue-search-banner__clear {
+  background: transparent;
+  border: 0;
+  color: #c7d2fe;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover { color: #e0e7ff; }
 }

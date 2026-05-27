@@ -28,6 +28,12 @@ interface CatalogueSearchModalProps {
   onSelectGroup: (group: string) => void;
   onSelectFlow: (group: string, flow: string) => void;
   onSelectScreenshot: (screenshot: ScreenshotNode) => void;
+  // Commit the query into the catalogue scope — modal closes and the
+  // catalogue grid scopes itself to the search query. Triggered by
+  // the "View all in catalogue" CTA, Cmd/Ctrl+Enter, or plain Enter
+  // when the user hasn't manually picked a result (no hover / no
+  // arrow nav).
+  onCommitQuery: (query: string) => void;
 }
 
 // Build a flat ordered list of results so keyboard nav (↑↓) can move
@@ -66,9 +72,14 @@ export function CatalogueSearchModal({
   onSelectGroup,
   onSelectFlow,
   onSelectScreenshot,
+  onCommitQuery,
 }: CatalogueSearchModalProps) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  // Tracks whether the user has manually picked a result (hover or
+  // arrow key). Plain Enter without interaction commits the query;
+  // Enter after interaction jumps to the specific result.
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [recents, setRecents] = useState<RecentEntry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -77,6 +88,7 @@ export function CatalogueSearchModal({
     if (!isOpen) return;
     setQuery('');
     setActiveIndex(0);
+    setHasInteracted(false);
     setRecents(loadRecents());
     // Defer focus so the input is in the DOM by the time we call focus.
     requestAnimationFrame(() => inputRef.current?.focus());
@@ -91,9 +103,13 @@ export function CatalogueSearchModal({
     [results],
   );
 
-  // Reset highlight when query changes so the first new result is selected.
+  // Reset highlight when query changes so the first new result is
+  // selected. Also reset the interaction flag — a fresh query string
+  // means the user is back to "I want to commit this," not "I want
+  // to jump to that specific previously-selected result."
   useEffect(() => {
     setActiveIndex(0);
+    setHasInteracted(false);
   }, [query]);
 
   // Scroll active row into view as it moves.
@@ -121,21 +137,45 @@ export function CatalogueSearchModal({
     inputRef.current?.focus();
   }
 
+  function commitQuery() {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    pushRecent(trimmed);
+    onCommitQuery(trimmed);
+    onClose();
+  }
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Escape') {
       event.preventDefault();
       onClose();
       return;
     }
-    if (flat.length === 0) return;
     if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+      if (flat.length === 0) return;
       event.preventDefault();
+      setHasInteracted(true);
       setActiveIndex((previous) => (previous + 1) % flat.length);
     } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      if (flat.length === 0) return;
       event.preventDefault();
+      setHasInteracted(true);
       setActiveIndex((previous) => (previous - 1 + flat.length) % flat.length);
     } else if (event.key === 'Enter') {
       event.preventDefault();
+      // Cmd/Ctrl+Enter always commits; explicit "see all results" shortcut.
+      if (event.metaKey || event.ctrlKey) {
+        commitQuery();
+        return;
+      }
+      // Plain Enter with no manual selection → commit the query so
+      // the user sees every match in the catalogue grid. Otherwise
+      // jump straight to the picked result (existing behaviour).
+      if (!hasInteracted && query.trim().length > 0) {
+        commitQuery();
+        return;
+      }
+      if (flat.length === 0) return;
       const result = flat[activeIndex];
       if (result) selectResult(result);
     }
@@ -229,7 +269,7 @@ export function CatalogueSearchModal({
                           type="button"
                           data-result-index={flatIndex}
                           className={`catalogue-search-modal__card${activeIndex === flatIndex ? ' is-active' : ''}`}
-                          onMouseEnter={() => setActiveIndex(flatIndex)}
+                          onMouseEnter={() => { setActiveIndex(flatIndex); setHasInteracted(true); }}
                           onClick={() => selectResult(result)}
                         >
                           <span className="catalogue-search-modal__card-thumb">
@@ -279,7 +319,7 @@ export function CatalogueSearchModal({
                         type="button"
                         data-result-index={flatIndex}
                         className={`catalogue-search-modal__row${activeIndex === flatIndex ? ' is-active' : ''}`}
-                        onMouseEnter={() => setActiveIndex(flatIndex)}
+                        onMouseEnter={() => { setActiveIndex(flatIndex); setHasInteracted(true); }}
                         onClick={() => selectResult(result)}
                       >
                         <span className="catalogue-search-modal__row-icon catalogue-search-modal__row-icon--group">
@@ -312,7 +352,7 @@ export function CatalogueSearchModal({
                         type="button"
                         data-result-index={flatIndex}
                         className={`catalogue-search-modal__row${activeIndex === flatIndex ? ' is-active' : ''}`}
-                        onMouseEnter={() => setActiveIndex(flatIndex)}
+                        onMouseEnter={() => { setActiveIndex(flatIndex); setHasInteracted(true); }}
                         onClick={() => selectResult(result)}
                       >
                         <span className="catalogue-search-modal__row-icon">
@@ -330,6 +370,22 @@ export function CatalogueSearchModal({
             </>
           )}
         </div>
+
+        {hasQuery && hasResults && (
+          <button
+            type="button"
+            className="catalogue-search-modal__commit"
+            onClick={commitQuery}
+          >
+            <span className="catalogue-search-modal__commit-label">
+              View all {results.groupsTotal + results.flowsTotal + results.screenshotsTotal} results in catalogue
+              <span className="catalogue-search-modal__commit-arrow" aria-hidden="true">↗</span>
+            </span>
+            <span className="catalogue-search-modal__commit-hint">
+              or press <kbd><CornerDownLeft size={11} aria-hidden="true" /></kbd>
+            </span>
+          </button>
+        )}
 
         <div className="catalogue-search-modal__footer">
           <span className="catalogue-search-modal__footer-group">
