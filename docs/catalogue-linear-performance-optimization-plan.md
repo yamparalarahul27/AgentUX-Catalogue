@@ -1,7 +1,7 @@
 # Catalogue - Linear-Style Performance Optimization Plan
 
-**Status:** Proposed
-**Scope:** `/designer/catalogue`, lightbox feedback, crop/reupload, search, initial load, bundle/assets, perceived-speed UX
+**Status:** Proposed · *addendum added 2026-05-27 — see §§2.7-2.9 for new findings after PRs #160-176*
+**Scope:** `/designer/catalogue`, lightbox feedback, crop/reupload, search, initial load, bundle/assets, perceived-speed UX, memory hygiene, auth back-navigation
 **PR intent:** Documentation only. No runtime code, migrations, package changes, or UI changes in this PR.
 **Reference:** [How is Linear so fast? A technical breakdown](https://performance.dev/how-is-linear-so-fast-a-technical-breakdown)
 
@@ -191,6 +191,154 @@ Relevant files:
 - `designer/src/components/CatalogueHeader.tsx`
 - `designer/src/pages/SharePage.tsx`
 - `designer/src/components/ThumbHashImage.tsx`
+
+### 2.7 Memory-leakage hotspots (addendum 2026-05-27)
+
+Findings from a fresh audit after PRs #160-176. The original doc only
+called out object-URL leaks in the crop flow; the new code added
+several longer-lived holders that warrant the same scrutiny.
+
+#### 2.7.1 `requestAnimationFrame` loops that never self-cancel
+
+- **`CatalogueCanvasGalleryView.tsx`** (lines ~280-294 on main, ~310-325
+  on the masonry branch). The inertia/pan tick re-schedules itself on
+  every frame regardless of whether `velX`/`velY` have decayed to zero.
+  An idle Canvas tab still burns ~60 fps forever; battery + CPU drain
+  is real, particularly on mobile.
+  - Fix: only re-schedule when `state.isPointerDown || |velX|+|velY| > 0.05`;
+    cancel + null the handle when velocity is exactly zero; re-arm on
+    `onPointerDown` / `onWheel`.
+  - Already filed in [`parked_canvas_gallery_perf_fixes.md`](../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_canvas_gallery_perf_fixes.md);
+    restated here so it's tracked inside the perf program.
+
+- **`loaders/dotmatrix-hooks.ts`** (the Echo Ring loader, PR #176). The
+  `useDotMatrixPhases` hook starts a rAF loop on mount that calls
+  `setPhase(...)` every frame for the life of the loader, triggering
+  a React render per frame. The visible animation is driven by pure
+  CSS keyframes (`.dmx-ripple-echo`) — the React `phase` value doesn't
+  appear to be read by the renderer. Looks like dead heat. Confirm
+  and remove, or gate behind a `phase`-consumer prop.
+
+#### 2.7.2 Module-level caches that grow forever
+
+- **`canvas-masonry.ts` `aspectCache`** (PR #177 branch, parked). A
+  module-level `Map<string, number>` keyed by image URL, populated by
+  `probeImageAspect()` and never evicted. Each session monotonically
+  grows by every screenshot URL the user has scrolled past. Mitigation:
+  cap at N entries (LRU) or evict by route change / session age.
+
+- **`use-catalogue-full-scope.ts` + search index.** Already covered by
+  §2.4-2.5 (full-scope hydration) and the Risk Register row "Search
+  index memory grows" (§12). No change — flagged here so the items
+  read together.
+
+#### 2.7.3 Long-lived event listeners
+
+Audit pass (`grep addEventListener|removeEventListener`) shows every
+`window` / `document` listener has a paired `return () => remove…` in
+its `useEffect`. No leaks found in this category as of 2026-05-27.
+This row stays in the doc as a reminder to keep checking — listener
+leaks are a classic React regression vector when an effect grows a
+new branch.
+
+#### 2.7.4 `new Image()` in crop + preload paths
+
+- `lib/screenshot-crop.ts` and `lib/catalogue-image.ts` create `Image`
+  objects to read natural dimensions. Once the load handler fires,
+  the closure unroots and the `Image` can be GC'd. No retention.
+- The same pattern in `canvas-masonry.ts`'s `probeImageAspect` is
+  also safe in isolation — but its result is stored in the unbounded
+  cache (§2.7.2).
+
+### 2.8 Sign-in back-navigation can flash the login screen
+
+Reported behaviour: *"after sign-in, going back should not log out."*
+
+Root cause analysis from the current code:
+
+- `PasscodeLogin` is rendered conditionally inside `CatalogueApp` based
+  on `useAuth().user`. There is no separate `/login` route — the URL
+  stays at `/designer/` throughout.
+- `useAuth` (`lib/useAuth.ts`) sets `loading: true` until
+  `getSession()` resolves on every mount; while loading it returns
+  `null`, which `CatalogueApp` renders as `null` (blank). After
+  resolution it either renders `<PasscodeLogin />` or the authenticated
+  tree.
+- `redeemPasscode()` calls `supabase.auth.setSession(...)`. Supabase
+  fires `onAuthStateChange`, `user` flips, `CatalogueApp` re-renders
+  the authenticated tree. **No `history.pushState` happens during this
+  transition.**
+
+Two failure modes follow:
+
+1. **Sign-in then browser-back leaves the app.** Because login didn't
+   push history, the back stack still points at whatever the user
+   came from before `/designer/`. Pressing back leaves the site
+   entirely; coming forward, the persisted localStorage session is
+   still there so they're technically logged in, but the round-trip
+   feels broken.
+
+2. **Back from an in-app route re-mounts `CatalogueApp` and briefly
+   shows the login screen during the `getSession()` race.** Path:
+   `/designer/` → sign in → `/g/<key>` → back. On the back step the
+   tree unmounts and re-mounts, `useAuth` starts `loading: true`,
+   renders `null`, then resolves to the user from localStorage. If
+   `loading: true` is rendered as `null` (current behaviour) the user
+   sees a blank frame — but a slow `getSession()` (cold network) can
+   stretch this to a visible "logged out" flash before the user is
+   recognised again.
+
+Fixes worth scoping, smallest first:
+
+- **(a) Push history on successful login.** In
+  `PasscodeLogin.handleSubmit` after `redeemPasscode` succeeds:
+  `window.history.pushState({}, '', window.location.href)`. Costs
+  nothing; keeps back inside the app instead of leaving it.
+- **(b) Don't render login during the `getSession()` race.** While
+  `useAuth().loading` is true, render a stable "shell" (or a brief
+  loader) instead of `<PasscodeLogin />`. Removes the flash.
+- **(c) Persist last-known-user marker in `localStorage`.** When
+  `useAuth` mounts, check the marker — if it says "signed in" and
+  `getSession()` is still in-flight, render the authenticated shell
+  optimistically and let `onAuthStateChange` correct it if the session
+  has actually expired. Mirrors Linear's "render from cache first,
+  reconcile after" pattern.
+- **(d) Get repro steps from the user.** "Logged out on back" could
+  also mean: token expired between visits, RLS rejected a query and
+  the app surfaced it as a logout, etc. Confirm the exact navigation
+  sequence before changing more than (a) + (b).
+
+### 2.9 New bundle weight contributors since 2026-05-24
+
+§2.6 captured the big rocks (Tegaki, logo SVG, eager imports). A
+re-audit of the built output as of 2026-05-27 adds three more:
+
+| Asset | Size (uncompressed) | Notes |
+| --- | ---: | --- |
+| `catalogue-*.js` | **~2.26 MB** | Single chunk; Rollup warns at 500 KB. PRs since then added Canvas Gallery + Echo Ring + typing keycap. |
+| `agentux-logo.svg` | 1.13 MB | Already flagged in §2.6. |
+| Tegaki TTFs (5 fonts) | 1.6 MB total | Already flagged; PR #107 added 3 of these (Kannada / Malayalam / Telugu). |
+| `floppy.png` | 553 KB | Save micro-animation (PR #157). Decorative; only renders during save. |
+| `trash-full.png` + `trash-empty.png` | 511 KB | Delete micro-animation (PR #157-158). Decorative; only renders during delete. |
+| `hb-*.wasm` (HarfBuzz) | 397 KB | Already covered by §2.6 (Tegaki dependency). |
+| `dotmatrix-loader.css` | 24 KB | Echo Ring rules (PR #176). Folded into the 310 KB CSS bundle. Most rules cover pattern variants that the current `DotmSquare11` doesn't use. |
+
+The save/trash PNGs are >1 MB of decorative animation assets in the
+first paint chunk. They should be:
+
+- Lazy-loaded via `import.meta.glob` or dynamic `import()` so they
+  only download on first save/delete; or
+- Replaced with SVG/Lottie/CSS if a smaller representation conveys
+  the same micro-interaction.
+
+The Echo Ring CSS can be tree-shaken: keep only `.dmx-root`,
+`.dmx-grid`, `.dmx-dot`, the `.dmx-ripple-echo` keyframe + class,
+and the `reduced-motion` overrides. Everything else is unused by
+the wrapper component. Estimated drop: ~18 KB.
+
+None of these change the phase ordering in §1. They slot into **P4
+(bundle/assets/images)** for the asset items and a new **hygiene
+pass** alongside P0 for the rAF / dead-React-state items.
 
 ---
 
@@ -1711,6 +1859,10 @@ Success:
 | RPC bypasses RLS accidentally | Backend | Use `SECURITY INVOKER` where possible and review policies before deploy |
 | Bundle splitting worsens UX with blank fallbacks | Lazy loading | Keep shell in first chunk and prefetch on hover/intent |
 | Search index memory grows | Search | Store compact fields, cap result size, fall back to server search if needed |
+| rAF loops never self-cancel (idle CPU/battery drain) | Canvas Gallery, Echo Ring | Gate re-schedule on "still doing work"; cancel + null handle when idle (§2.7.1) |
+| Aspect / probe cache grows unbounded | Canvas masonry | Cap with LRU or evict by session age (§2.7.2) |
+| Login flash during `getSession()` race | Auth gate | Render stable shell while `useAuth.loading` is true; optionally render last-known-user optimistically (§2.8) |
+| Back-button leaves the app after first sign-in | Auth | Push history once on successful login so back stays in-app (§2.8) |
 
 ---
 
