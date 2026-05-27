@@ -19,7 +19,7 @@ import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
-import { buildCatalogueFamilies, getActiveFamilyVariant, getScreenshotFamilyId, getVariantKey } from '../lib/catalogue-families';
+import { buildCatalogueFamilies, getActiveFamilyVariant } from '../lib/catalogue-families';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -1249,16 +1249,6 @@ export function Catalogue({
                       {filteredFamilies.length} {filteredFamilies.length === 1 ? 'match' : 'matches'} in catalogue
                     </span>
                   </div>
-                  <div className="catalogue-search-banner__hint">
-                    Press <kbd>/</kbd> to refine · <kbd>Esc</kbd>
-                    <button
-                      type="button"
-                      className="catalogue-search-banner__clear"
-                      onClick={() => setSearchQuery('')}
-                    >
-                      or clear search
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -1575,20 +1565,6 @@ export function Catalogue({
           setFilterGroup([group]);
           setFilterFlow([flow]);
           setFilterPlatform(null);
-        }}
-        onSelectScreenshot={(screenshot) => {
-          // Open the lightbox directly on the chosen screenshot's
-          // family. The user picked a specific image — show it, don't
-          // make them hunt for it in a filtered list. Pin the active
-          // variant to the clicked screenshot's variant key so the
-          // right tab is selected, and pass the screenshot ID as a
-          // tie-breaker hint for families that have multiple variants
-          // sharing the same key (which the key-only lookup can't
-          // disambiguate).
-          const familyId = getScreenshotFamilyId(screenshot);
-          upload.updateActiveVariant(familyId, getVariantKey(screenshot));
-          setPreviewScreenshotHint(screenshot.id);
-          setPreviewFamilyId(familyId);
         }}
         onCommitQuery={(committed) => {
           // Push the search into the catalogue's actual filter

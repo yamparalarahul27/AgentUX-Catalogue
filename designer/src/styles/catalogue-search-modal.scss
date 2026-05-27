@@ -543,16 +543,13 @@
 
 // ── Catalogue search-results banner ──────────────────────────
 // Sits above the catalogue grid when `searchQuery` is set, telling
-// the user what they're viewing + how to escape it. Indigo wash
-// reuses the visual language of the search highlight.
-//
-// Layout: title block on the left, hint block on the right, with
-// space-between so the keyboard hints sit at the trailing edge of
-// the toolbar/body width.
+// the user what they're viewing. The active query also lives as a
+// pill in the toolbar; clicking it clears, so the banner doesn't
+// need its own clear button.
 .catalogue-search-banner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
   padding: 12px 0;
@@ -563,9 +560,11 @@
 .catalogue-search-banner__title {
   display: inline-flex;
   align-items: baseline;
+  justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
   min-width: 0;
+  text-align: center;
 
   h2 {
     margin: 0;
@@ -583,36 +582,4 @@
 .catalogue-search-banner__count {
   color: #9499a3;
   font-size: 12.5px;
-}
-.catalogue-search-banner__hint {
-  color: #9499a3;
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-
-  kbd {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 3px;
-    padding: 1px 5px;
-    font-size: 10px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: #d4d4d8;
-  }
-}
-.catalogue-search-banner__clear {
-  background: transparent;
-  border: 0;
-  color: #c7d2fe;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-  margin-left: 4px;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-
-  &:hover { color: #e0e7ff; }
 }

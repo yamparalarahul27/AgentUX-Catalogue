@@ -27,7 +27,6 @@ interface CatalogueSearchModalProps {
   appearanceMap: CatalogueGroupAppearanceMap;
   onSelectGroup: (group: string) => void;
   onSelectFlow: (group: string, flow: string) => void;
-  onSelectScreenshot: (screenshot: ScreenshotNode) => void;
   // Commit the query into the catalogue scope — modal closes and the
   // catalogue grid scopes itself to the search query. Triggered by
   // the "View all in catalogue" CTA, Cmd/Ctrl+Enter, or plain Enter
@@ -71,7 +70,6 @@ export function CatalogueSearchModal({
   appearanceMap,
   onSelectGroup,
   onSelectFlow,
-  onSelectScreenshot,
   onCommitQuery,
 }: CatalogueSearchModalProps) {
   const [query, setQuery] = useState('');
@@ -120,15 +118,26 @@ export function CatalogueSearchModal({
   }, [activeIndex, isOpen]);
 
   function selectResult(result: SearchResult) {
-    pushRecent(query);
     if (result.type === 'group') {
+      pushRecent(query);
       onSelectGroup(result.name);
-    } else if (result.type === 'flow') {
-      onSelectFlow(result.group, result.name);
-    } else {
-      onSelectScreenshot(result.screenshot);
+      onClose();
+      return;
     }
-    onClose();
+    if (result.type === 'flow') {
+      pushRecent(query);
+      onSelectFlow(result.group, result.name);
+      onClose();
+      return;
+    }
+    // Screenshot card: fill the input with the screenshot's full
+    // name so results narrow to it. User can then press Enter (or
+    // click the "View all" CTA) to commit and reach the card in the
+    // catalogue grid — clicking the card there opens the lightbox
+    // reliably (same data source as the rendered card).
+    setQuery(result.screenshot.name);
+    setHasInteracted(false);
+    inputRef.current?.focus();
   }
 
   function selectRecent(entry: RecentEntry) {
