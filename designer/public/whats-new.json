@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-05-27-mobile-lightbox-tight",
+    "date": "May 27, 2026",
+    "title": "Mobile lightbox sits flush with the browser bar",
+    "bullets": [
+      { "kind": "fix", "text": "The lightbox bottom panel (grabber + metadata line) now hugs the browser's address bar when minimized — no more dead gap between the metadata strip and Safari's toolbar" }
+    ]
+  },
+  {
     "id": "2026-05-27-echo-ring-loader",
     "date": "May 27, 2026",
     "title": "New loading indicator across buttons + spinners",
