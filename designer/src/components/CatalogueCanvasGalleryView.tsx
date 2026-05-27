@@ -41,9 +41,10 @@ type Density = 'atom' | 'molecule' | 'compound';
 type LoaderState = 'enter' | 'exit' | 'idle';
 
 interface DensityPreset {
-  // Inner dimensions of the masonry area inside one tile.
+  // Inner width of the masonry area inside one tile. Height is dynamic
+  // — each tile renders to exactly its packed-rows total height so
+  // there's no wasted whitespace inside or between batches.
   contentW: number;
-  contentH: number;
   // Target row height fed to the justified-rows packer.
   rowH: number;
 }
@@ -51,20 +52,17 @@ interface DensityPreset {
 const BATCH_SIZE = 56;
 // Cell-to-cell gap inside a row + between rows inside a tile.
 const GAP = 20;
-// Tile-to-tile gap on the 2D canvas (the "seam" between batches).
-const SEAM_GAP = 96;
+// Horizontal gap between adjacent tile columns + vertical gap between
+// stacked tiles in the same column.
+const SEAM_GAP = 32;
 const LOADER_HOLD_MS = 1400;
 const REVEAL_FADE_MS = 600;
 const STAGGER_PER_CELL_MS = 24;
 
-// contentH is sized for the worst-case row count: 56 items where every
-// screenshot is a wide landscape gives ~8 rows at the target height. We
-// over-provision a hair so the last row's allowed 1.4× stretch can't
-// overflow the tile and leak into the next batch.
 const DENSITY_PRESETS: Record<Density, DensityPreset> = {
-  atom:     { contentW: 5000, contentH: 3200, rowH: 360 },
-  molecule: { contentW: 2700, contentH: 1850, rowH: 200 },
-  compound: { contentW: 1500, contentH: 1100, rowH: 110 },
+  atom:     { contentW: 5000, rowH: 360 },
+  molecule: { contentW: 2700, rowH: 200 },
+  compound: { contentW: 1500, rowH: 110 },
 };
 
 interface TilePosition { x: number; y: number; }
@@ -86,9 +84,15 @@ interface RenderedTile {
   position: TilePosition;
   batchIdx: number;
   rows: VisibleRow[];
-  // Total height of the masonry content; used to vertically center
-  // inside the fixed contentH for breathing room.
+  // Total height of the masonry content. The tile renders at exactly
+  // this height so adjacent tiles stack without dead space.
   contentHeight: number;
+}
+
+interface PlacedTile extends RenderedTile {
+  // Absolute pixel offsets within the canvas coordinate space.
+  pixelX: number;
+  pixelY: number;
 }
 
 function positionKey(p: TilePosition): string {
@@ -129,8 +133,8 @@ export function CatalogueCanvasGalleryView({
   });
 
   const preset = DENSITY_PRESETS[density];
-  const tileW = preset.contentW + SEAM_GAP;
-  const tileH = preset.contentH + SEAM_GAP;
+  // Horizontal stride between tile column origins.
+  const columnStride = preset.contentW + SEAM_GAP;
 
   // ── Probe aspects for every screenshot that has a URL. Calls are
   // idempotent — the module-level cache short-circuits repeats.
@@ -221,6 +225,41 @@ export function CatalogueCanvasGalleryView({
     return tiles;
   }, [batchPositions, families, activeVariantKeys, recentlyRevealedBatches, preset.contentW, preset.rowH, cacheVersion]);
 
+  // ── Place tiles in 2D canvas space (per-column cumulative stacking).
+  // Tile width is uniform per density; tile height tracks the actual
+  // masonry height. Within each column, tiles stack tightly with a
+  // single SEAM_GAP between neighbours. Center-of-tile coordinates
+  // (pixelX, pixelY) — the JSX uses negative margins to translate the
+  // tile so the center sits at this point.
+  const placedTiles = useMemo<PlacedTile[]>(() => {
+    const byColumn = new Map<number, RenderedTile[]>();
+    for (const tile of renderedTiles) {
+      let arr = byColumn.get(tile.position.x);
+      if (!arr) { arr = []; byColumn.set(tile.position.x, arr); }
+      arr.push(tile);
+    }
+    const out: PlacedTile[] = [];
+    for (const [col, tiles] of byColumn) {
+      tiles.sort((a, b) => a.position.y - b.position.y);
+      let prevCenterY = 0;
+      let prevHeight = 0;
+      for (let i = 0; i < tiles.length; i++) {
+        const t = tiles[i];
+        const centerY = i === 0
+          ? 0
+          : prevCenterY + prevHeight / 2 + SEAM_GAP + t.contentHeight / 2;
+        out.push({
+          ...t,
+          pixelX: col * columnStride,
+          pixelY: centerY,
+        });
+        prevCenterY = centerY;
+        prevHeight = t.contentHeight;
+      }
+    }
+    return out;
+  }, [renderedTiles, columnStride]);
+
   // ── Detect "newly populated" batches (cells arrive) ─
   useEffect(() => {
     const populatedCount = renderedTiles.length;
@@ -260,14 +299,27 @@ export function CatalogueCanvasGalleryView({
     canvas.style.transform = `translate3d(${-panX}px, ${-panY}px, 0)`;
   }, []);
 
-  // ── Camera-into-new-tile detection (same math as original). ────
+  // ── Camera-into-new-tile detection. ────────────────
+  // Columns are uniform-width so X is simple round. Rows within a
+  // column stack to variable heights; we walk the column's tiles to
+  // find which one contains the camera vertically, or return the next
+  // row index past the bottom.
   const cameraTilePosition = useCallback((): TilePosition => {
     const { panX, panY } = panRef.current;
-    return {
-      x: Math.round(panX / tileW),
-      y: Math.round(panY / tileH),
-    };
-  }, [tileW, tileH]);
+    const col = Math.round(panX / columnStride);
+    const colTiles = placedTiles
+      .filter((t) => t.position.x === col)
+      .sort((a, b) => a.pixelY - b.pixelY);
+    for (const t of colTiles) {
+      if (panY < t.pixelY + t.contentHeight / 2 + SEAM_GAP / 2) {
+        return { x: col, y: t.position.y };
+      }
+    }
+    const maxRow = colTiles.length > 0
+      ? Math.max(...colTiles.map((t) => t.position.y))
+      : -1;
+    return { x: col, y: maxRow + 1 };
+  }, [columnStride, placedTiles]);
 
   const maybeAllocateTile = useCallback(() => {
     const cam = cameraTilePosition();
@@ -295,7 +347,7 @@ export function CatalogueCanvasGalleryView({
 
   useEffect(() => {
     applyTransforms();
-  }, [applyTransforms, tileW, tileH]);
+  }, [applyTransforms, columnStride]);
 
   // ── Inertia rAF. ───────────────────────────────────
   useEffect(() => {
@@ -420,61 +472,42 @@ export function CatalogueCanvasGalleryView({
         onClick={handleCanvasClick}
       >
         <div ref={canvasRef} className="canvas-gallery-canvas">
-          {renderedTiles.map((tile) => {
-            const left = tile.position.x * tileW;
-            const top = tile.position.y * tileH;
-            return (
-              <div
-                key={`${tile.position.x},${tile.position.y}`}
-                className="canvas-gallery-tile"
-                style={{
-                  width: tileW,
-                  height: tileH,
-                  transform: `translate3d(${left}px, ${top}px, 0)`,
-                  marginLeft: -tileW / 2,
-                  marginTop: -tileH / 2,
-                }}
-              >
-                <div
-                  className="canvas-gallery-tile-content"
-                  style={{
-                    width: preset.contentW,
-                    height: preset.contentH,
-                  }}
-                >
-                  {tile.rows.map((row, rowIdx) => (
-                    <div key={rowIdx} className="canvas-gallery-row" style={{ height: row.height }}>
-                      {row.cells.map((cell) => (
-                        <div
-                          key={cell.familyId}
-                          className={`canvas-gallery-cell${cell.isFresh ? ' is-fresh' : ''}`}
-                          data-family-id={cell.familyId}
-                          style={
-                            {
-                              width: cell.width,
-                              height: cell.height,
-                              ...(cell.isFresh
-                                ? ({ ['--reveal-delay' as string]: `${cell.staggerMs}ms` } as React.CSSProperties)
-                                : null),
-                            } as React.CSSProperties
-                          }
-                        >
-                          <img src={cell.imageUrl} alt={cell.name} loading="lazy" decoding="async" draggable={false} />
-                        </div>
-                      ))}
+          {placedTiles.map((tile) => (
+            <div
+              key={`${tile.position.x},${tile.position.y}`}
+              className="canvas-gallery-tile"
+              style={{
+                width: preset.contentW,
+                height: tile.contentHeight,
+                transform: `translate3d(${tile.pixelX}px, ${tile.pixelY}px, 0)`,
+                marginLeft: -preset.contentW / 2,
+                marginTop: -tile.contentHeight / 2,
+              }}
+            >
+              {tile.rows.map((row, rowIdx) => (
+                <div key={rowIdx} className="canvas-gallery-row" style={{ height: row.height }}>
+                  {row.cells.map((cell) => (
+                    <div
+                      key={cell.familyId}
+                      className={`canvas-gallery-cell${cell.isFresh ? ' is-fresh' : ''}`}
+                      data-family-id={cell.familyId}
+                      style={
+                        {
+                          width: cell.width,
+                          height: cell.height,
+                          ...(cell.isFresh
+                            ? ({ ['--reveal-delay' as string]: `${cell.staggerMs}ms` } as React.CSSProperties)
+                            : null),
+                        } as React.CSSProperties
+                      }
+                    >
+                      <img src={cell.imageUrl} alt={cell.name} loading="lazy" decoding="async" draggable={false} />
                     </div>
                   ))}
                 </div>
-                {/* Trailing-edge markers — pure text, no visible line. */}
-                <div className="canvas-gallery-tile__marker canvas-gallery-tile__marker--v">
-                  <span>Placing more amazing references</span>
-                </div>
-                <div className="canvas-gallery-tile__marker canvas-gallery-tile__marker--h">
-                  <span>Placing more amazing references</span>
-                </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          ))}
         </div>
 
         <div className="canvas-gallery-bottom-row">

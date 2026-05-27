@@ -32,31 +32,18 @@
 }
 
 // ── Tile ──────────────────────────────────────────────
-// Each tile occupies one cell of the 2D integer grid (positions like
-// (0,0), (1,0), (0,1)). Sized + positioned by inline style from the
-// component.
+// Each tile IS the masonry — sized to exactly its rows' total height so
+// there's no internal whitespace. Position (centered on pixelX/pixelY)
+// set inline by the component via translate3d + negative margins.
 .canvas-gallery-tile {
   position: absolute;
   top: 0;
   left: 0;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  will-change: transform;
-}
-
-// Inner wrapper that holds the masonry rows. Sized to contentW × contentH
-// (the component sizes it generously for the worst-case row count of a
-// batch). When a batch under-fills the height, justify-content:center
-// gives breathing room above & below; when it perfectly fills there's
-// no leakage into adjacent tiles.
-.canvas-gallery-tile-content {
-  position: relative;
-  display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 20px;
   box-sizing: border-box;
+  will-change: transform;
 }
 
 // ── Row (justified flexbox) ──────────────────────────
@@ -126,47 +113,6 @@
   user-select: none;
   pointer-events: none;
   -webkit-user-drag: none;
-}
-
-// ── Tile boundary markers ────────────────────────────
-// Sits on the trailing right + bottom edges of every tile. Pure text,
-// no visible line — hints to the user that more content is being
-// placed in that direction. Same copy on both axes ("Placing more
-// amazing references"), rotated to read along each axis.
-.canvas-gallery-tile__marker {
-  position: absolute;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.canvas-gallery-tile__marker span {
-  font-size: 8.5px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  color: rgba(199, 210, 254, 0.55);
-  text-transform: uppercase;
-  white-space: nowrap;
-  padding: 0 4px;
-  text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
-}
-// Vertical marker on the RIGHT edge of every tile (straddles seam).
-.canvas-gallery-tile__marker--v {
-  top: 0;
-  bottom: 0;
-  right: -48px;
-  width: 96px;
-}
-.canvas-gallery-tile__marker--v span {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
-// Horizontal marker on the BOTTOM edge of every tile.
-.canvas-gallery-tile__marker--h {
-  left: 0;
-  right: 0;
-  bottom: -48px;
-  height: 96px;
 }
 
 // ── Bottom controls (Exit + Density) ─────────────────
