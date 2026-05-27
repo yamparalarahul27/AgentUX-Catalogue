@@ -19,7 +19,7 @@ import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
-import { buildCatalogueFamilies, CATALOGUE_FLOW_LABEL_KEY, getActiveFamilyVariant } from '../lib/catalogue-families';
+import { buildCatalogueFamilies, getActiveFamilyVariant, getScreenshotFamilyId } from '../lib/catalogue-families';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -1169,10 +1169,12 @@ export function Catalogue({
                     }
                   });
                 }}
+                onClearAllFilters={clearAllFilters}
                 onSortByChange={setSortBy}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
                 searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
                 sortBy={sortBy}
                 viewBy={viewBy}
                 viewMode={viewMode}
@@ -1523,14 +1525,10 @@ export function Catalogue({
           setFilterPlatform(null);
         }}
         onSelectScreenshot={(screenshot) => {
-          setFilterGroup(screenshot.group ? [screenshot.group] : []);
-          const metadata = screenshot.metadata as Record<string, unknown> | null | undefined;
-          const flowLabel = metadata && typeof metadata === 'object' && typeof metadata[CATALOGUE_FLOW_LABEL_KEY] === 'string'
-            ? (metadata[CATALOGUE_FLOW_LABEL_KEY] as string)
-            : null;
-          setFilterFlow(flowLabel ? [flowLabel] : []);
-          setFilterPlatform(screenshot.platform === 'mobile' || screenshot.platform === 'web' ? screenshot.platform : null);
-          setSearchQuery(screenshot.name);
+          // Open the lightbox directly on the chosen screenshot's
+          // family. The user picked a specific image — show it, don't
+          // make them hunt for it in a filtered list.
+          setPreviewFamilyId(getScreenshotFamilyId(screenshot));
         }}
       />
     </div>

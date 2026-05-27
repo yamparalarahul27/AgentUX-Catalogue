@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-27-search-fixes",
+    "date": "May 27, 2026",
+    "title": "Search — clearer, clearable, and the result actually opens",
+    "bullets": [
+      { "kind": "improved", "text": "Click a screenshot in the search modal and the lightbox opens straight on that screenshot, instead of just scoping the catalogue list to it" },
+      { "kind": "improved", "text": "Active search query now shows as its own pill in the toolbar — you can see what you searched for and remove it with one click" },
+      { "kind": "fix", "text": "\"Clear all\" now genuinely clears everything (search query included), instead of leaving a hidden filter behind" }
+    ]
+  },
+  {
     "id": "2026-05-27-perf-hygiene",
     "date": "May 27, 2026",
     "title": "Quieter app — idle Canvas + smoother sign-in",
