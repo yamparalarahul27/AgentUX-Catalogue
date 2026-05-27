@@ -1,4 +1,4 @@
-// Canvas gallery view — vertical justified-rows masonry.
+// Canvas gallery view — 2D pannable canvas with masonry-packed tiles.
 // Spec: docs/mockups/mockup-2026-05-27-canvas-masonry.html.
 //
 // This stylesheet covers BOTH:
@@ -22,32 +22,43 @@
 }
 .canvas-gallery-stage.is-dragging { cursor: grabbing; }
 
-// Masonry mode anchors the canvas to the top-left so vertical scroll
-// maps directly to the layout's y-axis.
-.canvas-gallery-canvas--masonry {
+.canvas-gallery-canvas {
   position: absolute;
-  top: 64px;             // breathing room below the floating header
-  left: 0;
-  right: 0;
-  padding: 0 32px;       // matches HORIZONTAL_PADDING in the component
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
   will-change: transform;
 }
 
-// ── Batch (vertical stack of rows) ────────────────────
-// Each batch positions absolutely inside the canvas at its computed y.
-.canvas-gallery-batch {
+// ── Tile ──────────────────────────────────────────────
+// Each tile occupies one cell of the 2D integer grid (positions like
+// (0,0), (1,0), (0,1)). Sized + positioned by inline style from the
+// component.
+.canvas-gallery-tile {
   position: absolute;
-  left: 32px;
-  right: 32px;
+  top: 0;
+  left: 0;
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  align-items: flex-start;
+  justify-content: center;
+  will-change: transform;
 }
 
-// ── Row (justified flexbox) ───────────────────────────
+// Inner wrapper that holds the masonry rows. The component sets a
+// padding-top equal to half the vertical slack so under-filled tiles
+// center their content with breathing room above & below.
+.canvas-gallery-tile-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// ── Row (justified flexbox) ──────────────────────────
 .canvas-gallery-row {
   display: flex;
-  gap: 14px;
+  gap: 20px;
   width: 100%;
 }
 
@@ -113,22 +124,45 @@
   -webkit-user-drag: none;
 }
 
-// ── Bottom "loading more" marker ─────────────────────
-// Appears below the placed batches while pagination is in flight.
-.canvas-gallery-bottom-marker {
+// ── Tile boundary markers ────────────────────────────
+// Sits on the trailing right + bottom edges of every tile. Pure text,
+// no visible line — hints to the user that more content is being
+// placed in that direction. Same copy on both axes ("Placing more
+// amazing references"), rotated to read along each axis.
+.canvas-gallery-tile__marker {
   position: absolute;
-  left: 0;
-  right: 0;
-  text-align: center;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.canvas-gallery-bottom-marker span {
-  font-size: 9px;
+.canvas-gallery-tile__marker span {
+  font-size: 8.5px;
   font-weight: 600;
   letter-spacing: 0.22em;
   color: rgba(199, 210, 254, 0.55);
   text-transform: uppercase;
   white-space: nowrap;
+  padding: 0 4px;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+}
+// Vertical marker on the RIGHT edge of every tile (straddles seam).
+.canvas-gallery-tile__marker--v {
+  top: 0;
+  bottom: 0;
+  right: -48px;
+  width: 96px;
+}
+.canvas-gallery-tile__marker--v span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+// Horizontal marker on the BOTTOM edge of every tile.
+.canvas-gallery-tile__marker--h {
+  left: 0;
+  right: 0;
+  bottom: -48px;
+  height: 96px;
 }
 
 // ── Bottom controls (Exit + Density) ─────────────────
