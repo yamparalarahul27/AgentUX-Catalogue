@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-05-27-lightbox-swipe",
+    "date": "May 27, 2026",
+    "title": "Mobile lightbox — swipe to navigate",
+    "bullets": [
+      { "kind": "new", "text": "Swipe left or right on the lightbox image to move to the next / previous screenshot. Keyboard arrows still work on desktop" }
+    ]
+  },
+  {
     "id": "2026-05-27-search-fixes",
     "date": "May 27, 2026",
     "title": "Search — clearer, clearable, and Enter goes where you'd expect",
