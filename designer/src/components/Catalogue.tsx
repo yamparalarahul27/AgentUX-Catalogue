@@ -19,7 +19,7 @@ import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
-import { buildCatalogueFamilies, CATALOGUE_FLOW_LABEL_KEY, getActiveFamilyVariant } from '../lib/catalogue-families';
+import { buildCatalogueFamilies, getActiveFamilyVariant } from '../lib/catalogue-families';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -385,6 +385,11 @@ export function Catalogue({
     if (!showWhatsNew) setWhatsNewUnseen(getWhatsNewUnseenCount());
   }, [showWhatsNew]);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
+  // When the lightbox is opened from a screenshot-specific source
+  // (search-result click), this hint disambiguates which exact
+  // screenshot within the family should render, since multiple
+  // variants can share the same `theme:platform:preset` key.
+  const [previewScreenshotHint, setPreviewScreenshotHint] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
   const [recentlyViewedFamilyId, setRecentlyViewedFamilyId] = useState<string | null>(null);
@@ -489,6 +494,20 @@ export function Catalogue({
     () => Object.fromEntries(allFamilies.map((family) => [family.id, family])),
     [allFamilies],
   );
+  // Parallel family map built from the FULL catalogue (not the
+  // filter-scoped subset). The lightbox preview uses this so that
+  // every variant of the previewed family is available — without
+  // this, a screenshot opened from the search modal (which searches
+  // full scope) may resolve to a family whose loaded variants don't
+  // include the specific one the user clicked, falling back to
+  // whichever variant happens to be `variants[0]`.
+  const fullScopeFamilyById = useMemo(
+    () => Object.fromEntries(
+      buildCatalogueFamilies(fullScopeScreenshots, scopedScreenFamilies, presetByKey)
+        .map((family) => [family.id, family]),
+    ),
+    [fullScopeScreenshots, scopedScreenFamilies, presetByKey],
+  );
   const screenshotIdToFamilyId = useMemo(() => {
     const map = new Map<string, string>();
     for (const family of allFamilies) {
@@ -519,7 +538,13 @@ export function Catalogue({
     () => filteredFamilies.filter((family) => selected.has(family.id)).length,
     [filteredFamilies, selected],
   );
-  const previewFamily = previewFamilyId ? familyById[previewFamilyId] ?? null : null;
+  // Prefer the full-scope family for the lightbox so every variant is
+  // present (search-result clicks can target screenshots outside the
+  // current filter or pagination window). Falls back to the scoped
+  // map if for some reason the full scope hasn't hydrated yet.
+  const previewFamily = previewFamilyId
+    ? (fullScopeFamilyById[previewFamilyId] ?? familyById[previewFamilyId] ?? null)
+    : null;
   const {
     handleAnnotationStateChange,
     handleChangeFamilyGroup,
@@ -817,6 +842,7 @@ export function Catalogue({
 
   function openPreview(familyId: string) {
     setPreviewStartInlineEdit(false);
+    setPreviewScreenshotHint(null);
     setPreviewFamilyId(familyId);
   }
 
@@ -827,6 +853,7 @@ export function Catalogue({
     const nextIndex = currentIndex + direction;
     if (nextIndex >= 0 && nextIndex < filteredFamilies.length) {
       setPreviewStartInlineEdit(false);
+      setPreviewScreenshotHint(null);
       setPreviewFamilyId(filteredFamilies[nextIndex].id);
       return;
     }
@@ -1169,10 +1196,12 @@ export function Catalogue({
                     }
                   });
                 }}
+                onClearAllFilters={clearAllFilters}
                 onSortByChange={setSortBy}
                 onViewByChange={setViewBy}
                 onViewModeChange={setViewMode}
                 searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
                 sortBy={sortBy}
                 viewBy={viewBy}
                 viewMode={viewMode}
@@ -1208,6 +1237,19 @@ export function Catalogue({
                     ));
                   }}
                 />
+              )}
+
+              {searchQuery.trim().length > 0 && (
+                <div className="catalogue-search-banner" role="region" aria-label="Search results">
+                  <div className="catalogue-search-banner__title">
+                    <h2>
+                      Search results for <span className="catalogue-search-banner__query">{searchQuery}</span>
+                    </h2>
+                    <span className="catalogue-search-banner__count">
+                      {filteredFamilies.length} {filteredFamilies.length === 1 ? 'match' : 'matches'} in catalogue
+                    </span>
+                  </div>
+                </div>
               )}
 
               <div className="catalogue-body-layout">
@@ -1366,6 +1408,7 @@ export function Catalogue({
       {previewFamily && (
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
+          preferredScreenshotId={previewScreenshotHint}
           canEdit={!isGuest}
           canEditMetadata={canEditFamily(previewFamily)}
           canDelete={canDeleteFamily(previewFamily)}
@@ -1389,6 +1432,7 @@ export function Catalogue({
           onClose={() => {
             const lastViewed = previewFamilyId;
             setPreviewFamilyId(null);
+            setPreviewScreenshotHint(null);
             setPreviewStartInlineEdit(false);
             setPendingPreviewNext(false);
             setRecentlyViewedFamilyId(lastViewed);
@@ -1522,15 +1566,12 @@ export function Catalogue({
           setFilterFlow([flow]);
           setFilterPlatform(null);
         }}
-        onSelectScreenshot={(screenshot) => {
-          setFilterGroup(screenshot.group ? [screenshot.group] : []);
-          const metadata = screenshot.metadata as Record<string, unknown> | null | undefined;
-          const flowLabel = metadata && typeof metadata === 'object' && typeof metadata[CATALOGUE_FLOW_LABEL_KEY] === 'string'
-            ? (metadata[CATALOGUE_FLOW_LABEL_KEY] as string)
-            : null;
-          setFilterFlow(flowLabel ? [flowLabel] : []);
-          setFilterPlatform(screenshot.platform === 'mobile' || screenshot.platform === 'web' ? screenshot.platform : null);
-          setSearchQuery(screenshot.name);
+        onCommitQuery={(committed) => {
+          // Push the search into the catalogue's actual filter
+          // pipeline so the grid scopes to results + a "Search: <q>"
+          // pill appears in the toolbar. Skips other filters; this
+          // is purely additive to the existing chip state.
+          setSearchQuery(committed);
         }}
       />
     </div>

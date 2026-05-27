@@ -39,8 +39,28 @@ export function getDefaultFamilyVariant(
 export function getActiveFamilyVariant(
   family: CatalogueFamilyView,
   activeVariantKey: string | null | undefined,
+  // Optional screenshot-ID tie-breaker. Variant keys are
+  // `theme:platform:preset` shaped, so when a family contains multiple
+  // screenshots that share the same key (common for multiple iterations
+  // of the same view), `find()` would otherwise always return the first
+  // one — not necessarily the one the user just selected (e.g., from
+  // search). When `preferredScreenshotId` is given, prefer the variant
+  // matching BOTH key + id; fall back to key-only if no exact match.
+  preferredScreenshotId?: string | null,
 ): CatalogueVariantView | null {
-  if (!activeVariantKey) return getDefaultFamilyVariant(family);
+  if (!activeVariantKey) {
+    if (preferredScreenshotId) {
+      const byId = family.variants.find((variant) => variant.id === preferredScreenshotId);
+      if (byId) return byId;
+    }
+    return getDefaultFamilyVariant(family);
+  }
+  if (preferredScreenshotId) {
+    const exact = family.variants.find(
+      (variant) => variant.key === activeVariantKey && variant.id === preferredScreenshotId,
+    );
+    if (exact) return exact;
+  }
   return family.variants.find((variant) => variant.key === activeVariantKey) ?? getDefaultFamilyVariant(family);
 }
 

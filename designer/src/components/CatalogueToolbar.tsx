@@ -69,10 +69,16 @@ interface CatalogueToolbarProps {
   onFilterWebPresetChange: (value: string | null) => void;
   onQuickUploadAll?: () => void;
   onQuickUploadClick?: () => void;
+  // Resets every filter + search + sort back to defaults. The "Clear all"
+  // pill at the bottom of the toolbar fires this. Defined upstream in
+  // `use-catalogue-filter-state.ts` so the toolbar can't drift from
+  // the canonical wipe list.
+  onClearAllFilters: () => void;
   onSortByChange: (value: CatalogueSortOption) => void;
   onViewByChange: (value: CatalogueViewBy) => void;
   onViewModeChange: (value: CatalogueViewMode) => void;
   searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
   sortBy: CatalogueSortOption;
   viewBy: CatalogueViewBy;
   viewMode: CatalogueViewMode;
@@ -196,6 +202,7 @@ export function CatalogueToolbar({
   onFilterUxPatternChange,
   onFilterWebPresetChange,
   onQuickUploadClick,
+  onClearAllFilters,
   onSortByChange,
   onViewByChange,
   onViewModeChange,
@@ -209,6 +216,7 @@ export function CatalogueToolbar({
   onOpenShare,
   onOpenSearch,
   searchQuery,
+  onSearchQueryChange,
   sortBy,
   viewBy,
   viewMode,
@@ -292,6 +300,17 @@ export function CatalogueToolbar({
     (viewBy !== 'all' ? 1 : 0);
 
   const activePills: Array<{ key: string; label: string; onRemove: () => void }> = [];
+  // Surface the active search query as a removable pill — otherwise it
+  // sits invisibly (a search-result click sets searchQuery to the
+  // screenshot's full name) and the user has no affordance to escape
+  // the scoped catalogue except Clear all.
+  if (searchQuery.trim().length > 0) {
+    activePills.push({
+      key: 'search',
+      label: `Search: ${searchQuery}`,
+      onRemove: () => onSearchQueryChange(''),
+    });
+  }
   filterGroup.forEach((group) => activePills.push({
     key: `group:${group}`,
     label: `Group: ${group}`,
@@ -713,17 +732,7 @@ export function CatalogueToolbar({
             <button
               type="button"
               className="catalogue-filter-pills__clear-all"
-              onClick={() => {
-                onFilterGroupChange([]);
-                onFilterFlowChange([]);
-                onFilterAnnotationChange([]);
-                onFilterUiElementChange?.([]);
-                onFilterPlatformChange(null);
-                onFilterWebPresetChange(null);
-                onFilterMobileOsChange(null);
-                onFilterThemeChange(null);
-                if (viewBy !== 'all') onViewByChange('all');
-              }}
+              onClick={onClearAllFilters}
             >
               Clear all
             </button>

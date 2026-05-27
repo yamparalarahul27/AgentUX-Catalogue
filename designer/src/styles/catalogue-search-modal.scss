@@ -312,12 +312,20 @@
 }
 
 .catalogue-search-modal__card--more {
-  cursor: default;
+  cursor: pointer;
   border-style: dashed;
   border-color: rgba(99, 102, 241, 0.35);
+  color: inherit;
+  font: inherit;
+  text-align: left;
 
   &:hover {
-    background: rgba(99, 102, 241, 0.06);
+    background: rgba(99, 102, 241, 0.10);
+    border-color: rgba(99, 102, 241, 0.55);
+  }
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: -2px;
   }
 }
 
@@ -330,11 +338,74 @@
   text-overflow: ellipsis;
 }
 
+// Highlighted matching substring inside result names. Indigo wash with
+// brighter text — visible enough to scan, quiet enough not to dominate.
+.catalogue-search-modal__hl {
+  background: rgba(99, 102, 241, 0.28);
+  color: #eef2ff;
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 -2px;
+  font-weight: 600;
+}
+
 .catalogue-search-modal__row-meta {
   font-size: 12px;
   color: #71717a;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+// Commit bar shown when results exist — clicking it (or pressing
+// Enter with no manual selection) closes the modal and scopes the
+// catalogue to the current query.
+.catalogue-search-modal__commit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 0;
+  border-top: 1px solid #27272a;
+  background: rgba(99, 102, 241, 0.07);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: background 0.12s ease;
+
+  &:hover { background: rgba(99, 102, 241, 0.13); }
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: -2px;
+  }
+}
+.catalogue-search-modal__commit-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 500;
+}
+.catalogue-search-modal__commit-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #71717a;
+  font-size: 11.5px;
+
+  kbd {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid #2a2a31;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #d4d4d8;
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 .catalogue-search-modal__footer {
@@ -468,4 +539,45 @@
     border-radius: 0;
     border: none;
   }
+}
+
+// ── Catalogue search-results banner ──────────────────────────
+// Sits above the catalogue grid when `searchQuery` is set as a
+// centered rounded chip — wraps only the title text, sides scaled
+// 2× the vertical padding for a pill-like proportion. The active
+// query also lives as a pill in the toolbar; clicking it clears,
+// so the banner doesn't need its own controls.
+.catalogue-search-banner {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 12px;
+}
+.catalogue-search-banner__title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  text-align: center;
+  padding: 6px 16px;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 999px;
+
+  h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #e4e4e7;
+  }
+}
+.catalogue-search-banner__query {
+  background: rgba(99, 102, 241, 0.32);
+  color: #eef2ff;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-weight: 600;
+}
+.catalogue-search-banner__count {
+  color: #9499a3;
+  font-size: 11.5px;
 }
