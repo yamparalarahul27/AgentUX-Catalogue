@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-05-27-canvas-chrome-rework",
+    "date": "May 27, 2026",
+    "title": "Canvas view — new chrome layout",
+    "bullets": [
+      { "kind": "improved", "text": "Exit Canvas now lives at the top-left as a pill with a back arrow + \"Exit\" label, replacing the bare ← glyph at the bottom" },
+      { "kind": "improved", "text": "AgentUX logo moves to the centre of the header in Canvas mode; section tabs hide so the canvas gets the full width" }
+    ]
+  },
+  {
     "id": "2026-05-27-mobile-lightbox-tight",
     "date": "May 27, 2026",
     "title": "Mobile lightbox sits flush with the browser bar",

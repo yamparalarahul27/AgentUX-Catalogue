@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canvas mode — chrome rework</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0a0c;
+    --ink: #e6e7ea;
+    --muted: #a1a1aa;
+    --line: rgba(255, 255, 255, 0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif; height: 100%; }
+
+  /* ── Canvas backdrop ─────────────────────────────────── */
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 60%),
+      #0a0a0c;
+  }
+
+  /* Fake masonry tiles in the back so the chrome has context */
+  .canvas-stand-in {
+    position: absolute;
+    inset: 60px 24px 60px 24px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    opacity: 0.35;
+  }
+  .canvas-stand-in .tile {
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--c1, #3a4256), var(--c2, #1d2030));
+  }
+  .canvas-stand-in .tile.t-mobile {
+    aspect-ratio: 9/19.5;
+    --c1: #5a3b7a;
+    --c2: #2b1d40;
+  }
+  .canvas-stand-in .tile.t-desktop {
+    aspect-ratio: 16/10;
+    --c1: #2c5b6b;
+    --c2: #16323b;
+  }
+  .canvas-stand-in .tile.t-tablet {
+    aspect-ratio: 3/4;
+    --c1: #6b4a2c;
+    --c2: #3b2b16;
+  }
+  .canvas-stand-in .tile.t-square {
+    aspect-ratio: 1/1;
+    --c1: #3a5a3c;
+    --c2: #1d301e;
+  }
+
+  /* ── Header ─────────────────────────────────────────── */
+  .header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 70;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    pointer-events: none;
+  }
+  .header > * { pointer-events: auto; }
+
+  /* ── Exit button (top-left, replaces logo position) ── */
+  .exit-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: rgba(22, 22, 26, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #d4d4d8;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .exit-pill svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  .exit-pill:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(99, 102, 241, 0.16);
+    color: #c7d2fe;
+  }
+
+  /* ── Logo (centered) ────────────────────────────────── */
+  .logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+  }
+  .logo-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  /* ── Right cluster (account, settings — stays) ─────── */
+  .right-cluster {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .right-cluster .icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(22, 22, 26, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #d4d4d8;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .right-cluster .icon-btn svg { width: 16px; height: 16px; }
+  .right-cluster .identity-pill {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: rgba(22, 22, 26, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #d4d4d8;
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  /* ── Bottom controls (density only, no Exit) ────────── */
+  .bottom-row {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .density {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 36px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .density button {
+    border: none;
+    background: transparent;
+    color: #a1a1aa;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .density button.is-active {
+    background: rgba(255, 255, 255, 0.10);
+    color: #fafafa;
+  }
+
+  /* ── Section tabs — shown for comparison, NOT rendered in Canvas ── */
+  .section-tabs-ghost {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none; /* hidden in Canvas mode */
+  }
+
+  /* ── Annotations ────────────────────────────────────── */
+  .anno {
+    position: absolute;
+    pointer-events: none;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.75);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px dashed rgba(99, 102, 241, 0.55);
+    border-radius: 6px;
+    padding: 3px 6px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .anno-arrow {
+    position: absolute;
+    border-left: 1px dashed rgba(99, 102, 241, 0.55);
+    pointer-events: none;
+  }
+  body[data-annotated="false"] .anno,
+  body[data-annotated="false"] .anno-arrow { display: none; }
+
+  /* ── Toolbar at top ─────────────────────────────────── */
+  .controls {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 200;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(22, 22, 26, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .controls button {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .controls button.is-active {
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--ink);
+  }
+</style>
+</head>
+<body data-annotated="true">
+
+<div class="stage">
+  <!-- Faded tile placeholders so the chrome has context -->
+  <div class="canvas-stand-in">
+    <div class="tile t-mobile"></div>
+    <div class="tile t-desktop"></div>
+    <div class="tile t-tablet"></div>
+    <div class="tile t-mobile"></div>
+    <div class="tile t-desktop"></div>
+    <div class="tile t-square"></div>
+    <div class="tile t-desktop"></div>
+    <div class="tile t-mobile"></div>
+    <div class="tile t-tablet"></div>
+    <div class="tile t-desktop"></div>
+    <div class="tile t-mobile"></div>
+    <div class="tile t-square"></div>
+  </div>
+
+  <!-- ── New header layout in Canvas mode ─────────────── -->
+  <div class="header">
+    <!-- Top-left: Exit button (was at bottom-center) -->
+    <button type="button" class="exit-pill" aria-label="Exit Canvas view">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+      </svg>
+      <span>Exit</span>
+    </button>
+
+    <!-- Top-center: AgentUX logo (was at top-left) -->
+    <div class="logo">
+      <span class="logo-mark">A</span>
+      <span>AgentUX</span>
+    </div>
+
+    <!-- Top-right: existing account chrome stays -->
+    <div class="right-cluster">
+      <span class="icon-btn" title="Team" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </span>
+      <span class="identity-pill">R</span>
+    </div>
+  </div>
+
+  <!-- Section tabs ghost — not rendered in Canvas mode -->
+  <div class="section-tabs-ghost">Catalogue · Videos · Saved (hidden in Canvas)</div>
+
+  <!-- Bottom row: density toggle only (Exit removed) -->
+  <div class="bottom-row">
+    <div class="density" role="radiogroup" aria-label="Cell zoom">
+      <button>A</button>
+      <button class="is-active">M</button>
+      <button>C</button>
+    </div>
+  </div>
+
+  <!-- Annotations -->
+  <div class="anno" style="top: 84px; left: 24px;">EXIT BUTTON · top-left · icon + label</div>
+  <div class="anno-arrow" style="top: 36px; left: 60px; width: 0; height: 48px;"></div>
+
+  <div class="anno" style="top: 70px; left: 50%; transform: translateX(-50%);">LOGO · centered · moved from top-left</div>
+
+  <div class="anno" style="top: 14px; right: 220px;">RIGHT cluster unchanged</div>
+
+  <div class="anno" style="bottom: 64px; left: 50%; transform: translateX(-50%);">BOTTOM · density only (Exit removed)</div>
+
+  <div class="anno" style="bottom: 14px; left: 24px; max-width: 360px; white-space: normal; line-height: 1.4;">
+    Section tabs (Catalogue · Videos · Saved · Account) are <b>hidden</b> in Canvas mode.<br>
+    Already-hidden today: What's New star, Links tab, toolbar, dock, flow strip.
+  </div>
+</div>
+
+<!-- Toggle annotations on / off -->
+<div class="controls">
+  <button id="toggle-anno" class="is-active">Show annotations</button>
+</div>
+
+<script>
+  const btn = document.getElementById('toggle-anno');
+  btn.addEventListener('click', () => {
+    const on = document.body.dataset.annotated !== 'true';
+    document.body.dataset.annotated = on ? 'true' : 'false';
+    btn.classList.toggle('is-active', on);
+  });
+</script>
+
+</body>
+</html>
