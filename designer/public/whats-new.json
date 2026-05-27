@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-05-27-mobile-viewport-fix",
+    "date": "May 27, 2026",
+    "title": "Mobile viewport fits properly now",
+    "bullets": [
+      { "kind": "fix", "text": "Modals and the lightbox no longer get cut off by the address bar on mobile Safari — every screen now sizes to what you can actually see" }
+    ]
+  },
+  {
     "id": "2026-05-27-lightbox-actions-card",
     "date": "May 27, 2026",
     "title": "Lightbox right-side polish",

@@ -718,7 +718,7 @@ $success: #22c55e;
 
 .label-paste-modal {
   width: min(640px, 100%);
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
   background: $surface;
   border: 1px solid $border;
   border-radius: 12px;
