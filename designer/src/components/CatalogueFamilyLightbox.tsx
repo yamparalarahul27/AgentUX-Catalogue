@@ -38,6 +38,12 @@ import { useSaveTrashAnimation } from './SaveTrashAnimation';
 import { getSkipDeleteConfirm, setSkipDeleteConfirm } from '../lib/delete-confirm-pref';
 interface CatalogueFamilyLightboxProps {
   activeVariantKey: string | null;
+  // Optional tie-breaker: when a family has multiple variants that
+  // share the same `theme:platform:preset` key (e.g., several
+  // iterations of the same view), this picks the exact one we want
+  // to render. Set when the lightbox is opened from a screenshot-
+  // specific source like a search-result click.
+  preferredScreenshotId?: string | null;
   // Non-guest gate (existing). Drives ensureCanEdit() and existing
   // permission checks for comments/annotations/etc.
   canEdit?: boolean;
@@ -127,6 +133,7 @@ function summarizeAnnotationActivity(annotations: LightboxAnnotation[]): { count
 }
 export function CatalogueFamilyLightbox({
   activeVariantKey,
+  preferredScreenshotId = null,
   canEdit = true,
   canEditMetadata = true,
   canDelete = true,
@@ -269,7 +276,10 @@ export function CatalogueFamilyLightbox({
     () => [...comments].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
     [comments],
   );
-  const activeVariant = useMemo(() => getActiveFamilyVariant(family, activeVariantKey), [activeVariantKey, family]); const screenshot = activeVariant?.screenshot ?? null;
+  const activeVariant = useMemo(
+    () => getActiveFamilyVariant(family, activeVariantKey, preferredScreenshotId),
+    [activeVariantKey, family, preferredScreenshotId],
+  ); const screenshot = activeVariant?.screenshot ?? null;
   const mediaLayout = useMemo(() => getContainLayout(mediaSize, imageSize), [imageSize, mediaSize]);
   const groupColor = getGroupColor(family.group);
   // Existing UI Elements (from the studio-curated taxonomy) merged with

@@ -385,6 +385,11 @@ export function Catalogue({
     if (!showWhatsNew) setWhatsNewUnseen(getWhatsNewUnseenCount());
   }, [showWhatsNew]);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
+  // When the lightbox is opened from a screenshot-specific source
+  // (search-result click), this hint disambiguates which exact
+  // screenshot within the family should render, since multiple
+  // variants can share the same `theme:platform:preset` key.
+  const [previewScreenshotHint, setPreviewScreenshotHint] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
   const [recentlyViewedFamilyId, setRecentlyViewedFamilyId] = useState<string | null>(null);
@@ -817,6 +822,7 @@ export function Catalogue({
 
   function openPreview(familyId: string) {
     setPreviewStartInlineEdit(false);
+    setPreviewScreenshotHint(null);
     setPreviewFamilyId(familyId);
   }
 
@@ -827,6 +833,7 @@ export function Catalogue({
     const nextIndex = currentIndex + direction;
     if (nextIndex >= 0 && nextIndex < filteredFamilies.length) {
       setPreviewStartInlineEdit(false);
+      setPreviewScreenshotHint(null);
       setPreviewFamilyId(filteredFamilies[nextIndex].id);
       return;
     }
@@ -1368,6 +1375,7 @@ export function Catalogue({
       {previewFamily && (
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
+          preferredScreenshotId={previewScreenshotHint}
           canEdit={!isGuest}
           canEditMetadata={canEditFamily(previewFamily)}
           canDelete={canDeleteFamily(previewFamily)}
@@ -1391,6 +1399,7 @@ export function Catalogue({
           onClose={() => {
             const lastViewed = previewFamilyId;
             setPreviewFamilyId(null);
+            setPreviewScreenshotHint(null);
             setPreviewStartInlineEdit(false);
             setPendingPreviewNext(false);
             setRecentlyViewedFamilyId(lastViewed);
@@ -1527,12 +1536,15 @@ export function Catalogue({
         onSelectScreenshot={(screenshot) => {
           // Open the lightbox directly on the chosen screenshot's
           // family. The user picked a specific image — show it, don't
-          // make them hunt for it in a filtered list. Also pin the
-          // family's active variant to the clicked screenshot so the
-          // lightbox renders THIS image, not whichever variant the
-          // family happened to be defaulted to.
+          // make them hunt for it in a filtered list. Pin the active
+          // variant to the clicked screenshot's variant key so the
+          // right tab is selected, and pass the screenshot ID as a
+          // tie-breaker hint for families that have multiple variants
+          // sharing the same key (which the key-only lookup can't
+          // disambiguate).
           const familyId = getScreenshotFamilyId(screenshot);
           upload.updateActiveVariant(familyId, getVariantKey(screenshot));
+          setPreviewScreenshotHint(screenshot.id);
           setPreviewFamilyId(familyId);
         }}
       />
