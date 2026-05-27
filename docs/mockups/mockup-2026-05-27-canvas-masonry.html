@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Canvas — masonry try</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0e0e10;
+    --ink: #e6e7ea;
+    --muted: #9499a3;
+    --line: rgba(255,255,255,0.08);
+    --panel: #17181c;
+    --tile-bg: #1b1d24;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif; }
+  body { min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(14,14,16,0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+  }
+  header .lede { color: var(--muted); font-size: 12px; }
+
+  .density {
+    margin-left: auto;
+    display: inline-flex;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 2px;
+  }
+  .density button {
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    padding: 5px 10px;
+    font: inherit;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .density button.is-active { background: rgba(255,255,255,0.08); color: var(--ink); }
+  .density button:not(.is-active):hover { color: var(--ink); }
+
+  .layout-toggle {
+    display: inline-flex;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 2px;
+  }
+  .layout-toggle button {
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    padding: 5px 10px;
+    font: inherit;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .layout-toggle button.is-active { background: rgba(255,255,255,0.08); color: var(--ink); }
+
+  /* ── Stage ──────────────────────────────────────────────── */
+  .stage {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .masonry {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap, 14px);
+  }
+  .masonry-row {
+    display: flex;
+    gap: var(--gap, 14px);
+    width: 100%;
+  }
+  .cell {
+    background: var(--tile-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+    flex-grow: 0;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .cell:hover {
+    transform: scale(1.03);
+    z-index: 2;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* Solid-fill stand-in when no img loads — we still want visual texture */
+  .cell .placeholder {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--c1, #3a4256), var(--c2, #1d2030));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cell .meta {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
+    background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .cell .meta .name { font-weight: 500; }
+  .cell .meta .ar { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.7; }
+
+  /* ── Pinterest-style column layout ──────────────────────── */
+  .pinterest {
+    column-gap: var(--gap, 14px);
+    column-fill: balance;
+  }
+  .pinterest .cell {
+    width: 100%;
+    margin-bottom: var(--gap, 14px);
+    break-inside: avoid;
+    height: auto;
+    aspect-ratio: var(--ar);
+  }
+
+  /* Visual differentiator labels */
+  .cell[data-kind="mobile"] .placeholder    { --c1: #5a3b7a; --c2: #2b1d40; }
+  .cell[data-kind="desktop"] .placeholder   { --c1: #2c5b6b; --c2: #16323b; }
+  .cell[data-kind="tablet"] .placeholder    { --c1: #6b4a2c; --c2: #3b2b16; }
+  .cell[data-kind="square"] .placeholder    { --c1: #3a5a3c; --c2: #1d301e; }
+  .cell[data-kind="wide"] .placeholder      { --c1: #495378; --c2: #232a40; }
+
+  .legend {
+    display: flex;
+    gap: 14px;
+    color: var(--muted);
+    font-size: 11px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .key .swatch { width: 14px; height: 14px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Canvas Gallery — masonry trial</h1>
+  <span class="lede">justified rows · cells preserve aspect · no letterboxing</span>
+  <div class="layout-toggle" role="radiogroup" aria-label="Layout">
+    <button data-layout="justified" class="is-active">Justified rows</button>
+    <button data-layout="pinterest">Pinterest cols</button>
+  </div>
+  <div class="density" role="radiogroup" aria-label="Density">
+    <button data-density="atom">A</button>
+    <button data-density="molecule" class="is-active">M</button>
+    <button data-density="compound">C</button>
+  </div>
+</header>
+
+<div class="stage">
+  <div class="legend">
+    <span class="key"><span class="swatch" style="background: linear-gradient(135deg,#5a3b7a,#2b1d40)"></span> Mobile portrait (9:19.5)</span>
+    <span class="key"><span class="swatch" style="background: linear-gradient(135deg,#2c5b6b,#16323b)"></span> Desktop (16:9 / 16:10)</span>
+    <span class="key"><span class="swatch" style="background: linear-gradient(135deg,#6b4a2c,#3b2b16)"></span> Tablet (3:4 / 4:3)</span>
+    <span class="key"><span class="swatch" style="background: linear-gradient(135deg,#3a5a3c,#1d301e)"></span> Square / hero</span>
+    <span class="key"><span class="swatch" style="background: linear-gradient(135deg,#495378,#232a40)"></span> Ultra-wide</span>
+  </div>
+
+  <div id="grid" class="masonry"></div>
+</div>
+
+<script>
+  // ── Sample data: realistic aspect-ratio mix ─────────────────
+  // Each item: { name, ar (w/h), kind }. We rotate through ~50 to fill a few rows.
+  const KINDS = {
+    mobile:  { ar: 9 / 19.5, label: "9:19.5" },
+    desktop: { ar: 16 / 9,   label: "16:9"   },
+    tablet:  { ar: 3 / 4,    label: "3:4"    },
+    square:  { ar: 1,        label: "1:1"    },
+    wide:    { ar: 21 / 9,   label: "21:9"   },
+    desktopAlt: { ar: 16 / 10, label: "16:10" },
+    mobileShort: { ar: 9 / 16, label: "9:16" },
+  };
+  const NAMES = [
+    "Login","Onboarding","Home","Trade","Wallet","Profile","Search","Orderbook","Chart",
+    "Convert","Send","Receive","KYC","Verify","Settings","Notifications","History",
+    "Markets","Watchlist","Portfolio","Insights","News","Earn","Stake","Deposit","Withdraw",
+    "Refer","Rewards","Help","About","Security","2FA","Biometrics","Devices","Sessions",
+    "Privacy","Terms","Logout","Empty","Error","404","Loading","Offline","Maintenance",
+    "Pricing","Compare","Discover","Trending","Recommended"
+  ];
+
+  // Deterministic mix so layout looks the same on every reload.
+  const KIND_CYCLE = [
+    "mobile","desktop","mobile","tablet","mobile","desktop",
+    "square","mobile","desktopAlt","mobile","mobileShort","desktop",
+    "tablet","mobile","wide","desktop","mobile","mobile",
+    "desktopAlt","tablet","mobile","desktop","mobile","square",
+    "mobile","desktop","wide","mobile","tablet","mobile",
+    "desktopAlt","mobile","desktop","mobile","mobileShort","tablet",
+    "mobile","desktop","mobile","mobile","desktop","mobile",
+    "tablet","mobile","desktop","square","mobile","desktopAlt"
+  ];
+
+  const data = NAMES.map((name, i) => {
+    const kind = KIND_CYCLE[i % KIND_CYCLE.length];
+    const k = KINDS[kind];
+    return { name, ar: k.ar, label: k.label, kind: kind === "mobileShort" ? "mobile" : kind === "desktopAlt" ? "desktop" : kind };
+  });
+
+  // ── Density → target row height (justified layout) ─────────
+  const ROW_TARGET = { atom: 360, molecule: 200, compound: 110 };
+  // ── Density → column count (pinterest layout) ──────────────
+  const COL_COUNT  = { atom: 3,   molecule: 5,   compound: 8 };
+  const GAP = 14;
+
+  let state = { density: "molecule", layout: "justified" };
+
+  function pickPlaceholder() {
+    // No external requests — empty img alt, the .placeholder div behind it gives the colour
+    return "";
+  }
+
+  // Greedy justified-rows packing (Flickr / Google Photos)
+  function layoutJustified(items, containerWidth, targetH, gap) {
+    const rows = [];
+    let current = [];
+    let arSum = 0;
+    for (const it of items) {
+      current.push(it);
+      arSum += it.ar;
+      // Width if we keep targetH: arSum*targetH + gap*(n-1)
+      const widthAtTarget = arSum * targetH + gap * (current.length - 1);
+      if (widthAtTarget >= containerWidth * 0.92) {
+        // Scale row to exact width: solve for h where arSum*h + gap*(n-1) = W
+        const h = (containerWidth - gap * (current.length - 1)) / arSum;
+        rows.push({ items: current, height: h });
+        current = [];
+        arSum = 0;
+      }
+    }
+    if (current.length) {
+      // Final row: keep target height (don't stretch)
+      rows.push({ items: current, height: targetH, isLast: true });
+    }
+    return rows;
+  }
+
+  function renderJustified() {
+    const grid = document.getElementById("grid");
+    grid.className = "masonry";
+    grid.style.setProperty("--gap", GAP + "px");
+    const w = grid.clientWidth || (document.querySelector(".stage").clientWidth - 48);
+    const targetH = ROW_TARGET[state.density];
+    const rows = layoutJustified(data, w, targetH, GAP);
+
+    grid.innerHTML = rows.map(row => `
+      <div class="masonry-row" style="height:${row.height}px">
+        ${row.items.map(it => `
+          <div class="cell" data-kind="${it.kind}" style="width:${row.height * it.ar}px; height:${row.height}px">
+            <div class="placeholder"></div>
+            <div class="meta">
+              <span class="name">${it.name}</span>
+              <span class="ar">${it.label}</span>
+            </div>
+          </div>`).join("")}
+      </div>`).join("");
+  }
+
+  function renderPinterest() {
+    const grid = document.getElementById("grid");
+    grid.className = "pinterest";
+    grid.style.setProperty("--gap", GAP + "px");
+    const cols = COL_COUNT[state.density];
+    grid.style.columnCount = cols;
+
+    grid.innerHTML = data.map(it => `
+      <div class="cell" data-kind="${it.kind}" style="--ar:${it.ar}">
+        <div class="placeholder"></div>
+        <div class="meta">
+          <span class="name">${it.name}</span>
+          <span class="ar">${it.label}</span>
+        </div>
+      </div>`).join("");
+  }
+
+  function render() {
+    if (state.layout === "justified") renderJustified();
+    else renderPinterest();
+  }
+
+  // ── Wire toggles ───────────────────────────────────────────
+  document.querySelector(".density").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    state.density = btn.dataset.density;
+    document.querySelectorAll(".density button").forEach(b => b.classList.toggle("is-active", b === btn));
+    render();
+  });
+  document.querySelector(".layout-toggle").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    state.layout = btn.dataset.layout;
+    document.querySelectorAll(".layout-toggle button").forEach(b => b.classList.toggle("is-active", b === btn));
+    render();
+  });
+
+  window.addEventListener("resize", () => { if (state.layout === "justified") render(); });
+  render();
+</script>
+
+</body>
+</html>
