@@ -2,8 +2,11 @@
   {
     "id": "2026-05-27-search-fixes",
     "date": "May 27, 2026",
-    "title": "Search — clearer, clearable, and the result actually opens",
+    "title": "Search — clearer, clearable, and Enter goes where you'd expect",
     "bullets": [
+      { "kind": "improved", "text": "Screenshots now appear first in search results — Enter on the default selection lands on a concrete screenshot, not a group filter" },
+      { "kind": "improved", "text": "Results are sorted by relevance now — matches in the name come before matches found in AI-generated tags or filenames" },
+      { "kind": "improved", "text": "Matching text is highlighted in result names so you can see WHY each result showed up" },
       { "kind": "improved", "text": "Click a screenshot in the search modal and the lightbox opens straight on that screenshot, instead of just scoping the catalogue list to it" },
       { "kind": "improved", "text": "Active search query now shows as its own pill in the toolbar — you can see what you searched for and remove it with one click" },
       { "kind": "fix", "text": "\"Clear all\" now genuinely clears everything (search query included), instead of leaving a hidden filter behind" }

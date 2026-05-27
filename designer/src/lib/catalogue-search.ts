@@ -17,6 +17,8 @@ export interface GroupResult {
   name: string;
   flowCount: number;
   screenCount: number;
+  /** Higher = more relevant. Used for sort ordering within bucket. */
+  score: number;
 }
 
 export interface FlowResult {
@@ -25,6 +27,7 @@ export interface FlowResult {
   name: string;
   group: string;
   screenCount: number;
+  score: number;
 }
 
 export interface ScreenshotResult {
@@ -32,6 +35,7 @@ export interface ScreenshotResult {
   id: string;
   screenshot: ScreenshotNode;
   meta: string;
+  score: number;
 }
 
 export type SearchResult = GroupResult | FlowResult | ScreenshotResult;
@@ -91,7 +95,9 @@ function getScreenshotHaystack(screenshot: ScreenshotNode): string {
   return parts.join(' ').toLowerCase();
 }
 
-function tokensFromQuery(query: string): string[] {
+// Exported so the search modal can use the same tokeniser to compute
+// highlight ranges on result names.
+export function tokensFromQuery(query: string): string[] {
   return query
     .trim()
     .toLowerCase()
@@ -104,6 +110,22 @@ function matchesAllTokens(haystack: string, tokens: string[]): boolean {
     if (!haystack.includes(token)) return false;
   }
   return true;
+}
+
+// Returns the highest score across the candidate fields. Each field
+// scores higher when it contains ALL tokens than just some.
+// `tieredFields` is ordered most→least relevant; the first one that
+// matches all tokens wins.
+function scoreByField(tokens: string[], tieredFields: Array<{ value: string; weight: number }>): number {
+  let best = 0;
+  for (const { value, weight } of tieredFields) {
+    if (!value) continue;
+    const lc = value.toLowerCase();
+    if (matchesAllTokens(lc, tokens)) {
+      if (weight > best) best = weight;
+    }
+  }
+  return best;
 }
 
 function platformLabel(platform: string | null | undefined): string {
@@ -162,25 +184,31 @@ export function deriveSearchResults({ screenshots, query, perCategory = SEARCH_P
         name,
         flowCount: entry.flows.size,
         screenCount: entry.screens,
+        score: 100, // groups only match on name; score uniform
       });
     }
   }
-  matchedGroups.sort((a, b) => a.name.localeCompare(b.name));
+  matchedGroups.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
   const matchedFlows: FlowResult[] = [];
   for (const [id, entry] of flowIndex) {
     const haystack = `${entry.name} ${entry.group}`.toLowerCase();
     if (matchesAllTokens(haystack, tokens)) {
+      const score = scoreByField(tokens, [
+        { value: entry.name, weight: 100 },
+        { value: entry.group, weight: 50 },
+      ]);
       matchedFlows.push({
         type: 'flow',
         id,
         name: entry.name,
         group: entry.group,
         screenCount: entry.screens,
+        score,
       });
     }
   }
-  matchedFlows.sort((a, b) => a.name.localeCompare(b.name));
+  matchedFlows.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
   const matchedScreenshots: ScreenshotResult[] = [];
   for (const screenshot of screenshots) {
@@ -192,13 +220,34 @@ export function deriveSearchResults({ screenshots, query, perCategory = SEARCH_P
       flow ?? '',
       platformLabel(screenshot.platform),
     ].filter((part) => part.length > 0 && part !== '—');
+    // Score from most→least visible: visible name first, then the
+    // labelled title (often the AI-derived display name), then the
+    // flow label / group, then less-visible signals.
+    const label = getLabel(screenshot);
+    const identity = label?.identity as Record<string, unknown> | undefined;
+    const title = typeof identity?.title === 'string' ? identity.title : '';
+    const summary = typeof identity?.one_line_summary === 'string' ? identity.one_line_summary : '';
+    const score = scoreByField(tokens, [
+      { value: screenshot.name ?? '', weight: 100 },
+      { value: title, weight: 80 },
+      { value: flow ?? '', weight: 60 },
+      { value: screenshot.group ?? '', weight: 55 },
+      { value: summary, weight: 40 },
+      { value: screenshot.file_name ?? '', weight: 30 },
+      // Tag-only matches (page_types / ui_elements / ux_patterns) fall
+      // through to the floor — we still surface them so nothing is
+      // hidden, but they sort below name / title / flow matches.
+      { value: haystack, weight: 10 },
+    ]);
     matchedScreenshots.push({
       type: 'screenshot',
       id: screenshot.id,
       screenshot,
       meta: metaParts.join(' · '),
+      score,
     });
   }
+  matchedScreenshots.sort((a, b) => b.score - a.score || a.screenshot.name.localeCompare(b.screenshot.name));
 
   return {
     groups: matchedGroups.slice(0, perCategory),

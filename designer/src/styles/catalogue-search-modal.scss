@@ -330,6 +330,17 @@
   text-overflow: ellipsis;
 }
 
+// Highlighted matching substring inside result names. Indigo wash with
+// brighter text — visible enough to scan, quiet enough not to dominate.
+.catalogue-search-modal__hl {
+  background: rgba(99, 102, 241, 0.28);
+  color: #eef2ff;
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 -2px;
+  font-weight: 600;
+}
+
 .catalogue-search-modal__row-meta {
   font-size: 12px;
   color: #71717a;

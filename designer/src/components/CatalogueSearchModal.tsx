@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Clock, Command, CornerDownLeft, Image as ImageIcon, LayoutGrid, Search as SearchIcon, Workflow, X } from 'lucide-react';
 
+import { Fragment, type ReactNode } from 'react';
 import {
   deriveSearchResults,
   loadRecents,
   pushRecent,
+  tokensFromQuery,
   type GroupResult,
   type FlowResult,
   type RecentEntry,
@@ -30,9 +32,30 @@ interface CatalogueSearchModalProps {
 
 // Build a flat ordered list of results so keyboard nav (↑↓) can move
 // across category boundaries without each section managing its own
-// index.
+// index. Screenshots come FIRST because that's the most common intent
+// when searching — Enter on default selection should land on a
+// concrete screenshot, not a group filter.
 function flattenResults(groups: GroupResult[], flows: FlowResult[], screenshots: ScreenshotResult[]): SearchResult[] {
-  return [...groups, ...flows, ...screenshots];
+  return [...screenshots, ...groups, ...flows];
+}
+
+// Wrap any token-matching substring in `<mark>` so the user can see
+// WHY a result matched. Case-insensitive; tokens come from the same
+// tokeniser as the matcher. Empty / no-match strings pass through
+// unchanged.
+function highlightMatch(text: string, tokens: string[]): ReactNode {
+  if (!text || tokens.length === 0) return text;
+  const escaped = tokens.map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp(`(${escaped.join('|')})`, 'gi');
+  const parts = text.split(re);
+  const lowerTokens = new Set(tokens.map((token) => token.toLowerCase()));
+  return parts.map((part, index) => {
+    if (!part) return null;
+    const isHit = lowerTokens.has(part.toLowerCase());
+    return isHit
+      ? <mark key={index} className="catalogue-search-modal__hl">{part}</mark>
+      : <Fragment key={index}>{part}</Fragment>;
+  });
 }
 
 export function CatalogueSearchModal({
@@ -60,6 +83,9 @@ export function CatalogueSearchModal({
   }, [isOpen]);
 
   const results = useMemo(() => deriveSearchResults({ screenshots, query }), [screenshots, query]);
+  // Same tokeniser as the search lib so highlight ranges always match
+  // what the matcher saw.
+  const tokens = useMemo(() => tokensFromQuery(query), [query]);
   const flat = useMemo(
     () => flattenResults(results.groups, results.flows, results.screenshots),
     [results],
@@ -189,69 +215,6 @@ export function CatalogueSearchModal({
 
           {hasQuery && hasResults && (
             <>
-              {results.groups.length > 0 && (
-                <section className="catalogue-search-modal__section">
-                  <div className="catalogue-search-modal__section-label">
-                    Groups <span className="catalogue-search-modal__section-count">· {results.groupsTotal} match{results.groupsTotal === 1 ? '' : 'es'}</span>
-                  </div>
-                  {results.groups.map((result, index) => {
-                    const flatIndex = index;
-                    const appearance = resolveCatalogueGroupAppearance(appearanceMap, result.name, null);
-                    return (
-                      <button
-                        key={result.id}
-                        type="button"
-                        data-result-index={flatIndex}
-                        className={`catalogue-search-modal__row${activeIndex === flatIndex ? ' is-active' : ''}`}
-                        onMouseEnter={() => setActiveIndex(flatIndex)}
-                        onClick={() => selectResult(result)}
-                      >
-                        <span className="catalogue-search-modal__row-icon catalogue-search-modal__row-icon--group">
-                          {appearance.iconUrl ? (
-                            <img src={appearance.iconUrl} alt="" />
-                          ) : (
-                            <LayoutGrid size={13} aria-hidden="true" />
-                          )}
-                        </span>
-                        <span className="catalogue-search-modal__row-main">{result.name}</span>
-                        <span className="catalogue-search-modal__row-meta">
-                          {result.flowCount} flow{result.flowCount === 1 ? '' : 's'}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </section>
-              )}
-
-              {results.flows.length > 0 && (
-                <section className="catalogue-search-modal__section">
-                  <div className="catalogue-search-modal__section-label">
-                    Flows <span className="catalogue-search-modal__section-count">· {results.flowsTotal} match{results.flowsTotal === 1 ? '' : 'es'}</span>
-                  </div>
-                  {results.flows.map((result, index) => {
-                    const flatIndex = results.groups.length + index;
-                    return (
-                      <button
-                        key={result.id}
-                        type="button"
-                        data-result-index={flatIndex}
-                        className={`catalogue-search-modal__row${activeIndex === flatIndex ? ' is-active' : ''}`}
-                        onMouseEnter={() => setActiveIndex(flatIndex)}
-                        onClick={() => selectResult(result)}
-                      >
-                        <span className="catalogue-search-modal__row-icon">
-                          <Workflow size={13} aria-hidden="true" />
-                        </span>
-                        <span className="catalogue-search-modal__row-main">{result.name}</span>
-                        <span className="catalogue-search-modal__row-meta">
-                          {result.group} · {result.screenCount} screen{result.screenCount === 1 ? '' : 's'}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </section>
-              )}
-
               {results.screenshots.length > 0 && (
                 <section className="catalogue-search-modal__section catalogue-search-modal__section--cards">
                   <div className="catalogue-search-modal__section-label">
@@ -259,7 +222,7 @@ export function CatalogueSearchModal({
                   </div>
                   <div className="catalogue-search-modal__cards">
                     {results.screenshots.map((result, index) => {
-                      const flatIndex = results.groups.length + results.flows.length + index;
+                      const flatIndex = index;
                       return (
                         <button
                           key={result.id}
@@ -281,7 +244,7 @@ export function CatalogueSearchModal({
                             )}
                           </span>
                           <span className="catalogue-search-modal__card-body">
-                            <span className="catalogue-search-modal__card-title">{result.screenshot.name}</span>
+                            <span className="catalogue-search-modal__card-title">{highlightMatch(result.screenshot.name, tokens)}</span>
                             <span className="catalogue-search-modal__card-meta">{result.meta}</span>
                           </span>
                         </button>
@@ -299,6 +262,69 @@ export function CatalogueSearchModal({
                       </div>
                     )}
                   </div>
+                </section>
+              )}
+
+              {results.groups.length > 0 && (
+                <section className="catalogue-search-modal__section">
+                  <div className="catalogue-search-modal__section-label">
+                    Groups <span className="catalogue-search-modal__section-count">· {results.groupsTotal} match{results.groupsTotal === 1 ? '' : 'es'}</span>
+                  </div>
+                  {results.groups.map((result, index) => {
+                    const flatIndex = results.screenshots.length + index;
+                    const appearance = resolveCatalogueGroupAppearance(appearanceMap, result.name, null);
+                    return (
+                      <button
+                        key={result.id}
+                        type="button"
+                        data-result-index={flatIndex}
+                        className={`catalogue-search-modal__row${activeIndex === flatIndex ? ' is-active' : ''}`}
+                        onMouseEnter={() => setActiveIndex(flatIndex)}
+                        onClick={() => selectResult(result)}
+                      >
+                        <span className="catalogue-search-modal__row-icon catalogue-search-modal__row-icon--group">
+                          {appearance.iconUrl ? (
+                            <img src={appearance.iconUrl} alt="" />
+                          ) : (
+                            <LayoutGrid size={13} aria-hidden="true" />
+                          )}
+                        </span>
+                        <span className="catalogue-search-modal__row-main">{highlightMatch(result.name, tokens)}</span>
+                        <span className="catalogue-search-modal__row-meta">
+                          {result.flowCount} flow{result.flowCount === 1 ? '' : 's'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </section>
+              )}
+
+              {results.flows.length > 0 && (
+                <section className="catalogue-search-modal__section">
+                  <div className="catalogue-search-modal__section-label">
+                    Flows <span className="catalogue-search-modal__section-count">· {results.flowsTotal} match{results.flowsTotal === 1 ? '' : 'es'}</span>
+                  </div>
+                  {results.flows.map((result, index) => {
+                    const flatIndex = results.screenshots.length + results.groups.length + index;
+                    return (
+                      <button
+                        key={result.id}
+                        type="button"
+                        data-result-index={flatIndex}
+                        className={`catalogue-search-modal__row${activeIndex === flatIndex ? ' is-active' : ''}`}
+                        onMouseEnter={() => setActiveIndex(flatIndex)}
+                        onClick={() => selectResult(result)}
+                      >
+                        <span className="catalogue-search-modal__row-icon">
+                          <Workflow size={13} aria-hidden="true" />
+                        </span>
+                        <span className="catalogue-search-modal__row-main">{highlightMatch(result.name, tokens)}</span>
+                        <span className="catalogue-search-modal__row-meta">
+                          {result.group} · {result.screenCount} screen{result.screenCount === 1 ? '' : 's'}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </section>
               )}
             </>
