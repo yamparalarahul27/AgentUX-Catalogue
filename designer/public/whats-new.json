@@ -1,5 +1,53 @@
 [
   {
+    "id": "2026-05-27-lightbox-actions-card",
+    "date": "May 27, 2026",
+    "title": "Lightbox right-side polish",
+    "bullets": [
+      { "kind": "fix", "text": "The Actions card in the lightbox right panel no longer looks cut off — same rounded edges and border as the card above it" }
+    ]
+  },
+  {
+    "id": "2026-05-26-canvas-gallery",
+    "date": "May 26, 2026",
+    "title": "Canvas view — infinite pannable Gallery",
+    "imageUrl": "/designer/mockup-2026-05-26-canvas-gallery.html",
+    "bullets": [
+      { "kind": "new", "text": "Gallery view becomes a pannable canvas — drag or trackpad-swipe through your screenshots like a wallpaper" },
+      { "kind": "new", "text": "Pan further → next 50 screenshots load in the direction you're heading. A subtle marker tells you content is arriving" },
+      { "kind": "new", "text": "Density toggle (A / M / C) zooms cells live — bigger for focus, smaller for breadth" },
+      { "kind": "new", "text": "Turn it off any time from Account menu → Canvas view; you'll fall back to the classic gallery" }
+    ]
+  },
+  {
+    "id": "2026-05-26-typing-key-feedback",
+    "date": "May 26, 2026",
+    "title": "Typing key feedback while you edit",
+    "imageUrl": "/designer/mockup-2026-05-26-typing-feedback-keycap.html",
+    "bullets": [
+      { "kind": "new", "text": "Editing a screenshot name shows the key you just pressed at the bottom of the screen, with a soft mechanical click" },
+      { "kind": "new", "text": "Toggle it on or off any time from Account menu → Typing key feedback" }
+    ]
+  },
+  {
+    "id": "2026-05-26-lightbox-polish",
+    "date": "May 26, 2026",
+    "title": "Lightbox quality of life",
+    "bullets": [
+      { "kind": "improved", "text": "More breathing room above and below the image inside the lightbox" },
+      { "kind": "improved", "text": "Image loads instantly with a chunky preview instead of a tiny dot in the centre" },
+      { "kind": "fix", "text": "Editing the Web preset on a screenshot now saves correctly — no more silent revert on reopen" }
+    ]
+  },
+  {
+    "id": "2026-05-25-quick-upload-paste-link",
+    "date": "May 25, 2026",
+    "title": "Quick Upload paste affordance",
+    "bullets": [
+      { "kind": "improved", "text": "Paste-from-clipboard now sits as a compact text link below a shorter drop zone — same iOS Universal Clipboard support, less screen real estate" }
+    ]
+  },
+  {
     "id": "2026-05-22-paste-from-clipboard",
     "date": "May 22, 2026",
     "title": "Paste from clipboard + UI Element tagging",
