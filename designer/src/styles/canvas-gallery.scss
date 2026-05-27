@@ -45,14 +45,18 @@
   will-change: transform;
 }
 
-// Inner wrapper that holds the masonry rows. The component sets a
-// padding-top equal to half the vertical slack so under-filled tiles
-// center their content with breathing room above & below.
+// Inner wrapper that holds the masonry rows. Sized to contentW × contentH
+// (the component sizes it generously for the worst-case row count of a
+// batch). When a batch under-fills the height, justify-content:center
+// gives breathing room above & below; when it perfectly fills there's
+// no leakage into adjacent tiles.
 .canvas-gallery-tile-content {
   position: relative;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 20px;
+  box-sizing: border-box;
 }
 
 // ── Row (justified flexbox) ──────────────────────────

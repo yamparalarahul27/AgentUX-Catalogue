@@ -57,10 +57,14 @@ const LOADER_HOLD_MS = 1400;
 const REVEAL_FADE_MS = 600;
 const STAGGER_PER_CELL_MS = 24;
 
+// contentH is sized for the worst-case row count: 56 items where every
+// screenshot is a wide landscape gives ~8 rows at the target height. We
+// over-provision a hair so the last row's allowed 1.4× stretch can't
+// overflow the tile and leak into the next batch.
 const DENSITY_PRESETS: Record<Density, DensityPreset> = {
-  atom:     { contentW: 5000, contentH: 1700, rowH: 360 },
-  molecule: { contentW: 2700, contentH: 1000, rowH: 200 },
-  compound: { contentW: 1500, contentH: 600,  rowH: 110 },
+  atom:     { contentW: 5000, contentH: 3200, rowH: 360 },
+  molecule: { contentW: 2700, contentH: 1850, rowH: 200 },
+  compound: { contentW: 1500, contentH: 1100, rowH: 110 },
 };
 
 interface TilePosition { x: number; y: number; }
@@ -419,9 +423,6 @@ export function CatalogueCanvasGalleryView({
           {renderedTiles.map((tile) => {
             const left = tile.position.x * tileW;
             const top = tile.position.y * tileH;
-            // Vertical centering inside the fixed contentH gives the
-            // masonry breathing room when it under-fills the tile.
-            const verticalSlack = Math.max(0, preset.contentH - tile.contentHeight);
             return (
               <div
                 key={`${tile.position.x},${tile.position.y}`}
@@ -439,7 +440,6 @@ export function CatalogueCanvasGalleryView({
                   style={{
                     width: preset.contentW,
                     height: preset.contentH,
-                    paddingTop: verticalSlack / 2,
                   }}
                 >
                   {tile.rows.map((row, rowIdx) => (
