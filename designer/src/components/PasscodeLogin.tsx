@@ -37,6 +37,17 @@ export function PasscodeLogin() {
 
     const result = await redeemPasscode(trimmedEmail, trimmedPasscode);
     if (result.ok) {
+      // Push a fresh history entry so the user's first browser-back
+      // after sign-in keeps them in the catalogue instead of leaving
+      // the site. Without this, the form's mount didn't change the
+      // URL, so back would still point at whatever was here before
+      // they ever opened /designer/.
+      try {
+        window.history.pushState({}, '', window.location.href);
+      } catch {
+        // History API can throw in cross-origin / sandboxed contexts.
+        // Failing silently is the right call — sign-in still succeeded.
+      }
       // useAuth's onAuthStateChange listener flips the gate; nothing
       // more for this component to do.
       return;

@@ -27,9 +27,23 @@ export function CatalogueApp() {
 
   const { user, loading, logout, logoutEverywhere } = useAuth();
 
-  // Avoid flashing the login screen for users who already have a
-  // persisted session in localStorage; getSession() resolves quickly.
-  if (loading) return null;
+  // Render a neutral dark backdrop while `getSession()` resolves so a
+  // slow first response doesn't briefly paint the login screen for
+  // users who actually have a persisted session. Sits as a stable
+  // shell on top of the body background until useAuth flips.
+  if (loading) {
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: '#0a0a0c',
+          zIndex: 0,
+        }}
+      />
+    );
+  }
 
   if (!user) {
     return (

@@ -275,24 +275,50 @@ export function CatalogueCanvasGalleryView({
     applyTransforms();
   }, [applyTransforms, tileW, tileH]);
 
-  // Inertia rAF.
+  // Inertia rAF — runs only while a drag-fling is decaying. The loop
+  // cancels itself once velocity falls below the 0.05 threshold so an
+  // idle Canvas tab doesn't burn 60 fps forever. Re-armed from the
+  // pointer / wheel handlers when the user kicks fresh motion in.
+  const rafRef = useRef<number | null>(null);
+  const tickRef = useRef<() => void>(() => {});
+
   useEffect(() => {
-    let raf = 0;
-    function tick() {
+    tickRef.current = () => {
       const state = panRef.current;
-      if (!state.isPointerDown && (Math.abs(state.velX) > 0.05 || Math.abs(state.velY) > 0.05)) {
+      const hasMotion = Math.abs(state.velX) > 0.05 || Math.abs(state.velY) > 0.05;
+      if (!state.isPointerDown && hasMotion) {
         state.panX += state.velX;
         state.panY += state.velY;
         state.velX *= 0.92;
         state.velY *= 0.92;
         applyTransforms();
         maybeAllocateTile();
+        rafRef.current = requestAnimationFrame(tickRef.current);
+      } else {
+        // Drop the velocity to a clean zero so the next interaction
+        // starts from rest, and let the loop stop.
+        if (!state.isPointerDown) {
+          state.velX = 0;
+          state.velY = 0;
+        }
+        rafRef.current = null;
       }
-      raf = requestAnimationFrame(tick);
-    }
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    };
   }, [applyTransforms, maybeAllocateTile]);
+
+  const startInertia = useCallback(() => {
+    if (rafRef.current != null) return;
+    rafRef.current = requestAnimationFrame(tickRef.current);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, []);
 
   // Pointer + wheel handlers.
   useEffect(() => {
@@ -335,6 +361,9 @@ export function CatalogueCanvasGalleryView({
       if (!state.isPointerDown) return;
       state.isPointerDown = false;
       stage?.classList.remove('is-dragging');
+      // Kick the inertia rAF loop so the fling decays. The loop
+      // self-cancels once velocity drops below the threshold.
+      startInertia();
     }
     function onWheel(event: WheelEvent) {
       event.preventDefault();
@@ -363,7 +392,7 @@ export function CatalogueCanvasGalleryView({
       stage.removeEventListener('pointerleave', onPointerEnd);
       stage.removeEventListener('wheel', onWheel);
     };
-  }, [applyTransforms, maybeAllocateTile]);
+  }, [applyTransforms, maybeAllocateTile, startInertia]);
 
   function handleCanvasClick(event: React.MouseEvent<HTMLDivElement>) {
     if (panRef.current.dragMoved) return;
