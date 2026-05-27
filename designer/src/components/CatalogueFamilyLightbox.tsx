@@ -647,9 +647,90 @@ export function CatalogueFamilyLightbox({
     if (drawing) setDrawing(null);
   }
   function handleMediaClick() {
+    // After a horizontal swipe, iOS fires a synthetic click on touchend.
+    // Suppress it so the user doesn't accidentally deselect an annotation
+    // (or trigger any future click-based behaviour) right after navigating.
+    if (suppressNextClickRef.current) {
+      suppressNextClickRef.current = false;
+      return;
+    }
     if (annotationMode || drawing || annotationDraft) return;
     if (!selectedAnnotationId) return;
     setSelectedAnnotationId(null);
+  }
+
+  // ── Mobile swipe gestures on the media (prev / next) ──
+  // Tracked via a ref so the gesture doesn't trigger re-renders. The
+  // axis is decided after a short threshold of movement (10px), and
+  // we only navigate when the user crossed SWIPE_DISTANCE_PX
+  // horizontally within SWIPE_MAX_DURATION_MS. Disabled while crop or
+  // annotation tools are active so we don't fight their own pointer
+  // logic.
+  const swipeRef = useRef<{
+    startX: number;
+    startY: number;
+    startTime: number;
+    active: boolean;
+    isHorizontal: boolean;
+  } | null>(null);
+  const suppressNextClickRef = useRef(false);
+  const SWIPE_DISTANCE_PX = 60;
+  const SWIPE_MAX_DURATION_MS = 800;
+  const SWIPE_AXIS_LOCK_PX = 10;
+
+  function swipeEnabled() {
+    return !cropMode && !annotationMode && !drawing && !annotationDraft;
+  }
+
+  function handleMediaTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    if (!swipeEnabled()) return;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    swipeRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startTime: performance.now(),
+      active: true,
+      isHorizontal: false,
+    };
+  }
+
+  function handleMediaTouchMove(event: React.TouchEvent<HTMLDivElement>) {
+    const state = swipeRef.current;
+    if (!state?.active) return;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - state.startX;
+    const dy = touch.clientY - state.startY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (!state.isHorizontal && absDx > SWIPE_AXIS_LOCK_PX && absDx > absDy * 1.5) {
+      state.isHorizontal = true;
+    } else if (!state.isHorizontal && absDy > SWIPE_AXIS_LOCK_PX && absDy > absDx * 1.5) {
+      // Dominant vertical — abandon the swipe so the page can scroll
+      // (the lightbox's comments panel scrolls vertically).
+      state.active = false;
+    }
+  }
+
+  function handleMediaTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    const state = swipeRef.current;
+    swipeRef.current = null;
+    if (!state?.active || !state.isHorizontal) return;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - state.startX;
+    const elapsed = performance.now() - state.startTime;
+    if (Math.abs(dx) < SWIPE_DISTANCE_PX) return;
+    if (elapsed > SWIPE_MAX_DURATION_MS) return;
+    // Left swipe (dx < 0) advances; right swipe (dx > 0) goes back.
+    if (dx < 0 && onNext) {
+      suppressNextClickRef.current = true;
+      onNext();
+    } else if (dx > 0 && onPrev) {
+      suppressNextClickRef.current = true;
+      onPrev();
+    }
   }
   async function addAnnotation() {
     if (!ensureCanEdit() || !screenshot) return;
@@ -900,6 +981,9 @@ export function CatalogueFamilyLightbox({
             onMouseUp={handleMediaMouseUp}
             onMouseLeave={handleMediaMouseLeave}
             onClick={handleMediaClick}
+            onTouchStart={handleMediaTouchStart}
+            onTouchMove={handleMediaTouchMove}
+            onTouchEnd={handleMediaTouchEnd}
             style={{ cursor: annotationMode && annotationEditAllowed ? 'crosshair' : 'default' }}
           >
           {/* Thumb-hash blurhash placeholder — paints instantly so the
