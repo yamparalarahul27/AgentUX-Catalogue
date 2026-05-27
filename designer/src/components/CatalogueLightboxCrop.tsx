@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { DotLoader } from './DotLoader';
+
 interface CatalogueLightboxCropProps {
   imageUrl: string;
   imageAlt: string;
@@ -455,7 +457,7 @@ export function CatalogueLightboxCrop({
           >
             {isApplying ? (
               <>
-                <span className="loading-spinner-small" aria-hidden="true" />
+                <DotLoader size="sm" ariaLabel="Cropping" />
                 <span>Cropping…</span>
               </>
             ) : 'Apply (replaces)'}

@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 
 import { formatDateTime } from '../lib/catalogue-lightbox';
 import type { CatalogueGalleryFeedbackState } from '../hooks/use-catalogue-gallery-feedback';
+import { DotLoader } from './DotLoader';
 
 interface CatalogueGalleryFeedbackPanelProps {
   canEdit: boolean;
@@ -44,7 +45,7 @@ export function CatalogueGalleryFeedbackPanel({
           <div className="catalogue-gallery-comments-list">
             {feedback.loadingComments ? (
               <div className="catalogue-gallery-comments-empty catalogue-gallery-comments-state">
-                <div className="loading-spinner" />
+                <DotLoader size="md" ariaLabel="Loading comments" />
                 <span>Loading comments...</span>
               </div>
             ) : feedback.commentsError ? (

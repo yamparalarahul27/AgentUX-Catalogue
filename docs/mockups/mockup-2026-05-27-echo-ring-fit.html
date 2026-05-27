@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Echo Ring — where it lands today</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0e0e10;
+    --panel: #17181c;
+    --panel-2: #1e2028;
+    --line: rgba(255,255,255,0.08);
+    --text: #e6e7ea;
+    --muted: #9499a3;
+    --accent: #5b8cff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif; }
+  body { padding: 32px 24px 80px; max-width: 1080px; margin: 0 auto; }
+  h1 { font-weight: 600; font-size: 22px; margin: 0 0 4px; }
+  .lede { color: var(--muted); margin: 0 0 28px; }
+  h2 { font-weight: 600; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 28px 0 12px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .where { font-weight: 600; font-size: 13px; color: var(--text); }
+  .meta { font-size: 11px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .stage {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 96px;
+    justify-content: center;
+  }
+  .stage-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .stage-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  /* App-ish button approximations */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #2b313e;
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: default;
+  }
+  .btn-primary.is-saving { color: #c9cdd6; }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .add-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent);
+    font-size: 13px;
+    background: transparent;
+    border: 1px dashed rgba(91,140,255,0.4);
+    border-radius: 8px;
+    padding: 7px 12px;
+  }
+  .scroll-sentinel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 24px 0;
+    width: 100%;
+  }
+  .full-area {
+    background: #101115;
+    border: 1px dashed rgba(255,255,255,0.06);
+    border-radius: 8px;
+    width: 100%;
+    aspect-ratio: 16/10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .comments-empty {
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 0;
+  }
+
+  /* ----- Echo Ring loader CSS (extracted minimal subset) ----- */
+  .dmx-root {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    --dmx-cycle: 1500ms;
+    --dmx-opacity-base: 0.16;
+    --dmx-opacity-mid: 0.32;
+    --dmx-opacity-peak: 1;
+  }
+  .dmx-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+  }
+  .dmx-dot {
+    border-radius: 999px;
+    display: block;
+    background: currentColor;
+    opacity: calc(0.5 * (var(--dmx-opacity-base) + var(--dmx-opacity-mid)));
+    will-change: opacity;
+  }
+  .dmx-inactive { opacity: 0; }
+  .dmx-ripple-echo {
+    animation: dmx-ripple-echo calc(var(--dmx-cycle) * var(--dmx-speed, 0.9)) ease-in-out infinite;
+    animation-delay: calc((var(--dmx-ripple-ring, 0) * 0.14 + var(--dmx-ripple-parity, 0) * 0.03) * var(--dmx-cycle) * var(--dmx-speed, 0.9));
+  }
+  @keyframes dmx-ripple-echo {
+    0%, 100% { opacity: calc(0.625 * var(--dmx-opacity-base)); }
+    28% { opacity: calc(0.98 * var(--dmx-opacity-peak)); }
+    52% { opacity: calc(1.18 * var(--dmx-opacity-mid)); }
+    72% { opacity: calc(0.55 * var(--dmx-opacity-mid)); }
+  }
+
+  .wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* same as production */
+  }
+
+  /* Outline overlay so it's obvious where the wrapper ends */
+  .show-bounds .wrapper { outline: 1px dashed rgba(255, 80, 80, 0.5); }
+  .show-bounds .dmx-grid { outline: 1px dashed rgba(80, 220, 120, 0.45); }
+
+  .legend {
+    display: flex;
+    gap: 14px;
+    color: var(--muted);
+    font-size: 11px;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .key::before { content: ""; width: 14px; height: 0; border-top: 1px dashed; display: inline-block; }
+  .legend .key.red::before { border-color: rgba(255, 80, 80, 0.8); }
+  .legend .key.green::before { border-color: rgba(80, 220, 120, 0.8); }
+  .toggle {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 36px 0 0; }
+  .footnote { color: var(--muted); font-size: 12px; margin-top: 18px; }
+</style>
+</head>
+<body class="show-bounds">
+
+<h1>Echo Ring — where it lands today</h1>
+<p class="lede">
+  Eight places I swapped the loader in. Below shows the current production rendering — wrapper size on the left, the actual 5×5 dot grid the loader paints in the middle, and the same context with a proposed dot-size override on the right.
+</p>
+
+<div class="legend">
+  <span class="key red">wrapper box (what we sized)</span>
+  <span class="key green">actual painted 5×5 grid</span>
+  <label class="toggle"><input id="bounds-toggle" type="checkbox" checked /> show bounds</label>
+</div>
+
+<h2>The root problem</h2>
+<div class="card">
+  <div class="card-head">
+    <span class="where">The loader renders a 5×5 dot grid at <code>dotSize=5</code> (default)</span>
+    <span class="meta">size = dotSize·5 + gap·4</span>
+  </div>
+  <div class="stage">
+    <div class="stage-label">how the grid sizes itself</div>
+    <p style="margin:0;color:var(--muted);font-size:12.5px;">
+      With <code>dotSize = 5</code> (component default), the grid wants <b>at least 29px</b> (5×5 dots + 4×1px gap). When we wrap it in a 14px or 22px box and clip with <code>overflow:hidden</code>, the dots get cropped to a tight square — so it stops reading as a "ring" and looks like a small smudge.
+    </p>
+    <p style="margin:0;color:var(--muted);font-size:12.5px;">
+      Fix: pass a smaller <code>dotSize</code> for the <code>sm</code> / <code>md</code> presets so the grid naturally fits the wrapper.
+    </p>
+  </div>
+</div>
+
+<h2>Spots in the app — current (left) vs proposed (right)</h2>
+
+<div class="grid" id="grid"></div>
+
+<hr />
+
+<h2>Proposed change</h2>
+<div class="card">
+  <div class="stage" style="background: transparent; border: 0; padding: 0;">
+<pre style="margin:0;padding:14px 16px;background:#0b0b0d;border:1px solid var(--line);border-radius:8px;font-size:12.5px;color:#cdd1da;overflow:auto;"><code>const SIZE_PX: Record&lt;DotLoaderSize, number&gt; = {
+  sm: 14, md: 22, lg: 32,
+};
+const DOT_PX: Record&lt;DotLoaderSize, number&gt; = {
+  sm: 2,  md: 3,  lg: 4,    // ← add this
+};
+
+return (
+  &lt;DotmSquare11
+    size={SIZE_PX[size]}
+    dotSize={DOT_PX[size]}   // ← pass it through
+    color="currentColor"
+    speed={1.1}
+  /&gt;
+);</code></pre>
+  </div>
+  <p class="footnote">
+    With <code>dotSize</code> = 2/3/4 the grid math becomes <b>14px / 19px / 32px</b> respectively — the dots fit the wrapper cleanly at every size, no clipping, and the Echo Ring reads as a ring at all three.
+  </p>
+</div>
+
+<script>
+  // Match the production layout helper: g = max(1, floor((size - dotSize*5) / 4))
+  function layout(size, dotSize) {
+    const g = Math.max(1, Math.floor((size - dotSize * 5) / 4));
+    const span = dotSize * 5 + g * 4;
+    return { gap: g, span };
+  }
+  function renderRing(size, dotSize, color = "currentColor") {
+    const { gap, span } = layout(size, dotSize);
+    const dots = [];
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        const man = Math.abs(r - 2) + Math.abs(c - 2);
+        const ring = Math.max(0, Math.min(4, man));
+        dots.push(
+          `<span class="dmx-dot dmx-ripple-echo" style="width:${dotSize}px;height:${dotSize}px;--dmx-ripple-ring:${ring};--dmx-ripple-parity:${ring%2}"></span>`
+        );
+      }
+    }
+    return `
+      <span class="wrapper" style="width:${size}px;height:${size}px;color:${color}">
+        <span class="dmx-root">
+          <span class="dmx-grid" style="gap:${gap}px;width:${span}px;height:${span}px">${dots.join("")}</span>
+        </span>
+      </span>`;
+  }
+
+  const SIZE_PX = { sm: 14, md: 22, lg: 32 };
+  const FIX_DOT = { sm: 2,  md: 3,  lg: 4  };
+
+  const spots = [
+    {
+      where: "Inline editor — Save button",
+      file: "CatalogueFamilyLightboxInlineEditor.tsx",
+      size: "sm",
+      context: (loader) => `
+        <div class="stage-row">
+          <button class="btn-primary is-saving">${loader} Save</button>
+          <button class="btn-ghost">Cancel</button>
+        </div>`,
+    },
+    {
+      where: "Group appearance — Save",
+      file: "GroupAppearanceEditModal.tsx",
+      size: "sm",
+      context: (loader) => `
+        <div class="stage-row">
+          <button class="btn-primary is-saving">${loader} Save</button>
+          <button class="btn-ghost">Cancel</button>
+        </div>`,
+    },
+    {
+      where: "Gallery view — Save",
+      file: "CatalogueGalleryView.tsx",
+      size: "sm",
+      context: (loader) => `
+        <div class="stage-row">
+          <button class="btn-primary is-saving">${loader} Save</button>
+        </div>`,
+    },
+    {
+      where: "Videos — Add X Post",
+      file: "CatalogueVideosSection.tsx",
+      size: "sm",
+      context: (loader) => `
+        <div class="stage-row">
+          <button class="btn-primary is-saving">${loader} Add post</button>
+        </div>`,
+    },
+    {
+      where: "Links — Add link button",
+      file: "CatalogueLinksSection.tsx",
+      size: "sm",
+      context: (loader) => `
+        <div class="stage-row">
+          <button class="add-link">${loader} Add link</button>
+        </div>`,
+    },
+    {
+      where: "Scroll sentinel — Loading more",
+      file: "CatalogueScrollSentinel.tsx",
+      size: "md",
+      context: (loader) => `
+        <div class="scroll-sentinel">${loader}<span>Loading more…</span></div>`,
+    },
+    {
+      where: "Gallery comments — Loading",
+      file: "CatalogueGalleryFeedbackPanel.tsx",
+      size: "md",
+      context: (loader) => `
+        <div class="comments-empty">${loader}<span>Loading comments…</span></div>`,
+    },
+    {
+      where: "Lightbox — full-area loading",
+      file: "CatalogueFamilyLightbox.tsx",
+      size: "lg",
+      context: (loader) => `
+        <div class="full-area">${loader}</div>`,
+    },
+  ];
+
+  const grid = document.getElementById("grid");
+  for (const s of spots) {
+    const px = SIZE_PX[s.size];
+    const currentDot = 5;            // production today
+    const fixDot     = FIX_DOT[s.size];
+    const currentLoader = renderRing(px, currentDot);
+    const fixLoader     = renderRing(px, fixDot);
+    grid.insertAdjacentHTML("beforeend", `
+      <div class="card">
+        <div class="card-head">
+          <span class="where">${s.where}</span>
+          <span class="meta">size=${px} · dot=${currentDot}px</span>
+        </div>
+        <div class="stage">
+          <div class="stage-label">current (in PR #176)</div>
+          ${s.context(currentLoader)}
+        </div>
+        <div class="stage">
+          <div class="stage-label">proposed — dot=${fixDot}px</div>
+          ${s.context(fixLoader)}
+        </div>
+      </div>`);
+  }
+
+  document.getElementById("bounds-toggle").addEventListener("change", (e) => {
+    document.body.classList.toggle("show-bounds", e.target.checked);
+  });
+</script>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ import androidLogo from '../assets/android-logo.svg';
 import appleLogo from '../assets/apple-logo.svg';
 import { REFERENCE_IMAGES_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
+import { DotLoader } from './DotLoader';
 import { Dropdown } from './Dropdown';
 
 interface CatalogueFamilyLightboxInlineEditorProps {
@@ -307,11 +308,10 @@ export function CatalogueFamilyLightboxInlineEditor({
       </div>
       <div className="catalogue-lightbox-inline-editor__actions">
         <button type="button" className="catalogue-family-lightbox__action" onClick={onSave} disabled={isSaving} title="Save (Enter)">
-          {isSaving ? 'Saving...' : (
-            <>
-              Save
-              <CornerDownLeft size={14} aria-hidden style={{ marginLeft: 6, opacity: 0.7 }} />
-            </>
+          {isSaving && <DotLoader size="sm" ariaLabel="Saving" />}
+          Save
+          {!isSaving && (
+            <CornerDownLeft size={14} aria-hidden style={{ marginLeft: 6, opacity: 0.7 }} />
           )}
         </button>
         <button type="button" className="catalogue-family-lightbox__action" onClick={onCancel} disabled={isSaving}>

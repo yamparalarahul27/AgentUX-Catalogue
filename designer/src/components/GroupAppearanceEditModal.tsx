@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, LayoutGrid, Upload, X } from 'lucide-react';
 
+import { DotLoader } from './DotLoader';
+
 import type {
   CatalogueGroupCategory,
   CatalogueGroupRegion,
@@ -215,7 +217,8 @@ export function GroupAppearanceEditModal({
             onClick={onSave}
             disabled={isSaving || isUploading}
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving && <DotLoader size="sm" ariaLabel="Saving" />}
+            Save
           </button>
         </div>
       </div>

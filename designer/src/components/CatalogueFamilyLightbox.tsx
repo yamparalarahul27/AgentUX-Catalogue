@@ -22,6 +22,7 @@ import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions
 import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { DotLoader } from './DotLoader';
 import { EditableTitle } from './EditableTitle';
 import { TypingKeycap, type TypingKeycapHandle } from './TypingKeycap';
 import { LabelEditor } from './labeling/LabelEditor';
@@ -1015,7 +1016,7 @@ export function CatalogueFamilyLightbox({
           )}
           {isLoadingNext && (
             <div className="catalogue-lightbox-media-loading" aria-live="polite">
-              <div className="loading-spinner" />
+              <DotLoader size="lg" ariaLabel="Loading next" />
               <span>Loading next…</span>
             </div>
           )}
@@ -1194,7 +1195,7 @@ export function CatalogueFamilyLightbox({
                 <>
                   <div className="catalogue-lightbox-comments-list">
                     {loadingComments ? (
-                      <div className="catalogue-lightbox-comments-empty"><div className="loading-spinner" /></div>
+                      <div className="catalogue-lightbox-comments-empty"><DotLoader size="md" ariaLabel="Loading comments" /></div>
                     ) : commentsError ? (
                       <p className="catalogue-lightbox-comments-empty">{commentsError}</p>
                     ) : sortedComments.length === 0 ? (
