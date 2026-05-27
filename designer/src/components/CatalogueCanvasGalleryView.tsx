@@ -1,28 +1,31 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 
 import { getActiveFamilyVariant, type CatalogueFamilyView } from '../lib/catalogue-families';
+import {
+  getCachedAspect,
+  getScreenshotAspectDefault,
+  layoutJustifiedRows,
+  probeImageAspect,
+  useAspectCacheVersion,
+} from '../lib/canvas-masonry';
 
-// Canvas Gallery view — demand-driven tile placement.
+// Canvas Gallery view — 2D pannable canvas with masonry-packed tiles.
 //
-// Items are chunked into batches of 50. Each batch lives in a finite
-// "tile" rectangle (8 cols × ceil(50/8) rows). Tiles are positioned in
-// a 2D grid keyed by camera position: the first tile sits at (0, 0);
-// every other tile is allocated the moment the camera enters its
-// position. So:
+// The pan/allocation model is identical to the original fixed-grid
+// canvas: items are chunked into batches of 56, each batch lives in a
+// fixed-size tile rectangle, and tiles are positioned in an integer
+// grid keyed by camera pan (pan right → tile to the right, pan down →
+// tile below). Items always flow in catalogue order.
 //
-//   - Pan right past tile 1's right edge → tile 2 spawns to the right
-//     with items 51-100.
-//   - Pan down from tile 2 → tile 3 spawns below with items 101-150.
+// What changed: inside each tile, the layout is now justified-rows
+// masonry instead of a uniform CSS grid. Every cell preserves its
+// natural aspect (no letterboxing). Aspects come from a hybrid source:
+// platform default on first paint (mobile = 9:19.5, web = 16:10),
+// refined async via `new Image()` natural-dim probing — the layout
+// re-justifies when real aspects land.
 //
-// Items always flow in catalogue order; the user's pan history only
-// determines spatial layout, not which screenshots appear next.
-//
-// Server pagination wires through `onLoadMore` + `hasMore`. When the
-// user crosses a tile boundary into a position that needs more items
-// than `families` currently has, the canvas calls `onLoadMore()` and
-// allocates the new tile placement once items arrive.
-//
-// Spec mockup: docs/mockups/mockup-2026-05-26-canvas-gallery.html.
+// Spec mockup: docs/mockups/mockup-2026-05-27-canvas-masonry.html.
 
 interface CatalogueCanvasGalleryViewProps {
   families: CatalogueFamilyView[];
@@ -38,46 +41,58 @@ type Density = 'atom' | 'molecule' | 'compound';
 type LoaderState = 'enter' | 'exit' | 'idle';
 
 interface DensityPreset {
-  w: number;
-  h: number;
+  // Inner width of the masonry area inside one tile. Height is dynamic
+  // — each tile renders to exactly its packed-rows total height so
+  // there's no wasted whitespace inside or between batches.
+  contentW: number;
+  // Target row height fed to the justified-rows packer.
+  rowH: number;
 }
 
-// COLS is constant across all densities — density only changes cell
-// SIZE (zoom). Keeps the marker at a consistent "8 cells from the
-// start" regardless of which density is active.
-//
-// BATCH_SIZE is a multiple of COLS so every non-final tile has a
-// completely filled bottom row — no ragged edge of empty slots above
-// the "Placing more amazing references" marker.
-const COLS = 8;
-const TILE_ROWS = 7;
-const BATCH_SIZE = COLS * TILE_ROWS; // 56
-const DENSITY_PRESETS: Record<Density, DensityPreset> = {
-  atom:     { w: 640, h: 400 },   // ~2 visible per row in a typical viewport
-  molecule: { w: 320, h: 200 },   // ~4 visible per row (default)
-  compound: { w: 170, h: 106 },   // ~8 visible per row
-};
-const GAP = 18;
-const SEAM_GAP = 56;
+const BATCH_SIZE = 56;
+// Cell-to-cell gap inside a row + between rows inside a tile.
+const GAP = 20;
+// Horizontal gap between adjacent tile columns + vertical gap between
+// stacked tiles in the same column.
+const SEAM_GAP = 32;
 const LOADER_HOLD_MS = 1400;
 const REVEAL_FADE_MS = 600;
 const STAGGER_PER_CELL_MS = 24;
+
+const DENSITY_PRESETS: Record<Density, DensityPreset> = {
+  atom:     { contentW: 5000, rowH: 360 },
+  molecule: { contentW: 2700, rowH: 200 },
+  compound: { contentW: 1500, rowH: 110 },
+};
 
 interface TilePosition { x: number; y: number; }
 interface VisibleCell {
   familyId: string;
   name: string;
   imageUrl: string;
-  // Staggered animation delay applied via inline style on .is-fresh
-  // cells. Lets each item in a freshly-revealed batch pop in
-  // ~24 ms after the one before it.
+  aspect: number;
+  width: number;
+  height: number;
   staggerMs: number;
   isFresh: boolean;
+}
+interface VisibleRow {
+  height: number;
+  cells: VisibleCell[];
 }
 interface RenderedTile {
   position: TilePosition;
   batchIdx: number;
-  cells: VisibleCell[];
+  rows: VisibleRow[];
+  // Total height of the masonry content. The tile renders at exactly
+  // this height so adjacent tiles stack without dead space.
+  contentHeight: number;
+}
+
+interface PlacedTile extends RenderedTile {
+  // Absolute pixel offsets within the canvas coordinate space.
+  pixelX: number;
+  pixelY: number;
 }
 
 function positionKey(p: TilePosition): string {
@@ -101,9 +116,8 @@ export function CatalogueCanvasGalleryView({
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const prevFamiliesKeyRef = useRef<string>('');
-  // Tracks the highest batch index we've actually populated with
-  // items — so the reveal effect fires only on growth.
   const prevPopulatedBatchesRef = useRef(0);
+  const cacheVersion = useAspectCacheVersion();
 
   const panRef = useRef({
     panX: 0,
@@ -119,12 +133,18 @@ export function CatalogueCanvasGalleryView({
   });
 
   const preset = DENSITY_PRESETS[density];
-  const cellW = preset.w;
-  const cellH = preset.h;
-  const tileContentW = COLS * cellW + (COLS - 1) * GAP;
-  const tileContentH = TILE_ROWS * cellH + (TILE_ROWS - 1) * GAP;
-  const tileW = tileContentW + SEAM_GAP;
-  const tileH = tileContentH + SEAM_GAP;
+  // Horizontal stride between tile column origins.
+  const columnStride = preset.contentW + SEAM_GAP;
+
+  // ── Probe aspects for every screenshot that has a URL. Calls are
+  // idempotent — the module-level cache short-circuits repeats.
+  useEffect(() => {
+    for (const family of families) {
+      const variant = getActiveFamilyVariant(family, activeVariantKeys[family.id]);
+      const url = variant?.screenshot?.image_url;
+      if (url) probeImageAspect(url);
+    }
+  }, [families, activeVariantKeys]);
 
   // ── Reset on filter change (NOT on server pagination) ──
   // Append (new ids extend the existing prefix) = pagination — keep
@@ -148,46 +168,99 @@ export function CatalogueCanvasGalleryView({
     panRef.current.velY = 0;
   }, [familiesKey, familyIdList]);
 
-  // ── Build the rendered tile list ───────────────────
-  // Each batchPosition produces one tile. The items for batch N are
-  // `families[N*50 .. (N+1)*50]` — if fewer than 50 are available,
-  // the tile renders a partial grid (no padding cells).
+  // ── Build the rendered tile list (masonry packing per batch). ──
   const renderedTiles = useMemo<RenderedTile[]>(() => {
+    void cacheVersion; // re-evaluate when aspect probes land
     const tiles: RenderedTile[] = [];
     for (let batchIdx = 0; batchIdx < batchPositions.length; batchIdx++) {
       const start = batchIdx * BATCH_SIZE;
       const end = Math.min(start + BATCH_SIZE, families.length);
-      if (end <= start) continue; // no items yet for this batch
-      const cells: VisibleCell[] = [];
-      const isFreshBatch = recentlyRevealedBatches.has(batchIdx);
-      let cellOrder = 0;
+      if (end <= start) continue;
+
+      const items: { familyId: string; name: string; imageUrl: string; aspect: number }[] = [];
       for (let i = start; i < end; i++) {
         const family = families[i];
         const variant = getActiveFamilyVariant(family, activeVariantKeys[family.id]);
-        const url = variant?.screenshot?.image_url;
+        const screenshot = variant?.screenshot;
+        const url = screenshot?.image_url;
         if (!url) continue;
-        cells.push({
+        items.push({
           familyId: family.id,
           name: family.name,
           imageUrl: url,
-          // Stagger only fires for freshly-revealed batches.
-          staggerMs: isFreshBatch ? cellOrder * STAGGER_PER_CELL_MS : 0,
-          isFresh: isFreshBatch,
+          aspect: getCachedAspect(url) ?? getScreenshotAspectDefault(screenshot),
         });
-        cellOrder += 1;
       }
+      if (items.length === 0) continue;
+
+      const rawRows = layoutJustifiedRows(items, preset.contentW, preset.rowH, GAP);
+      const isFreshBatch = recentlyRevealedBatches.has(batchIdx);
+      let cellOrder = 0;
+      const rows: VisibleRow[] = rawRows.map((row) => ({
+        height: row.height,
+        cells: row.items.map((it) => {
+          const visible: VisibleCell = {
+            familyId: it.familyId,
+            name: it.name,
+            imageUrl: it.imageUrl,
+            aspect: it.aspect,
+            width: it.aspect * row.height,
+            height: row.height,
+            staggerMs: isFreshBatch ? cellOrder * STAGGER_PER_CELL_MS : 0,
+            isFresh: isFreshBatch,
+          };
+          cellOrder += 1;
+          return visible;
+        }),
+      }));
+      const contentHeight = rows.reduce((s, r) => s + r.height, 0) + GAP * Math.max(0, rows.length - 1);
+
       tiles.push({
         position: batchPositions[batchIdx],
         batchIdx,
-        cells,
+        rows,
+        contentHeight,
       });
     }
     return tiles;
-  }, [batchPositions, families, activeVariantKeys, recentlyRevealedBatches]);
+  }, [batchPositions, families, activeVariantKeys, recentlyRevealedBatches, preset.contentW, preset.rowH, cacheVersion]);
+
+  // ── Place tiles in 2D canvas space (per-column cumulative stacking).
+  // Tile width is uniform per density; tile height tracks the actual
+  // masonry height. Within each column, tiles stack tightly with a
+  // single SEAM_GAP between neighbours. Center-of-tile coordinates
+  // (pixelX, pixelY) — the JSX uses negative margins to translate the
+  // tile so the center sits at this point.
+  const placedTiles = useMemo<PlacedTile[]>(() => {
+    const byColumn = new Map<number, RenderedTile[]>();
+    for (const tile of renderedTiles) {
+      let arr = byColumn.get(tile.position.x);
+      if (!arr) { arr = []; byColumn.set(tile.position.x, arr); }
+      arr.push(tile);
+    }
+    const out: PlacedTile[] = [];
+    for (const [col, tiles] of byColumn) {
+      tiles.sort((a, b) => a.position.y - b.position.y);
+      let prevCenterY = 0;
+      let prevHeight = 0;
+      for (let i = 0; i < tiles.length; i++) {
+        const t = tiles[i];
+        const centerY = i === 0
+          ? 0
+          : prevCenterY + prevHeight / 2 + SEAM_GAP + t.contentHeight / 2;
+        out.push({
+          ...t,
+          pixelX: col * columnStride,
+          pixelY: centerY,
+        });
+        prevCenterY = centerY;
+        prevHeight = t.contentHeight;
+      }
+    }
+    return out;
+  }, [renderedTiles, columnStride]);
 
   // ── Detect "newly populated" batches (cells arrive) ─
-  // A batch is "populated" when its slice of families becomes non-empty.
-  // When a batch flips from empty to populated, mark it for fresh fade-in.
   useEffect(() => {
     const populatedCount = renderedTiles.length;
     if (populatedCount > prevPopulatedBatchesRef.current) {
@@ -201,8 +274,9 @@ export function CatalogueCanvasGalleryView({
           for (const idx of newBatchIdxs) next.add(idx);
           return next;
         });
-        const lastBatchSize = renderedTiles[renderedTiles.length - 1].cells.length;
-        const clearAfter = REVEAL_FADE_MS + lastBatchSize * STAGGER_PER_CELL_MS;
+        const lastBatch = renderedTiles[renderedTiles.length - 1];
+        const lastBatchCellCount = lastBatch.rows.reduce((s, r) => s + r.cells.length, 0);
+        const clearAfter = REVEAL_FADE_MS + lastBatchCellCount * STAGGER_PER_CELL_MS;
         const timer = window.setTimeout(() => {
           setRecentlyRevealedBatches((current) => {
             const next = new Set(current);
@@ -217,9 +291,7 @@ export function CatalogueCanvasGalleryView({
     prevPopulatedBatchesRef.current = populatedCount;
   }, [renderedTiles]);
 
-  // ── Pan transform ──────────────────────────────────
-  // Single transform on the canvas — every tile is positioned inside
-  // canvas-space at (batchPos.x * tileW, batchPos.y * tileH).
+  // ── Pan transform (2D). ────────────────────────────
   const applyTransforms = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -227,19 +299,27 @@ export function CatalogueCanvasGalleryView({
     canvas.style.transform = `translate3d(${-panX}px, ${-panY}px, 0)`;
   }, []);
 
-  // ── Camera-into-new-tile detection ────────────────
-  // The camera is at (panX, panY) in canvas space. The tile that
-  // contains the camera centre is (floor((panX + tileW/2) / tileW),
-  // floor((panY + tileH/2) / tileH))... but our tiles are centred on
-  // grid positions (a tile at (1, 0) covers canvas x ∈ [tileW/2, 3·tileW/2]).
-  // Simpler: round the camera position to the nearest tile centre.
+  // ── Camera-into-new-tile detection. ────────────────
+  // Columns are uniform-width so X is simple round. Rows within a
+  // column stack to variable heights; we walk the column's tiles to
+  // find which one contains the camera vertically, or return the next
+  // row index past the bottom.
   const cameraTilePosition = useCallback((): TilePosition => {
     const { panX, panY } = panRef.current;
-    return {
-      x: Math.round(panX / tileW),
-      y: Math.round(panY / tileH),
-    };
-  }, [tileW, tileH]);
+    const col = Math.round(panX / columnStride);
+    const colTiles = placedTiles
+      .filter((t) => t.position.x === col)
+      .sort((a, b) => a.pixelY - b.pixelY);
+    for (const t of colTiles) {
+      if (panY < t.pixelY + t.contentHeight / 2 + SEAM_GAP / 2) {
+        return { x: col, y: t.position.y };
+      }
+    }
+    const maxRow = colTiles.length > 0
+      ? Math.max(...colTiles.map((t) => t.position.y))
+      : -1;
+    return { x: col, y: maxRow + 1 };
+  }, [columnStride, placedTiles]);
 
   const maybeAllocateTile = useCallback(() => {
     const cam = cameraTilePosition();
@@ -249,7 +329,6 @@ export function CatalogueCanvasGalleryView({
     const nextBatchIdx = batchPositions.length;
     const itemsNeededTotal = (nextBatchIdx + 1) * BATCH_SIZE;
     if (families.length >= nextBatchIdx * BATCH_SIZE + 1) {
-      // At least one item available for this batch — allocate now.
       startTransition(() => {
         setBatchPositions((prev) => {
           if (prev.some((p) => positionKey(p) === key)) return prev;
@@ -257,24 +336,20 @@ export function CatalogueCanvasGalleryView({
         });
       });
     }
-    // If we'll need more items than we have, ask the server.
     if (families.length < itemsNeededTotal && hasMore && !loadingMore) {
       onLoadMore();
     }
   }, [batchPositions, cameraTilePosition, families.length, hasMore, loadingMore, onLoadMore]);
 
-  // After paginated items arrive, allocate any pending position
-  // automatically. (Camera might still be in the same un-tiled spot.)
   useEffect(() => {
     maybeAllocateTile();
   }, [maybeAllocateTile]);
 
-  // Initial paint + reapply on geometry change.
   useEffect(() => {
     applyTransforms();
-  }, [applyTransforms, tileW, tileH]);
+  }, [applyTransforms, columnStride]);
 
-  // Inertia rAF.
+  // ── Inertia rAF. ───────────────────────────────────
   useEffect(() => {
     let raf = 0;
     function tick() {
@@ -293,10 +368,10 @@ export function CatalogueCanvasGalleryView({
     return () => cancelAnimationFrame(raf);
   }, [applyTransforms, maybeAllocateTile]);
 
-  // Pointer + wheel handlers.
+  // ── Pointer + wheel handlers (2D pan). ─────────────
   useEffect(() => {
     const stage = stageRef.current;
-    if (!stage) return;
+    if (!stage) return undefined;
 
     function onPointerDown(event: PointerEvent) {
       const state = panRef.current;
@@ -377,7 +452,7 @@ export function CatalogueCanvasGalleryView({
     onSelectFamily(familyId);
   }
 
-  // Enter loader on mount.
+  // ── Enter / exit transitions. ──────────────────────
   useEffect(() => {
     setLoaderState('enter');
     const t = window.setTimeout(() => setLoaderState('idle'), LOADER_HOLD_MS);
@@ -389,64 +464,50 @@ export function CatalogueCanvasGalleryView({
     window.setTimeout(() => onExit(), LOADER_HOLD_MS);
   }
 
-  const stageStyle = {
-    '--canvas-cell-w': `${cellW}px`,
-    '--canvas-cell-h': `${cellH}px`,
-    '--canvas-cols': String(COLS),
-  } as React.CSSProperties;
-
   return (
     <>
       <div
         ref={stageRef}
         className="canvas-gallery canvas-gallery-stage"
-        style={stageStyle}
         onClick={handleCanvasClick}
       >
         <div ref={canvasRef} className="canvas-gallery-canvas">
-          {renderedTiles.map((tile) => {
-            const left = tile.position.x * tileW;
-            const top = tile.position.y * tileH;
-            return (
-              <div
-                key={`${tile.position.x},${tile.position.y}`}
-                className="canvas-gallery-tile"
-                style={{
-                  width: tileW,
-                  height: tileH,
-                  transform: `translate3d(${left}px, ${top}px, 0)`,
-                  marginLeft: -tileW / 2,
-                  marginTop: -tileH / 2,
-                }}
-              >
-                <div
-                  className="canvas-gallery-grid"
-                  style={{ width: tileContentW, height: tileContentH }}
-                >
-                  {tile.cells.map((cell) => (
+          {placedTiles.map((tile) => (
+            <div
+              key={`${tile.position.x},${tile.position.y}`}
+              className="canvas-gallery-tile"
+              style={{
+                width: preset.contentW,
+                height: tile.contentHeight,
+                transform: `translate3d(${tile.pixelX}px, ${tile.pixelY}px, 0)`,
+                marginLeft: -preset.contentW / 2,
+                marginTop: -tile.contentHeight / 2,
+              }}
+            >
+              {tile.rows.map((row, rowIdx) => (
+                <div key={rowIdx} className="canvas-gallery-row" style={{ height: row.height }}>
+                  {row.cells.map((cell) => (
                     <div
                       key={cell.familyId}
                       className={`canvas-gallery-cell${cell.isFresh ? ' is-fresh' : ''}`}
                       data-family-id={cell.familyId}
-                      style={cell.isFresh ? ({ '--reveal-delay': `${cell.staggerMs}ms` } as React.CSSProperties) : undefined}
+                      style={
+                        {
+                          width: cell.width,
+                          height: cell.height,
+                          ...(cell.isFresh
+                            ? ({ ['--reveal-delay' as string]: `${cell.staggerMs}ms` } as React.CSSProperties)
+                            : null),
+                        } as React.CSSProperties
+                      }
                     >
-                      <img src={cell.imageUrl} alt={cell.name} loading="lazy" draggable={false} />
+                      <img src={cell.imageUrl} alt={cell.name} loading="lazy" decoding="async" draggable={false} />
                     </div>
                   ))}
                 </div>
-                {/* Trailing-edge marker text on right + bottom of every
-                    tile. Text only — no visible line under it. Tells
-                    the user "more is being placed" if they keep panning
-                    in that direction. */}
-                <div className="canvas-gallery-tile__marker canvas-gallery-tile__marker--v">
-                  <span>Placing more amazing references</span>
-                </div>
-                <div className="canvas-gallery-tile__marker canvas-gallery-tile__marker--h">
-                  <span>Placing more amazing references</span>
-                </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          ))}
         </div>
 
         <div className="canvas-gallery-bottom-row">
@@ -457,11 +518,10 @@ export function CatalogueCanvasGalleryView({
             title="Exit Canvas view"
             onClick={handleExitClick}
           >
-            ←
+            <ArrowLeft size={16} aria-hidden="true" />
           </button>
           <div className="canvas-gallery-density" role="radiogroup" aria-label="Cell zoom">
             {(['atom', 'molecule', 'compound'] as const).map((level) => {
-              const visibleApprox = level === 'atom' ? 2 : level === 'molecule' ? 4 : 8;
               const labelName = `${level[0].toUpperCase()}${level.slice(1)}`;
               return (
                 <button
@@ -470,8 +530,8 @@ export function CatalogueCanvasGalleryView({
                   role="radio"
                   aria-checked={density === level}
                   className={density === level ? 'is-active' : ''}
-                  title={`${labelName} · ~${visibleApprox} visible per row`}
-                  aria-label={`${labelName} — about ${visibleApprox} visible per row`}
+                  title={`${labelName} · ${DENSITY_PRESETS[level].rowH}px row height`}
+                  aria-label={`${labelName} — ${DENSITY_PRESETS[level].rowH}px row height`}
                   onClick={() => setDensity(level)}
                 >
                   {level[0].toUpperCase()}

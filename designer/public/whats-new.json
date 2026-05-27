@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-27-canvas-masonry",
+    "date": "May 27, 2026",
+    "title": "Canvas Gallery — masonry layout",
+    "imageUrl": "/designer/mockup-2026-05-27-canvas-masonry.html",
+    "bullets": [
+      { "kind": "improved", "text": "Canvas view now packs screenshots in justified rows — every cell preserves its natural aspect so portrait mobile shots and wide desktops sit side-by-side without letterboxing" },
+      { "kind": "improved", "text": "Pan is now vertical-only (down to load more); cell hover scales the image directly instead of a fixed letterboxed cell" }
+    ]
+  },
+  {
     "id": "2026-05-27-echo-ring-loader",
     "date": "May 27, 2026",
     "title": "New loading indicator across buttons + spinners",
