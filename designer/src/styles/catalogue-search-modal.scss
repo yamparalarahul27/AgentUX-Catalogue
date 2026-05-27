@@ -541,18 +541,27 @@
 // Sits above the catalogue grid when `searchQuery` is set, telling
 // the user what they're viewing + how to escape it. Indigo wash
 // reuses the visual language of the search highlight.
+//
+// Layout: title block on the left, hint block on the right, with
+// space-between so the keyboard hints sit at the trailing edge of
+// the toolbar/body width.
 .catalogue-search-banner {
-  padding: 14px 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 0;
   border-bottom: 1px solid rgba(99, 102, 241, 0.18);
   background: rgba(99, 102, 241, 0.04);
   margin: 0 0 12px;
 }
 .catalogue-search-banner__title {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
   gap: 10px;
-  margin-bottom: 4px;
   flex-wrap: wrap;
+  min-width: 0;
 
   h2 {
     margin: 0;
