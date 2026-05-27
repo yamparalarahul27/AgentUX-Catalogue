@@ -312,12 +312,20 @@
 }
 
 .catalogue-search-modal__card--more {
-  cursor: default;
+  cursor: pointer;
   border-style: dashed;
   border-color: rgba(99, 102, 241, 0.35);
+  color: inherit;
+  font: inherit;
+  text-align: left;
 
   &:hover {
-    background: rgba(99, 102, 241, 0.06);
+    background: rgba(99, 102, 241, 0.10);
+    border-color: rgba(99, 102, 241, 0.55);
+  }
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: -2px;
   }
 }
 
@@ -379,10 +387,6 @@
   color: #e4e4e7;
   font-size: 13px;
   font-weight: 500;
-}
-.catalogue-search-modal__commit-arrow {
-  font-size: 12px;
-  color: #a5b4fc;
 }
 .catalogue-search-modal__commit-hint {
   display: inline-flex;

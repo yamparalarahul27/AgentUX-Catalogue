@@ -291,15 +291,19 @@ export function CatalogueSearchModal({
                       );
                     })}
                     {results.screenshotsTotal > results.screenshots.length && (
-                      <div className="catalogue-search-modal__card catalogue-search-modal__card--more" aria-hidden="true">
+                      <button
+                        type="button"
+                        className="catalogue-search-modal__card catalogue-search-modal__card--more"
+                        onClick={commitQuery}
+                      >
                         <span className="catalogue-search-modal__card-thumb catalogue-search-modal__card-thumb--more">
                           +{results.screenshotsTotal - results.screenshots.length}
                         </span>
                         <span className="catalogue-search-modal__card-body">
-                          <span className="catalogue-search-modal__card-title">more</span>
-                          <span className="catalogue-search-modal__card-meta">refine query to see them</span>
+                          <span className="catalogue-search-modal__card-title">View all</span>
+                          <span className="catalogue-search-modal__card-meta">in catalogue</span>
                         </span>
-                      </div>
+                      </button>
                     )}
                   </div>
                 </section>
@@ -379,7 +383,6 @@ export function CatalogueSearchModal({
           >
             <span className="catalogue-search-modal__commit-label">
               View all {results.groupsTotal + results.flowsTotal + results.screenshotsTotal} results in catalogue
-              <span className="catalogue-search-modal__commit-arrow" aria-hidden="true">↗</span>
             </span>
             <span className="catalogue-search-modal__commit-hint">
               or press <kbd><CornerDownLeft size={11} aria-hidden="true" /></kbd>
