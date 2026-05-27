@@ -1,4 +1,5 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 
 import { getActiveFamilyVariant, type CatalogueFamilyView } from '../lib/catalogue-families';
 
@@ -449,16 +450,18 @@ export function CatalogueCanvasGalleryView({
           })}
         </div>
 
+        <button
+          type="button"
+          className="canvas-gallery-exit"
+          aria-label="Exit Canvas view"
+          title="Exit Canvas view"
+          onClick={handleExitClick}
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          <span>Exit</span>
+        </button>
+
         <div className="canvas-gallery-bottom-row">
-          <button
-            type="button"
-            className="canvas-gallery-exit"
-            aria-label="Exit Canvas view"
-            title="Exit Canvas view"
-            onClick={handleExitClick}
-          >
-            ←
-          </button>
           <div className="canvas-gallery-density" role="radiogroup" aria-label="Cell zoom">
             {(['atom', 'molecule', 'compound'] as const).map((level) => {
               const visibleApprox = level === 'atom' ? 2 : level === 'molecule' ? 4 : 8;

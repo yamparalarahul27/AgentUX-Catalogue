@@ -274,6 +274,14 @@
   grid-template-rows: 0fr;
 }
 
+// When the bottom sheet is minimized, drop the mobile breakpoint's
+// min-height so the panel hugs the grabber + summary line. Otherwise
+// the 260/220px floor leaves a dead gap between the metadata strip
+// and iOS Safari's bottom toolbar.
+.catalogue-lightbox-comments.is-minimized {
+  min-height: 0;
+}
+
 @media (max-width: 1200px) and (min-width: 721px) {
   .catalogue-lightbox-comments {
     overflow-y: auto;

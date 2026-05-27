@@ -172,6 +172,39 @@
 }
 
 // ── Bottom controls (Exit + Density) ─────────────────
+// Exit button — lives at the top-left of the canvas in place of the
+// hidden AgentUX logo. Pill with icon + "Exit" label.
+.canvas-gallery-exit {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 75;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(22, 22, 26, 0.85);
+  color: #d4d4d8;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.canvas-gallery-exit svg { display: block; }
+.canvas-gallery-exit:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+}
+
+// Bottom row now only holds the A/M/C density toggle.
 .canvas-gallery-bottom-row {
   position: absolute;
   bottom: 14px;
@@ -180,30 +213,6 @@
   z-index: 60;
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.canvas-gallery-exit {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(22, 22, 26, 0.85);
-  color: #d4d4d8;
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-.canvas-gallery-exit:hover {
-  border-color: rgba(99, 102, 241, 0.5);
-  background: rgba(99, 102, 241, 0.16);
-  color: #c7d2fe;
 }
 
 .canvas-gallery-density {
@@ -320,9 +329,10 @@
   }
   .catalogue-header > * { pointer-events: auto; }
 
-  // Section tabs absolute-centre on the viewport midline. Beats any
-  // flex margin-auto centring that would skew with asymmetric flanks.
-  .catalogue-header__tabs {
+  // Logo (catalogue-header__title) takes the viewport-centre slot
+  // that the section tabs used to occupy. The canvas's own Exit pill
+  // sits where the logo used to be in the top-left.
+  .catalogue-header__title {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -331,11 +341,13 @@
   }
 
   // Hidden in Canvas mode:
+  //   - Section tabs (Catalogue · Videos · Saved · Account)
   //   - What's New star button
   //   - Links section tab (icon-only)
   //   - Toolbar wrapper (filters / view-mode / sort / upload)
   //   - Magnified bottom dock
   //   - Flow strip
+  .catalogue-header__tabs { display: none; }
   .catalogue-header__sparkles-btn { display: none; }
   .catalogue-header__tab[aria-label="Links"] { display: none; }
   .catalogue-toolbar-wrapper { display: none; }
