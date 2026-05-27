@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-27-perf-hygiene",
+    "date": "May 27, 2026",
+    "title": "Quieter app — idle Canvas + smoother sign-in",
+    "bullets": [
+      { "kind": "improved", "text": "Canvas Gallery no longer burns CPU when idle — the pan animation loop now stops itself as soon as motion settles, and re-arms when you drag or scroll again" },
+      { "kind": "fix", "text": "After sign-in, the browser back button stays inside the catalogue instead of dropping you off the site" },
+      { "kind": "fix", "text": "No more login-screen flash when re-opening the app — the gate waits for the persisted session check before showing anything" }
+    ]
+  },
+  {
     "id": "2026-05-27-canvas-chrome-rework",
     "date": "May 27, 2026",
     "title": "Canvas view — new chrome layout",
