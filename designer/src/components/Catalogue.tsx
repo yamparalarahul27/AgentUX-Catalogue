@@ -19,7 +19,7 @@ import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
-import { buildCatalogueFamilies, getActiveFamilyVariant, getScreenshotFamilyId } from '../lib/catalogue-families';
+import { buildCatalogueFamilies, getActiveFamilyVariant, getScreenshotFamilyId, getVariantKey } from '../lib/catalogue-families';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -1527,8 +1527,13 @@ export function Catalogue({
         onSelectScreenshot={(screenshot) => {
           // Open the lightbox directly on the chosen screenshot's
           // family. The user picked a specific image — show it, don't
-          // make them hunt for it in a filtered list.
-          setPreviewFamilyId(getScreenshotFamilyId(screenshot));
+          // make them hunt for it in a filtered list. Also pin the
+          // family's active variant to the clicked screenshot so the
+          // lightbox renders THIS image, not whichever variant the
+          // family happened to be defaulted to.
+          const familyId = getScreenshotFamilyId(screenshot);
+          upload.updateActiveVariant(familyId, getVariantKey(screenshot));
+          setPreviewFamilyId(familyId);
         }}
       />
     </div>
