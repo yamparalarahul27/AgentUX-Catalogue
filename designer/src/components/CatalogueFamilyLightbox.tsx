@@ -959,7 +959,7 @@ export function CatalogueFamilyLightbox({
           <X size={20} aria-hidden="true" />
         </button>
       </div>
-      <div className="catalogue-lightbox-body" onClick={(event) => event.stopPropagation()}>
+      <div className={`catalogue-lightbox-body${cropMode ? ' is-crop' : ''}`} onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-media">
           {cropMode && imageSize && screenshot.image_url ? (
             <CatalogueLightboxCrop

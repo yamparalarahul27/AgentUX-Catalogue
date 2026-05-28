@@ -282,6 +282,15 @@
   min-height: 0;
 }
 
+// In crop mode, the crop component owns its own bottom action bar
+// (Cancel / Preview / Apply) with thumb-zone placement. The lightbox
+// comments / annotations sheet would otherwise sit on top of it on
+// mobile, hiding the Apply button. Hide the sheet entirely while
+// crop is active — the user can re-open it after applying.
+.catalogue-lightbox-body.is-crop .catalogue-lightbox-comments {
+  display: none;
+}
+
 @media (max-width: 1200px) and (min-width: 721px) {
   .catalogue-lightbox-comments {
     overflow-y: auto;
