@@ -816,13 +816,9 @@
     overflow: hidden;
     transition: min-height 0.2s ease, max-height 0.2s ease;
   }
-  // Mid (default expanded). Floor + ceiling of the existing layout.
-  .catalogue-lightbox-comments.is-mid {
-    min-height: min(32dvh, 260px);
-    max-height: min(58dvh, 460px);
-  }
-  // Full — drag/tap up from mid. Leaves room for the floating header
-  // + close button at the top.
+  // Full — tap grabber to expand. Leaves room for the floating
+  // header + close button at the top. Two states only on mobile:
+  // collapsed (is-min, handled elsewhere) and full.
   .catalogue-lightbox-comments.is-full {
     min-height: min(88dvh, 720px);
     max-height: min(88dvh, 720px);

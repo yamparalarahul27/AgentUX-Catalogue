@@ -15,7 +15,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { thumbHashToPixelatedUrl } from '../lib/thumbhash';
 import type { MobileOs, WebPreset } from '../types';
-import { Bookmark, Check, Copy, Crop, Send, Share2, SquarePen, Trash2, X } from 'lucide-react';
+import { Check, Copy, Crop, MapPin, Save, Send, Trash2, X } from 'lucide-react';
 
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
@@ -96,6 +96,10 @@ interface CatalogueFamilyLightboxProps {
   // clipboard + shows a toast. Optional so guest contexts (or any
   // surface that wants to suppress sharing) can omit it.
   onShareLink?: (screenshotId: string) => void;
+  // Optional toast surface — used by the mobile mini action bar so
+  // every tap gets visible confirmation. Caller wires to the same
+  // `setToast` that the rest of the page uses.
+  onToast?: (message: string, type?: 'info' | 'success' | 'error') => void;
 }
 type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; is_public?: boolean };
 type LightboxPanel = 'label' | 'comments' | 'annotations';
@@ -104,13 +108,14 @@ type DrawingState = { startX: number; startY: number; currentX: number; currentY
 
 const DRAG_THRESHOLD_PERCENT = 0.8; // ~0.8% of image dimension counts as a drag (otherwise: click)
 
-type SheetState = 'min' | 'mid' | 'full';
+type SheetState = 'min' | 'full';
 const shouldStartLightboxSheetMinimized = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
-const initialSheetState = (): SheetState => (shouldStartLightboxSheetMinimized() ? 'min' : 'mid');
-// Tap cycle: min → mid → full → min. Lets the user pull comments
-// progressively further up without needing a continuous drag.
+const initialSheetState = (): SheetState => (shouldStartLightboxSheetMinimized() ? 'min' : 'full');
+// Tap toggles between minimized (just grabber + action icons) and the
+// near-fullscreen panel that hosts metadata + tabs + comments +
+// annotations. No intermediate mid state — felt fiddly on mobile.
 const nextSheetState = (current: SheetState): SheetState => (
-  current === 'min' ? 'mid' : current === 'mid' ? 'full' : 'min'
+  current === 'min' ? 'full' : 'min'
 );
 const isAnnotationEditAllowedNow = () => typeof window !== 'undefined' && window.innerWidth > ANNOTATION_EDIT_MIN_VIEWPORT_PX;
 
@@ -175,6 +180,7 @@ export function CatalogueFamilyLightbox({
   bookmarkedIds,
   onToggleBookmark,
   onShareLink,
+  onToast,
 }: CatalogueFamilyLightboxProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
@@ -514,7 +520,7 @@ export function CatalogueFamilyLightbox({
         // Annotation toggle — even if a draft is mid-flight, A still
         // toggles (matches what clicking the annotation button does).
         event.preventDefault();
-        setSheetState((current) => (current === 'min' ? 'mid' : current));
+        setSheetState((current) => (current === 'min' ? 'full' : current));
         setLightboxPanel('annotations');
         toggleAnnotationMode();
         return;
@@ -1130,11 +1136,7 @@ export function CatalogueFamilyLightbox({
             type="button"
             className="catalogue-lightbox-grabber"
             onClick={() => setSheetState(nextSheetState)}
-            aria-label={
-              sheetState === 'min' ? 'Expand panel'
-                : sheetState === 'mid' ? 'Expand further'
-                : 'Minimize panel'
-            }
+            aria-label={sheetState === 'min' ? 'Expand panel' : 'Minimize panel'}
           />
           {/* Mobile-only mini action bar visible when the sheet is
               minimized. The metadata strip used to live in this slot
@@ -1146,11 +1148,15 @@ export function CatalogueFamilyLightbox({
               <button
                 type="button"
                 className="catalogue-lightbox-mini-actions__btn"
-                onClick={() => onShareLink(screenshot.id)}
-                title="Share"
-                aria-label="Share"
+                onClick={() => {
+                  onShareLink(screenshot.id);
+                  // Share handler already fires its own copy-link
+                  // toast — no need to duplicate here.
+                }}
+                title="Copy share link"
+                aria-label="Copy share link"
               >
-                <Share2 size={18} aria-hidden="true" />
+                <Copy size={18} aria-hidden="true" />
               </button>
             )}
             {onToggleBookmark && screenshot && (
@@ -1158,24 +1164,29 @@ export function CatalogueFamilyLightbox({
                 type="button"
                 className={`catalogue-lightbox-mini-actions__btn${bookmarkedIds?.has(screenshot.id) ? ' is-active' : ''}`}
                 onClick={() => {
-                  if (bookmarkedIds?.has(screenshot.id)) {
+                  const wasSaved = Boolean(bookmarkedIds?.has(screenshot.id));
+                  if (wasSaved) {
                     onToggleBookmark(screenshot.id);
                   } else {
                     fireSaveAnimation();
                   }
+                  onToast?.(wasSaved ? 'Removed from Saved' : 'Saved', 'success');
                 }}
                 title={bookmarkedIds?.has(screenshot.id) ? 'Unsave' : 'Save'}
                 aria-label="Save"
                 aria-pressed={Boolean(bookmarkedIds?.has(screenshot.id))}
               >
-                <Bookmark size={18} aria-hidden="true" />
+                <Save size={18} aria-hidden="true" />
               </button>
             )}
             {canEdit && imageSize && (
               <button
                 type="button"
                 className="catalogue-lightbox-mini-actions__btn"
-                onClick={openCropMode}
+                onClick={() => {
+                  openCropMode();
+                  onToast?.('Crop mode', 'info');
+                }}
                 title="Crop"
                 aria-label="Crop"
               >
@@ -1190,15 +1201,17 @@ export function CatalogueFamilyLightbox({
                   // Lift the sheet so the user sees the annotation
                   // panel / toolbar; toggling annotation mode while
                   // the sheet is collapsed leaves no visible feedback.
-                  setSheetState((current) => (current === 'min' ? 'mid' : current));
+                  const wasOn = annotationMode;
+                  setSheetState((current) => (current === 'min' ? 'full' : current));
                   setLightboxPanel('annotations');
                   toggleAnnotationMode();
+                  onToast?.(wasOn ? 'Annotation mode off' : 'Annotation mode on', 'info');
                 }}
                 title={annotationMode ? 'Stop annotating' : 'Annotate'}
                 aria-label="Annotate"
                 aria-pressed={annotationMode}
               >
-                <SquarePen size={18} aria-hidden="true" />
+                <MapPin size={18} aria-hidden="true" />
               </button>
             )}
             {canDelete && (
@@ -1306,8 +1319,8 @@ export function CatalogueFamilyLightbox({
                 onGroupChange={setGroupDraft}
                 onMobileOsChange={setMobileOsDraft}
                 onNameChange={setNameDraft}
-                onOpenAnnotations={() => { setSheetState((current) => (current === 'min' ? 'mid' : current)); setLightboxPanel('annotations'); toggleAnnotationMode(); }}
-                onOpenComments={() => { setSheetState((current) => (current === 'min' ? 'mid' : current)); setLightboxPanel('comments'); }}
+                onOpenAnnotations={() => { setSheetState((current) => (current === 'min' ? 'full' : current)); setLightboxPanel('annotations'); toggleAnnotationMode(); }}
+                onOpenComments={() => { setSheetState((current) => (current === 'min' ? 'full' : current)); setLightboxPanel('comments'); }}
                 onOpenCrop={openCropMode}
                 onPlatformChange={handleInlinePlatformChange}
                 onReferenceFileSelect={handleInlineReferenceFileSelect}

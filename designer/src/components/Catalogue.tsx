@@ -1460,6 +1460,7 @@ export function Catalogue({
             });
           }}
           onShareLink={handleShareSingleScreenshot}
+          onToast={(message, type) => setToast({ message, type: type ?? 'info' })}
         />
       )}
       {bulkAction === 'group' && (
