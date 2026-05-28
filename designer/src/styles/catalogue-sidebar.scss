@@ -30,6 +30,15 @@
   max-width: none;
 }
 
+// Invisible 1px sibling immediately above .catalogue-toolbar-wrapper.
+// CatalogueToolbar observes it with IntersectionObserver to detect
+// when the wrapper has become "stuck" (sentinel scrolls out of view).
+// Only purpose is to drive the .is-stuck class on the wrapper below.
+.catalogue-toolbar-sticky-sentinel {
+  height: 1px;
+  pointer-events: none;
+}
+
 .catalogue-toolbar-wrapper {
   position: sticky;
   top: 0;
@@ -37,6 +46,14 @@
   margin-bottom: 4px;
   background: linear-gradient(180deg, rgba(15, 15, 16, 0.96) 0%, rgba(15, 15, 16, 0.92) 70%, rgba(15, 15, 16, 0) 100%);
   backdrop-filter: blur(18px);
+
+  // When stuck at top:0, extend the wrapper's translucent dark
+  // background up behind the iOS status bar (black-translucent mode
+  // overlays content). env(safe-area-inset-top) is 0 outside iOS
+  // standalone, so non-PWA contexts see no change.
+  &.is-stuck {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 .catalogue-toolbar {
