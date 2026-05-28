@@ -109,6 +109,7 @@ export function useCatalogueFamilyActions({
   const imageActions = useCatalogueImageActions({
     screenshots,
     setScreenshots,
+    setFullScopeScreenshots,
     setToast,
     userId,
   });

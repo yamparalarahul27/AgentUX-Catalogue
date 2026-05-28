@@ -43,6 +43,19 @@ These bias toward caution over speed. For trivial tasks, use judgment.
 - Don't reach for HTML for the sake of it — only when the alternative (plain prose / a flat table / a long list) genuinely hurts scannability. The goal is the reader's mental load, not visual cleverness.
 - Most useful in practice: `<details><summary>` for collapsible sections, `<sub>` / `<sup>` for terse annotations, side-by-side `<table>` for comparisons that a single column would obscure.
 
+### Dual-scope screenshot state
+
+The catalogue keeps **two** screenshot arrays in React state:
+
+- `screenshots` — scoped to the current filter window
+- `fullScopeScreenshots` — unfiltered superset, used by chip strips, facet counters, and the lightbox's `fullScopeFamilyById` (lets search-result clicks disambiguate variants outside the current scope)
+
+**Rule:** every action that mutates a screenshot (image_url, storage_path, reference fields, metadata, soft-delete state) MUST update both arrays in one go. If you only update `screenshots`, the lightbox / chip strip will keep rendering the pre-mutation record because they fall back to `fullScopeScreenshots`.
+
+The shared helper is `applyToBothScopes(updater, matches)` in [`use-catalogue-image-actions.ts`](designer/src/hooks/use-catalogue-image-actions.ts); the metadata equivalent is `setFamilyScreenshotsPatch` in [`use-catalogue-family-actions.ts`](designer/src/hooks/use-catalogue-family-actions.ts). When you write a new mutation handler, thread `setFullScopeScreenshots` through and call the helper — never call `setScreenshots` directly with a `map(...)` for a screenshot mutation.
+
+Symptom of a missed sync: changes appear in the grid but the lightbox shows stale data (e.g. crop applied, old image still rendered, thumbhash fade-in never plays).
+
 ### Secrets & environment
 
 - No hardcoded secrets, tokens, or API keys — ever. Enforced by `.claude/hooks/scan-secrets.js`.

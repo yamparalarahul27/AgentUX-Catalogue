@@ -19,6 +19,13 @@ interface ToastState {
 interface UseCatalogueImageActionsArgs {
   screenshots: ScreenshotNode[];
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
+  // Lightbox resolves the previewed family from full-scope screenshots
+  // (see `fullScopeFamilyById` in Catalogue.tsx) so search-result clicks
+  // can disambiguate variants outside the current filter window. That
+  // means every image-mutating action below must keep the full-scope
+  // array in sync — otherwise the lightbox keeps rendering the
+  // pre-mutation image_url after a crop / replace / reference change.
+  setFullScopeScreenshots?: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
   userId: string;
 }
@@ -30,9 +37,20 @@ interface UseCatalogueImageActionsArgs {
 export function useCatalogueImageActions({
   screenshots,
   setScreenshots,
+  setFullScopeScreenshots,
   setToast,
   userId,
 }: UseCatalogueImageActionsArgs) {
+  // Apply the same updater to both the scoped + full-scope screenshot
+  // arrays so the lightbox sees the new image_url regardless of which
+  // map it falls back to. The full-scope setter is optional because
+  // some callers (share page, etc.) don't have a full-scope source.
+  function applyToBothScopes(updater: (item: ScreenshotNode) => ScreenshotNode, matches: (item: ScreenshotNode) => boolean) {
+    setScreenshots((previous) => previous.map((item) => (matches(item) ? updater(item) : item)));
+    if (setFullScopeScreenshots) {
+      setFullScopeScreenshots((previous) => previous.map((item) => (matches(item) ? updater(item) : item)));
+    }
+  }
   const handleReplaceImage = useCallback(async (id: string, file: File) => {
     const screenshot = screenshots.find((item) => item.id === id);
     if (!screenshot) return;
@@ -63,13 +81,12 @@ export function useCatalogueImageActions({
     const imageUrl = supabase.storage.from('screenshots').getPublicUrl(storagePath).data.publicUrl;
     await supabase.from('screenshots').update({ storage_path: storagePath, file_name: file.name }).eq('id', id);
 
-    setScreenshots((previous) => previous.map((item) => (
-      item.id === id
-        ? { ...item, storage_path: storagePath, file_name: file.name, image_url: imageUrl, version_count: nextVersion }
-        : item
-    )));
+    applyToBothScopes(
+      (item) => ({ ...item, storage_path: storagePath, file_name: file.name, image_url: imageUrl, version_count: nextVersion }),
+      (item) => item.id === id,
+    );
     setToast({ message: 'Variant image replaced', type: 'success' });
-  }, [screenshots, setScreenshots, setToast, userId]);
+  }, [screenshots, setScreenshots, setFullScopeScreenshots, setToast, userId]);
 
   // Crop replaces the existing storage object — no version row is added
   // (saves space). Annotations are shifted/clipped relative to the new
@@ -209,11 +226,10 @@ export function useCatalogueImageActions({
       const baseUrl = supabase.storage.from('screenshots').getPublicUrl(newStoragePath).data.publicUrl;
       const newImageUrl = `${baseUrl}?v=${Date.now()}`;
 
-      setScreenshots((previous) => previous.map((item) => (
-        item.id === screenshotId
-          ? { ...item, storage_path: newStoragePath, thumb_hash: thumbHash, image_url: newImageUrl }
-          : item
-      )));
+      applyToBothScopes(
+        (item) => ({ ...item, storage_path: newStoragePath, thumb_hash: thumbHash, image_url: newImageUrl }),
+        (item) => item.id === screenshotId,
+      );
 
       // Best-effort cleanup of the old object. Failure here is non-fatal.
       if (oldStoragePath) {
@@ -270,9 +286,10 @@ export function useCatalogueImageActions({
       return false;
     }
 
-    setScreenshots((previous) => previous.map((item) => (
-      item.id === screenshotId ? { ...item, ...patch } : item
-    )));
+    applyToBothScopes(
+      (item) => ({ ...item, ...patch }),
+      (item) => item.id === screenshotId,
+    );
 
     if (input.file && screenshot.reference_storage_path && screenshot.reference_storage_path !== nextStoragePath) {
       const { error: cleanupError } = await supabase.storage
@@ -315,9 +332,10 @@ export function useCatalogueImageActions({
       if (storageError) cleanupError = storageError.message;
     }
 
-    setScreenshots((previous) => previous.map((item) => (
-      item.id === screenshotId ? { ...item, ...patch } : item
-    )));
+    applyToBothScopes(
+      (item) => ({ ...item, ...patch }),
+      (item) => item.id === screenshotId,
+    );
 
     setToast({
       message: cleanupError
@@ -326,7 +344,7 @@ export function useCatalogueImageActions({
       type: cleanupError ? 'info' : 'success',
     });
     return true;
-  }, [screenshots, setScreenshots, setToast]);
+  }, [screenshots, setScreenshots, setFullScopeScreenshots, setToast]);
 
   return {
     handleCropFamilyImage,
