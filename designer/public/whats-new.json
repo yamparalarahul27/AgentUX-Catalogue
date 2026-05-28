@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-28-crop-mobile",
+    "date": "May 28, 2026",
+    "title": "Crop — easier to confirm on mobile",
+    "imageUrl": "/designer/mockup-2026-05-28-mobile-lightbox.html",
+    "bullets": [
+      { "kind": "improved", "text": "Crop mode now has a top header (Cancel · Crop · Reset) and big sticky Cancel / Apply buttons at the bottom of the screen — no more hunting for the small Apply button in a cramped row" },
+      { "kind": "improved", "text": "Apply button stretches a bit wider than Cancel and renders in indigo so the primary action is obvious" }
+    ]
+  },
+  {
     "id": "2026-05-27-lightbox-swipe",
     "date": "May 27, 2026",
     "title": "Mobile lightbox — swipe to navigate",

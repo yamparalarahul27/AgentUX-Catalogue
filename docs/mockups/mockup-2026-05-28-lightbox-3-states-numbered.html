@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mobile lightbox — 3 states (numbered)</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #000;
+    --tray: rgba(20, 20, 24, 0.92);
+    --icon: #e4e4e7;
+    --danger: #ef4444;
+    --line: rgba(255, 255, 255, 0.08);
+    --mark: #6366f1;
+    --accent: #6366f1;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #18181b; color: #e6e7ea; font: 13px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif; min-height: 100vh; }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 12px 80px;
+    gap: 24px;
+  }
+  h1 { font-size: 18px; margin: 0; align-self: stretch; max-width: 1400px; }
+  .lede { color: #9499a3; margin: -10px 0 0; max-width: 1400px; align-self: stretch; font-size: 13px; line-height: 1.55; }
+
+  .states {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 36px;
+    max-width: 1400px;
+    align-self: stretch;
+  }
+  .state {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .state__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e4e4e7;
+    border-left: 3px solid var(--mark);
+    padding-left: 10px;
+    line-height: 1.1;
+  }
+  .state__sub {
+    font-size: 12px;
+    color: #9499a3;
+    display: block;
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  /* iPhone frame */
+  .device {
+    width: 360px;
+    height: 740px;
+    border-radius: 38px;
+    background: #000;
+    padding: 9px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    overflow: visible;
+    position: relative;
+    margin: 0 auto;
+  }
+  .screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 30px;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .notch {
+    position: absolute; top: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 110px; height: 26px;
+    background: #000; border-radius: 0 0 16px 16px;
+    z-index: 30;
+  }
+  .statusbar {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 44px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 26px 8px;
+    font-size: 14px; font-weight: 600;
+    z-index: 25; color: #e4e4e7;
+    pointer-events: none;
+  }
+
+  /* Lightbox top chrome */
+  .topbar {
+    position: absolute;
+    top: 44px;
+    left: 0;
+    right: 0;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px 0;
+    z-index: 20;
+  }
+  .topbar .name { font-size: 15px; font-weight: 600; color: #e4e4e7; }
+  .topbar .variant-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid #6366f1; border-radius: 999px;
+    padding: 4px 12px;
+    color: #818cf8; font-size: 13px; font-weight: 500;
+  }
+  .topbar .variant-pill .x-icon { display: inline-flex; align-items: center; color: #e4e4e7; font-weight: 700; }
+  .topbar .close-btn {
+    margin-left: auto; width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.10); color: #e4e4e7;
+    display: inline-flex; align-items: center; justify-content: center; border: 0;
+  }
+  .topbar .close-btn svg { width: 16px; height: 16px; }
+
+  /* Media area (default) */
+  .media {
+    position: absolute;
+    top: 110px; left: 0; right: 0;
+    bottom: 170px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stand-in {
+    width: 80%;
+    aspect-ratio: 9 / 19.5;
+    border-radius: 12px;
+    background: linear-gradient(170deg, #2a3a5a 0%, #1c2540 65%, #0e1428 100%);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.35);
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  /* Bottom sheet / tray (minimized variant) */
+  .tray {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 170px;
+    background: var(--tray);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line);
+    border-radius: 24px 24px 0 0;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 32px;
+    z-index: 25;
+  }
+  .grabber {
+    flex-shrink: 0; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255, 255, 255, 0.45);
+    border: 0; background: transparent;
+  }
+  .grabber svg { width: 22px; height: 22px; }
+
+  .actions {
+    display: flex; align-items: center;
+    padding: 6px 18px 12px;
+    gap: 12px;
+  }
+  .action-btn {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 0; color: var(--icon);
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .action-btn svg { width: 22px; height: 22px; }
+  .action-btn--danger {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.10);
+  }
+  .actions-spacer { flex: 1; min-width: 16px; }
+
+  /* ── Expanded sheet variant ───────────────────────── */
+  .tray--full {
+    height: calc(100% - 100px);
+    padding-bottom: 32px;
+    overflow: hidden;
+  }
+  .tray--full .grabber svg { transform: rotate(180deg); }
+  .sheet-header {
+    display: grid;
+    grid-template-columns: 76px 1fr;
+    gap: 14px;
+    padding: 0 16px 12px;
+    align-items: start;
+  }
+  .sheet-thumb {
+    width: 76px; height: 100px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.35);
+    font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .sheet-meta { display: flex; flex-direction: column; gap: 6px; }
+  .sheet-meta .row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .sheet-meta .platform-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.10);
+    border: 1px solid rgba(99, 102, 241, 0.30);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 13px; font-weight: 500;
+  }
+  .sheet-meta .platform-pill .x { color: #e4e4e7; font-weight: 700; }
+  .sheet-meta .time { color: #9499a3; font-size: 12px; }
+  .sheet-meta .variant { color: #c7c8d2; font-size: 13px; }
+  .sheet-tabs {
+    display: flex; gap: 8px;
+    padding: 0 16px 12px;
+  }
+  .sheet-tabs button {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #9499a3;
+    font: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer;
+  }
+  .sheet-tabs button.is-active {
+    color: #e4e4e7;
+    border-color: rgba(255,255,255,0.18);
+  }
+  .sheet-body {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    color: #71717a;
+    font-size: 13px;
+  }
+  .sheet-input {
+    display: flex; gap: 8px;
+    padding: 10px 16px 0;
+  }
+  .sheet-input input {
+    flex: 1;
+    height: 40px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0 14px;
+    color: #e4e4e7;
+    font: inherit; font-size: 13px;
+    outline: none;
+  }
+  .sheet-input button {
+    width: 40px; height: 40px;
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .sheet-input button svg { width: 16px; height: 16px; }
+
+  /* ── Crop variant ─────────────────────────────────── */
+  .crop-image {
+    position: absolute;
+    top: 110px; left: 0; right: 0;
+    bottom: 200px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .crop-frame {
+    position: relative;
+    width: 80%;
+    aspect-ratio: 9 / 19.5;
+    background: linear-gradient(170deg, #2a3a5a 0%, #1c2540 65%, #0e1428 100%);
+    border-radius: 4px;
+    overflow: visible;
+  }
+  .crop-mask {
+    position: absolute;
+    inset: 4% 2% 12% 2%;
+    border: 2px solid #6366f1;
+  }
+  .crop-handle {
+    position: absolute;
+    width: 28px; height: 14px;
+    background: #6366f1;
+    border-radius: 999px;
+  }
+  .crop-handle.top { top: -7px; left: 50%; transform: translateX(-50%); }
+  .crop-handle.bottom { bottom: -7px; left: 50%; transform: translateX(-50%); }
+  .crop-handle.left { left: -7px; top: 50%; transform: translateY(-50%); width: 14px; height: 28px; }
+  .crop-handle.right { right: -7px; top: 50%; transform: translateY(-50%); width: 14px; height: 28px; }
+
+  .crop-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 14px 38px;
+    background: transparent;
+    z-index: 25;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .crop-meta-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; color: #a1a1aa;
+  }
+  .crop-meta-card .reset { color: #c7d2fe; font-weight: 500; }
+  .crop-actions {
+    display: flex; gap: 8px;
+  }
+  .crop-btn {
+    flex: 1;
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    color: #e4e4e7;
+    font: inherit; font-size: 14px; font-weight: 500;
+  }
+  .crop-btn--apply {
+    flex: 1.4;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ── Markers + legend shared ───────────────────────── */
+  .mark {
+    position: absolute;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--mark);
+    color: #fff;
+    font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 4px 10px rgba(0,0,0,0.45);
+    z-index: 80;
+  }
+
+  .legend {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #c7c8d2;
+  }
+  .legend ol {
+    margin: 0; padding: 0;
+    list-style: none;
+    display: flex; flex-direction: column;
+    gap: 10px;
+  }
+  .legend li {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+  .legend-mark {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--mark); color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+  .legend .label { font-weight: 600; color: #e4e4e7; }
+  .legend .detail { color: #9499a3; font-size: 12px; }
+  .legend code {
+    background: rgba(255,255,255,0.06);
+    padding: 1px 4px; border-radius: 3px;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Mobile lightbox — 3 states (numbered for callouts)</h1>
+<p class="lede">
+  Each phone marker maps to a row in its column legend. Tell me which numbers need adjusting,
+  by state and number (e.g. <em>"state 1, mark 5 — bigger gap"</em> or <em>"crop mode mark 3 — remove the meta card"</em>).
+</p>
+
+<div class="states">
+
+  <!-- ───────────── State 1: minimized ────────────── -->
+  <div class="state">
+    <div class="state__title">State 1 — Minimized
+      <span class="state__sub">Default mobile state. Image full screen, slim tray at bottom.</span>
+    </div>
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar"><span>11:38</span><span>● ●●● 5G 29</span></div>
+        <div class="topbar">
+          <span class="name">AI search</span>
+          <span class="variant-pill"><span class="x-icon">𝕏</span> Social</span>
+          <button class="close-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="mark" style="top: 56px; right: -14px;">1</div>
+
+        <div class="media"><div class="stand-in">9:19.5</div></div>
+
+        <div class="tray">
+          <button class="grabber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <div class="actions">
+            <button class="action-btn action-btn--danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
+            <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v20"/><path d="M22 18h-4a4 4 0 0 1-4-4V0"/></svg></button>
+            <span class="actions-spacer"></span>
+            <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+            <button class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          </div>
+        </div>
+
+        <div class="mark" style="bottom: 158px; left: 50%; transform: translateX(-50%);">2</div>
+        <div class="mark" style="bottom: 64px; left: 30px;">3</div>
+        <div class="mark" style="bottom: 64px; left: 100px;">4</div>
+        <div class="mark" style="bottom: 64px; left: 50%; transform: translateX(-50%);">5</div>
+        <div class="mark" style="bottom: 64px; right: 100px;">6</div>
+        <div class="mark" style="bottom: 64px; right: 30px;">7</div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="legend-mark">1</span><div><span class="label">Lightbox header</span><div class="detail">Title + variant pill + close ✕. Stays in all states.</div></div></li>
+      <li><span class="legend-mark">2</span><div><span class="label">Grabber (chevron-up)</span><div class="detail">Thin caret, tap to expand sheet. <code>color: rgba(255,255,255,0.45)</code></div></div></li>
+      <li><span class="legend-mark">3</span><div><span class="label">Delete</span><div class="detail">56×56 red circle. <code>#ef4444</code> on <code>rgba(239,68,68,0.10)</code></div></div></li>
+      <li><span class="legend-mark">4</span><div><span class="label">Crop</span><div class="detail">56×56 white-on-dark circle. Left cluster.</div></div></li>
+      <li><span class="legend-mark">5</span><div><span class="label">Spacer</span><div class="detail"><code>flex: 1</code> · pushes clusters apart.</div></div></li>
+      <li><span class="legend-mark">6</span><div><span class="label">Save</span><div class="detail">56×56 floppy. Right cluster.</div></div></li>
+      <li><span class="legend-mark">7</span><div><span class="label">Copy share link</span><div class="detail">56×56 two-rect icon. Far right.</div></div></li>
+    </ol>
+  </div>
+
+  <!-- ───────────── State 2: expanded ────────────── -->
+  <div class="state">
+    <div class="state__title">State 2 — Open (expanded)
+      <span class="state__sub">Tap the grabber. Sheet covers most of screen with thumb + metadata + tabs + comments.</span>
+    </div>
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar"><span>11:38</span><span>● ●●● 5G 29</span></div>
+        <div class="topbar">
+          <span class="name">AI search</span>
+          <span class="variant-pill"><span class="x-icon">𝕏</span> Social</span>
+          <button class="close-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="tray tray--full">
+          <button class="grabber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <div class="sheet-header">
+            <div class="sheet-thumb">9:19.5</div>
+            <div class="sheet-meta">
+              <div class="row">
+                <span class="platform-pill"><span class="x">𝕏</span> Social</span>
+                <span class="time">12h ago</span>
+              </div>
+              <span class="variant">Unthemed / Unclassified</span>
+            </div>
+          </div>
+          <div class="sheet-tabs">
+            <button class="is-active">Comments (0)</button>
+            <button>Annotations (0)</button>
+          </div>
+          <div class="sheet-body">No comments yet</div>
+          <div class="sheet-input">
+            <input type="text" placeholder="Add a comment…" />
+            <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+          </div>
+        </div>
+
+        <div class="mark" style="top: 116px; left: 50%; transform: translateX(-50%);">1</div>
+        <div class="mark" style="top: 168px; left: 64px;">2</div>
+        <div class="mark" style="top: 168px; right: 100px;">3</div>
+        <div class="mark" style="top: 232px; right: 90px;">4</div>
+        <div class="mark" style="top: 296px; left: 50%; transform: translateX(-50%);">5</div>
+        <div class="mark" style="bottom: 92px; left: 20px;">6</div>
+        <div class="mark" style="bottom: 38px; right: 60px;">7</div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="legend-mark">1</span><div><span class="label">Chevron-down</span><div class="detail">Grabber rotates 180° when full. Tap to collapse back to minimized.</div></div></li>
+      <li><span class="legend-mark">2</span><div><span class="label">Thumbnail</span><div class="detail">76×100, rounded 10. Keeps user oriented when image is hidden by sheet.</div></div></li>
+      <li><span class="legend-mark">3</span><div><span class="label">Platform pill + time</span><div class="detail">Indigo-tinted pill (X icon + label) on left, relative time right-aligned.</div></div></li>
+      <li><span class="legend-mark">4</span><div><span class="label">Variant label</span><div class="detail">Below the platform row. <code>Unthemed / Unclassified</code> etc.</div></div></li>
+      <li><span class="legend-mark">5</span><div><span class="label">Tab pills</span><div class="detail">Active: white text + white outline border. Inactive: muted text, transparent.</div></div></li>
+      <li><span class="legend-mark">6</span><div><span class="label">Comments empty state</span><div class="detail">Subdued centered text. Otherwise: scrollable comment list.</div></div></li>
+      <li><span class="legend-mark">7</span><div><span class="label">Add comment input + send</span><div class="detail">Pinned at bottom. Indigo send button.</div></div></li>
+    </ol>
+  </div>
+
+  <!-- ───────────── State 3: crop ────────────── -->
+  <div class="state">
+    <div class="state__title">State 3 — Crop active
+      <span class="state__sub">Tap Crop from minimized state. Image gets handles, sheet is hidden, dedicated bottom bar.</span>
+    </div>
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar"><span>11:38</span><span>● ●●● 5G 29</span></div>
+        <div class="topbar">
+          <span class="name">AI search</span>
+          <span class="variant-pill"><span class="x-icon">𝕏</span> Social</span>
+          <button class="close-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="crop-image">
+          <div class="crop-frame">
+            <div class="crop-mask">
+              <span class="crop-handle top"></span>
+              <span class="crop-handle bottom"></span>
+              <span class="crop-handle left"></span>
+              <span class="crop-handle right"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="crop-bottom">
+          <div class="crop-meta-card">
+            <span>Trim: T 0px · B 0px · L 0px · R 0px · Final: 1001×697</span>
+            <span class="reset">Reset</span>
+          </div>
+          <div class="crop-actions">
+            <button class="crop-btn">Cancel</button>
+            <button class="crop-btn">Preview</button>
+            <button class="crop-btn crop-btn--apply">Apply</button>
+          </div>
+        </div>
+
+        <div class="mark" style="top: 56px; right: -14px;">1</div>
+        <div class="mark" style="top: 280px; left: 50%; transform: translateX(-50%);">2</div>
+        <div class="mark" style="bottom: 152px; left: 14px;">3</div>
+        <div class="mark" style="bottom: 152px; right: 14px;">4</div>
+        <div class="mark" style="bottom: 80px; left: 60px;">5</div>
+        <div class="mark" style="bottom: 80px; left: 50%; transform: translateX(-50%);">6</div>
+        <div class="mark" style="bottom: 80px; right: 50px;">7</div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span class="legend-mark">1</span><div><span class="label">Lightbox header</span><div class="detail">Still visible (was hidden in earlier version — fixed in latest commit).</div></div></li>
+      <li><span class="legend-mark">2</span><div><span class="label">Crop handles</span><div class="detail">Indigo pill handles on each edge of the crop rectangle. Drag to set trim.</div></div></li>
+      <li><span class="legend-mark">3</span><div><span class="label">Meta card</span><div class="detail">Rounded outlined card. <code>Trim · Final</code> dimensions. Single-line w/ ellipsis on narrow viewports.</div></div></li>
+      <li><span class="legend-mark">4</span><div><span class="label">Reset link</span><div class="detail">Indigo text-button at trailing edge of meta card. Disabled when no trim.</div></div></li>
+      <li><span class="legend-mark">5</span><div><span class="label">Cancel</span><div class="detail">Secondary (outlined dark). Exits crop without applying.</div></div></li>
+      <li><span class="legend-mark">6</span><div><span class="label">Preview</span><div class="detail">Secondary. Toggles between crop edit / preview view.</div></div></li>
+      <li><span class="legend-mark">7</span><div><span class="label">Apply</span><div class="detail">Primary indigo. <code>flex: 1.4</code> so it's the widest. 48px tall.</div></div></li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>

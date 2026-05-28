@@ -228,30 +228,25 @@
 .catalogue-lightbox-grabber {
   display: none;
   width: 100%;
-  min-height: 44px;
-  padding: 16px 0;
+  min-height: 28px;
+  padding: 4px 0;
+  align-items: center;
+  justify-content: center;
   border: none;
   background: transparent;
+  color: rgba(255, 255, 255, 0.45);
   cursor: pointer;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease, transform 0.2s ease;
 
-  &::after {
-    content: '';
-    display: block;
-    width: 40px;
-    height: 5px;
-    margin: 0 auto;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.22);
-    transition: background 0.15s ease, width 0.15s ease;
-  }
-
-  &:hover::after,
-  &:active::after {
-    background: rgba(255, 255, 255, 0.45);
-    width: 52px;
-  }
+  &:hover,
+  &:active { color: rgba(255, 255, 255, 0.75); }
+}
+// Chevron points up when the sheet is minimized (tap to expand) and
+// flips to down when full (tap to collapse).
+.catalogue-lightbox-comments.is-full .catalogue-lightbox-grabber {
+  transform: rotate(180deg);
 }
 
 .catalogue-lightbox-collapsible {
@@ -280,6 +275,56 @@
 // and iOS Safari's bottom toolbar.
 .catalogue-lightbox-comments.is-minimized {
   min-height: 0;
+}
+
+// In crop mode, the crop component owns its bottom action bar +
+// inline meta card. Hide the comments sheet so the crop buttons
+// reach the thumb zone, but keep the lightbox's own header (name +
+// variant pill + close) so the user still has context about which
+// screenshot is being cropped + a clear escape via the X button.
+.catalogue-lightbox-body.is-crop .catalogue-lightbox-comments {
+  display: none;
+}
+
+// ── Mobile mini action bar ───────────────────────────────
+// Visible only on mobile when the bottom sheet is minimized. Replaces
+// the metadata strip with five icon buttons in the thumb zone (Share,
+// Save, Crop, Annotate, Delete). Hidden by default so desktop layout
+// is unaffected.
+.catalogue-lightbox-mini-actions {
+  display: none;
+}
+.catalogue-lightbox-mini-actions__btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.10);
+  }
+  &.is-active {
+    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.18);
+  }
+  &--danger {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+    &:hover { background: rgba(239, 68, 68, 0.14); }
+  }
+}
+// Pushes the destructive/edit cluster left, save/share right.
+.catalogue-lightbox-mini-actions__spacer {
+  flex: 1;
+  min-width: 24px;
 }
 
 @media (max-width: 1200px) and (min-width: 721px) {
@@ -762,8 +807,6 @@
     position: absolute;
     inset: auto 0 0;
     width: auto;
-    min-height: min(32dvh, 260px);
-    max-height: min(58dvh, 460px);
     padding: 12px 12px max(12px, env(safe-area-inset-bottom));
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -771,6 +814,14 @@
     background: rgba(20, 20, 24, 0.96);
     box-shadow: 0 -20px 42px rgba(0, 0, 0, 0.42);
     overflow: hidden;
+    transition: min-height 0.2s ease, max-height 0.2s ease;
+  }
+  // Full — tap grabber to expand. Leaves room for the floating
+  // header + close button at the top. Two states only on mobile:
+  // collapsed (is-min, handled elsewhere) and full.
+  .catalogue-lightbox-comments.is-full {
+    min-height: min(88dvh, 720px);
+    max-height: min(88dvh, 720px);
   }
 
   .catalogue-lightbox-comments::before {
@@ -779,6 +830,111 @@
 
   .catalogue-lightbox-grabber {
     display: block;
+  }
+
+  // Mini action bar appears when the sheet is minimized; metadata
+  // summary appears when expanded. The grabber toggles between them.
+  // Actions sit ABOVE the chevron in minimized — user reaches actions
+  // first, chevron is the "pull up to expand" hint at the very bottom.
+  .catalogue-lightbox-comments.is-minimized {
+    display: flex;
+    flex-direction: column;
+
+    .catalogue-lightbox-mini-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px 0;
+      order: 1;
+    }
+    .catalogue-lightbox-grabber {
+      order: 2;
+      padding-top: 4px;
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
+    }
+    .catalogue-family-lightbox__summary {
+      display: none;
+    }
+  }
+  // When expanded, suppress the mini action bar — the existing actions
+  // inside the collapsible panel take over.
+  .catalogue-lightbox-comments:not(.is-minimized) .catalogue-lightbox-mini-actions {
+    display: none;
+  }
+
+  // ── Mobile expanded sheet: thumbnail + metadata header ──
+  // Once the sheet covers the main image, a small thumbnail keeps the
+  // user oriented. Renders inline at the top of `__summary` on mobile
+  // only; hidden on desktop and when the sheet is minimized.
+  .catalogue-lightbox-sheet-thumb {
+    display: none;
+  }
+  .catalogue-lightbox-comments.is-full .catalogue-family-lightbox__summary {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: center;
+    // Equal top + bottom breathing room around the meta strip
+    // (matches the user's mockup).
+    padding: 10px 12px;
+  }
+  // Smaller thumbnail that respects the screenshot's natural aspect
+  // ratio (set inline via aspect-ratio style on the element). Fits in
+  // a 44 × 64 box max — mobile portraits stay tall + narrow, desktop
+  // shots stay wide + short. No letterbox stretching.
+  .catalogue-lightbox-comments.is-full .catalogue-lightbox-sheet-thumb {
+    display: block;
+    max-width: 44px;
+    max-height: 64px;
+    width: auto;
+    height: auto;
+    aspect-ratio: 9 / 19.5;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+  .catalogue-lightbox-comments.is-full .catalogue-lightbox-meta-line {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  // Hide the "·" separators when meta-line is stacked vertically.
+  .catalogue-lightbox-comments.is-full .catalogue-lightbox-meta-sep {
+    display: none;
+  }
+
+  // ── Pill-shaped tabs on mobile ─────────────────────────
+  // Outlined active tab, plain inactive tabs — matches the look in
+  // the user's expanded-state mock.
+  .catalogue-lightbox-comments.is-full .catalogue-lightbox-panel-tabs {
+    gap: 8px;
+    padding: 12px 0 14px;
+    border-bottom: 0;
+    background: transparent;
+  }
+  .catalogue-lightbox-comments.is-full .catalogue-lightbox-tab {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #9499a3;
+    font-weight: 500;
+
+    &.is-active {
+      color: #e4e4e7;
+      border-color: rgba(255, 255, 255, 0.18);
+      background: transparent;
+    }
   }
 
   .catalogue-family-lightbox {
@@ -799,7 +955,7 @@
 
   .catalogue-lightbox-icon-bar {
     gap: 6px;
-    justify-content: center;
+    justify-content: space-around;
   }
 
   .catalogue-lightbox-icon-bar__spacer {
@@ -809,6 +965,18 @@
   .catalogue-lightbox-icon-btn {
     width: 40px;
     height: 40px;
+  }
+
+  // Hide Edit pencil + Annotations pin on mobile — both surfaces
+  // open side panels that don't fit on a phone (Edit modal floats
+  // off-screen-right; annotation creation needs a pointer toolbar).
+  // Name editing happens via the lightbox top title click instead.
+  // Reupload also goes — covered by Crop + Delete + a fresh upload.
+  .catalogue-lightbox-icon-bar > button[title="Edit"],
+  .catalogue-lightbox-icon-bar > button[title="Close edit"],
+  .catalogue-lightbox-icon-bar > button[title="Reupload"],
+  .catalogue-lightbox-icon-bar > button[title^="Annotations"] {
+    display: none;
   }
 
   .catalogue-family-lightbox__panel {
@@ -830,6 +998,20 @@
     max-height: none;
     padding-left: 0;
     padding-right: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  // Empty-state ("No comments yet" / "No annotations yet") stretches
+  // to fill the visible scroll area + vertically centres the text so
+  // it doesn't sit cramped at the top of an otherwise empty sheet.
+  .catalogue-lightbox-comments-empty,
+  .catalogue-gallery-annotations-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
   }
 
   .catalogue-lightbox-comment-input {

@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mobile lightbox — Apple/Google Photos pattern</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0a0c;
+    --panel: #16171b;
+    --panel-2: #1c1d22;
+    --line: rgba(255,255,255,0.08);
+    --ink: #e6e7ea;
+    --muted: #9499a3;
+    --accent: #6366f1;
+    --danger: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #18181b; color: var(--ink); font: 13px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif; min-height: 100vh; }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 12px 80px;
+    gap: 28px;
+  }
+
+  h1 { font-size: 18px; margin: 0; align-self: stretch; max-width: 980px; }
+  .lede { color: var(--muted); margin: -12px 0 0; max-width: 980px; align-self: stretch; font-size: 13px; line-height: 1.55; }
+
+  .frames {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 28px;
+    align-self: stretch;
+    max-width: 1280px;
+  }
+
+  /* iPhone-style frame around each scene */
+  .frame {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .frame__caption {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    text-align: left;
+  }
+  .frame__caption strong { color: var(--ink); font-weight: 600; }
+
+  .device {
+    width: 350px;
+    height: 720px;
+    border-radius: 36px;
+    background: #000;
+    padding: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    position: relative;
+    overflow: hidden;
+    margin: 0 auto;
+  }
+
+  .screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 30px;
+    background: var(--bg);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* Notch */
+  .notch {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 96px;
+    height: 22px;
+    background: #000;
+    border-radius: 0 0 14px 14px;
+    z-index: 30;
+  }
+
+  /* Status bar (mocked) */
+  .statusbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px 0;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 25;
+    color: var(--ink);
+    pointer-events: none;
+  }
+
+  /* ── Top chrome bar (Apple-style) ─────────────────────────── */
+  .topbar {
+    position: absolute;
+    top: 38px;
+    left: 0;
+    right: 0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    z-index: 20;
+    background: linear-gradient(180deg, rgba(0,0,0,0.55), transparent);
+  }
+  .topbar .icon-btn,
+  .actionbar .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(28, 29, 34, 0.65);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    flex-shrink: 0;
+  }
+  .topbar .title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+  .topbar .title .name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar .title .crumb {
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .topbar .title-pencil {
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  /* ── Media area ───────────────────────────────────────────── */
+  .media {
+    position: absolute;
+    inset: 88px 0 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1b21;
+  }
+  .media img,
+  .media .stand-in {
+    width: 70%;
+    aspect-ratio: 9 / 19.5;
+    border-radius: 8px;
+    background: linear-gradient(170deg, #2a3a5a 0%, #1c2540 65%, #0e1428 100%);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.35);
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  /* ── Bottom action bar (Apple Photos pattern) ─────────────── */
+  .actionbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 8px 14px 22px;
+    z-index: 20;
+    background: linear-gradient(0deg, rgba(0,0,0,0.55), transparent);
+  }
+  .actionbar .icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: transparent;
+    border: 0;
+    backdrop-filter: none;
+  }
+  .actionbar .icon-btn.danger { color: var(--danger); }
+
+  /* ── Scene 2: chrome hidden ──────────────────────────────── */
+  .screen.is-hidden-chrome .topbar,
+  .screen.is-hidden-chrome .actionbar {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+  }
+  .screen.is-hidden-chrome .actionbar { transform: translateY(8px); }
+  .screen.is-hidden-chrome .media { inset: 0; }
+
+  /* ── Scene 3: info sheet slide-up ─────────────────────────── */
+  .infosheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60%;
+    background: rgba(20, 20, 24, 0.96);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+    z-index: 22;
+    padding: 12px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .screen.is-info-open .infosheet { transform: translateY(0); }
+  .screen.is-info-open .media { inset: 88px 0 60%; }
+  .screen.is-info-open .actionbar { opacity: 0; pointer-events: none; }
+
+  .infosheet__handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.20);
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+  .infosheet__title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 2px 0 0;
+  }
+  .infosheet__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .infosheet__tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    padding: 3px;
+    flex-shrink: 0;
+  }
+  .infosheet__tabs button {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    padding: 6px 8px;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 11.5px;
+    cursor: pointer;
+  }
+  .infosheet__tabs button.is-active {
+    background: rgba(255,255,255,0.10);
+    color: var(--ink);
+  }
+  .infosheet__body {
+    flex: 1;
+    overflow-y: auto;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  .infosheet__comment {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  .infosheet__comment .who {
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .infosheet__comment .text {
+    color: var(--ink);
+    font-size: 12.5px;
+  }
+
+  /* ── Scene 4: Edit mode toolbar ──────────────────────────── */
+  .editbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 15, 18, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 18px 14px 26px;
+    z-index: 21;
+  }
+  .editbar__tools {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 14px;
+  }
+  .editbar__tool {
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .editbar__tool .icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.06);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .editbar__tool.is-active .icon {
+    background: rgba(99, 102, 241, 0.22);
+    color: #c7d2fe;
+  }
+  .editbar__cta-row {
+    display: flex;
+    gap: 8px;
+  }
+  .editbar__btn {
+    flex: 1;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .editbar__btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ── Scene 5: Crop mode ──────────────────────────────────── */
+  .crop-frame {
+    position: relative;
+    width: 70%;
+    aspect-ratio: 9 / 19.5;
+    background: linear-gradient(170deg, #2a3a5a 0%, #1c2540 65%, #0e1428 100%);
+    border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    overflow: visible;
+  }
+  .crop-mask {
+    position: absolute;
+    inset: 12% 8% 18% 8%;
+    border: 1px dashed rgba(255,255,255,0.7);
+    border-radius: 2px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+  }
+  .crop-handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.4);
+  }
+  .crop-handle.tl { top: -7px; left: -7px; }
+  .crop-handle.tr { top: -7px; right: -7px; }
+  .crop-handle.bl { bottom: -7px; left: -7px; }
+  .crop-handle.br { bottom: -7px; right: -7px; }
+
+  .crop-topbar {
+    position: absolute;
+    top: 38px;
+    left: 0;
+    right: 0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 22;
+  }
+  .crop-topbar button {
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+  .crop-topbar .crop-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .crop-aspect-row {
+    position: absolute;
+    bottom: 130px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    z-index: 22;
+    padding: 0 14px;
+  }
+  .crop-aspect-row button {
+    background: rgba(28, 29, 34, 0.85);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 11.5px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .crop-aspect-row button.is-active {
+    background: rgba(99, 102, 241, 0.22);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #c7d2fe;
+  }
+  .crop-bottombar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 14px 14px 26px;
+    background: rgba(15, 15, 18, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    z-index: 22;
+    display: flex;
+    gap: 10px;
+  }
+  .crop-bottombar button {
+    flex: 1;
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.06);
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .crop-bottombar .apply {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* SVG icon sizing */
+  .ic { width: 18px; height: 18px; display: block; }
+
+  /* ── Annotations layer ─────────────────────────────────── */
+  .annotation {
+    position: absolute;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px dashed rgba(99, 102, 241, 0.55);
+    color: rgba(199, 210, 254, 0.92);
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border-radius: 6px;
+    padding: 2px 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .annotation::after {
+    content: "";
+    position: absolute;
+    border-left: 1px dashed rgba(99, 102, 241, 0.55);
+  }
+</style>
+</head>
+<body>
+
+<h1>Mobile lightbox — Apple/Google Photos pattern</h1>
+<p class="lede">
+  Five scenes laying out what the mobile lightbox should feel like. Top of each device is the
+  status notch (mocked). Toggle a tap on the image to hide/show chrome (Apple convention). Edit
+  enters a dedicated mode with its own toolbar. Crop has explicit Cancel / Apply buttons
+  pinned to the thumb zone — the main bug you flagged.
+</p>
+
+<div class="frames">
+
+  <!-- ── 1. Resting state ─────────────────────────────── -->
+  <div class="frame">
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span>📶 5G 🔋</span></div>
+
+        <div class="topbar">
+          <button class="icon-btn" aria-label="Close">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="title">
+            <span class="name">Secure Your Account<span class="title-pencil">✎</span></span>
+            <span class="crumb">Auth · Settings &gt; Security · Web</span>
+          </div>
+          <button class="icon-btn" aria-label="More">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>
+          </button>
+        </div>
+
+        <div class="media"><div class="stand-in">9:19.5 screenshot</div></div>
+
+        <div class="actionbar">
+          <button class="icon-btn" aria-label="Share">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          </button>
+          <button class="icon-btn" aria-label="Save">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <button class="icon-btn" aria-label="Info">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
+          <button class="icon-btn" aria-label="Edit">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4z"/></svg>
+          </button>
+          <button class="icon-btn danger" aria-label="Delete">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="frame__caption">
+      <strong>1. Resting.</strong> Top: Back · Name (tap to rename, ✎ hint) + breadcrumb · ⋯ More.
+      Bottom action bar — five icons in thumb zone: Share · Save · Info · Edit · Delete.
+      Chrome is overlaid on the media (Apple style).
+    </div>
+  </div>
+
+  <!-- ── 2. Tap to hide chrome ─────────────────────────── -->
+  <div class="frame">
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen is-hidden-chrome">
+        <div class="statusbar"><span>9:41</span><span>📶 5G 🔋</span></div>
+        <div class="topbar">
+          <button class="icon-btn"></button>
+          <div class="title"></div>
+          <button class="icon-btn"></button>
+        </div>
+        <div class="media"><div class="stand-in" style="width: 100%; aspect-ratio: 9 / 19.5;">immersive view</div></div>
+        <div class="actionbar"></div>
+      </div>
+    </div>
+    <div class="frame__caption">
+      <strong>2. Tap toggles chrome.</strong> Single tap on the media → top + bottom bars
+      fade out; image fills the screen. Tap again → chrome returns. Same Apple Photos
+      "immersive" pattern.
+    </div>
+  </div>
+
+  <!-- ── 3. Info sheet ─────────────────────────────────── -->
+  <div class="frame">
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen is-info-open">
+        <div class="statusbar"><span>9:41</span><span>📶 5G 🔋</span></div>
+        <div class="topbar">
+          <button class="icon-btn">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="title">
+            <span class="name">Secure Your Account</span>
+            <span class="crumb">Auth · Settings &gt; Security</span>
+          </div>
+          <button class="icon-btn">
+            <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>
+          </button>
+        </div>
+        <div class="media"><div class="stand-in">image (top portion)</div></div>
+        <div class="actionbar"></div>
+
+        <div class="infosheet">
+          <div class="infosheet__handle"></div>
+          <div class="infosheet__title">Secure Your Account</div>
+          <div class="infosheet__meta">
+            <span>📐 1170 × 2532</span><span>🌐 Web</span><span>🌙 Dark</span><span>8h ago</span>
+          </div>
+          <div class="infosheet__tabs" role="tablist">
+            <button class="is-active">Comments · 3</button>
+            <button>Annotations · 2</button>
+            <button>Labels</button>
+          </div>
+          <div class="infosheet__body">
+            <div class="infosheet__comment">
+              <div class="who">rahul · 8h ago</div>
+              <div class="text">The passkey CTA is doing too much — drop the secondary line.</div>
+            </div>
+            <div class="infosheet__comment">
+              <div class="who">rahul · 5h ago</div>
+              <div class="text">Compare to Coinbase &amp; Robinhood for the layout.</div>
+            </div>
+            <div class="infosheet__comment">
+              <div class="who">designer · 2h ago</div>
+              <div class="text">Will iterate on Friday.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame__caption">
+      <strong>3. Info sheet (tap ⓘ).</strong> Slide-up sheet with drag handle. Tabs for
+      Comments / Annotations / Labels. Swipe down (or tap outside) to dismiss.
+      Replaces the current bottom-anchored grabber panel.
+    </div>
+  </div>
+
+  <!-- ── 4. Edit mode ──────────────────────────────────── -->
+  <div class="frame">
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span>📶 5G 🔋</span></div>
+
+        <div class="crop-topbar">
+          <button>Cancel</button>
+          <span class="crop-title">Edit</span>
+          <button>Done</button>
+        </div>
+
+        <div class="media" style="inset: 88px 0 220px;">
+          <div class="stand-in" style="width: 65%; aspect-ratio: 9 / 19.5;">image</div>
+        </div>
+
+        <div class="editbar">
+          <div class="editbar__tools">
+            <button class="editbar__tool is-active">
+              <span class="icon"><svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v20"/><path d="M22 18h-4a4 4 0 0 1-4-4V0"/></svg></span>
+              Crop
+            </button>
+            <button class="editbar__tool">
+              <span class="icon"><svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>
+              Annotate
+            </button>
+            <button class="editbar__tool">
+              <span class="icon"><svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 7 12 13 21 7"/><rect x="3" y="3" width="18" height="14" rx="2"/></svg></span>
+              Replace
+            </button>
+            <button class="editbar__tool">
+              <span class="icon"><svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/></svg></span>
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame__caption">
+      <strong>4. Edit mode.</strong> Top: <code>Cancel · Edit · Done</code>. Bottom: tool row
+      (Crop / Annotate / Replace / Reset) with active tool highlighted in indigo. Tapping
+      Crop enters the crop sub-mode (scene 5).
+    </div>
+  </div>
+
+  <!-- ── 5. Crop mode (THE FIX) ───────────────────────── -->
+  <div class="frame">
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span>📶 5G 🔋</span></div>
+
+        <div class="crop-topbar">
+          <button>Cancel</button>
+          <span class="crop-title">Crop</span>
+          <button>Reset</button>
+        </div>
+
+        <div class="media" style="inset: 88px 0 180px;">
+          <div class="crop-frame">
+            <div class="crop-mask">
+              <span class="crop-handle tl"></span>
+              <span class="crop-handle tr"></span>
+              <span class="crop-handle bl"></span>
+              <span class="crop-handle br"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="crop-aspect-row">
+          <button>Original</button>
+          <button class="is-active">Freeform</button>
+          <button>1:1</button>
+          <button>16:9</button>
+        </div>
+
+        <div class="crop-bottombar">
+          <button>Cancel</button>
+          <button class="apply">Apply</button>
+        </div>
+
+        <div class="annotation" style="bottom: 78px; right: 26px;">
+          ← Apply button — fixed bottom, thumb-zone
+        </div>
+      </div>
+    </div>
+    <div class="frame__caption">
+      <strong>5. Crop mode (the bug fix).</strong> Top: <code>Cancel · Crop · Reset</code>.
+      Aspect chips above the bottom bar. <strong>Big, sticky <em>Cancel</em> + <em>Apply</em>
+      buttons</strong> at the bottom in thumb reach — no more hunting for the small text
+      button. Apply = primary indigo.
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

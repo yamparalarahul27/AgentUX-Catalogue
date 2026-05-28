@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mobile lightbox — minimized state spec</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #000;
+    --tray: rgba(20, 20, 24, 0.92);
+    --icon: #e4e4e7;
+    --icon-dim: rgba(255, 255, 255, 0.55);
+    --danger: #ef4444;
+    --line: rgba(255, 255, 255, 0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #18181b; color: #e6e7ea; font: 13px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif; min-height: 100vh; }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 12px 80px;
+    gap: 24px;
+  }
+  h1 { font-size: 18px; margin: 0; align-self: stretch; max-width: 980px; }
+  .lede { color: #9499a3; margin: -10px 0 0; max-width: 980px; align-self: stretch; font-size: 13px; line-height: 1.55; }
+
+  /* iPhone frame */
+  .device {
+    width: 360px;
+    height: 740px;
+    border-radius: 38px;
+    background: #000;
+    padding: 9px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    overflow: hidden;
+    position: relative;
+  }
+  .screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 30px;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .notch {
+    position: absolute; top: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 110px; height: 26px;
+    background: #000; border-radius: 0 0 16px 16px;
+    z-index: 30;
+  }
+  .statusbar {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 44px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 26px 8px;
+    font-size: 14px; font-weight: 600;
+    z-index: 25; color: #e4e4e7;
+    pointer-events: none;
+  }
+
+  /* Lightbox top chrome */
+  .topbar {
+    position: absolute;
+    top: 44px;
+    left: 0;
+    right: 0;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px 0;
+    z-index: 20;
+  }
+  .topbar .name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e4e4e7;
+  }
+  .topbar .variant-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #6366f1;
+    border-radius: 999px;
+    padding: 4px 12px;
+    color: #818cf8;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .topbar .variant-pill .x-icon {
+    display: inline-flex; align-items: center;
+    color: #e4e4e7;
+    font-weight: 700;
+  }
+  .topbar .close-btn {
+    margin-left: auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    color: #e4e4e7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+  }
+  .topbar .close-btn svg { width: 16px; height: 16px; }
+
+  /* Media area */
+  .media {
+    position: absolute;
+    top: 110px;
+    left: 0;
+    right: 0;
+    bottom: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stand-in {
+    width: 80%;
+    aspect-ratio: 9 / 19.5;
+    border-radius: 12px;
+    background: linear-gradient(170deg, #2a3a5a 0%, #1c2540 65%, #0e1428 100%);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.35);
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  /* ── Bottom sheet / tray ────────────────────────────── */
+  .tray {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 170px;
+    background: var(--tray);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line);
+    border-radius: 24px 24px 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding-bottom: 32px;
+    z-index: 25;
+  }
+
+  .grabber {
+    flex-shrink: 0;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.45);
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .grabber svg { width: 22px; height: 22px; }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    padding: 6px 18px 12px;
+    gap: 12px;
+  }
+  .action-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 0;
+    color: var(--icon);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .action-btn svg { width: 22px; height: 22px; }
+  .action-btn--danger {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.10);
+  }
+  .actions-spacer {
+    flex: 1;
+    min-width: 16px;
+  }
+
+  .ic { width: 22px; height: 22px; display: block; }
+
+  /* Annotation overlay */
+  .anno {
+    position: absolute;
+    background: rgba(99, 102, 241, 0.14);
+    border: 1px dashed rgba(99, 102, 241, 0.55);
+    color: rgba(199, 210, 254, 0.95);
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border-radius: 6px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .anno-line {
+    position: absolute;
+    border-left: 1px dashed rgba(99, 102, 241, 0.55);
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  .frames {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    align-self: stretch;
+  }
+  .caption {
+    color: #9499a3;
+    font-size: 12.5px;
+    max-width: 360px;
+    line-height: 1.55;
+  }
+  .caption strong { color: #e4e4e7; font-weight: 600; }
+
+  .spec-list {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #c7c8d2;
+    max-width: 360px;
+  }
+  .spec-list h3 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    color: #e4e4e7;
+  }
+  .spec-list ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .spec-list code {
+    background: rgba(255,255,255,0.06);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11.5px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Mobile lightbox — minimized state spec</h1>
+<p class="lede">
+  Locking the spec from your screenshots: 4 actions, dark-circle backgrounds, distinct
+  destructive vs save/share clusters, chevron-up grabber. Tell me if any cell is off.
+</p>
+
+<div class="frames">
+  <div>
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar"><span>11:38</span><span>● ●●● 5G 29</span></div>
+
+        <div class="topbar">
+          <span class="name">AI search</span>
+          <span class="variant-pill"><span class="x-icon">𝕏</span> Social</span>
+          <button class="close-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="media"><div class="stand-in">9:19.5</div></div>
+
+        <div class="tray">
+          <button class="grabber" aria-label="Expand panel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <div class="actions">
+            <button class="action-btn action-btn--danger" aria-label="Delete">
+              <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </button>
+            <button class="action-btn" aria-label="Crop">
+              <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v20"/><path d="M22 18h-4a4 4 0 0 1-4-4V0"/></svg>
+            </button>
+            <span class="actions-spacer"></span>
+            <button class="action-btn" aria-label="Save">
+              <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            </button>
+            <button class="action-btn" aria-label="Copy">
+              <svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Annotation overlays -->
+        <div class="anno" style="bottom: 145px; left: 16px;">chevron ^ · centered · thin caret</div>
+        <div class="anno-line" style="bottom: 138px; left: 180px; width: 0; height: 22px;"></div>
+
+        <div class="anno" style="bottom: 86px; left: 12px;">red wash · trash on left edge</div>
+        <div class="anno" style="bottom: 50px; left: 90px;">Crop · pair w/ Delete</div>
+        <div class="anno" style="bottom: 86px; right: 12px;">Copy · pair w/ Save</div>
+        <div class="anno" style="bottom: 50px; right: 80px;">spacer between clusters</div>
+      </div>
+    </div>
+    <div class="caption" style="margin-top: 14px;">
+      <strong>Minimized state.</strong> Tray sits above iOS Safari toolbar. Chevron-up grabber
+      (tap to expand). 4 circular icon buttons in two clusters: destructive (Delete · Crop)
+      left, save/share (Save · Copy) right, with a flex spacer in the middle.
+    </div>
+  </div>
+
+  <div class="spec-list">
+    <h3>Spec details — confirm or correct</h3>
+    <ul>
+      <li><strong>Tray</strong>: rounded top corners 24px · semi-transparent dark blur · sits above iOS Safari URL bar (uses safe-area-inset-bottom)</li>
+      <li><strong>Grabber</strong>: thin chevron-up icon · ~22px · centered · 36px tall hit area · color rgba(255,255,255,0.45)</li>
+      <li><strong>Action buttons</strong>: 56×56 px circles · radius 50% · background rgba(255,255,255,0.05) · icon 22px</li>
+      <li><strong>Delete</strong> (red): color <code>#ef4444</code> · bg <code>rgba(239,68,68,0.10)</code></li>
+      <li><strong>Order</strong>: Delete · Crop · [spacer] · Save · Copy</li>
+      <li><strong>Spacer</strong>: <code>flex: 1</code> · min 16px · pushes clusters apart</li>
+      <li><strong>Padding</strong>: 18px horizontal · 6px above icons · 12px below · 32px tray bottom padding (home indicator)</li>
+      <li><strong>Lightbox header</strong>: stays visible (X Social pill + close X)</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>
