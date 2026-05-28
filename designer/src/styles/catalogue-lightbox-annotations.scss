@@ -287,6 +287,14 @@
   }
 }
 
+// Mobile-only thumbnail inside the expanded bottom sheet (set to
+// display: block by a mobile-scoped `.is-full` rule). Hidden on
+// desktop entirely — the side panel doesn't need a thumbnail
+// because the main image is still visible.
+.catalogue-lightbox-sheet-thumb {
+  display: none;
+}
+
 // ── Mobile mini action bar ───────────────────────────────
 // Visible only on mobile when the bottom sheet is minimized. Replaces
 // the metadata strip with five icon buttons in the thumb zone (Share,
@@ -863,13 +871,6 @@
     display: none;
   }
 
-  // ── Mobile expanded sheet: thumbnail + metadata header ──
-  // Once the sheet covers the main image, a small thumbnail keeps the
-  // user oriented. Renders inline at the top of `__summary` on mobile
-  // only; hidden on desktop and when the sheet is minimized.
-  .catalogue-lightbox-sheet-thumb {
-    display: none;
-  }
   .catalogue-lightbox-comments.is-full .catalogue-family-lightbox__summary {
     display: grid;
     grid-template-columns: auto 1fr;
