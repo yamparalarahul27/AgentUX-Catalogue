@@ -14,6 +14,16 @@ Last updated: 2026-05-27 (latest) — Backlog audit pass after user QA. Moved 3 
 
 ---
 
+## 📌 Pinned next
+
+> User pinned 2026-05-28 (after the PR #185 dual-scope leak) — pick this up before any new feature work.
+
+| Item | Status | Source |
+|---|---|---|
+| **Build a hybrid test suite** — Vitest + React Testing Library for hooks/components, Playwright for E2E flows. First PR: lightbox + image actions only (open → crop → verify new image in BOTH lightbox + grid + thumbhash placeholder fires → replace → reference set/remove + unit tests on `applyToBothScopes`). Scope harness + fixture strategy with user *before* adding any dep | 🔵 first PR ≈ ½ day after scoping; full coverage is multi-PR | [`parked_test_suite_e2e_component`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_test_suite_e2e_component.md) |
+
+---
+
 ## 🔴 Open bugs
 
 | Item | Status | Source |
