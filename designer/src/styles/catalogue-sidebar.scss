@@ -656,7 +656,11 @@
 
 @media (max-width: 640px) {
   .catalogue-header {
-    padding: 14px 16px;
+    // Keep env(safe-area-inset-top) in the calc so the iOS status bar
+    // doesn't overlap the header in PWA standalone mode — the base rule
+    // in part-4-catalogue-core.scss includes it, and a flat `14px 16px`
+    // here would silently strip it.
+    padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
   }
 
   .catalogue-toolbar-left {
