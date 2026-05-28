@@ -277,13 +277,14 @@
   min-height: 0;
 }
 
-// In crop mode, the crop component owns its bottom action bar +
-// inline meta card. Hide the comments sheet so the crop buttons
-// reach the thumb zone, but keep the lightbox's own header (name +
-// variant pill + close) so the user still has context about which
-// screenshot is being cropped + a clear escape via the X button.
-.catalogue-lightbox-body.is-crop .catalogue-lightbox-comments {
-  display: none;
+// On mobile, crop mode hides the comments sheet so the crop's own
+// bottom action row reaches the thumb zone. On desktop the side
+// panel stays visible — there's room for both. Scoped to mobile so
+// desktop behaviour matches what it was before PR #184.
+@media (max-width: 720px) {
+  .catalogue-lightbox-body.is-crop .catalogue-lightbox-comments {
+    display: none;
+  }
 }
 
 // ── Mobile mini action bar ───────────────────────────────

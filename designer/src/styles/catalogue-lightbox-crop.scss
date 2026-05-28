@@ -108,38 +108,32 @@
   height: 32px;
 }
 
-// ── Bottom area: meta line + thumb-zone action bar ────
-// The lightbox header is hidden during crop mode (see the .is-crop
-// rule in catalogue-lightbox-annotations.scss), so this bottom region
-// is the only chrome.
+// ── Bottom area: meta line + action buttons ────
+// DEFAULT (desktop) — horizontal row with meta on the left and the
+// 3 action buttons on the right. Matches the prior `__footer` layout
+// so desktop crop didn't change visually. Mobile overrides below.
 .catalogue-lightbox-crop__bottom {
   flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 6px 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
   background: rgba(15, 15, 17, 0.96);
   border-top: 1px solid #1f1f24;
 }
 
 .catalogue-lightbox-crop__meta {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   color: #a1a1aa;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  // Rounded card so the meta strip reads as one container, with the
-  // Reset link tucked in at the trailing edge.
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 10px 14px;
-}
-.catalogue-lightbox-crop__meta-line {
   flex: 1;
   min-width: 0;
+}
+.catalogue-lightbox-crop__meta-line {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -176,44 +170,59 @@
 }
 
 .catalogue-lightbox-crop__actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .catalogue-lightbox-crop__btn {
-  flex: 1;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 10px;
-  font-size: 14px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
-.catalogue-lightbox-crop__btn--apply { flex: 1.4; }
 
-// Mobile: max out button heights + add safe-area inset on bottom.
+// ── Mobile overrides ────────────────────────────────────
+// Stack column: meta card on top + full-width Cancel/Preview/Apply
+// row below in the thumb zone. Apply gets `flex: 1.4` so it reads as
+// the primary action.
 @media (max-width: 720px) {
   .catalogue-lightbox-crop__bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
     padding: 8px 6px max(14px, env(safe-area-inset-bottom));
   }
-  .catalogue-lightbox-crop__btn {
-    min-height: 48px;
-    font-size: 15px;
-    padding: 0 10px;
-  }
-  // Meta dimensions string can get long; truncate gracefully on narrow
-  // viewports so it never pushes the buttons off-screen.
   .catalogue-lightbox-crop__meta {
-    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
     flex-wrap: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
     padding: 8px 12px;
+    font-size: 11px;
   }
   .catalogue-lightbox-crop__meta > span { white-space: nowrap; }
+  .catalogue-lightbox-crop__actions {
+    display: flex;
+    flex-direction: row;
+  }
+  .catalogue-lightbox-crop__btn {
+    flex: 1;
+    min-height: 48px;
+    font-size: 15px;
+    padding: 0 10px;
+    border-radius: 10px;
+  }
+  .catalogue-lightbox-crop__btn--apply { flex: 1.4; }
 }
