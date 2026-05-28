@@ -143,6 +143,24 @@ export function CatalogueQuickUploadPanel({
     quickUploadQueue.length > 0 && flowReady && !uploading,
   );
 
+  // Enter to submit when the Upload All button is enabled. Skipped while a
+  // text field has focus so the in-progress Flow/Group commit (which also
+  // uses Enter) isn't intercepted; also skipped while a combobox is open.
+  useEffect(() => {
+    if (!canUploadAllQuick) return;
+    function handleEnter(event: KeyboardEvent) {
+      if (event.key !== 'Enter' || event.isComposing) return;
+      if (flowMenuOpen || groupMenuOpen) return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return;
+      event.preventDefault();
+      onQuickUploadUploadAll();
+    }
+    document.addEventListener('keydown', handleEnter);
+    return () => document.removeEventListener('keydown', handleEnter);
+  }, [canUploadAllQuick, flowMenuOpen, groupMenuOpen, onQuickUploadUploadAll]);
+
   function getQueueGroupLabel(item: { parsedGroup: string | null }) {
     return quickUploadGroup.trim() || item.parsedGroup || 'No group';
   }

@@ -10,11 +10,13 @@ import {
   subscribeCatalogueGroupAppearance,
 } from '../lib/catalogue-group-appearance';
 import { defaultGridDensity, persistGridDensity, type GridDensity } from '../lib/catalogue-helpers';
+import { computeCoverageTargets, computeGroupCoverage } from '../lib/group-coverage';
 import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
 import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useGroupAppearanceEditor } from '../hooks/use-group-appearance-editor';
 import type { ScreenshotNode } from '../types';
 import { CatalogueGridDensity } from './CatalogueGridDensity';
+import { CatalogueGroupCoverage } from './CatalogueGroupCoverage';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueNotFound } from './CatalogueNotFound';
 import { CatalogueShareModal } from './CatalogueShareModal';
@@ -127,6 +129,14 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
     const sample = groupScreenshots.find((s) => s.group);
     return sample?.group ?? urlKey;
   }, [groupScreenshots, urlKey]);
+
+  // Coverage score (Mobile + Web) for this group, self-calibrating against
+  // the catalogue-wide ceilings. Computed off the full-scope screenshot
+  // array, not the in-page filter window.
+  const coverage = useMemo(() => {
+    const targets = computeCoverageTargets(screenshots);
+    return computeGroupCoverage(groupScreenshots, targets);
+  }, [screenshots, groupScreenshots]);
 
   const appearance = useMemo(
     () => resolveCatalogueGroupAppearance(appearanceMap, groupName, null),
@@ -359,6 +369,8 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
                 </div>
               )}
             </div>
+
+            <CatalogueGroupCoverage coverage={coverage} variant="hero" />
           </div>
         </header>
 

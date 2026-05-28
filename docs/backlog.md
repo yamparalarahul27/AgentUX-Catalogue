@@ -111,7 +111,6 @@ Last updated: 2026-05-27 (latest) — Backlog audit pass after user QA. Moved 3 
 | Loading states for flows / groups / other views | [UX polish dump](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_ux_polish_backlog.md) |
 | Group trading volume from CoinGecko (CEX) + DefiLlama (DEX) on group header/detail | [`parked_group_trading_volume`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_trading_volume.md) |
 | Per-group UX strengths chart (Auth/Trading/Onboarding scores; curator vs peer review TBD) | [`parked_group_ux_strengths`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_ux_strengths.md) |
-| **Coverage score per group (Mobile + Web)** — breadth-of-capture metric split by platform on each group card and `/g/<key>` hero. User flagged as important. Denominator still open (canonical flow list vs diversity vs bucketed count); overlaps with the UX-strengths chart above — consider bundling | [`parked_group_coverage_score`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_group_coverage_score.md) |
 | "Features" filter — hierarchy above Flows (e.g. "Spot" feature bundles many trading flows); needs schema + assignment UI | [`parked_features_filter`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_features_filter.md) |
 | Colour filter — once colour metadata is captured on every screenshot, surface a Colour filter rendered as a **circular flower-shape** swatch picker (petals = colour buckets, radial layout). Metadata pipeline (extraction + storage) is a precondition and a separate prior PR | [`parked_colour_filter`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_colour_filter.md) |
 | Filters bottom sheet — mobile UX overhaul (search/typeahead, pinned recents/favourites, possibly tabbed Groups \| Flow \| Platform \| Sort). Overlaps Mobbin #5–#7; may be absorbed into that overhaul rather than landing standalone | [`parked_mobile_filters_bottom_sheet`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobile_filters_bottom_sheet.md) |
@@ -142,6 +141,7 @@ Working clone is at `~/Desktop/tegaki-fork/` if review feedback comes.
 
 | PR | What | Closed items from this backlog |
 |---|---|---|
+| (this PR) | Coverage score per group (Mobile + Web) — diversity-based, ships in section headers + group detail hero; +5% bonus for all-variants. Also: Enter-to-submit Upload All in Quick Upload | **Coverage score per group ✅** (Phase 1; canonical-flow-list upgrade left as a future row) |
 | #176 | Echo Ring loader — replaces button spinners + "Saving..." text-swaps across the app | — |
 | #175 | Mobile viewport: `vh` → `dvh` sweep across stylesheets | — |
 | #171 | Lightbox actions card — drop the cut-off look | — |
