@@ -1,13 +1,17 @@
 import { CheckSquare, ImageIcon, Square } from 'lucide-react';
 
+import { useMemo } from 'react';
+
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import { computeCoverageTargets, computeGroupCoverage } from '../lib/group-coverage';
 import type { ScreenshotNode } from '../types';
 import { CatalogueCanvasGalleryView } from './CatalogueCanvasGalleryView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
 import { CatalogueGalleryView } from './CatalogueGalleryView';
+import { CatalogueGroupCoverage } from './CatalogueGroupCoverage';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueGroupView } from './CatalogueGroupView';
 import { CatalogueScrollSentinel } from './CatalogueScrollSentinel';
@@ -128,6 +132,29 @@ export function CatalogueContent({
   canvasGalleryEnabled,
   onExitCanvasGallery,
 }: CatalogueContentProps) {
+  // Coverage score (Mobile + Web) per group — diversity-based, computed
+  // off full-scope screenshots so the score reflects actual capture
+  // breadth, not the current filter window.
+  const coverageTargets = useMemo(
+    () => computeCoverageTargets(fullScopeScreenshots),
+    [fullScopeScreenshots],
+  );
+  const coverageByGroupKey = useMemo(() => {
+    const byGroup = new Map<string, ScreenshotNode[]>();
+    for (const shot of fullScopeScreenshots) {
+      const key = (shot.group ?? '').trim().toLowerCase();
+      if (!key) continue;
+      const bucket = byGroup.get(key) ?? [];
+      bucket.push(shot);
+      byGroup.set(key, bucket);
+    }
+    const out = new Map<string, ReturnType<typeof computeGroupCoverage>>();
+    for (const [key, shots] of byGroup) {
+      out.set(key, computeGroupCoverage(shots, coverageTargets));
+    }
+    return out;
+  }, [fullScopeScreenshots, coverageTargets]);
+
   const hasActiveFilters = Boolean(
     searchQuery ||
     filterFlow.length > 0 ||
@@ -253,6 +280,11 @@ export function CatalogueContent({
               />
               <span className="catalogue-section-count">{families.length}</span>
             </h3>
+
+            {(() => {
+              const coverage = coverageByGroupKey.get(groupName.trim().toLowerCase());
+              return coverage ? <CatalogueGroupCoverage coverage={coverage} variant="compact" /> : null;
+            })()}
 
             <div
               className="catalogue-grid catalogue-grid--families"

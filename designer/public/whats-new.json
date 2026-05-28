@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-28-coverage-score",
+    "date": "May 28, 2026",
+    "title": "Coverage score — see at a glance which apps are well-captured",
+    "bullets": [
+      { "kind": "new", "text": "Every group section in the catalogue now shows Mobile and Web coverage bars — instantly see breadth of capture, not just screenshot count" },
+      { "kind": "new", "text": "Group detail pages show the score with N / M flows captured; a ✦ marks groups with all variants present (iOS+Android, or all web breakpoints)" },
+      { "kind": "improved", "text": "Quick Upload — press Enter to fire Upload All when the button is enabled. No more reaching for the mouse" }
+    ]
+  },
+  {
     "id": "2026-05-28-crop-mobile",
     "date": "May 28, 2026",
     "title": "Crop — easier to confirm on mobile",
