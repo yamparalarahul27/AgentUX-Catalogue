@@ -104,7 +104,14 @@ type DrawingState = { startX: number; startY: number; currentX: number; currentY
 
 const DRAG_THRESHOLD_PERCENT = 0.8; // ~0.8% of image dimension counts as a drag (otherwise: click)
 
+type SheetState = 'min' | 'mid' | 'full';
 const shouldStartLightboxSheetMinimized = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+const initialSheetState = (): SheetState => (shouldStartLightboxSheetMinimized() ? 'min' : 'mid');
+// Tap cycle: min → mid → full → min. Lets the user pull comments
+// progressively further up without needing a continuous drag.
+const nextSheetState = (current: SheetState): SheetState => (
+  current === 'min' ? 'mid' : current === 'mid' ? 'full' : 'min'
+);
 const isAnnotationEditAllowedNow = () => typeof window !== 'undefined' && window.innerWidth > ANNOTATION_EDIT_MIN_VIEWPORT_PX;
 
 function toLightboxAnnotation(row: ScreenshotAnnotation): LightboxAnnotation {
@@ -244,7 +251,8 @@ export function CatalogueFamilyLightbox({
       // Studio is admin-only, so this path is vanishingly rare.
     }
   }
-  const [sheetMinimized, setSheetMinimized] = useState(shouldStartLightboxSheetMinimized);
+  const [sheetState, setSheetState] = useState<SheetState>(initialSheetState);
+  const sheetMinimized = sheetState === 'min';
   const [isInlineEditing, setIsInlineEditing] = useState(startInlineEdit && canEdit);
   const [isSavingInline, setIsSavingInline] = useState(false);
   const [nameDraft, setNameDraft] = useState(family.name); const [groupDraft, setGroupDraft] = useState(family.group || ''); const [flowDraft, setFlowDraft] = useState(flowName || '');
@@ -310,7 +318,7 @@ export function CatalogueFamilyLightbox({
   useEffect(() => {
     if (!isOpen || !screenshot) return;
     setLightboxPanel(showLabelTab ? 'label' : 'comments');
-    setSheetMinimized(shouldStartLightboxSheetMinimized());
+    setSheetState(initialSheetState());
     setComments([]);
     setNewComment('');
     setCommentsError('');
@@ -506,7 +514,7 @@ export function CatalogueFamilyLightbox({
         // Annotation toggle — even if a draft is mid-flight, A still
         // toggles (matches what clicking the annotation button does).
         event.preventDefault();
-        setSheetMinimized(false);
+        setSheetState((current) => (current === 'min' ? 'mid' : current));
         setLightboxPanel('annotations');
         toggleAnnotationMode();
         return;
@@ -1117,8 +1125,17 @@ export function CatalogueFamilyLightbox({
           </div>
           )}
         </div>
-        <div className={`catalogue-lightbox-comments ${sheetMinimized ? 'is-minimized' : ''}`}>
-          <button type="button" className="catalogue-lightbox-grabber" onClick={() => setSheetMinimized((v) => !v)} aria-label={sheetMinimized ? 'Expand panel' : 'Minimize panel'} />
+        <div className={`catalogue-lightbox-comments is-${sheetState}${sheetState === 'min' ? ' is-minimized' : ''}`}>
+          <button
+            type="button"
+            className="catalogue-lightbox-grabber"
+            onClick={() => setSheetState(nextSheetState)}
+            aria-label={
+              sheetState === 'min' ? 'Expand panel'
+                : sheetState === 'mid' ? 'Expand further'
+                : 'Minimize panel'
+            }
+          />
           {/* Mobile-only mini action bar visible when the sheet is
               minimized. The metadata strip used to live in this slot
               but didn't enable any action — actions belong in the
@@ -1169,7 +1186,14 @@ export function CatalogueFamilyLightbox({
               <button
                 type="button"
                 className={`catalogue-lightbox-mini-actions__btn${annotationMode ? ' is-active' : ''}`}
-                onClick={() => setAnnotationMode((mode) => !mode)}
+                onClick={() => {
+                  // Lift the sheet so the user sees the annotation
+                  // panel / toolbar; toggling annotation mode while
+                  // the sheet is collapsed leaves no visible feedback.
+                  setSheetState((current) => (current === 'min' ? 'mid' : current));
+                  setLightboxPanel('annotations');
+                  toggleAnnotationMode();
+                }}
                 title={annotationMode ? 'Stop annotating' : 'Annotate'}
                 aria-label="Annotate"
                 aria-pressed={annotationMode}
@@ -1282,8 +1306,8 @@ export function CatalogueFamilyLightbox({
                 onGroupChange={setGroupDraft}
                 onMobileOsChange={setMobileOsDraft}
                 onNameChange={setNameDraft}
-                onOpenAnnotations={() => { setSheetMinimized(false); setLightboxPanel('annotations'); toggleAnnotationMode(); }}
-                onOpenComments={() => { setSheetMinimized(false); setLightboxPanel('comments'); }}
+                onOpenAnnotations={() => { setSheetState((current) => (current === 'min' ? 'mid' : current)); setLightboxPanel('annotations'); toggleAnnotationMode(); }}
+                onOpenComments={() => { setSheetState((current) => (current === 'min' ? 'mid' : current)); setLightboxPanel('comments'); }}
                 onOpenCrop={openCropMode}
                 onPlatformChange={handleInlinePlatformChange}
                 onReferenceFileSelect={handleInlineReferenceFileSelect}

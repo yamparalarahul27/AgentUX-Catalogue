@@ -807,8 +807,6 @@
     position: absolute;
     inset: auto 0 0;
     width: auto;
-    min-height: min(32dvh, 260px);
-    max-height: min(58dvh, 460px);
     padding: 12px 12px max(12px, env(safe-area-inset-bottom));
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -816,6 +814,18 @@
     background: rgba(20, 20, 24, 0.96);
     box-shadow: 0 -20px 42px rgba(0, 0, 0, 0.42);
     overflow: hidden;
+    transition: min-height 0.2s ease, max-height 0.2s ease;
+  }
+  // Mid (default expanded). Floor + ceiling of the existing layout.
+  .catalogue-lightbox-comments.is-mid {
+    min-height: min(32dvh, 260px);
+    max-height: min(58dvh, 460px);
+  }
+  // Full — drag/tap up from mid. Leaves room for the floating header
+  // + close button at the top.
+  .catalogue-lightbox-comments.is-full {
+    min-height: min(88dvh, 720px);
+    max-height: min(88dvh, 720px);
   }
 
   .catalogue-lightbox-comments::before {
