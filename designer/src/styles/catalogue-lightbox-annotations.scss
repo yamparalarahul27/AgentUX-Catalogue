@@ -292,6 +292,41 @@
   display: none;
 }
 
+// ── Mobile mini action bar ───────────────────────────────
+// Visible only on mobile when the bottom sheet is minimized. Replaces
+// the metadata strip with five icon buttons in the thumb zone (Share,
+// Save, Crop, Annotate, Delete). Hidden by default so desktop layout
+// is unaffected.
+.catalogue-lightbox-mini-actions {
+  display: none;
+}
+.catalogue-lightbox-mini-actions__btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 0;
+  background: transparent;
+  color: #e4e4e7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  &.is-active {
+    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.16);
+  }
+  &--danger {
+    color: #ef4444;
+    &:hover { background: rgba(239, 68, 68, 0.08); }
+  }
+}
+
 @media (max-width: 1200px) and (min-width: 721px) {
   .catalogue-lightbox-comments {
     overflow-y: auto;
@@ -789,6 +824,26 @@
 
   .catalogue-lightbox-grabber {
     display: block;
+  }
+
+  // Mini action bar appears when the sheet is minimized; metadata
+  // summary appears when expanded. The grabber toggles between them.
+  .catalogue-lightbox-comments.is-minimized {
+    .catalogue-lightbox-mini-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      gap: 4px;
+      padding: 0 8px max(8px, env(safe-area-inset-bottom));
+    }
+    .catalogue-family-lightbox__summary {
+      display: none;
+    }
+  }
+  // When expanded, suppress the mini action bar — the existing actions
+  // inside the collapsible panel take over.
+  .catalogue-lightbox-comments:not(.is-minimized) .catalogue-lightbox-mini-actions {
+    display: none;
   }
 
   .catalogue-family-lightbox {

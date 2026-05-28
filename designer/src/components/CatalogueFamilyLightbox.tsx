@@ -15,7 +15,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { thumbHashToPixelatedUrl } from '../lib/thumbhash';
 import type { MobileOs, WebPreset } from '../types';
-import { Check, Copy, Send, X } from 'lucide-react';
+import { Bookmark, Check, Copy, Crop, Send, Share2, SquarePen, Trash2, X } from 'lucide-react';
 
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
@@ -1119,6 +1119,76 @@ export function CatalogueFamilyLightbox({
         </div>
         <div className={`catalogue-lightbox-comments ${sheetMinimized ? 'is-minimized' : ''}`}>
           <button type="button" className="catalogue-lightbox-grabber" onClick={() => setSheetMinimized((v) => !v)} aria-label={sheetMinimized ? 'Expand panel' : 'Minimize panel'} />
+          {/* Mobile-only mini action bar visible when the sheet is
+              minimized. The metadata strip used to live in this slot
+              but didn't enable any action — actions belong in the
+              thumb zone, metadata + tabs surface when the user
+              expands the sheet. */}
+          <div className="catalogue-lightbox-mini-actions" aria-hidden={!sheetMinimized}>
+            {onShareLink && screenshot && (
+              <button
+                type="button"
+                className="catalogue-lightbox-mini-actions__btn"
+                onClick={() => onShareLink(screenshot.id)}
+                title="Share"
+                aria-label="Share"
+              >
+                <Share2 size={18} aria-hidden="true" />
+              </button>
+            )}
+            {onToggleBookmark && screenshot && (
+              <button
+                type="button"
+                className={`catalogue-lightbox-mini-actions__btn${bookmarkedIds?.has(screenshot.id) ? ' is-active' : ''}`}
+                onClick={() => {
+                  if (bookmarkedIds?.has(screenshot.id)) {
+                    onToggleBookmark(screenshot.id);
+                  } else {
+                    fireSaveAnimation();
+                  }
+                }}
+                title={bookmarkedIds?.has(screenshot.id) ? 'Unsave' : 'Save'}
+                aria-label="Save"
+                aria-pressed={Boolean(bookmarkedIds?.has(screenshot.id))}
+              >
+                <Bookmark size={18} aria-hidden="true" />
+              </button>
+            )}
+            {canEdit && imageSize && (
+              <button
+                type="button"
+                className="catalogue-lightbox-mini-actions__btn"
+                onClick={openCropMode}
+                title="Crop"
+                aria-label="Crop"
+              >
+                <Crop size={18} aria-hidden="true" />
+              </button>
+            )}
+            {canEdit && (
+              <button
+                type="button"
+                className={`catalogue-lightbox-mini-actions__btn${annotationMode ? ' is-active' : ''}`}
+                onClick={() => setAnnotationMode((mode) => !mode)}
+                title={annotationMode ? 'Stop annotating' : 'Annotate'}
+                aria-label="Annotate"
+                aria-pressed={annotationMode}
+              >
+                <SquarePen size={18} aria-hidden="true" />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                className="catalogue-lightbox-mini-actions__btn catalogue-lightbox-mini-actions__btn--danger"
+                onClick={() => void requestDeleteFamily()}
+                title="Delete"
+                aria-label="Delete"
+              >
+                <Trash2 size={18} aria-hidden="true" />
+              </button>
+            )}
+          </div>
           <div className="catalogue-family-lightbox">
             <div className="catalogue-family-lightbox__summary">
               <div className="catalogue-lightbox-meta-line">
