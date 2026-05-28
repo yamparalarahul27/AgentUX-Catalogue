@@ -247,12 +247,16 @@ export function CatalogueToolbar({
   // is pinned at top:0 — we apply `.is-stuck` so iOS PWA standalone mode
   // can add `padding-top: env(safe-area-inset-top)` and keep the
   // black-translucent status bar from overlapping the toolbar icons.
+  // useLayoutEffect + a synchronous bounding-rect check seeds the
+  // initial state before paint so reloading the PWA while scrolled past
+  // the toolbar doesn't flash an un-stuck frame.
   const stickySentinelRef = useRef<HTMLDivElement | null>(null);
   const [toolbarStuck, setToolbarStuck] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const sentinel = stickySentinelRef.current;
     if (!sentinel) return undefined;
+    setToolbarStuck(sentinel.getBoundingClientRect().bottom <= 0);
     const observer = new IntersectionObserver(
       ([entry]) => setToolbarStuck(!entry.isIntersecting),
       { threshold: 0 },
