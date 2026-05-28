@@ -117,7 +117,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 14px 14px;
+  padding: 10px 6px 14px;
   background: rgba(15, 15, 17, 0.96);
   border-top: 1px solid #1f1f24;
 }
@@ -198,11 +198,12 @@
 // Mobile: max out button heights + add safe-area inset on bottom.
 @media (max-width: 720px) {
   .catalogue-lightbox-crop__bottom {
-    padding: 10px 12px max(14px, env(safe-area-inset-bottom));
+    padding: 8px 6px max(14px, env(safe-area-inset-bottom));
   }
   .catalogue-lightbox-crop__btn {
     min-height: 48px;
     font-size: 15px;
+    padding: 0 10px;
   }
   // Meta dimensions string can get long; truncate gracefully on narrow
   // viewports so it never pushes the buttons off-screen.
@@ -212,6 +213,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding: 8px 12px;
   }
   .catalogue-lightbox-crop__meta > span { white-space: nowrap; }
 }

@@ -1211,9 +1211,17 @@ export function CatalogueFamilyLightbox({
             <div className="catalogue-family-lightbox__summary">
               {/* Thumbnail shown only on mobile expanded — gives the
                   user a visual reference to the screenshot they're
-                  commenting on once the sheet covers the main image. */}
+                  commenting on once the sheet covers the main image.
+                  Aspect ratio comes from the loaded natural image
+                  dimensions when available so portrait mobile shots
+                  render tall + narrow instead of squashed into a
+                  fixed box. */}
               {screenshot?.image_url && (
-                <div className="catalogue-lightbox-sheet-thumb" aria-hidden="true">
+                <div
+                  className="catalogue-lightbox-sheet-thumb"
+                  aria-hidden="true"
+                  style={imageSize ? { aspectRatio: `${imageSize.width} / ${imageSize.height}` } as React.CSSProperties : undefined}
+                >
                   <img src={screenshot.image_url} alt="" />
                 </div>
               )}

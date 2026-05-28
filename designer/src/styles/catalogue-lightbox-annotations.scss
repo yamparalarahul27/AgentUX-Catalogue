@@ -834,12 +834,23 @@
 
   // Mini action bar appears when the sheet is minimized; metadata
   // summary appears when expanded. The grabber toggles between them.
+  // Actions sit ABOVE the chevron in minimized — user reaches actions
+  // first, chevron is the "pull up to expand" hint at the very bottom.
   .catalogue-lightbox-comments.is-minimized {
+    display: flex;
+    flex-direction: column;
+
     .catalogue-lightbox-mini-actions {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 0 12px max(8px, env(safe-area-inset-bottom));
+      padding: 8px 12px 0;
+      order: 1;
+    }
+    .catalogue-lightbox-grabber {
+      order: 2;
+      padding-top: 4px;
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
     }
     .catalogue-family-lightbox__summary {
       display: none;
@@ -860,19 +871,27 @@
   }
   .catalogue-lightbox-comments.is-full .catalogue-family-lightbox__summary {
     display: grid;
-    grid-template-columns: 76px 1fr;
-    gap: 14px;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
     align-items: start;
     padding-top: 4px;
   }
+  // Smaller thumbnail that respects the screenshot's natural aspect
+  // ratio (set inline via aspect-ratio style on the element). Fits in
+  // a 44 × 64 box max — mobile portraits stay tall + narrow, desktop
+  // shots stay wide + short. No letterbox stretching.
   .catalogue-lightbox-comments.is-full .catalogue-lightbox-sheet-thumb {
     display: block;
-    width: 76px;
-    height: 100px;
-    border-radius: 10px;
+    max-width: 44px;
+    max-height: 64px;
+    width: auto;
+    height: auto;
+    aspect-ratio: 9 / 19.5;
+    border-radius: 8px;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
 
     img {
       width: 100%;
@@ -965,6 +984,20 @@
     max-height: none;
     padding-left: 0;
     padding-right: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  // Empty-state ("No comments yet" / "No annotations yet") stretches
+  // to fill the visible scroll area + vertically centres the text so
+  // it doesn't sit cramped at the top of an otherwise empty sheet.
+  .catalogue-lightbox-comments-empty,
+  .catalogue-gallery-annotations-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
   }
 
   .catalogue-lightbox-comment-input {
