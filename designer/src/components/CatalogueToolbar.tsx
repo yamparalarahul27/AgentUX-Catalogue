@@ -242,6 +242,29 @@ export function CatalogueToolbar({
   });
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
 
+  // Sticky-stuck detection: a 1px sentinel sits immediately before the
+  // toolbar wrapper. When the sentinel scrolls out of view, the wrapper
+  // is pinned at top:0 — we apply `.is-stuck` so iOS PWA standalone mode
+  // can add `padding-top: env(safe-area-inset-top)` and keep the
+  // black-translucent status bar from overlapping the toolbar icons.
+  // useLayoutEffect + a synchronous bounding-rect check seeds the
+  // initial state before paint so reloading the PWA while scrolled past
+  // the toolbar doesn't flash an un-stuck frame.
+  const stickySentinelRef = useRef<HTMLDivElement | null>(null);
+  const [toolbarStuck, setToolbarStuck] = useState(false);
+
+  useLayoutEffect(() => {
+    const sentinel = stickySentinelRef.current;
+    if (!sentinel) return undefined;
+    setToolbarStuck(sentinel.getBoundingClientRect().bottom <= 0);
+    const observer = new IntersectionObserver(
+      ([entry]) => setToolbarStuck(!entry.isIntersecting),
+      { threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!filterMenuOpen) return undefined;
 
@@ -408,7 +431,13 @@ export function CatalogueToolbar({
   }
 
   return (
-    <div className="catalogue-toolbar-wrapper">
+    <>
+      <div
+        ref={stickySentinelRef}
+        aria-hidden="true"
+        className="catalogue-toolbar-sticky-sentinel"
+      />
+    <div className={`catalogue-toolbar-wrapper${toolbarStuck ? ' is-stuck' : ''}`}>
       <div className="catalogue-toolbar">
         <div className="catalogue-toolbar-left">
           <button
@@ -768,5 +797,6 @@ export function CatalogueToolbar({
       />
 
     </div>
+    </>
   );
 }
