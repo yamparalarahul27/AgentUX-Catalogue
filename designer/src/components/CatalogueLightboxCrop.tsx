@@ -234,6 +234,25 @@ export function CatalogueLightboxCrop({
 
   return (
     <div className="catalogue-lightbox-crop">
+      <div className="catalogue-lightbox-crop__header">
+        <button
+          type="button"
+          className="catalogue-lightbox-crop__header-btn"
+          onClick={onCancel}
+          disabled={isApplying}
+        >
+          Cancel
+        </button>
+        <span className="catalogue-lightbox-crop__header-title">Crop</span>
+        <button
+          type="button"
+          className="catalogue-lightbox-crop__header-btn catalogue-lightbox-crop__header-btn--trailing"
+          onClick={reset}
+          disabled={isApplying || !hasTrim}
+        >
+          Reset
+        </button>
+      </div>
       <div className="catalogue-lightbox-crop__media" ref={containerRef}>
         <img
           ref={imgRef}
@@ -408,7 +427,7 @@ export function CatalogueLightboxCrop({
         )}
       </div>
 
-      <div className="catalogue-lightbox-crop__footer">
+      <div className="catalogue-lightbox-crop__bottom">
         <div className="catalogue-lightbox-crop__meta">
           <span>Trim: T {topPx}px · B {bottomPx}px · L {leftPx}px · R {rightPx}px</span>
           <span className="catalogue-lightbox-crop__meta-divider">·</span>
@@ -425,23 +444,7 @@ export function CatalogueLightboxCrop({
         <div className="catalogue-lightbox-crop__actions">
           <button
             type="button"
-            className="btn-secondary"
-            onClick={reset}
-            disabled={isApplying || !hasTrim}
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => setPreviewMode((value) => !value)}
-            disabled={isApplying || !hasTrim}
-          >
-            {previewMode ? 'Edit' : 'Preview'}
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
+            className="btn-secondary catalogue-lightbox-crop__btn catalogue-lightbox-crop__btn--cancel"
             onClick={onCancel}
             disabled={isApplying}
             title="Cancel (Esc)"
@@ -450,7 +453,15 @@ export function CatalogueLightboxCrop({
           </button>
           <button
             type="button"
-            className="btn-primary catalogue-lightbox-crop__apply"
+            className="btn-secondary catalogue-lightbox-crop__btn catalogue-lightbox-crop__btn--preview"
+            onClick={() => setPreviewMode((value) => !value)}
+            disabled={isApplying || !hasTrim}
+          >
+            {previewMode ? 'Edit' : 'Preview'}
+          </button>
+          <button
+            type="button"
+            className="btn-primary catalogue-lightbox-crop__btn catalogue-lightbox-crop__btn--apply"
             onClick={() => onApply({ topTrim: topPx, bottomTrim: bottomPx, leftTrim: leftPx, rightTrim: rightPx })}
             disabled={!canApply}
             title={canApply ? 'Apply crop (Enter)' : 'Drag a handle to set a crop area'}
@@ -460,7 +471,7 @@ export function CatalogueLightboxCrop({
                 <DotLoader size="sm" ariaLabel="Cropping" />
                 <span>Cropping…</span>
               </>
-            ) : 'Apply (replaces)'}
+            ) : 'Apply'}
           </button>
         </div>
       </div>

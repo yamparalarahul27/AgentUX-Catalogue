@@ -108,13 +108,49 @@
   height: 32px;
 }
 
-.catalogue-lightbox-crop__footer {
+// ── Top header (Apple/Photos style) ────────────────────
+// Cancel on the left, "Crop" title centered, Reset on the right.
+// Replaces the bottom-cluttered single row; gives a clear "you are
+// in crop mode" affordance up top.
+.catalogue-lightbox-crop__header {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(15, 15, 17, 0.96);
+  border-bottom: 1px solid #1f1f24;
+}
+.catalogue-lightbox-crop__header-btn {
+  background: transparent;
+  border: 0;
+  color: #e4e4e7;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 4px;
+  cursor: pointer;
+  justify-self: start;
+
+  &:disabled {
+    color: #52525b;
+    cursor: not-allowed;
+  }
+}
+.catalogue-lightbox-crop__header-btn--trailing { justify-self: end; }
+.catalogue-lightbox-crop__header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e4e4e7;
+  text-align: center;
+}
+
+// ── Bottom area: meta line + thumb-zone action bar ────
+.catalogue-lightbox-crop__bottom {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 18px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px 14px;
   background: rgba(15, 15, 17, 0.96);
   border-top: 1px solid #1f1f24;
 }
@@ -138,14 +174,42 @@
 }
 
 .catalogue-lightbox-crop__actions {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
 }
 
-.catalogue-lightbox-crop__apply {
+.catalogue-lightbox-crop__btn {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+}
+.catalogue-lightbox-crop__btn--apply { flex: 1.4; }
+
+// Mobile: max out button heights + add safe-area inset on bottom.
+@media (max-width: 720px) {
+  .catalogue-lightbox-crop__bottom {
+    padding: 10px 12px max(14px, env(safe-area-inset-bottom));
+  }
+  .catalogue-lightbox-crop__btn {
+    min-height: 48px;
+    font-size: 15px;
+  }
+  // Meta dimensions string can get long; truncate gracefully on narrow
+  // viewports so it never pushes the buttons off-screen.
+  .catalogue-lightbox-crop__meta {
+    font-size: 11px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .catalogue-lightbox-crop__meta > span { white-space: nowrap; }
 }
