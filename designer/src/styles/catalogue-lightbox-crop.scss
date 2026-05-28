@@ -130,6 +130,12 @@
   color: #a1a1aa;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+  // Rounded card so the meta strip reads as one container, with the
+  // Reset link tucked in at the trailing edge.
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 14px;
 }
 .catalogue-lightbox-crop__meta-line {
   flex: 1;

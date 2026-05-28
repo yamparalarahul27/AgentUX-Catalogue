@@ -15,7 +15,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { thumbHashToPixelatedUrl } from '../lib/thumbhash';
 import type { MobileOs, WebPreset } from '../types';
-import { Check, Copy, Crop, MapPin, Save, Send, Trash2, X } from 'lucide-react';
+import { Check, ChevronUp, Copy, Crop, Save, Send, Trash2, X } from 'lucide-react';
 
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
@@ -1137,28 +1137,44 @@ export function CatalogueFamilyLightbox({
             className="catalogue-lightbox-grabber"
             onClick={() => setSheetState(nextSheetState)}
             aria-label={sheetState === 'min' ? 'Expand panel' : 'Minimize panel'}
-          />
+          >
+            <ChevronUp size={20} aria-hidden="true" />
+          </button>
           {/* Mobile-only mini action bar visible when the sheet is
               minimized. The metadata strip used to live in this slot
               but didn't enable any action — actions belong in the
               thumb zone, metadata + tabs surface when the user
               expands the sheet. */}
           <div className="catalogue-lightbox-mini-actions" aria-hidden={!sheetMinimized}>
-            {onShareLink && screenshot && (
+            {/* Destructive / edit cluster on the left. */}
+            {canDelete && (
+              <button
+                type="button"
+                className="catalogue-lightbox-mini-actions__btn catalogue-lightbox-mini-actions__btn--danger"
+                onClick={() => void requestDeleteFamily()}
+                title="Delete"
+                aria-label="Delete"
+              >
+                <Trash2 size={20} aria-hidden="true" />
+              </button>
+            )}
+            {canEdit && imageSize && (
               <button
                 type="button"
                 className="catalogue-lightbox-mini-actions__btn"
                 onClick={() => {
-                  onShareLink(screenshot.id);
-                  // Share handler already fires its own copy-link
-                  // toast — no need to duplicate here.
+                  openCropMode();
+                  onToast?.('Crop mode', 'info');
                 }}
-                title="Copy share link"
-                aria-label="Copy share link"
+                title="Crop"
+                aria-label="Crop"
               >
-                <Copy size={18} aria-hidden="true" />
+                <Crop size={20} aria-hidden="true" />
               </button>
             )}
+            {/* Spacer separates destructive cluster from save/share. */}
+            <span className="catalogue-lightbox-mini-actions__spacer" />
+            {/* Save / share cluster on the right. */}
             {onToggleBookmark && screenshot && (
               <button
                 type="button"
@@ -1176,58 +1192,31 @@ export function CatalogueFamilyLightbox({
                 aria-label="Save"
                 aria-pressed={Boolean(bookmarkedIds?.has(screenshot.id))}
               >
-                <Save size={18} aria-hidden="true" />
+                <Save size={20} aria-hidden="true" />
               </button>
             )}
-            {canEdit && imageSize && (
+            {onShareLink && screenshot && (
               <button
                 type="button"
                 className="catalogue-lightbox-mini-actions__btn"
-                onClick={() => {
-                  openCropMode();
-                  onToast?.('Crop mode', 'info');
-                }}
-                title="Crop"
-                aria-label="Crop"
+                onClick={() => onShareLink(screenshot.id)}
+                title="Copy share link"
+                aria-label="Copy share link"
               >
-                <Crop size={18} aria-hidden="true" />
-              </button>
-            )}
-            {canEdit && (
-              <button
-                type="button"
-                className={`catalogue-lightbox-mini-actions__btn${annotationMode ? ' is-active' : ''}`}
-                onClick={() => {
-                  // Lift the sheet so the user sees the annotation
-                  // panel / toolbar; toggling annotation mode while
-                  // the sheet is collapsed leaves no visible feedback.
-                  const wasOn = annotationMode;
-                  setSheetState((current) => (current === 'min' ? 'full' : current));
-                  setLightboxPanel('annotations');
-                  toggleAnnotationMode();
-                  onToast?.(wasOn ? 'Annotation mode off' : 'Annotation mode on', 'info');
-                }}
-                title={annotationMode ? 'Stop annotating' : 'Annotate'}
-                aria-label="Annotate"
-                aria-pressed={annotationMode}
-              >
-                <MapPin size={18} aria-hidden="true" />
-              </button>
-            )}
-            {canDelete && (
-              <button
-                type="button"
-                className="catalogue-lightbox-mini-actions__btn catalogue-lightbox-mini-actions__btn--danger"
-                onClick={() => void requestDeleteFamily()}
-                title="Delete"
-                aria-label="Delete"
-              >
-                <Trash2 size={18} aria-hidden="true" />
+                <Copy size={20} aria-hidden="true" />
               </button>
             )}
           </div>
           <div className="catalogue-family-lightbox">
             <div className="catalogue-family-lightbox__summary">
+              {/* Thumbnail shown only on mobile expanded — gives the
+                  user a visual reference to the screenshot they're
+                  commenting on once the sheet covers the main image. */}
+              {screenshot?.image_url && (
+                <div className="catalogue-lightbox-sheet-thumb" aria-hidden="true">
+                  <img src={screenshot.image_url} alt="" />
+                </div>
+              )}
               <div className="catalogue-lightbox-meta-line">
                 {family.group && <span className="catalogue-lightbox-meta-chip" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={null} linkTo={`/g/${encodeURIComponent(family.group.trim().toLowerCase())}`} /></span>}
                 {flowName && <><span className="catalogue-lightbox-meta-sep">·</span><span className="catalogue-lightbox-meta-chip catalogue-lightbox-meta-chip--flow">{flowName}</span></>}
