@@ -228,8 +228,8 @@
 .catalogue-lightbox-grabber {
   display: none;
   width: 100%;
-  min-height: 44px;
-  padding: 16px 0;
+  min-height: 24px;
+  padding: 8px 0;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -239,8 +239,8 @@
   &::after {
     content: '';
     display: block;
-    width: 40px;
-    height: 5px;
+    width: 36px;
+    height: 4px;
     margin: 0 auto;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.22);
@@ -250,7 +250,7 @@
   &:hover::after,
   &:active::after {
     background: rgba(255, 255, 255, 0.45);
-    width: 52px;
+    width: 44px;
   }
 }
 
@@ -282,12 +282,13 @@
   min-height: 0;
 }
 
-// In crop mode, the crop component owns its own bottom action bar
-// (Cancel / Preview / Apply) with thumb-zone placement. The lightbox
-// comments / annotations sheet would otherwise sit on top of it on
-// mobile, hiding the Apply button. Hide the sheet entirely while
-// crop is active — the user can re-open it after applying.
-.catalogue-lightbox-body.is-crop .catalogue-lightbox-comments {
+// In crop mode, the crop component owns its own top header and
+// bottom action bar. Hide the lightbox's own header + comments sheet
+// so they don't stack on top of the crop's chrome (mobile especially:
+// the lightbox header was competing with `Cancel · Crop · Reset` for
+// the same top strip).
+.catalogue-lightbox-body.is-crop .catalogue-lightbox-comments,
+.catalogue-lightbox-body.is-crop .catalogue-lightbox-header {
   display: none;
 }
 

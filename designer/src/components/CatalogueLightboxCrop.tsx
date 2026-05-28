@@ -234,25 +234,6 @@ export function CatalogueLightboxCrop({
 
   return (
     <div className="catalogue-lightbox-crop">
-      <div className="catalogue-lightbox-crop__header">
-        <button
-          type="button"
-          className="catalogue-lightbox-crop__header-btn"
-          onClick={onCancel}
-          disabled={isApplying}
-        >
-          Cancel
-        </button>
-        <span className="catalogue-lightbox-crop__header-title">Crop</span>
-        <button
-          type="button"
-          className="catalogue-lightbox-crop__header-btn catalogue-lightbox-crop__header-btn--trailing"
-          onClick={reset}
-          disabled={isApplying || !hasTrim}
-        >
-          Reset
-        </button>
-      </div>
       <div className="catalogue-lightbox-crop__media" ref={containerRef}>
         <img
           ref={imgRef}
@@ -429,17 +410,27 @@ export function CatalogueLightboxCrop({
 
       <div className="catalogue-lightbox-crop__bottom">
         <div className="catalogue-lightbox-crop__meta">
-          <span>Trim: T {topPx}px · B {bottomPx}px · L {leftPx}px · R {rightPx}px</span>
-          <span className="catalogue-lightbox-crop__meta-divider">·</span>
-          <span>Final: {finalWidth}×{finalHeight}</span>
-          {annotationCount > 0 && (
-            <>
-              <span className="catalogue-lightbox-crop__meta-divider">·</span>
-              <span className="catalogue-lightbox-crop__meta-warn">
-                {annotationCount} annotation{annotationCount === 1 ? '' : 's'} will be adjusted
-              </span>
-            </>
-          )}
+          <span className="catalogue-lightbox-crop__meta-line">
+            <span>Trim: T {topPx}px · B {bottomPx}px · L {leftPx}px · R {rightPx}px</span>
+            <span className="catalogue-lightbox-crop__meta-divider">·</span>
+            <span>Final: {finalWidth}×{finalHeight}</span>
+            {annotationCount > 0 && (
+              <>
+                <span className="catalogue-lightbox-crop__meta-divider">·</span>
+                <span className="catalogue-lightbox-crop__meta-warn">
+                  {annotationCount} annotation{annotationCount === 1 ? '' : 's'} will be adjusted
+                </span>
+              </>
+            )}
+          </span>
+          <button
+            type="button"
+            className="catalogue-lightbox-crop__reset-link"
+            onClick={reset}
+            disabled={isApplying || !hasTrim}
+          >
+            Reset
+          </button>
         </div>
         <div className="catalogue-lightbox-crop__actions">
           <button
