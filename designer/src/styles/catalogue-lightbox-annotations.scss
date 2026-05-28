@@ -873,8 +873,10 @@
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 12px;
-    align-items: start;
-    padding-top: 4px;
+    align-items: center;
+    // Equal top + bottom breathing room around the meta strip
+    // (matches the user's mockup).
+    padding: 10px 12px;
   }
   // Smaller thumbnail that respects the screenshot's natural aspect
   // ratio (set inline via aspect-ratio style on the element). Fits in
@@ -953,7 +955,7 @@
 
   .catalogue-lightbox-icon-bar {
     gap: 6px;
-    justify-content: center;
+    justify-content: space-around;
   }
 
   .catalogue-lightbox-icon-bar__spacer {
@@ -963,6 +965,18 @@
   .catalogue-lightbox-icon-btn {
     width: 40px;
     height: 40px;
+  }
+
+  // Hide Edit pencil + Annotations pin on mobile — both surfaces
+  // open side panels that don't fit on a phone (Edit modal floats
+  // off-screen-right; annotation creation needs a pointer toolbar).
+  // Name editing happens via the lightbox top title click instead.
+  // Reupload also goes — covered by Crop + Delete + a fresh upload.
+  .catalogue-lightbox-icon-bar > button[title="Edit"],
+  .catalogue-lightbox-icon-bar > button[title="Close edit"],
+  .catalogue-lightbox-icon-bar > button[title="Reupload"],
+  .catalogue-lightbox-icon-bar > button[title^="Annotations"] {
+    display: none;
   }
 
   .catalogue-family-lightbox__panel {
