@@ -5,6 +5,7 @@ import { useAuth } from './lib/useAuth';
 import { Catalogue } from './components/Catalogue';
 import { CatalogueGroupDetail } from './components/CatalogueGroupDetail';
 import { CatalogueNotFound } from './components/CatalogueNotFound';
+import { ChangelogPage } from './components/ChangelogPage';
 import { PasscodeLogin } from './components/PasscodeLogin';
 import { SaveTrashAnimationProvider } from './components/SaveTrashAnimation';
 import { SharePage } from './components/SharePage';
@@ -77,6 +78,7 @@ export function CatalogueApp() {
             />
           )}
         />
+        <Route path="/changelog" element={<ChangelogPage />} />
         <Route
           path="*"
           element={(

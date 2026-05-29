@@ -1,22 +1,46 @@
 [
   {
+    "id": "2026-05-29-changelog",
+    "date": "May 29, 2026",
+    "title": "Changelog has a home",
+    "bullets": [
+      { "kind": "new", "text": "Every release we've ever shipped now lives on a dedicated /changelog page — open it from the history icon in the header (top-right)" },
+      { "kind": "improved", "text": "Backfilled the history all the way to March 18, 2026 (the first commit) — 46 dated entries total" }
+    ]
+  },
+  {
     "id": "2026-05-29-lightbox-redesign",
     "date": "May 29, 2026",
     "title": "Lightbox — cleaner layout",
     "bullets": [
-      { "kind": "improved", "text": "Title and metadata now sit at the top of the right side panel, with the close × overlaid on the top-left of the screenshot" },
-      { "kind": "improved", "text": "Tabs (Comments · Annotations) switched from pills to underline-on-active text — quieter and more legible" },
-      { "kind": "improved", "text": "Right side panel sits directly on the dark backdrop with no fill or divider; tightened the gutter around the whole lightbox to 12 px on all sides for more screenshot real estate" }
+      {
+        "kind": "improved",
+        "text": "Title and metadata now sit at the top of the right side panel, with the close × overlaid on the top-left of the screenshot"
+      },
+      {
+        "kind": "improved",
+        "text": "Tabs (Comments · Annotations) switched from pills to underline-on-active text — quieter and more legible"
+      },
+      {
+        "kind": "improved",
+        "text": "Right side panel sits directly on the dark backdrop with no fill or divider; tightened the gutter around the whole lightbox to 12 px on all sides for more screenshot real estate"
+      }
     ]
   },
   {
     "id": "2026-05-29-lightbox-squircles",
     "date": "May 29, 2026",
     "title": "Lightbox polish — Figma-quality squircle corners",
-    "imageUrl": "/designer/mockup-2026-05-29-lightbox-lisse-comparison.html",
+    "imageUrl_pending": "/designer/mockup-2026-05-29-lightbox-lisse-comparison.html",
     "bullets": [
-      { "kind": "improved", "text": "Close button, action toolbar, mobile mini-action bar, and the comment composer now use squircle (superellipse) corners — the curve eases continuously into each edge instead of the abrupt circular-arc inflection point" },
-      { "kind": "improved", "text": "Mobile mini-action buttons (Delete · Crop · Save · Copy) shift from circles to squircles to match the rest of the toolbar" }
+      {
+        "kind": "improved",
+        "text": "Close button, action toolbar, mobile mini-action bar, and the comment composer now use squircle (superellipse) corners — the curve eases continuously into each edge instead of the abrupt circular-arc inflection point"
+      },
+      {
+        "kind": "improved",
+        "text": "Mobile mini-action buttons (Delete · Crop · Save · Copy) shift from circles to squircles to match the rest of the toolbar"
+      }
     ]
   },
   {
@@ -24,19 +48,34 @@
     "date": "May 28, 2026",
     "title": "Coverage score — see at a glance which apps are well-captured",
     "bullets": [
-      { "kind": "new", "text": "Every group section in the catalogue now shows Mobile and Web coverage bars — instantly see breadth of capture, not just screenshot count" },
-      { "kind": "new", "text": "Group detail pages show the score with N / M flows captured; a ✦ marks groups with all variants present (iOS+Android, or all web breakpoints)" },
-      { "kind": "improved", "text": "Quick Upload — press Enter to fire Upload All when the button is enabled. No more reaching for the mouse" }
+      {
+        "kind": "new",
+        "text": "Every group section in the catalogue now shows Mobile and Web coverage bars — instantly see breadth of capture, not just screenshot count"
+      },
+      {
+        "kind": "new",
+        "text": "Group detail pages show the score with N / M flows captured; a ✦ marks groups with all variants present (iOS+Android, or all web breakpoints)"
+      },
+      {
+        "kind": "improved",
+        "text": "Quick Upload — press Enter to fire Upload All when the button is enabled. No more reaching for the mouse"
+      }
     ]
   },
   {
     "id": "2026-05-28-crop-mobile",
     "date": "May 28, 2026",
     "title": "Crop — easier to confirm on mobile",
-    "imageUrl": "/designer/mockup-2026-05-28-mobile-lightbox.html",
+    "imageUrl_pending": "/designer/mockup-2026-05-28-mobile-lightbox.html",
     "bullets": [
-      { "kind": "improved", "text": "Crop mode now has a top header (Cancel · Crop · Reset) and big sticky Cancel / Apply buttons at the bottom of the screen — no more hunting for the small Apply button in a cramped row" },
-      { "kind": "improved", "text": "Apply button stretches a bit wider than Cancel and renders in indigo so the primary action is obvious" }
+      {
+        "kind": "improved",
+        "text": "Crop mode now has a top header (Cancel · Crop · Reset) and big sticky Cancel / Apply buttons at the bottom of the screen — no more hunting for the small Apply button in a cramped row"
+      },
+      {
+        "kind": "improved",
+        "text": "Apply button stretches a bit wider than Cancel and renders in indigo so the primary action is obvious"
+      }
     ]
   },
   {
@@ -44,23 +83,50 @@
     "date": "May 27, 2026",
     "title": "Mobile lightbox — swipe to navigate",
     "bullets": [
-      { "kind": "new", "text": "Swipe left or right on the lightbox image to move to the next / previous screenshot. Keyboard arrows still work on desktop" }
+      {
+        "kind": "new",
+        "text": "Swipe left or right on the lightbox image to move to the next / previous screenshot. Keyboard arrows still work on desktop"
+      }
     ]
   },
   {
     "id": "2026-05-27-search-fixes",
     "date": "May 27, 2026",
     "title": "Search — clearer, clearable, and Enter goes where you'd expect",
-    "imageUrl": "/designer/mockup-2026-05-27-search-as-filter.html",
+    "imageUrl_pending": "/designer/mockup-2026-05-27-search-as-filter.html",
     "bullets": [
-      { "kind": "new", "text": "Press Enter (without picking a specific result) and the catalogue scopes to your query — a banner at the top tells you what you're viewing and how many matches there are" },
-      { "kind": "new", "text": "Modal shows a \"View all N results in catalogue\" bar at the bottom — same effect as Enter, but visible" },
-      { "kind": "improved", "text": "Screenshots now appear first in search results — Enter on a specific card jumps to that screenshot directly in the lightbox" },
-      { "kind": "improved", "text": "Results are sorted by relevance now — matches in the name come before matches found in AI-generated tags or filenames" },
-      { "kind": "improved", "text": "Matching text is highlighted in result names so you can see WHY each result showed up" },
-      { "kind": "improved", "text": "Click a screenshot in the search modal and the lightbox opens straight on that screenshot, instead of just scoping the catalogue list to it" },
-      { "kind": "improved", "text": "Active search query shows as its own pill in the toolbar — you can see what you searched for and remove it with one click" },
-      { "kind": "fix", "text": "\"Clear all\" now genuinely clears everything (search query included), instead of leaving a hidden filter behind" }
+      {
+        "kind": "new",
+        "text": "Press Enter (without picking a specific result) and the catalogue scopes to your query — a banner at the top tells you what you're viewing and how many matches there are"
+      },
+      {
+        "kind": "new",
+        "text": "Modal shows a \"View all N results in catalogue\" bar at the bottom — same effect as Enter, but visible"
+      },
+      {
+        "kind": "improved",
+        "text": "Screenshots now appear first in search results — Enter on a specific card jumps to that screenshot directly in the lightbox"
+      },
+      {
+        "kind": "improved",
+        "text": "Results are sorted by relevance now — matches in the name come before matches found in AI-generated tags or filenames"
+      },
+      {
+        "kind": "improved",
+        "text": "Matching text is highlighted in result names so you can see WHY each result showed up"
+      },
+      {
+        "kind": "improved",
+        "text": "Click a screenshot in the search modal and the lightbox opens straight on that screenshot, instead of just scoping the catalogue list to it"
+      },
+      {
+        "kind": "improved",
+        "text": "Active search query shows as its own pill in the toolbar — you can see what you searched for and remove it with one click"
+      },
+      {
+        "kind": "fix",
+        "text": "\"Clear all\" now genuinely clears everything (search query included), instead of leaving a hidden filter behind"
+      }
     ]
   },
   {
@@ -68,9 +134,18 @@
     "date": "May 27, 2026",
     "title": "Quieter app — idle Canvas + smoother sign-in",
     "bullets": [
-      { "kind": "improved", "text": "Canvas Gallery no longer burns CPU when idle — the pan animation loop now stops itself as soon as motion settles, and re-arms when you drag or scroll again" },
-      { "kind": "fix", "text": "After sign-in, the browser back button stays inside the catalogue instead of dropping you off the site" },
-      { "kind": "fix", "text": "No more login-screen flash when re-opening the app — the gate waits for the persisted session check before showing anything" }
+      {
+        "kind": "improved",
+        "text": "Canvas Gallery no longer burns CPU when idle — the pan animation loop now stops itself as soon as motion settles, and re-arms when you drag or scroll again"
+      },
+      {
+        "kind": "fix",
+        "text": "After sign-in, the browser back button stays inside the catalogue instead of dropping you off the site"
+      },
+      {
+        "kind": "fix",
+        "text": "No more login-screen flash when re-opening the app — the gate waits for the persisted session check before showing anything"
+      }
     ]
   },
   {
@@ -78,8 +153,14 @@
     "date": "May 27, 2026",
     "title": "Canvas view — new chrome layout",
     "bullets": [
-      { "kind": "improved", "text": "Exit Canvas now lives at the top-left as a pill with a back arrow + \"Exit\" label, replacing the bare ← glyph at the bottom" },
-      { "kind": "improved", "text": "AgentUX logo moves to the centre of the header in Canvas mode; section tabs hide so the canvas gets the full width" }
+      {
+        "kind": "improved",
+        "text": "Exit Canvas now lives at the top-left as a pill with a back arrow + \"Exit\" label, replacing the bare ← glyph at the bottom"
+      },
+      {
+        "kind": "improved",
+        "text": "AgentUX logo moves to the centre of the header in Canvas mode; section tabs hide so the canvas gets the full width"
+      }
     ]
   },
   {
@@ -87,7 +168,10 @@
     "date": "May 27, 2026",
     "title": "Mobile lightbox sits flush with the browser bar",
     "bullets": [
-      { "kind": "fix", "text": "The lightbox bottom panel (grabber + metadata line) now hugs the browser's address bar when minimized — no more dead gap between the metadata strip and Safari's toolbar" }
+      {
+        "kind": "fix",
+        "text": "The lightbox bottom panel (grabber + metadata line) now hugs the browser's address bar when minimized — no more dead gap between the metadata strip and Safari's toolbar"
+      }
     ]
   },
   {
@@ -95,8 +179,14 @@
     "date": "May 27, 2026",
     "title": "New loading indicator across buttons + spinners",
     "bullets": [
-      { "kind": "improved", "text": "Loading states now show an Echo Ring — concentric diamond ripple — in place of the old ring spinner and the \"Saving...\" text. Save buttons keep their label, the loader just appears beside it" },
-      { "kind": "improved", "text": "Echo Ring now also appears on the lightbox Crop button while a crop is being applied" }
+      {
+        "kind": "improved",
+        "text": "Loading states now show an Echo Ring — concentric diamond ripple — in place of the old ring spinner and the \"Saving...\" text. Save buttons keep their label, the loader just appears beside it"
+      },
+      {
+        "kind": "improved",
+        "text": "Echo Ring now also appears on the lightbox Crop button while a crop is being applied"
+      }
     ]
   },
   {
@@ -104,7 +194,10 @@
     "date": "May 27, 2026",
     "title": "Mobile viewport fits properly now",
     "bullets": [
-      { "kind": "fix", "text": "Modals and the lightbox no longer get cut off by the address bar on mobile Safari — every screen now sizes to what you can actually see" }
+      {
+        "kind": "fix",
+        "text": "Modals and the lightbox no longer get cut off by the address bar on mobile Safari — every screen now sizes to what you can actually see"
+      }
     ]
   },
   {
@@ -112,29 +205,50 @@
     "date": "May 27, 2026",
     "title": "Lightbox right-side polish",
     "bullets": [
-      { "kind": "fix", "text": "The Actions card in the lightbox right panel no longer looks cut off — same rounded edges and border as the card above it" }
+      {
+        "kind": "fix",
+        "text": "The Actions card in the lightbox right panel no longer looks cut off — same rounded edges and border as the card above it"
+      }
     ]
   },
   {
     "id": "2026-05-26-canvas-gallery",
     "date": "May 26, 2026",
     "title": "Canvas view — infinite pannable Gallery",
-    "imageUrl": "/designer/mockup-2026-05-26-canvas-gallery.html",
+    "imageUrl_pending": "/designer/mockup-2026-05-26-canvas-gallery.html",
     "bullets": [
-      { "kind": "new", "text": "Gallery view becomes a pannable canvas — drag or trackpad-swipe through your screenshots like a wallpaper" },
-      { "kind": "new", "text": "Pan further → next 50 screenshots load in the direction you're heading. A subtle marker tells you content is arriving" },
-      { "kind": "new", "text": "Density toggle (A / M / C) zooms cells live — bigger for focus, smaller for breadth" },
-      { "kind": "new", "text": "Turn it off any time from Account menu → Canvas view; you'll fall back to the classic gallery" }
+      {
+        "kind": "new",
+        "text": "Gallery view becomes a pannable canvas — drag or trackpad-swipe through your screenshots like a wallpaper"
+      },
+      {
+        "kind": "new",
+        "text": "Pan further → next 50 screenshots load in the direction you're heading. A subtle marker tells you content is arriving"
+      },
+      {
+        "kind": "new",
+        "text": "Density toggle (A / M / C) zooms cells live — bigger for focus, smaller for breadth"
+      },
+      {
+        "kind": "new",
+        "text": "Turn it off any time from Account menu → Canvas view; you'll fall back to the classic gallery"
+      }
     ]
   },
   {
     "id": "2026-05-26-typing-key-feedback",
     "date": "May 26, 2026",
     "title": "Typing key feedback while you edit",
-    "imageUrl": "/designer/mockup-2026-05-26-typing-feedback-keycap.html",
+    "imageUrl_pending": "/designer/mockup-2026-05-26-typing-feedback-keycap.html",
     "bullets": [
-      { "kind": "new", "text": "Editing a screenshot name shows the key you just pressed at the bottom of the screen, with a soft mechanical click" },
-      { "kind": "new", "text": "Toggle it on or off any time from Account menu → Typing key feedback" }
+      {
+        "kind": "new",
+        "text": "Editing a screenshot name shows the key you just pressed at the bottom of the screen, with a soft mechanical click"
+      },
+      {
+        "kind": "new",
+        "text": "Toggle it on or off any time from Account menu → Typing key feedback"
+      }
     ]
   },
   {
@@ -142,9 +256,18 @@
     "date": "May 26, 2026",
     "title": "Lightbox quality of life",
     "bullets": [
-      { "kind": "improved", "text": "More breathing room above and below the image inside the lightbox" },
-      { "kind": "improved", "text": "Image loads instantly with a chunky preview instead of a tiny dot in the centre" },
-      { "kind": "fix", "text": "Editing the Web preset on a screenshot now saves correctly — no more silent revert on reopen" }
+      {
+        "kind": "improved",
+        "text": "More breathing room above and below the image inside the lightbox"
+      },
+      {
+        "kind": "improved",
+        "text": "Image loads instantly with a chunky preview instead of a tiny dot in the centre"
+      },
+      {
+        "kind": "fix",
+        "text": "Editing the Web preset on a screenshot now saves correctly — no more silent revert on reopen"
+      }
     ]
   },
   {
@@ -152,7 +275,10 @@
     "date": "May 25, 2026",
     "title": "Quick Upload paste affordance",
     "bullets": [
-      { "kind": "improved", "text": "Paste-from-clipboard now sits as a compact text link below a shorter drop zone — same iOS Universal Clipboard support, less screen real estate" }
+      {
+        "kind": "improved",
+        "text": "Paste-from-clipboard now sits as a compact text link below a shorter drop zone — same iOS Universal Clipboard support, less screen real estate"
+      }
     ]
   },
   {
@@ -160,9 +286,18 @@
     "date": "May 22, 2026",
     "title": "Paste from clipboard + UI Element tagging",
     "bullets": [
-      { "kind": "new", "text": "Quick Upload has a Paste pill next to the drop zone — click it and Cmd/Ctrl+V to drop in images, works on iOS via long-press too" },
-      { "kind": "new", "text": "Annotate an area then flip \"Tag as UI Element\" to add it to the UI Element filter taxonomy — no Studio access needed" },
-      { "kind": "new", "text": "New UI Element filter in the toolbar, plus a green \"[📦 N]\" badge on cards that have tagged UI elements" }
+      {
+        "kind": "new",
+        "text": "Quick Upload has a Paste pill next to the drop zone — click it and Cmd/Ctrl+V to drop in images, works on iOS via long-press too"
+      },
+      {
+        "kind": "new",
+        "text": "Annotate an area then flip \"Tag as UI Element\" to add it to the UI Element filter taxonomy — no Studio access needed"
+      },
+      {
+        "kind": "new",
+        "text": "New UI Element filter in the toolbar, plus a green \"[📦 N]\" badge on cards that have tagged UI elements"
+      }
     ]
   },
   {
@@ -170,21 +305,42 @@
     "date": "May 22, 2026",
     "title": "Mobile header, PWA install & filter chip strip",
     "bullets": [
-      { "kind": "improved", "text": "Header on mobile shrinks — identity pill collapses to a single letter, Settings moves into the dropdown, no more overlap" },
-      { "kind": "new", "text": "Real app icon when you Add to Home Screen on iPhone — dark boot screen, no more white flash on launch" },
-      { "kind": "improved", "text": "Selected filter chips now show as a row below the toolbar with one-click remove + Clear all" },
-      { "kind": "fix", "text": "App-update toast moved to top-right on desktop so it stops overlapping the magnified dock" }
+      {
+        "kind": "improved",
+        "text": "Header on mobile shrinks — identity pill collapses to a single letter, Settings moves into the dropdown, no more overlap"
+      },
+      {
+        "kind": "new",
+        "text": "Real app icon when you Add to Home Screen on iPhone — dark boot screen, no more white flash on launch"
+      },
+      {
+        "kind": "improved",
+        "text": "Selected filter chips now show as a row below the toolbar with one-click remove + Clear all"
+      },
+      {
+        "kind": "fix",
+        "text": "App-update toast moved to top-right on desktop so it stops overlapping the magnified dock"
+      }
     ]
   },
   {
     "id": "2026-05-21-whats-new-and-toasts",
     "date": "May 21, 2026",
     "title": "What's New panel + App-update toast",
-    "imageUrl": "/designer/mockup-2026-05-21-whats-new-panel.html",
+    "imageUrl_pending": "/designer/mockup-2026-05-21-whats-new-panel.html",
     "bullets": [
-      { "kind": "new", "text": "Click the star in the header to see what shipped recently — release notes right inside the app" },
-      { "kind": "new", "text": "When a new build deploys, a toast appears so you can refresh and pick up the latest" },
-      { "kind": "improved", "text": "Labelling Studio icon now matches the AI theme — sparkles instead of tags" }
+      {
+        "kind": "new",
+        "text": "Click the star in the header to see what shipped recently — release notes right inside the app"
+      },
+      {
+        "kind": "new",
+        "text": "When a new build deploys, a toast appears so you can refresh and pick up the latest"
+      },
+      {
+        "kind": "improved",
+        "text": "Labelling Studio icon now matches the AI theme — sparkles instead of tags"
+      }
     ]
   },
   {
@@ -192,11 +348,26 @@
     "date": "May 20, 2026",
     "title": "Saved animation, Copy morph & Videos overhaul",
     "bullets": [
-      { "kind": "improved", "text": "Bookmarks is now \"Saved\" — and you'll see screens fly into the Saved tab when you stash them" },
-      { "kind": "improved", "text": "Copying a share link gives you a clear green checkmark instead of a silent click" },
-      { "kind": "improved", "text": "Videos load instantly: see who posted and read the excerpt before deciding to load the full embed" },
-      { "kind": "new", "text": "Speed through the lightbox with single keys — E edit · D delete · C crop · B save · A annotate" },
-      { "kind": "new", "text": "Jump anywhere in the app with C / V / L / I / S, or hit U to start a quick upload" }
+      {
+        "kind": "improved",
+        "text": "Bookmarks is now \"Saved\" — and you'll see screens fly into the Saved tab when you stash them"
+      },
+      {
+        "kind": "improved",
+        "text": "Copying a share link gives you a clear green checkmark instead of a silent click"
+      },
+      {
+        "kind": "improved",
+        "text": "Videos load instantly: see who posted and read the excerpt before deciding to load the full embed"
+      },
+      {
+        "kind": "new",
+        "text": "Speed through the lightbox with single keys — E edit · D delete · C crop · B save · A annotate"
+      },
+      {
+        "kind": "new",
+        "text": "Jump anywhere in the app with C / V / L / I / S, or hit U to start a quick upload"
+      }
     ]
   },
   {
@@ -204,10 +375,22 @@
     "date": "May 19, 2026",
     "title": "Keyboard-first lightbox + group filter fixes",
     "bullets": [
-      { "kind": "new", "text": "Fine-tune crops with arrow keys — hold Shift for bigger jumps" },
-      { "kind": "new", "text": "Pick search results without touching the mouse: arrow through and hit Enter" },
-      { "kind": "fix", "text": "Your catalogue no longer comes up empty after login — group filters now ignore casing" },
-      { "kind": "new", "text": "Share links you paste in Slack or X show a proper preview card" }
+      {
+        "kind": "new",
+        "text": "Fine-tune crops with arrow keys — hold Shift for bigger jumps"
+      },
+      {
+        "kind": "new",
+        "text": "Pick search results without touching the mouse: arrow through and hit Enter"
+      },
+      {
+        "kind": "fix",
+        "text": "Your catalogue no longer comes up empty after login — group filters now ignore casing"
+      },
+      {
+        "kind": "new",
+        "text": "Share links you paste in Slack or X show a proper preview card"
+      }
     ]
   },
   {
@@ -215,10 +398,22 @@
     "date": "May 16 – 19, 2026",
     "title": "Group detail pages, login backdrop & toolbar refinements",
     "bullets": [
-      { "kind": "new", "text": "Every group has its own page at /g/<key> — a tight grid of every screen, sized for your viewport" },
-      { "kind": "new", "text": "Click a group icon on the login screen to land straight in that group after sign-in" },
-      { "kind": "new", "text": "Browse flows from a chip strip below the toolbar — quicker than opening the dropdown" },
-      { "kind": "improved", "text": "Groups without a category land in \"Other\" instead of muddying \"Untagged\"" }
+      {
+        "kind": "new",
+        "text": "Every group has its own page at /g/<key> — a tight grid of every screen, sized for your viewport"
+      },
+      {
+        "kind": "new",
+        "text": "Click a group icon on the login screen to land straight in that group after sign-in"
+      },
+      {
+        "kind": "new",
+        "text": "Browse flows from a chip strip below the toolbar — quicker than opening the dropdown"
+      },
+      {
+        "kind": "improved",
+        "text": "Groups without a category land in \"Other\" instead of muddying \"Untagged\""
+      }
     ]
   },
   {
@@ -226,9 +421,971 @@
     "date": "May 15, 2026",
     "title": "Role system, Marketing Bucket & capability-aware UI",
     "bullets": [
-      { "kind": "new", "text": "Roles replace the admin / non-admin split — every member gets exactly the capabilities they need" },
-      { "kind": "improved", "text": "Mint a passcode for a teammate and pick their role in the same step" },
-      { "kind": "new", "text": "Marketing uploads now flow into a \"Marketing Bucket\" group, ready for an admin to promote" }
+      {
+        "kind": "new",
+        "text": "Roles replace the admin / non-admin split — every member gets exactly the capabilities they need"
+      },
+      {
+        "kind": "improved",
+        "text": "Mint a passcode for a teammate and pick their role in the same step"
+      },
+      {
+        "kind": "new",
+        "text": "Marketing uploads now flow into a \"Marketing Bucket\" group, ready for an admin to promote"
+      }
+    ]
+  },
+  {
+    "id": "may-13-14-2026",
+    "date": "May 13 – 14, 2026",
+    "title": "Auth Gate, RLS Hardening & Telegram Bot Security",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Passcode login screen — the old self-asserted email prompt is gone. Visitors now land on a full-page PasscodeLogin and must redeem an admin-minted passcode (argon2id-hashed server-side) to get a real Supabase Auth session. 90-day refresh token keeps members signed in across reloads. Wrong passcode is rate-limited: 5 failed attempts trigger a 15-minute lockout with a live countdown."
+      },
+      {
+        "kind": "new",
+        "text": "Members admin panel — new Settings → Team → Members subtab for admins. Mint, rotate, disable, or remove member passcodes; force log-out everywhere; reset lockout counters. Add-member modal generates a fresh XXXX-XXXX-XXXX passcode and reveals it once with a one-click Copy. Self-protect on the admin's own row (no disable / delete icons). Mobile renders the same data as cards."
+      },
+      {
+        "kind": "new",
+        "text": "Log out everywhere in the profile menu — calls signOut({ scope: 'global' }) to invalidate every refresh token issued to the user, kicking out all other tabs and devices."
+      },
+      {
+        "kind": "new",
+        "text": "Row Level Security across the database — the 11 catalogue tables that previously had RLS disabled are now locked down. Permissive policies for authenticated users; anon role can only read non-deleted screenshots (so public share pages keep working). Storage buckets follow the same pattern: public read for share-page images, authenticated-only for writes."
+      },
+      {
+        "kind": "new",
+        "text": "scan-secrets hook on the dev side — a PostToolUse hook that redacts secret-shaped strings (JWTs, Stripe / GitHub / Google / Telegram tokens, AWS keys, PEM blocks, named env-var assignments) from Bash output before they enter Claude Code's context. Closes the \"cat .env\" bypass that the deny list alone couldn't catch."
+      },
+      {
+        "kind": "improved",
+        "text": "Admin gate switched from hardcoded email to the admins table. Multiple admins can now share Settings / Members / Studio access — backed by RLS-readable rows rather than a string literal in code. Both bootstrapped accounts have full admin reach."
+      },
+      {
+        "kind": "improved",
+        "text": "Edge Function CORS — auth-login, auth-admin, and purge-orphan-storage all gained CORS headers + OPTIONS preflight handlers. Browser fetch calls no longer get silently blocked at preflight."
+      },
+      {
+        "kind": "improved",
+        "text": "Telegram bot allow-list flipped to fail-closed. Previously, an unset ALLOWED_TELEGRAM_USER_IDS env meant any Telegram user could upload to the catalogue. Now an empty list rejects everyone — including the operator, on purpose, so the misconfiguration is loud."
+      },
+      {
+        "kind": "improved",
+        "text": "Pre-public-release checklist in CLAUDE.md rewritten as a \"done\" note. The three blockers that gated linking the catalogue from hirahul.xyz (auth gate, RLS, Claude permissions) are all closed."
+      },
+      {
+        "kind": "fix",
+        "text": "Telegram webhook verification — the bot endpoint was reachable by anyone who learned its URL. Added TELEGRAM_WEBHOOK_SECRET env that's compared against the x-telegram-bot-api-secret-token header Telegram echoes on every delivery. Missing or mismatched header now returns 401 before any DB writes."
+      },
+      {
+        "kind": "fix",
+        "text": "Personal Telegram user ID redacted from docs/telegram-bot-setup.md. The setup doc was committing a real numeric ID as the \"Adding more allowed users\" example; replaced with a placeholder."
+      },
+      {
+        "kind": "fix",
+        "text": "\"Allow all\" public-role policies dropped on comparisons, connections, flows, projects, and screenshots. These were the second back door alongside the RLS-disabled tables — RLS was technically on, but the policy said \"anyone can do anything.\" Replaced with authenticated-only equivalents."
+      },
+      {
+        "kind": "fix",
+        "text": "Mobile toolbar Quick Upload — the text button was leaking onto narrow viewports next to the search icon. Hidden below 960px so mobile only shows the icon button."
+      },
+      {
+        "kind": "fix",
+        "text": "Storage bucket policies tightened — public INSERT and public DELETE on the screenshots bucket are gone (anyone could previously overwrite or delete any uploaded screenshot). Anon write policies on catalogue-group-icons dropped the same way. Public read stays where the share page needs it."
+      }
+    ]
+  },
+  {
+    "id": "may-13-2026",
+    "date": "May 13, 2026",
+    "title": "Categorised Search Modal",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Catalogue search modal — Cmd+K (or Option+Space) opens a Spotlight-style modal that searches across Groups, Flows, and Screenshots at once. Each category gets its own section with match counts; up to five results per category before a \"+N more\" indicator. The screenshot results render as vertical cards with thumbnails in a horizontal scrolling row — click to filter the catalogue to that exact screenshot."
+      },
+      {
+        "kind": "new",
+        "text": "Click actions — selecting a Group filters the catalogue to that group; a Flow narrows to that group + flow; a Screenshot narrows further by platform and search query so the card surfaces immediately. Modal closes on select."
+      },
+      {
+        "kind": "new",
+        "text": "Keyboard nav — ↑/↓ and ←/→ move across results, Enter selects, Esc closes. Cmd+K / Option+Space toggle the modal. Shortcuts are suppressed while typing in any input so they don't fight with paste / undo."
+      },
+      {
+        "kind": "new",
+        "text": "Recents — the last five queries persist across sessions in localStorage and surface as one-tap shortcuts when the modal is empty."
+      },
+      {
+        "kind": "new",
+        "text": "Group icons — uploaded group icons render in the result row; groups without an uploaded icon fall back to a generic Lucide LayoutGrid."
+      },
+      {
+        "kind": "new",
+        "text": "HTML mockup preserved at docs/mockups/mockup-2026-05-13-catalogue-search-modal.html as a before/after visual reference. Static screenshots of the modal in action live alongside it. Future feature: surface these from the changelog page directly."
+      },
+      {
+        "kind": "improved",
+        "text": "Toolbar search — the inline desktop search pill is gone, replaced by a Search icon sibling to the Share icon on the right side of the toolbar. Single discovery point across desktop and mobile."
+      },
+      {
+        "kind": "improved",
+        "text": "Mobile search — the mobile Search pill now opens the same categorised modal full-screen, instead of expanding an inline search row. One mental model for everyone; the inline expandable row has been removed."
+      },
+      {
+        "kind": "improved",
+        "text": "Full-scope query picks up name, file_name, and storage_path so search can match on screenshot names and render real thumbnails for top results."
+      }
+    ]
+  },
+  {
+    "id": "may-11-12-2026",
+    "date": "May 11 – 12, 2026",
+    "title": "Trash, Groups Taxonomy & Carousel Share View",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Trash with 15-day Restore — deletes are now soft. Cards move to a new Settings → Team → Trash tab where each row shows thumb, name, group/flow/platform, who deleted it, and when. One-click Restore. A pg_cron job at 03:00 UTC permanently purges anything older than 15 days. The delete confirm now reads \"Move to Trash. Recoverable for 15 days\". Cards animate out with a blur + fade + scale dissolve (~280ms) so the removal feels intentional, not abrupt."
+      },
+      {
+        "kind": "new",
+        "text": "Groups Type / Region taxonomy — tag each group as CEX or DEX, and as India or Global. Tags render as coloured pills on each group card. New filter bar above the Groups grid: search input + Type radio + Region radio (each with an Untagged option, AND across axes). Filter state mirrors to URL params (?q=&type=&region=) via replaceState, so links are shareable and back/forward restores correctly. The Edit-group modal grew two segmented radio rows for setting Type and Region; icon uploads no longer wipe the taxonomy."
+      },
+      {
+        "kind": "new",
+        "text": "Share view: List ⇄ Carousel toggle — public share links can now be viewed as the existing vertical list or a new carousel. The toggle sits next to the title; URL persists the choice (?view=carousel). Carousel uses a peek layout on desktop (~75% centre, ~12% prev/next neighbours dimmed and blurred), full-width single screen below 768px. Arrows, dots, keyboard (← → Home End), touch swipe, click-on-peek to jump. Deep-link to a specific step via ?view=carousel&step=N. Edge cases handled: single screen (no chrome), two screens (no peeks), first/last (matching arrow + peek hidden)."
+      },
+      {
+        "kind": "new",
+        "text": "Share view: Last-updated pill in the header, with a Clock icon and relative time (\"2h ago\"). Hover/focus reveals the full date in a tooltip. Header logo centres when no timestamp is available."
+      },
+      {
+        "kind": "new",
+        "text": "Share view: Footer attribution links — \"Powered by AgentUX · Built by Yamparala Rahul\". AgentUX opens agentux.hirahul.xyz/designer/, Yamparala Rahul opens the portfolio at www.hirahul.xyz. Both open in new tabs."
+      },
+      {
+        "kind": "new",
+        "text": "Auth gate design spec — frozen-at-decision document for the upcoming public-release auth gate: per-email passcodes (argon2id hashed), Supabase Edge Functions for login + admin operations, a Members admin panel inside Settings → Team. Lives at docs/security-auth-passcode-and-members.md. Implementation lands in a follow-up PR."
+      },
+      {
+        "kind": "improved",
+        "text": "Share view header — the \"AgentUX Catalogue\" wordmark next to the logo is gone. Logo only on the left, last-updated pill on the right (or logo centred when no timestamp). Cleaner, less visually noisy."
+      },
+      {
+        "kind": "improved",
+        "text": "Share view logo — the source SVG contains both the icon mark and a wordmark; previously it was pillarboxed inside a forced square, making the visible mark tiny. Now sized to the icon's natural aspect (~55×56 in the header, ~29×30 in the footer) with the wordmark cropped off via object-fit: cover."
+      },
+      {
+        "kind": "improved",
+        "text": "Share view meta line — replaced text labels with lucide icons: User for the sharer, Images for the count, Monitor / Smartphone for platform."
+      },
+      {
+        "kind": "improved",
+        "text": "Share view state visuals — Loading shows a spinning Loader2, errors show AlertTriangle, empty shows Inbox. Less text, more glance-able."
+      },
+      {
+        "kind": "improved",
+        "text": "Delete confirms updated everywhere — per-card, lightbox, and bulk-select dialogs all now read \"Move to Trash. Recoverable for 15 days from Settings → Team → Trash.\" instead of the old \"cannot be undone\" copy."
+      },
+      {
+        "kind": "improved",
+        "text": "Groups view card layout — edit pencil moved into the meta row (top-right of the card); screenshot count drops to its own line below. Tag pills (when set) render below that."
+      },
+      {
+        "kind": "fix",
+        "text": "Bookmark filter leaked through on mobile — the toolbar's bookmark-filter button is tagged catalogue-toolbar--desktop-only, but a higher-source-order rule in bookmarks.scss overrode the display: none via equal specificity. Now hidden on viewports ≤ 960px via an attribute-scoped rule that only targets the filter button (Share button next to it stays visible on mobile)."
+      },
+      {
+        "kind": "fix",
+        "text": "Mobile carousel arrows took horizontal room for no benefit on touch viewports. Hidden below 768px — swipe and dots already convey navigation."
+      },
+      {
+        "kind": "fix",
+        "text": "Portfolio link in share footer didn't load in Safari for some users — it pointed to the apex domain (hirahul.xyz). Switched to www.hirahul.xyz."
+      }
+    ]
+  },
+  {
+    "id": "may-7-9-2026",
+    "date": "May 7 – 9, 2026",
+    "title": "Identity pill, Logout, Drag-Drop Upload & Progress Ribbon",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Identity pill in the header — replaces the hamburger menu. Click reveals a dropdown with the signed-in email, a ★ My bookmarks toggle (flips the toolbar bookmark filter), Settings, Team (admin), Labelling Studio (admin), and Logout. When no email is set the pill becomes a Sign in CTA."
+      },
+      {
+        "kind": "new",
+        "text": "Drag-and-drop to Quick Upload — drop image files (or a top-level folder of images) anywhere on the catalogue grid and they queue into the Quick Upload modal. Folders walk one level deep; subfolders are skipped. Non-image files are silently filtered, hidden files (.DS_Store etc) ignored, and drops are capped at 200 files with a toast if exceeded."
+      },
+      {
+        "kind": "new",
+        "text": "Upload progress ribbon — bottom-right slim card with a thumbnail per file. Each box shows live status: queued, uploading (spinner), uploaded, or failed (red badge with error). Successful uploads fade out (blur + scale + width-to-zero) and the ribbon shrinks; the card itself shrinks to fit. A Retry failed button appears whenever any item failed and re-runs only those. Auto-dismisses 2s after a clean run; persists with errors visible until dismissed."
+      },
+      {
+        "kind": "improved",
+        "text": "One identity, one email. The bookmark-only email key (agentux:bookmark-email) and its prompt modal are gone — bookmarks now read the same login email used for comments, annotations, and label review. Guests bookmarking a card open the standard login modal instead of a separate flow."
+      },
+      {
+        "kind": "improved",
+        "text": "The legacy \"Uploading screenshots…\" canvas overlay is gone. The progress ribbon is the single source of truth for upload status now."
+      },
+      {
+        "kind": "fix",
+        "text": "Drag-drop overlay no longer covers the Quick Upload modal — when the modal is already open, the global drop handler stands down so the modal's own drop zone takes the files."
+      },
+      {
+        "kind": "fix",
+        "text": "Upload outcomes were silent — the toast briefly flashed then nothing, leaving users wondering whether the batch succeeded. Per-file status in the ribbon makes outcome unambiguous, and individual errors are now surfaced with the actual error message."
+      }
+    ]
+  },
+  {
+    "id": "may-6-7-2026",
+    "date": "May 6 – 7, 2026",
+    "title": "Labelling Studio, Comments Polish & Lightbox Focus",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Labelling Studio (admin) — paste-or-type structured metadata per screenshot. Six sections: Identity, Journey, Screen analysis, Visual design, Design reference, Review. Auto-fills platform, device type, theme, and flow name from existing metadata on first open. New Paste JSON modal with live preview so an AI-generated JSON blob can populate the editor in one click; pasted verified status is silently downgraded to draft so paste cannot bypass human verification."
+      },
+      {
+        "kind": "new",
+        "text": "Database-aggregated status totals at the top of the Studio so admins see how many screenshots are still unlabelled, drafted, in review, or verified — across the whole catalogue, not just the loaded grid. Refreshes after every save."
+      },
+      {
+        "kind": "new",
+        "text": "Public catalogue filter chips driven by label data — Page type, UI element, UX pattern, and Screen state. Search also matches labelled title and one_line_summary."
+      },
+      {
+        "kind": "new",
+        "text": "Lightbox area focus — clicking an area annotation dims the rest of the screenshot via a stacked box-shadow. Click outside or press Esc to clear."
+      },
+      {
+        "kind": "improved",
+        "text": "Comments simplified to delete-only — Resolve concept removed (no green pills, no \"Resolved by …\" copy). Admin can delete any comment; authors keep delete on their own."
+      },
+      {
+        "kind": "improved",
+        "text": "Annotations: admin can delete any annotation (mirrors comments). Existing pin annotations from before pin-creation was disabled are now deletable by the admin."
+      },
+      {
+        "kind": "improved",
+        "text": "Card surface (grid): the comment-count chip and the misleading pencil button (labelled \"Open preview\" but opened the editor) are removed. Card click is the only entry; edit is reachable from inside the lightbox."
+      },
+      {
+        "kind": "improved",
+        "text": "Studio context in the lightbox: only the Label tab renders; Comments and Annotations are hidden. Action toolbar reduced to Edit (pencil) only — Crop, Bookmark, Comments, Annotations, and Delete are hidden in admin-labelling mode."
+      },
+      {
+        "kind": "improved",
+        "text": "Reference Image attachments are now behind a feature flag (REFERENCE_IMAGES_ENABLED, off by default). Existing data preserved; flip the flag to re-surface the \"Ref\" chips, the upload UI in the inline editor, and the gallery side panel."
+      },
+      {
+        "kind": "fix",
+        "text": "TypeScript error that silently hid the Studio and Team menu entries — the canViewTeam → canAdmin rename was missed at the call site between Catalogue.tsx and CatalogueHeader.tsx. Both menu entries now appear for admins."
+      },
+      {
+        "kind": "fix",
+        "text": "Studio grid was capped at 50 screenshots because it used the paginated source without scroll-load. Now loads progressively as you scroll, matching the catalogue grid behaviour."
+      }
+    ]
+  },
+  {
+    "id": "may-2-4-2026",
+    "date": "May 2 – 4, 2026",
+    "title": "Edit-Icon Modal, Four-Side Crop & Sticky Quick Upload",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Quick Upload now opens at sensible defaults — Dark theme, Web platform, 1512 web preset (and iOS when Mobile is picked) — and field values stick within a browser session: Flow, Group, Platform, Theme, preset, and Mobile OS persist across modal close, successful uploads, and reopens. A page reload returns to defaults."
+      },
+      {
+        "kind": "new",
+        "text": "On the first Quick Upload open after a page reload, single-value catalogue toolbar filters (Flow, Group, Platform, Theme, Web preset, Mobile OS) seed the modal so a filtered context carries naturally into upload."
+      },
+      {
+        "kind": "new",
+        "text": "Lightbox crop now supports all four sides — left and right handles alongside the existing top and bottom. Combine any subset of trims in one pass; the footer reads T · B · L · R and the final width × height. Annotations re-project across both axes — pins outside the kept rectangle are removed, area annotations clip and re-percent over the new dimensions."
+      },
+      {
+        "kind": "new",
+        "text": "Edit Icon for catalogue groups is a focused modal — paste an image with ⌘V / Ctrl+V, drag-and-drop, or click the dropzone. Replaces the old inline editor row."
+      },
+      {
+        "kind": "improved",
+        "text": "Group appearance: the Emoji field has been removed from the editor, the lib layer, and the database (icon_emoji column dropped). Uploaded icon is the only icon source; first-letter avatar is the fallback."
+      },
+      {
+        "kind": "improved",
+        "text": "supabase/.temp/ added to .gitignore (Supabase CLI-generated metadata)."
+      }
+    ]
+  },
+  {
+    "id": "may-1-2026",
+    "date": "May 1, 2026",
+    "title": "Group Rename, Live Chip Strip, Lucide Icons & Toolbar Polish",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Lucide icon library across primary surfaces — header, toolbar, chip strip, lightbox actions, bulk bar, dropdowns, modals, scroll-to-top, view toggle, and confirm dialogs all use Lucide icons in place of the older inline SVGs / Unicode glyphs."
+      },
+      {
+        "kind": "new",
+        "text": "Toolbar's Quick Upload button doubles as Upload All (N) while the Quick Upload modal is open — kick off the upload from the toolbar without scrolling to the modal's footer."
+      },
+      {
+        "kind": "improved",
+        "text": "Group chip strip now refreshes instantly when a screenshot's group changes (bulk move, single change, or admin rename) — no reload required."
+      },
+      {
+        "kind": "improved",
+        "text": "Chip strip aggregates groups case-insensitively. Coinbase and coinbase now show as one chip with the combined count; clicking it filters across every casing."
+      },
+      {
+        "kind": "improved",
+        "text": "Renaming a group from Team Settings is now a true rename. Saving a new name opens a confirm dialog (\"Rename X → Y, affects N screenshots\"), then runs a single project-wide UPDATE that catches every DB casing under that canonical, and refreshes the appearance label to the new key."
+      },
+      {
+        "kind": "improved",
+        "text": "Team Settings project picker dropped (single-project workflow). Per-project appearance logic still works internally."
+      },
+      {
+        "kind": "improved",
+        "text": "Upload Analytics tab in Team Settings is now hidden by default. Default sub-tab is Flows."
+      },
+      {
+        "kind": "improved",
+        "text": "Sort button on the chip strip simplified to label + chevron; the redundant up/down arrow icon was removed."
+      },
+      {
+        "kind": "fix",
+        "text": "Past partial bulk renames that left mixed casings in the DB (e.g. some Coinbase, some coinbase) can now be cleaned in one Team Settings save — the rename merges every casing under the new name."
+      }
+    ]
+  },
+  {
+    "id": "apr-30-2026",
+    "date": "Apr 30, 2026",
+    "title": "Group Chip Strip, Folder Upload & Toolbar Polish",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Group chip strip above the toolbar — one chip per group, click to scope into that group with a shareable ?group= URL. Paused by default; resume the ticker from the sort menu. While paused, scroll the strip horizontally with no visible scrollbar. Honors prefers-reduced-motion."
+      },
+      {
+        "kind": "new",
+        "text": "Sort menu next to the strip (Recent · A–Z · Count) is the single source of truth for between-group ordering, and now also drives Grid view section ordering. Preference persists in localStorage."
+      },
+      {
+        "kind": "new",
+        "text": "Folder drag-and-drop in Quick Upload — drop a folder onto the Quick Upload zone and its name auto-fills the Flow input (only when empty; typed values are preserved). Images inside, plus any loose images dropped alongside, all queue together. Multi-folder drops are rejected with a toast; non-image files are skipped with a count."
+      },
+      {
+        "kind": "new",
+        "text": "Floating scroll-to-top button on the catalogue — appears after 600px of scroll, smooth-scrolls to the top, hides itself when at the top."
+      },
+      {
+        "kind": "new",
+        "text": "Lightbox crop — trim the top and/or bottom of a screenshot from the lightbox. Two horizontal drag handles, live size readout, a Preview toggle that shows the cropped result before committing, and Apply replaces the original (no version row to keep storage tight). Existing annotations on the screenshot are auto-shifted and clipped to the new bounds; ones fully outside the kept area are removed."
+      },
+      {
+        "kind": "improved",
+        "text": "Toolbar default is now a clean slate — first-time users see only Search and Filters ▾ (renamed from + Filter for label consistency). Filters opt in one at a time via the dropdown. Existing users keep their saved visibility selections."
+      },
+      {
+        "kind": "improved",
+        "text": "Toolbar layout: Quick Upload stays pinned to the right at all times. When many filters are visible, the filter row absorbs the overflow with a hidden-scrollbar horizontal scroll instead of wrapping to a new line."
+      },
+      {
+        "kind": "improved",
+        "text": "Header reflowed — AgentUX logo pinned to the left, Catalogue / Videos / Links tabs centered, ☰ menu remains on the right."
+      },
+      {
+        "kind": "improved",
+        "text": "Bulk Change Group dialog now uses a searchable combobox (matches the sibling Bulk Change Flow dialog) — type to find a group, press Enter to create a new one. Replaces the wall of chips that stretched the modal vertically with many groups. Primary group badge preserved."
+      },
+      {
+        "kind": "improved",
+        "text": "Reupload icon hidden in the lightbox (feature-flagged off) now that Crop covers the common \"fix this screenshot\" case."
+      },
+      {
+        "kind": "fix",
+        "text": "Card thumbnails now fit the whole screenshot inside the card (object-fit: contain) instead of cropping the edges. The blurred thumbhash placeholder fills the letterbox so there's no transparent gap."
+      }
+    ]
+  },
+  {
+    "id": "apr-29-2026",
+    "date": "Apr 29, 2026",
+    "title": "Area Annotations, Annotation Filter & Bulk Flow",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Area annotations — drag a box on any screenshot in the lightbox to mark a region (e.g. \"Sign-up modal\"), name it, and save. Old point pins still render as legacy data; new annotations are areas by default (a feature flag toggles pin creation if needed)."
+      },
+      {
+        "kind": "new",
+        "text": "Toolbar Annotation filter — multi-select with built-in search; pick one or more annotation labels and the catalogue narrows to every screenshot tagged with them, scoped across the full DB regardless of pagination."
+      },
+      {
+        "kind": "new",
+        "text": "Composer autocomplete — when naming an annotation, suggestions appear from your full set of existing labels so naming stays consistent."
+      },
+      {
+        "kind": "new",
+        "text": "Bulk Change Flow — select multiple families and assign or remove a flow with one click, mirroring Change Group; combobox search includes a \"Remove flow from N\" action for unassigning in batch."
+      },
+      {
+        "kind": "new",
+        "text": "Annotations live in their own screenshot_annotations table with a one-time backfill from the legacy metadata blob, plus a screenshots_with_annotation_labels RPC for case-insensitive label lookup."
+      },
+      {
+        "kind": "improved",
+        "text": "Annotation editing is desktop-only (≤720px viewports show existing annotations read-only); the Add control hides and a small notice appears in the panel."
+      },
+      {
+        "kind": "improved",
+        "text": "Concurrent annotation edits no longer race — each pin/area is its own row instead of being part of a single overwritten JSON array."
+      },
+      {
+        "kind": "improved",
+        "text": "Annotation count and \"last added\" timestamps are now hydrated from the table for grid badges, family counts, and view-by sorting; changes propagate without a refetch."
+      },
+      {
+        "kind": "improved",
+        "text": "The \"Annotations added\" view-by option was removed from the dropdown — the new multi-select replaces it. \"Comments added\" view-by is unchanged."
+      },
+      {
+        "kind": "improved",
+        "text": "Shared Dropdown component supports an opt-in searchable prop with a search input + filter, used by the Annotation filter today."
+      },
+      {
+        "kind": "improved",
+        "text": "Toolbar search now also matches Group names — typing a group like \"Binance\" surfaces every screenshot in that group alongside name and filename matches, with no UX change to the search input or filter chips."
+      },
+      {
+        "kind": "fix",
+        "text": "Quick Upload side panel no longer hides under the sticky toolbar when scrolling — the panel is now offset by the toolbar height so the close button and Flow input stay reachable."
+      }
+    ]
+  },
+  {
+    "id": "apr-28-2026",
+    "date": "Apr 28, 2026",
+    "title": "Lightbox & Quick Upload Polish",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Lightbox keyboard navigation — arrow keys step between screenshots without leaving the preview"
+      },
+      {
+        "kind": "new",
+        "text": "Lightbox auto-loads the next page when you arrow past the loaded boundary; spinner overlay while it fetches; \"End of catalogue\" toast at the very last screenshot"
+      },
+      {
+        "kind": "new",
+        "text": "Lightbox now uses the app's confirm modal for deletion (no more native browser dialog) and jumps to the neighbor screenshot after delete instead of closing"
+      },
+      {
+        "kind": "new",
+        "text": "Closing the lightbox highlights the last-viewed card with a soft 3-second accent glow and scrolls it into view"
+      },
+      {
+        "kind": "new",
+        "text": "Quick Upload: Group field is now a search-and-add combobox sourced from every group across your projects (no longer limited to paginated rows)"
+      },
+      {
+        "kind": "new",
+        "text": "Quick Upload: Flow field is a search-and-add combobox over existing flows, with free-type for new ones"
+      },
+      {
+        "kind": "new",
+        "text": "Toolbar filters for Group and Flow now support multi-select"
+      },
+      {
+        "kind": "improved",
+        "text": "Quick Upload group UX collapsed: removed the auto / existing / new chip switcher in favor of one combobox; empty input falls back to per-file filename-parsed group"
+      },
+      {
+        "kind": "improved",
+        "text": "Quick Upload header tightened — dropped the subtitle and project picker; Theme paired with Group assignment"
+      },
+      {
+        "kind": "improved",
+        "text": "Flow name is now required to upload — Upload All stays disabled with an inline hint until a flow is set"
+      },
+      {
+        "kind": "fix",
+        "text": "Multi-file drop occasionally lost files when async work ran between the drop event and the read — DataTransfer entries are now snapshotted up front"
+      }
+    ]
+  },
+  {
+    "id": "apr-27-2026",
+    "date": "Apr 27, 2026",
+    "title": "Catalogue Goes Solo — Repo Split & Cleanup",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Links section announced (coming soon) — save URLs alongside screenshots and videos"
+      },
+      {
+        "kind": "new",
+        "text": "Dedicated Telegram Bot section on landing page"
+      },
+      {
+        "kind": "improved",
+        "text": "Repository stripped to Catalogue-only: screenshots, videos, and links (144 files removed, 28k lines trimmed)"
+      },
+      {
+        "kind": "improved",
+        "text": "Dev Mode, Flow Builder, Feature Log, Compare View, Archive, and Figma sections moved to AgentUX-other"
+      },
+      {
+        "kind": "improved",
+        "text": "Landing page rewritten: \"Screenshots. Videos. Links.\" — focused entirely on Catalogue"
+      },
+      {
+        "kind": "improved",
+        "text": "Header tabs simplified to Catalogue + Videos"
+      },
+      {
+        "kind": "improved",
+        "text": "Vite config and Vercel rewrites updated for single-app deployment"
+      },
+      {
+        "kind": "improved",
+        "text": "Removed @xyflow/react and @dagrejs/dagre dependencies (Flow Builder only)"
+      }
+    ]
+  },
+  {
+    "id": "apr-20-2026",
+    "date": "Apr 20, 2026",
+    "title": "ThumbHash Image Placeholders",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "ThumbHash placeholder system — blurry 28-byte previews render instantly before full images load"
+      },
+      {
+        "kind": "new",
+        "text": "ThumbHash generated on every screenshot upload and stored in the database"
+      },
+      {
+        "kind": "new",
+        "text": "ThumbHashImage component with blur-to-sharp crossfade transition (0.3s ease-in)"
+      },
+      {
+        "kind": "new",
+        "text": "Database migration adding thumb_hash column to screenshots table"
+      },
+      {
+        "kind": "improved",
+        "text": "Catalogue family cards now use ThumbHash placeholders instead of blank/progress-bar-only loading"
+      },
+      {
+        "kind": "improved",
+        "text": "Landing page updated with ThumbHash feature mention"
+      }
+    ]
+  },
+  {
+    "id": "apr-15-17-2026",
+    "date": "Apr 15 – 17, 2026",
+    "title": "Telegram Bot, X Video Links & Feature Log Improvements",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Telegram bot Edge Function — share screenshot images from your phone and they land in the Catalogue \"Social\" group"
+      },
+      {
+        "kind": "new",
+        "text": "X (Twitter) video link support in Telegram bot — paste an X post URL and it's added to the Videos section"
+      },
+      {
+        "kind": "new",
+        "text": "Duplicate detection for X posts — bot replies with \"already in catalogue\" instead of failing"
+      },
+      {
+        "kind": "new",
+        "text": "Archive link added to landing page navigation"
+      },
+      {
+        "kind": "improved",
+        "text": "Feature Log: renamed \"Designed\" status to \"Reference\" for clearer intent"
+      },
+      {
+        "kind": "improved",
+        "text": "Feature Log: cards are now clickable for faster navigation to detail views"
+      },
+      {
+        "kind": "improved",
+        "text": "Feature Log: replaced text back-link with an icon back button"
+      },
+      {
+        "kind": "improved",
+        "text": "Landing page updated with Telegram bot, archive compare, and X video link features"
+      },
+      {
+        "kind": "fix",
+        "text": "Reduced image loading progress bar from default height to 1px for a subtler loading indicator"
+      }
+    ]
+  },
+  {
+    "id": "apr-14-2026",
+    "date": "Apr 14, 2026",
+    "title": "Feature Log Lifecycle, Global Scope & Navigation Restructure",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Feature Log tab with planned/reference/shipped grouping and feature CRUD"
+      },
+      {
+        "kind": "new",
+        "text": "Feature detail view with separate Shipped and Reference sections"
+      },
+      {
+        "kind": "new",
+        "text": "Global screenshot link picker for linking existing screenshots into features"
+      },
+      {
+        "kind": "new",
+        "text": "Archive menu surfaces for Flow Builder and Projects (read-only context)"
+      },
+      {
+        "kind": "improved",
+        "text": "Catalogue header now uses primary tabs (Catalogue, Feature Log, Videos) with a right-corner menu"
+      },
+      {
+        "kind": "improved",
+        "text": "Team and catalogue filter scope now default to full DB view instead of project-scoped pages"
+      },
+      {
+        "kind": "improved",
+        "text": "Feature edit modal now supports manual status override alongside title and description edits"
+      },
+      {
+        "kind": "fix",
+        "text": "Mark Shipped flow now prompts clearly when shipped evidence is missing"
+      },
+      {
+        "kind": "fix",
+        "text": "Feature link picker visual polish (single-stroke controls, cleaner metadata tags, image fit containment)"
+      },
+      {
+        "kind": "fix",
+        "text": "Catalogue preview cards now include a bottom loading progress indicator while images are resolving"
+      }
+    ]
+  },
+  {
+    "id": "apr-7-8-2026",
+    "date": "Apr 7 – 8, 2026",
+    "title": "Folder View, Group Appearance & Gallery Workflow",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Folder view on CD page — groups render as brand cards with swipeable carousel previews"
+      },
+      {
+        "kind": "new",
+        "text": "Group appearance system — custom icons (Supabase-backed upload), descriptions, and status badges per brand"
+      },
+      {
+        "kind": "new",
+        "text": "Gallery inline editor and feedback panel for reviewing screenshots in-context"
+      },
+      {
+        "kind": "new",
+        "text": "Team section group management with 32px section icons"
+      },
+      {
+        "kind": "new",
+        "text": "Bulk webapp-to-Figma capture SOP and runner template"
+      },
+      {
+        "kind": "improved",
+        "text": "CD page now uses the same dark theme tokens as the main Catalogue (removed Nothing Design system)"
+      },
+      {
+        "kind": "improved",
+        "text": "Group rename and icon updates no longer require a project selection"
+      },
+      {
+        "kind": "fix",
+        "text": "React hook-order error in gallery view"
+      },
+      {
+        "kind": "fix",
+        "text": "Header tabs styling on CD page"
+      },
+      {
+        "kind": "fix",
+        "text": "CI pipeline — upgraded vite to patch 3 high-severity vulnerabilities"
+      }
+    ]
+  },
+  {
+    "id": "apr-6-2026",
+    "date": "Apr 6, 2026",
+    "title": "Compare Mode, Team Flows & CD Page Experiments",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Compare mode — side-by-side flow comparison across primary and vs groups"
+      },
+      {
+        "kind": "new",
+        "text": "Team section with Flows sub-tab and Figma Prototypes tab"
+      },
+      {
+        "kind": "new",
+        "text": "CD page with Nothing Design light theme for layout experiments"
+      },
+      {
+        "kind": "new",
+        "text": "Catalogue rename script for local batch execution"
+      },
+      {
+        "kind": "new",
+        "text": "Quick upload improvements with enhanced naming conventions"
+      },
+      {
+        "kind": "fix",
+        "text": "Max-lines build failures from compare mode additions"
+      },
+      {
+        "kind": "fix",
+        "text": "Gallery preview image fit"
+      }
+    ]
+  },
+  {
+    "id": "apr-4-5-2026",
+    "date": "Apr 4 – 5, 2026",
+    "title": "Videos Tab, AgentUX Branding & CD Page",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Videos section in Catalogue for design references and competitive UX studies"
+      },
+      {
+        "kind": "new",
+        "text": "CD test page (/designer/cd) for prototyping new layouts"
+      },
+      {
+        "kind": "new",
+        "text": "AgentUX logo in all designer headers"
+      },
+      {
+        "kind": "improved",
+        "text": "List-view UX updates with improved inline editing"
+      },
+      {
+        "kind": "fix",
+        "text": "Family grouping and legacy fallback for older screenshots"
+      },
+      {
+        "kind": "fix",
+        "text": "Desktop/mobile UI scoping and card delete modal"
+      }
+    ]
+  },
+  {
+    "id": "apr-3-2026",
+    "date": "Apr 3, 2026",
+    "title": "Mobile UX Overhaul & Filter Sheet",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Filter bottom sheet replacing inline filters — 11 iterations to get it right"
+      },
+      {
+        "kind": "new",
+        "text": "Redesigned lightbox preview with compact layout and minimizable bottom sheet"
+      },
+      {
+        "kind": "new",
+        "text": "Floating search with collapsible pill on mobile"
+      },
+      {
+        "kind": "new",
+        "text": "Inline toolbar pills for search and upload on mobile"
+      },
+      {
+        "kind": "new",
+        "text": "Team upload analytics (admin-only)"
+      },
+      {
+        "kind": "new",
+        "text": "Reference removal actions and gallery zoom toolbar"
+      },
+      {
+        "kind": "improved",
+        "text": "Preview-first catalogue UX restored as default interaction"
+      },
+      {
+        "kind": "improved",
+        "text": "Header tabs repositioned with platform icons"
+      },
+      {
+        "kind": "improved",
+        "text": "Catalogue inline editing and comment workflows refined"
+      },
+      {
+        "kind": "fix",
+        "text": "Modal rendering and list inline editing"
+      },
+      {
+        "kind": "fix",
+        "text": "Details modal sticky save footer"
+      },
+      {
+        "kind": "fix",
+        "text": "Upload modal scroll on small screens"
+      },
+      {
+        "kind": "fix",
+        "text": "Search pill positioning and toolbar overlap on mobile"
+      }
+    ]
+  },
+  {
+    "id": "apr-2-2026",
+    "date": "Apr 2, 2026",
+    "title": "Catalogue Core Features",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Sorting controls and refined toolbar layout"
+      },
+      {
+        "kind": "new",
+        "text": "Quick upload flow with lightbox rename"
+      },
+      {
+        "kind": "new",
+        "text": "Annotations and multiple view modes (grid, list, gallery)"
+      },
+      {
+        "kind": "new",
+        "text": "Filter and gallery controls"
+      },
+      {
+        "kind": "new",
+        "text": "700-line max rule enforced in CI"
+      }
+    ]
+  },
+  {
+    "id": "apr-1-2026",
+    "date": "Apr 1, 2026",
+    "title": "Flow Builder Canvas Enhancements",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Multi-path flow insert with node deduplication"
+      },
+      {
+        "kind": "new",
+        "text": "Undo support, placeholder flow insertion, and auto-refresh"
+      },
+      {
+        "kind": "new",
+        "text": "Text-flow studio, flow compare, and catalogue sidebar"
+      },
+      {
+        "kind": "fix",
+        "text": "New flow steps and catalogue additions no longer overlap existing nodes"
+      },
+      {
+        "kind": "fix",
+        "text": "Viewport preserved during canvas auto-refresh"
+      }
+    ]
+  },
+  {
+    "id": "mar-28-2026",
+    "date": "Mar 28, 2026",
+    "title": "Designer Flow Builder",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Standalone web-based Flow Builder with drag-and-drop canvas"
+      },
+      {
+        "kind": "new",
+        "text": "Screenshot upload with auto-naming and flow connection"
+      },
+      {
+        "kind": "new",
+        "text": "Catalogue sidebar for managing screenshots alongside flows"
+      }
+    ]
+  },
+  {
+    "id": "mar-21-2026",
+    "date": "Mar 21, 2026",
+    "title": "Landing Page & MVP Definition",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Static landing page at agentux.hirahul.xyz"
+      },
+      {
+        "kind": "new",
+        "text": "Vercel deployment configuration"
+      },
+      {
+        "kind": "new",
+        "text": "AgentUX flow MVP specification"
+      }
+    ]
+  },
+  {
+    "id": "mar-18-19-2026",
+    "date": "Mar 18 – 19, 2026",
+    "title": "Project Launch",
+    "bullets": [
+      {
+        "kind": "new",
+        "text": "Initial appmap package — interactive app map visualization for React"
+      },
+      {
+        "kind": "new",
+        "text": "Auto-detection for Next.js App Router, Pages Router, and React Router"
+      },
+      {
+        "kind": "new",
+        "text": "Runtime route transition tracking"
+      },
+      {
+        "kind": "new",
+        "text": "Floating dev button with draggable positioning"
+      },
+      {
+        "kind": "new",
+        "text": "Markdown + JSON export for AI agents"
+      },
+      {
+        "kind": "new",
+        "text": "Published as @yamparala27/agentux on npm"
+      },
+      {
+        "kind": "new",
+        "text": "CI/CD pipeline, security policy, and open-source governance"
+      },
+      {
+        "kind": "fix",
+        "text": "\"use client\" directive for Next.js App Router compatibility"
+      }
     ]
   }
 ]

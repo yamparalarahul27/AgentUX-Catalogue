@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
   Frame,
+  History,
   Keyboard,
   Link as LinkIcon,
   LogIn,
@@ -11,7 +12,6 @@ import {
   Save,
   Settings,
   Sparkles,
-  Star,
 } from 'lucide-react';
 
 import agentuxLogo from '../assets/agentux-logo.svg';
@@ -226,11 +226,11 @@ export function CatalogueHeader({
           <button
             type="button"
             className="catalogue-header__icon-btn catalogue-header__sparkles-btn"
-            aria-label={whatsNewUnseenCount > 0 ? `What's new (${whatsNewUnseenCount} new)` : "What's new"}
-            title={whatsNewUnseenCount > 0 ? `What's new · ${whatsNewUnseenCount} new` : "What's new"}
+            aria-label={whatsNewUnseenCount > 0 ? `Changelog (${whatsNewUnseenCount} new)` : 'Changelog'}
+            title={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}
             onClick={onOpenWhatsNew}
           >
-            <Star size={15} aria-hidden="true" />
+            <History size={15} aria-hidden="true" />
             {whatsNewUnseenCount > 0 && (
               <span className="catalogue-header__sparkles-dot" aria-hidden="true" />
             )}

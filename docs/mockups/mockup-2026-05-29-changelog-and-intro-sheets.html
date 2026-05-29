@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Changelog page + feature intro sheets — concept directions</title>
+<style>
+  :root {
+    --bg: #0d0d0e;
+    --surface: #161618;
+    --surface-2: #1d1d20;
+    --surface-3: #232328;
+    --border: #27272a;
+    --text: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-bg: rgba(99,102,241,0.18);
+    --good: #4ade80;
+    --new: #818cf8;
+    --improved: #fbbf24;
+    --fix: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  .page { max-width: 1320px; margin: 0 auto; padding: 48px 32px 80px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lede { color: var(--text-muted); margin: 0 0 8px; font-size: 14.5px; max-width: 760px; }
+  .lede strong { color: var(--text); }
+
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 24px 0 48px;
+  }
+  .summary h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .summary table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .summary td { padding: 6px 0; vertical-align: top; }
+  .summary td:first-child { color: var(--text-dim); width: 200px; padding-right: 18px; }
+
+  .section {
+    margin-bottom: 64px;
+  }
+  .section > h2 {
+    font-size: 22px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .section > .caption {
+    color: var(--text-dim);
+    font-size: 13.5px;
+    margin: 0 0 24px;
+    max-width: 720px;
+  }
+
+  /* ─── shared frame for mockups ─── */
+  .frame {
+    background: #050507;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  /* ─── browser chrome (light) ─── */
+  .browser {
+    background: #0a0a0c;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .browser__bar {
+    background: #1a1a1d;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .browser__dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.18); }
+  .browser__url { margin-left: 14px; padding: 4px 12px; background: rgba(0,0,0,0.4); border-radius: 6px; font-size: 11px; color: var(--text-muted); font-family: ui-monospace, SF Mono, monospace; }
+
+  /* ============================================
+     PART 1 — Changelog page
+     ============================================ */
+  .changelog {
+    padding: 40px 48px 60px;
+    background: var(--bg);
+  }
+  .changelog h1 { font-size: 32px; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .changelog__lede { color: var(--text-muted); margin: 0 0 32px; font-size: 14.5px; }
+  .changelog__entry {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 32px;
+    padding: 28px 0;
+    border-top: 1px solid var(--border);
+  }
+  .changelog__date {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    padding-top: 4px;
+  }
+  .changelog__entry h3 {
+    margin: 0 0 12px;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+  }
+  .changelog__bullets {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .changelog__bullets li {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .kind {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .kind--new { background: rgba(129,140,248,0.16); color: var(--new); }
+  .kind--improved { background: rgba(251,191,36,0.14); color: var(--improved); }
+  .kind--fix { background: rgba(74,222,128,0.14); color: var(--fix); }
+  .changelog__img {
+    margin-top: 14px;
+    height: 140px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.12);
+    font-size: 11px;
+  }
+
+  /* ============================================
+     PART 2 — Concept frames (4 directions)
+     ============================================ */
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .concept {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .concept__head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .concept__pill {
+    display: inline-block;
+    background: var(--accent-bg);
+    color: var(--accent-hover);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .concept__title { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+  .concept__sub { font-size: 12.5px; color: var(--text-dim); margin: 0; }
+  .concept__viewport {
+    position: relative;
+    height: 480px;
+    background:
+      linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+      repeating-linear-gradient(45deg, #1a1a1f 0, #1a1a1f 1px, transparent 1px, transparent 12px),
+      var(--surface-2);
+    overflow: hidden;
+  }
+  .concept__notes {
+    padding: 14px 20px 18px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .concept__notes b { color: var(--text); }
+  .concept__notes ul { margin: 6px 0 0 18px; padding: 0; }
+  .concept__notes li { margin-bottom: 4px; }
+
+  /* ─── A: Apple-style full sheet ─── */
+  .sheet-a {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 360px;
+    background: var(--surface);
+    border-radius: 22px;
+    padding: 36px 28px 20px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .sheet-a__hero {
+    width: 76px; height: 76px;
+    margin: 0 auto 18px;
+    background: linear-gradient(135deg, #6366f1, #c084fc);
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 36px;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.45);
+  }
+  .sheet-a__title { font-size: 22px; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .sheet-a__body { font-size: 13.5px; color: var(--text-muted); margin: 0 0 28px; line-height: 1.5; }
+  .sheet-a__dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+  .sheet-a__dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.18); }
+  .sheet-a__dots .is-active { background: white; }
+  .sheet-a__cta {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    border: 0;
+    border-radius: 12px;
+    color: white;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sheet-a__skip {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px;
+    background: transparent;
+    border: 0;
+    color: var(--text-dim);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* ─── B: Linear-style toast card ─── */
+  .sheet-b {
+    position: absolute;
+    bottom: 16px; right: 16px;
+    width: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.45);
+  }
+  .sheet-b__hero {
+    height: 110px;
+    background: linear-gradient(135deg, #6366f1, #c084fc);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 32px;
+  }
+  .sheet-b__pill {
+    display: inline-block;
+    background: var(--accent-bg);
+    color: var(--accent-hover);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .sheet-b__title { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+  .sheet-b__body { font-size: 12.5px; color: var(--text-muted); margin: 0 0 14px; line-height: 1.45; }
+  .sheet-b__actions { display: flex; gap: 6px; }
+  .sheet-b__cta { flex: 1; padding: 7px 12px; background: var(--accent); border: 0; border-radius: 8px; color: white; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .sheet-b__skip { padding: 7px 12px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font: inherit; font-size: 12px; cursor: pointer; }
+
+  /* ─── C: Inline spotlight (Notion-style) ─── */
+  .spotlight-context {
+    position: absolute;
+    top: 32px; left: 32px;
+    right: 32px; bottom: 32px;
+    border: 1px dashed rgba(255,255,255,0.08);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.14);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+  .spotlight-target {
+    position: absolute;
+    top: 60px; left: 80px;
+    width: 100px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.15), 0 0 0 8px rgba(99,102,241,0.08), 0 0 24px 8px rgba(99,102,241,0.35);
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .sheet-c {
+    position: absolute;
+    top: 110px; left: 80px;
+    width: 280px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.55);
+  }
+  .sheet-c::before {
+    content: "";
+    position: absolute;
+    top: -6px; left: 30px;
+    width: 12px; height: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: 0; border-right: 0;
+    transform: rotate(45deg);
+  }
+  .sheet-c__title { font-size: 13.5px; font-weight: 600; margin: 0 0 6px; }
+  .sheet-c__body { font-size: 12.5px; color: var(--text-muted); margin: 0 0 12px; line-height: 1.45; }
+  .sheet-c__actions { display: flex; align-items: center; justify-content: space-between; }
+  .sheet-c__step { font-size: 11px; color: var(--text-dim); }
+  .sheet-c__btn { padding: 6px 12px; background: var(--accent); border: 0; border-radius: 6px; color: white; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  /* ─── D: Stacked bottom sheet (carousel) ─── */
+  .sheet-d {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: var(--surface);
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+    padding: 18px 22px 22px;
+    box-shadow: 0 -16px 40px rgba(0,0,0,0.5);
+  }
+  .sheet-d__grabber { width: 40px; height: 4px; background: rgba(255,255,255,0.18); border-radius: 4px; margin: 0 auto 16px; }
+  .sheet-d__rail { display: flex; gap: 14px; margin-bottom: 16px; }
+  .sheet-d__card {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .sheet-d__card.is-active { border-color: var(--accent); background: rgba(99,102,241,0.06); }
+  .sheet-d__card-hero {
+    height: 56px;
+    background: linear-gradient(135deg, #6366f1, #c084fc);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 22px;
+  }
+  .sheet-d__card-title { font-size: 12px; font-weight: 600; margin: 0; }
+  .sheet-d__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 6px;
+  }
+  .sheet-d__dots { display: flex; gap: 4px; }
+  .sheet-d__dots span { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+  .sheet-d__dots .is-active { background: white; }
+  .sheet-d__cta { padding: 7px 14px; background: var(--accent); border: 0; border-radius: 7px; color: white; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  /* ─── decision footer ─── */
+  .decide {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-top: 24px;
+  }
+  .decide h3 { margin: 0 0 12px; font-size: 16px; }
+  .decide p { margin: 0 0 12px; color: var(--text-muted); font-size: 13.5px; }
+  .decide ol { margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 13.5px; }
+  .decide ol li { margin-bottom: 6px; }
+  .decide ol li strong { color: var(--accent-hover); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Changelog page + feature intro sheets</h1>
+  <p class="lede">
+    Splitting "What's New" into two: the existing list view becomes a dedicated <strong>Changelog page</strong>,
+    and the "What's New" surface becomes a <strong>per-feature intro sheet</strong> that introduces one new thing
+    at a time when the user first encounters a build with new features.
+  </p>
+
+  <div class="summary">
+    <h3>What I understood</h3>
+    <table>
+      <tr><td><strong>Changelog page</strong></td><td>A dedicated <code>/changelog</code> route (or account-menu entry) that lists every release historically — same content shape as today's <code>whats-new.json</code>, just a full browse-by-date page</td></tr>
+      <tr><td><strong>What's New (after this PR)</strong></td><td>One feature intro sheet per new item. Triggered on first session after a build that has un-seen items. User dismisses or steps through; each item only shown once</td></tr>
+      <tr><td><strong>Data source</strong></td><td>Same <code>whats-new.json</code> — adds a tracking layer for "has this user seen entry X yet?" (localStorage, simplest)</td></tr>
+    </table>
+  </div>
+
+  <!-- ============ CHANGELOG ============ -->
+  <div class="section">
+    <h2>1 · Changelog page</h2>
+    <p class="caption">Lives at <code>/changelog</code>. Reuses the existing entry shape from <code>whats-new.json</code> — bullet kinds (new / improved / fix) get coloured tags, optional image renders inline. Linear and Vercel style: chronological reverse, dated rows.</p>
+
+    <div class="frame">
+      <div class="browser">
+        <div class="browser__bar">
+          <div class="browser__dot"></div><div class="browser__dot"></div><div class="browser__dot"></div>
+          <div class="browser__url">designer.hirahul.xyz/changelog</div>
+        </div>
+        <div class="changelog">
+          <h1>Changelog</h1>
+          <p class="changelog__lede">Everything we've shipped, most recent first. Subscribe via <a style="color:var(--accent-hover)">RSS</a>.</p>
+
+          <div class="changelog__entry">
+            <div class="changelog__date">May 29, 2026</div>
+            <div>
+              <h3>Lightbox — cleaner layout</h3>
+              <ul class="changelog__bullets">
+                <li><span class="kind kind--improved">improved</span> Title and metadata moved to the side panel; close × overlaid on the screenshot's top-left.</li>
+                <li><span class="kind kind--improved">improved</span> Comments / Annotations tabs are now underline-on-active instead of pills.</li>
+                <li><span class="kind kind--improved">improved</span> Tightened the gutter around the lightbox to 12 px on all sides for more screenshot real estate.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="changelog__entry">
+            <div class="changelog__date">May 29, 2026</div>
+            <div>
+              <h3>Lightbox polish — Figma-quality squircle corners</h3>
+              <ul class="changelog__bullets">
+                <li><span class="kind kind--improved">improved</span> Close, action toolbar, mobile mini-action bar, and composer now use squircle (superellipse) corners — the curve eases continuously into each edge.</li>
+                <li><span class="kind kind--improved">improved</span> Mobile mini-action buttons shift from circles to squircles to match the rest of the toolbar.</li>
+              </ul>
+              <div class="changelog__img">[ optional image — squircle vs circular corners side-by-side ]</div>
+            </div>
+          </div>
+
+          <div class="changelog__entry">
+            <div class="changelog__date">May 28, 2026</div>
+            <div>
+              <h3>Coverage score — see at a glance which apps are well-captured</h3>
+              <ul class="changelog__bullets">
+                <li><span class="kind kind--new">new</span> Every group section in the catalogue shows Mobile and Web coverage bars.</li>
+                <li><span class="kind kind--new">new</span> Group detail pages show the score with N / M flows captured; ✦ marks groups with all variants present.</li>
+                <li><span class="kind kind--improved">improved</span> Quick Upload — press Enter to fire Upload All when the button is enabled.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FOUR CONCEPTS ============ -->
+  <div class="section">
+    <h2>2 · Feature intro sheet — four concept directions</h2>
+    <p class="caption">Each concept is a different idea of how "the user sees a new feature for the first time" plays out. Same data shape underneath (one feature per item in <code>whats-new.json</code>) — the visual + interaction is what differs. Pick a direction, then we'll scope the build.</p>
+
+    <div class="concepts-grid">
+
+      <!-- A — Apple full sheet -->
+      <div class="concept">
+        <div class="concept__head">
+          <span class="concept__pill">Concept A</span>
+          <h3 class="concept__title">Apple iOS-style full sheet</h3>
+          <p class="concept__sub">Centered modal · one feature per screen · "Continue" steps through the queue</p>
+        </div>
+        <div class="concept__viewport">
+          <div class="sheet-a">
+            <div class="sheet-a__hero">✨</div>
+            <h2 class="sheet-a__title">Quieter tabs</h2>
+            <p class="sheet-a__body">The lightbox's Comments and Annotations tabs are now underline-on-active text instead of pills. Easier to scan when you're focused on the screenshot.</p>
+            <div class="sheet-a__dots">
+              <span></span><span class="is-active"></span><span></span>
+            </div>
+            <button class="sheet-a__cta">Continue</button>
+            <button class="sheet-a__skip">Skip all</button>
+          </div>
+        </div>
+        <div class="concept__notes">
+          <b>Feel:</b> formal. Commands attention. Best when there are 2–4 features worth introducing per build.
+          <ul>
+            <li>Big illustration / glyph slot per feature</li>
+            <li>Dots show queue position</li>
+            <li>Dismissing one = next in queue · "Skip all" = mark all seen</li>
+            <li>Risk: feels heavy if there's only 1 small feature to introduce</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- B — Linear card -->
+      <div class="concept">
+        <div class="concept__head">
+          <span class="concept__pill">Concept B</span>
+          <h3 class="concept__title">Linear-style bottom-corner card</h3>
+          <p class="concept__sub">Floats in lower-right · one feature at a time · stays out of the way</p>
+        </div>
+        <div class="concept__viewport">
+          <div class="sheet-b">
+            <div class="sheet-b__hero">📐</div>
+            <span class="sheet-b__pill">improved</span>
+            <h3 class="sheet-b__title">Squircle corners on the lightbox</h3>
+            <p class="sheet-b__body">Action buttons, mini-action bar, and the comment composer now use smoothed superellipse corners.</p>
+            <div class="sheet-b__actions">
+              <button class="sheet-b__cta">Got it</button>
+              <button class="sheet-b__skip">Hide</button>
+            </div>
+          </div>
+        </div>
+        <div class="concept__notes">
+          <b>Feel:</b> casual, non-blocking. Slack / Linear product-update tone. Easy to dismiss.
+          <ul>
+            <li>One card visible at a time; queue advances on dismiss</li>
+            <li>Doesn't block the page — user can keep using the app</li>
+            <li>Coloured tag matches the kind (new · improved · fix)</li>
+            <li>Risk: easily missed; can feel like ad noise after a while</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- C — Inline spotlight -->
+      <div class="concept">
+        <div class="concept__head">
+          <span class="concept__pill">Concept C</span>
+          <h3 class="concept__title">Inline spotlight on the actual UI</h3>
+          <p class="concept__sub">Points directly at the changed element · contextual tour</p>
+        </div>
+        <div class="concept__viewport">
+          <div class="spotlight-context">imagined catalogue UI underneath</div>
+          <div class="spotlight-target">Upload All</div>
+          <div class="sheet-c">
+            <h3 class="sheet-c__title">Enter to upload</h3>
+            <p class="sheet-c__body">When Quick Upload is open and you've added files, just press <strong>Enter</strong> to fire Upload All — no need to reach for the button.</p>
+            <div class="sheet-c__actions">
+              <span class="sheet-c__step">1 of 3</span>
+              <button class="sheet-c__btn">Got it</button>
+            </div>
+          </div>
+        </div>
+        <div class="concept__notes">
+          <b>Feel:</b> a guided tour. Highest learnability — the user sees exactly where the change is.
+          <ul>
+            <li>Each feature is anchored to a real UI element via a CSS selector</li>
+            <li>Glowing target ring + arrow pointer · steps through with "Got it"</li>
+            <li>Highest implementation cost — needs anchor data per feature</li>
+            <li>Risk: brittle if the UI moves between when the entry was written and when the user sees it</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- D — Bottom sheet rail -->
+      <div class="concept">
+        <div class="concept__head">
+          <span class="concept__pill">Concept D</span>
+          <h3 class="concept__title">Bottom-sheet rail (multi-feature)</h3>
+          <p class="concept__sub">All recent features in one swipeable rail · pick what to read · pick what to skip</p>
+        </div>
+        <div class="concept__viewport">
+          <div class="sheet-d">
+            <div class="sheet-d__grabber"></div>
+            <div class="sheet-d__rail">
+              <div class="sheet-d__card">
+                <div class="sheet-d__card-hero">✂️</div>
+                <p class="sheet-d__card-title">New crop UX</p>
+              </div>
+              <div class="sheet-d__card is-active">
+                <div class="sheet-d__card-hero">📐</div>
+                <p class="sheet-d__card-title">Squircle corners</p>
+              </div>
+              <div class="sheet-d__card">
+                <div class="sheet-d__card-hero">📊</div>
+                <p class="sheet-d__card-title">Coverage score</p>
+              </div>
+            </div>
+            <div class="sheet-d__bottom">
+              <div class="sheet-d__dots">
+                <span></span><span class="is-active"></span><span></span>
+              </div>
+              <button class="sheet-d__cta">Read</button>
+            </div>
+          </div>
+        </div>
+        <div class="concept__notes">
+          <b>Feel:</b> a digestible "you have N new things" surface. User browses, picks what to read.
+          <ul>
+            <li>Mobile-first pattern; works on desktop too</li>
+            <li>One bottom-sheet with all unseen features as a card rail</li>
+            <li>User taps a card → expands to full description (Concept A or B style)</li>
+            <li>Risk: can feel busy; needs visual variety per card to avoid sameness</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ DECIDE ============ -->
+  <div class="decide">
+    <h3>How to pick</h3>
+    <p>The four concepts trade off along two axes — how <em>intrusive</em> they are, and how <em>guided</em> they are.</p>
+    <p style="margin-top:14px;"><b>Less intrusive, less guided →</b> B (corner card)<br>
+       <b>More intrusive, less guided →</b> A (full sheet)<br>
+       <b>Less intrusive, more guided →</b> D (rail of cards)<br>
+       <b>More intrusive, more guided →</b> C (inline spotlight)</p>
+    <p style="margin-top:14px;">If you're trying to make sure people <strong>actually see</strong> the change, lean A or C. If you trust users to discover and only want a gentle nudge, lean B or D.</p>
+
+    <h3 style="margin-top:22px;">Then we scope</h3>
+    <ol>
+      <li><strong>Which concept</strong> for the intro sheet (A / B / C / D — or a mix)?</li>
+      <li><strong>Trigger:</strong> show automatically on first session after a build with unseen items, or only when user clicks an "N new" badge in the account menu?</li>
+      <li><strong>Tracking:</strong> per-user (in Supabase) or per-device (localStorage)? Latter is simpler, former survives device changes.</li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>

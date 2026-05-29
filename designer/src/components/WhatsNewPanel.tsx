@@ -226,3 +226,17 @@ function countUnseen(releases: WhatsNewRelease[]): number {
 export function getWhatsNewUnseenCount(): number {
   return countUnseen(getCachedWhatsNewReleases());
 }
+
+// Stamp the newest release id as "seen". Used by the Changelog page
+// (mount) and the header history icon (click) so the unseen-count
+// badge clears once the user has had a chance to see the entries.
+// Safe to call with an empty array — no-op.
+export function markAllWhatsNewSeen(releases: WhatsNewRelease[]): void {
+  if (typeof window === 'undefined' || releases.length === 0) return;
+  try {
+    window.localStorage.setItem(WHATS_NEW_LAST_SEEN_KEY, releases[0].id);
+  } catch {
+    // Ignore quota / disabled storage — the badge falls back to "all
+    // seen" silently on next comparison if storage is broken.
+  }
+}

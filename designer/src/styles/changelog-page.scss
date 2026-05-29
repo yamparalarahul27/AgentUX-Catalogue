@@ -1,0 +1,144 @@
+$bg: #0d0d0e;
+$surface: #161618;
+$surface-2: #1d1d20;
+$border: #27272a;
+$text: #f4f4f5;
+$text-muted: #a1a1aa;
+$text-dim: #71717a;
+$accent: #6366f1;
+$accent-hover: #818cf8;
+
+.changelog-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: $bg;
+  color: $text;
+  padding: 56px 32px 96px;
+  max-width: 980px;
+  margin: 0 auto;
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+}
+
+.changelog-page__header {
+  margin-bottom: 40px;
+}
+
+.changelog-page__title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+
+.changelog-page__lede {
+  color: $text-muted;
+  margin: 0;
+  font-size: 14.5px;
+}
+
+.changelog-page__empty {
+  color: $text-dim;
+  font-size: 14px;
+  padding: 32px 0;
+}
+
+.changelog-page__entries {
+  display: flex;
+  flex-direction: column;
+}
+
+.changelog-page__entry {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 32px;
+  padding: 28px 0;
+  border-top: 1px solid $border;
+}
+
+.changelog-page__date {
+  font-size: 13px;
+  color: $text-dim;
+  font-variant-numeric: tabular-nums;
+  padding-top: 4px;
+}
+
+.changelog-page__entry-title {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.changelog-page__bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.changelog-page__bullet {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 14px;
+  color: $text-muted;
+  line-height: 1.5;
+}
+
+.changelog-page__kind {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 3px;
+
+  &--new {
+    background: rgba(129, 140, 248, 0.16);
+    color: $accent-hover;
+  }
+  &--improved {
+    background: rgba(251, 191, 36, 0.14);
+    color: #fbbf24;
+  }
+  &--fix {
+    background: rgba(74, 222, 128, 0.14);
+    color: #4ade80;
+  }
+}
+
+.changelog-page__figure {
+  margin: 16px 0 0;
+  border: 1px solid $border;
+  border-radius: 12px;
+  overflow: hidden;
+  background: $surface-2;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .changelog-page {
+    padding: 32px 20px 64px;
+  }
+
+  .changelog-page__title { font-size: 26px; }
+
+  .changelog-page__entry {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .changelog-page__date {
+    padding-top: 0;
+  }
+}
