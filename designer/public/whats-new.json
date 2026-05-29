@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-29-lightbox-redesign",
+    "date": "May 29, 2026",
+    "title": "Lightbox — cleaner layout",
+    "bullets": [
+      { "kind": "improved", "text": "Title and metadata now sit at the top of the right side panel, with the close × overlaid on the top-left of the screenshot" },
+      { "kind": "improved", "text": "Tabs (Comments · Annotations) switched from pills to underline-on-active text — quieter and more legible" },
+      { "kind": "improved", "text": "Right side panel sits directly on the dark backdrop with no fill or divider; tightened the gutter around the whole lightbox to 12 px on all sides for more screenshot real estate" }
+    ]
+  },
+  {
     "id": "2026-05-29-lightbox-squircles",
     "date": "May 29, 2026",
     "title": "Lightbox polish — Figma-quality squircle corners",
