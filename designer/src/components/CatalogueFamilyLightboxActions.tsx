@@ -4,6 +4,11 @@ import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
 import { CopyMorphIcon, useCopyConfirmation } from './CopyMorphIcon';
+import { Squircle } from './Squircle';
+
+// Matches the existing border-radius: 10px on .catalogue-lightbox-icon-btn —
+// the CSS rule stays as a fallback before the hook computes the clip-path.
+const ICON_BTN_RADIUS = 10;
 
 interface CatalogueFamilyLightboxActionsProps {
   annotationsCount: number;
@@ -105,22 +110,24 @@ export function CatalogueFamilyLightboxActions({
     <div className="catalogue-family-lightbox__summary">
       <div className="catalogue-lightbox-icon-bar">
         {canEdit && (
-          <button type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
+          <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
             <Pencil size={15} />
-          </button>
+          </Squircle>
         )}
         {REUPLOAD_ENABLED && (
-          <button type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} title="Reupload">
+          <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} title="Reupload">
             <RefreshCw size={15} />
-          </button>
+          </Squircle>
         )}
         {!hideCatalogueActions && (
-          <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenCrop} disabled={!canCrop} title="Crop">
+          <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenCrop} disabled={!canCrop} title="Crop">
             <Crop size={15} />
-          </button>
+          </Squircle>
         )}
         {!hideCatalogueActions && onToggleBookmark && (
-          <button
+          <Squircle
+            as="button"
+            cornerRadius={ICON_BTN_RADIUS}
             type="button"
             className={`catalogue-lightbox-icon-btn ${isBookmarked ? 'is-bookmarked' : ''}`}
             onClick={onToggleBookmark}
@@ -128,10 +135,12 @@ export function CatalogueFamilyLightboxActions({
             aria-pressed={Boolean(isBookmarked)}
           >
             <Save size={15} />
-          </button>
+          </Squircle>
         )}
         {!hideCatalogueActions && onShareLink && (
-          <button
+          <Squircle
+            as="button"
+            cornerRadius={ICON_BTN_RADIUS}
             type="button"
             className="catalogue-lightbox-icon-btn"
             onClick={() => { onShareLink(); confirmShareCopy(); }}
@@ -144,23 +153,23 @@ export function CatalogueFamilyLightboxActions({
               justCopied={justShared}
               size={15}
             />
-          </button>
+          </Squircle>
         )}
         <span className="catalogue-lightbox-icon-bar__spacer" />
         {!hideCatalogueActions && (
           <>
-            <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenComments} title={`Comments (${commentsCount})`}>
+            <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenComments} title={`Comments (${commentsCount})`}>
               <MessageCircle size={15} />
               {commentsCount > 0 && <span className="catalogue-lightbox-icon-badge">{commentsCount}</span>}
-            </button>
-            <button type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenAnnotations} title={`Annotations (${annotationsCount})`}>
+            </Squircle>
+            <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenAnnotations} title={`Annotations (${annotationsCount})`}>
               <MapPin size={15} />
               {annotationsCount > 0 && <span className="catalogue-lightbox-icon-badge">{annotationsCount}</span>}
-            </button>
+            </Squircle>
             {canDelete && (
-              <button type="button" className="catalogue-lightbox-icon-btn is-danger" onClick={onDelete} title="Delete">
+              <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn is-danger" onClick={onDelete} title="Delete">
                 <Trash2 size={15} />
-              </button>
+              </Squircle>
             )}
           </>
         )}

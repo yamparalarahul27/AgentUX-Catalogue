@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Lightbox · current vs new layout with Lisse squircles</title>
+<style>
+  :root {
+    --bg: #0d0d0e;
+    --surface: #161618;
+    --surface-2: #1d1d20;
+    --border: #27272a;
+    --border-soft: rgba(255,255,255,0.06);
+    --text: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-bg: rgba(99,102,241,0.18);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  .page { max-width: 1640px; margin: 0 auto; padding: 48px 32px; }
+  h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lede { color: var(--text-muted); margin: 0 0 40px; font-size: 14px; max-width: 720px; }
+
+  .section { margin-bottom: 56px; }
+  .section h2 { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 4px; }
+  .section .caption { color: var(--text-dim); margin: 0 0 18px; font-size: 12px; }
+
+  /* ============ Lightbox shell ============ */
+  .lb {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    background: var(--bg);
+    padding: 24px;
+    border-radius: 4px;
+    border: 1px dashed rgba(255,255,255,0.04);
+  }
+  .lb__media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  /* Diagonal "screenshot" placeholder */
+  .lb__media::before, .lb__media::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: linear-gradient(to top right, transparent calc(50% - 1px), rgba(255,255,255,0.05) 50%, transparent calc(50% + 1px));
+    pointer-events: none;
+  }
+  .lb__media::after {
+    background-image: linear-gradient(to top left, transparent calc(50% - 1px), rgba(255,255,255,0.05) 50%, transparent calc(50% + 1px));
+  }
+  .lb__media-label {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; font-weight: 500; color: rgba(255,255,255,0.10);
+    letter-spacing: 0.02em;
+  }
+  .lb__close {
+    position: absolute; top: 12px; left: 12px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55);
+    color: var(--text);
+    cursor: pointer;
+    border: 0;
+    z-index: 2;
+  }
+  .lb__close svg { width: 18px; height: 18px; }
+
+  .lb__panel {
+    display: flex; flex-direction: column;
+    min-height: 540px;
+    background: transparent;
+    padding: 0 4px;
+  }
+  .lb__title { font-size: 16px; font-weight: 600; margin: 0 0 14px; letter-spacing: -0.01em; }
+  .lb__meta {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .lb__meta-icon {
+    width: 22px; height: 22px;
+    background: linear-gradient(180deg, #2563eb, #1d4ed8);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 10px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .lb__meta-text { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-muted); }
+  .lb__meta-text strong { color: var(--text); font-weight: 500; }
+  .lb__meta-text .accent { color: var(--accent-hover); }
+  .lb__meta-time { color: var(--text-dim); font-size: 11px; }
+
+  .lb__actions {
+    display: flex; align-items: center; gap: 6px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .lb__actions .spacer { flex: 1; }
+  .lb__btn {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .lb__btn:hover { background: var(--surface); color: var(--text); border-color: var(--text-dim); }
+  .lb__btn svg { width: 15px; height: 15px; }
+
+  .lb__tabs {
+    display: flex; gap: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+  }
+  .lb__tab {
+    position: relative;
+    background: transparent; border: 0; color: var(--text-dim);
+    padding: 0 0 12px; margin-bottom: -13px;
+    font: inherit; font-size: 14px; font-weight: 500;
+    cursor: pointer;
+  }
+  .lb__tab.is-active { color: var(--text); }
+  .lb__tab.is-active::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 2px; background: var(--text);
+  }
+
+  .lb__empty {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  .lb__composer {
+    display: flex; align-items: center; gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .lb__input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font: inherit; font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+  }
+  .lb__input::placeholder { color: var(--text-dim); }
+  .lb__send {
+    width: 34px; height: 34px;
+    background: var(--accent-bg);
+    border: 0;
+    color: var(--accent-hover);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .lb__send svg { width: 16px; height: 16px; }
+
+  /* ============ CURRENT — regular CSS border-radius ============ */
+  .current .lb__media,
+  .current .lb__close,
+  .current .lb__meta-icon,
+  .current .lb__btn,
+  .current .lb__input,
+  .current .lb__send {
+    border-radius: 8px;
+  }
+  /* Slightly larger on the big surface to match real catalogue today */
+  .current .lb__media { border-radius: 12px; }
+
+  /* ============ NEW + LISSE — squircles via clip-path ============ */
+  /* Surfaces get data-squircle="R"; JS computes the path. */
+  /* We keep a CSS border-radius fallback for browsers that haven't run the JS yet. */
+  .lisse .lb__media { border-radius: 20px; }
+  .lisse .lb__close { border-radius: 12px; }
+  .lisse .lb__meta-icon { border-radius: 8px; }
+  .lisse .lb__btn { border-radius: 10px; }
+  .lisse .lb__input { border-radius: 12px; }
+  .lisse .lb__send { border-radius: 10px; }
+
+  /* ============ Tablet breakpoint ============ */
+  .tablet-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+  }
+  .tablet-frame {
+    width: 100%;
+    max-width: 820px;
+    background: #000;
+    border: 1px solid #2a2a2e;
+    border-radius: 28px;
+    padding: 14px;
+    box-shadow: 0 18px 38px rgba(0,0,0,0.40);
+  }
+  .tablet-frame__inner {
+    background: var(--bg);
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 16px;
+  }
+  /* Tablet lightbox: two-column but compressed */
+  .tablet-lb {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
+    min-height: 480px;
+  }
+  .tablet-lb .lb__media { aspect-ratio: 4/3; min-height: 0; }
+  .tablet-lb .lb__panel { min-height: 0; }
+  .tablet-lb .lb__title { font-size: 15px; }
+  .tablet-lb .lb__actions { gap: 4px; }
+  .tablet-lb .lb__btn { width: 30px; height: 30px; }
+  .tablet-lb .lb__btn svg { width: 13px; height: 13px; }
+
+  /* Current — circular arc corners */
+  .tablet-current .lb__media { border-radius: 12px; }
+  .tablet-current .lb__close { border-radius: 8px; }
+  .tablet-current .lb__meta-icon { border-radius: 6px; }
+  .tablet-current .lb__btn { border-radius: 7px; }
+  .tablet-current .lb__input { border-radius: 8px; }
+  .tablet-current .lb__send { border-radius: 8px; }
+
+  /* New + Lisse — squircles via clip-path (data-squircle) */
+  .tablet-lisse .lb__media { border-radius: 18px; }
+  .tablet-lisse .lb__close { border-radius: 10px; }
+  .tablet-lisse .lb__meta-icon { border-radius: 7px; }
+  .tablet-lisse .lb__btn { border-radius: 9px; }
+  .tablet-lisse .lb__input { border-radius: 11px; }
+  .tablet-lisse .lb__send { border-radius: 9px; }
+
+  /* ============ Mobile breakpoint ============ */
+  .mobile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 360px);
+    gap: 48px;
+    justify-content: start;
+  }
+  .mobile-grid .mobile-col h3 {
+    font-size: 12px; font-weight: 600; color: var(--text-muted);
+    letter-spacing: 0.04em; text-transform: uppercase;
+    margin: 0 0 10px;
+  }
+
+  .phone {
+    width: 360px;
+    height: 720px;
+    background: #000;
+    border: 1px solid #2a2a2e;
+    border-radius: 44px;
+    padding: 12px;
+    position: relative;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.45);
+  }
+  .phone__inner {
+    position: relative;
+    width: 100%; height: 100%;
+    background: var(--bg);
+    border-radius: 32px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .phone__statusbar {
+    height: 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    color: var(--text); font-size: 12px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .phone__statusbar .right { display: flex; gap: 4px; align-items: center; opacity: 0.85; }
+  .phone__statusbar .right svg { width: 14px; height: 14px; }
+
+  .phone__media {
+    position: relative;
+    flex: 1;
+    background: var(--surface);
+    margin: 8px 12px 4px;
+    overflow: hidden;
+  }
+  .phone__media::before, .phone__media::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: linear-gradient(to top right, transparent calc(50% - 1px), rgba(255,255,255,0.05) 50%, transparent calc(50% + 1px));
+    pointer-events: none;
+  }
+  .phone__media::after {
+    background-image: linear-gradient(to top left, transparent calc(50% - 1px), rgba(255,255,255,0.05) 50%, transparent calc(50% + 1px));
+  }
+  .phone__media-label {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.08); font-size: 20px; font-weight: 500;
+  }
+  .phone__close {
+    position: absolute; top: 12px; left: 12px;
+    width: 32px; height: 32px;
+    background: rgba(0,0,0,0.55);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    border: 0; cursor: pointer;
+    z-index: 2;
+  }
+  .phone__close svg { width: 16px; height: 16px; }
+
+  .phone__sheet {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px 18px;
+    flex-shrink: 0;
+  }
+  .phone__grabber {
+    width: 36px; height: 18px;
+    margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim);
+  }
+  .phone__grabber svg { width: 18px; height: 18px; }
+  .phone__minibar {
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 4px 0;
+  }
+  .phone__minibtn {
+    width: 56px; height: 56px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .phone__minibtn svg { width: 22px; height: 22px; }
+
+  /* Current mobile — circular arc corners */
+  .mobile-current .phone__media { border-radius: 14px; }
+  .mobile-current .phone__close { border-radius: 10px; }
+  .mobile-current .phone__minibtn { border-radius: 14px; }
+
+  /* New + Lisse mobile — squircle corners (data-squircle wires JS) */
+  .mobile-lisse .phone__media { border-radius: 20px; }
+  .mobile-lisse .phone__close { border-radius: 12px; }
+  .mobile-lisse .phone__minibtn { border-radius: 16px; }
+
+  /* ============ Side-by-side caption ============ */
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-top: 32px;
+  }
+  .note h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
+  .note p { margin: 0; color: var(--text-muted); font-size: 13px; }
+  .note ul { margin: 8px 0 0 18px; padding: 0; color: var(--text-muted); font-size: 13px; }
+  .note ul li { margin-bottom: 4px; }
+
+  .swatch {
+    display: inline-block;
+    width: 56px; height: 56px;
+    background: var(--accent);
+    vertical-align: middle;
+    margin-right: 12px;
+  }
+  .swatch.regular { border-radius: 14px; }
+  .swatch.lisse { border-radius: 14px; }
+  .swatch-row {
+    display: flex; align-items: center; gap: 32px;
+    padding: 16px 0;
+    margin-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .swatch-row .label { font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Lightbox · current vs new layout + Lisse squircles</h1>
+  <p class="lede">
+    Side-by-side comparison. The <strong>Current</strong> block reflects today's lightbox using CSS <code>border-radius</code>
+    (circular arc corners). The <strong>New + Lisse</strong> block is your proposed layout (BTC/USDT screenshot) with
+    Figma-quality squircle corners applied to every rounded surface via <code>clip-path</code>.
+  </p>
+
+  <!-- ============ CURRENT ============ -->
+  <div class="section">
+    <h2>Current</h2>
+    <p class="caption">Existing lightbox · CSS border-radius circular arcs · 8–12 px corners</p>
+    <div class="lb current">
+      <div class="lb__media">
+        <button class="lb__close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <span class="lb__media-label">Screenshot</span>
+      </div>
+      <aside class="lb__panel">
+        <h3 class="lb__title">BTC/USDT Spot Trade</h3>
+        <div class="lb__meta">
+          <div class="lb__meta-icon">V</div>
+          <div class="lb__meta-text">
+            <span><strong>Valr</strong> · <span class="accent">Spot Trade</span> · Dark / Web / Default</span>
+            <span class="lb__meta-time">13h ago</span>
+          </div>
+        </div>
+        <div class="lb__actions">
+          <button class="lb__btn" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="lb__btn" title="Crop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+          <button class="lb__btn" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+          <button class="lb__btn" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <span class="spacer"></span>
+          <button class="lb__btn" title="Comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></button>
+          <button class="lb__btn" title="Annotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-12a7 7 0 1 1 14 0c0 5.5-7 12-7 12Z"/></svg></button>
+          <button class="lb__btn" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+        </div>
+        <div class="lb__tabs">
+          <button class="lb__tab is-active">Comments (0)</button>
+          <button class="lb__tab">Annotations (0)</button>
+        </div>
+        <div class="lb__empty">No comments yet</div>
+        <div class="lb__composer">
+          <input class="lb__input" type="text" placeholder="Add a comment…" />
+          <button class="lb__send" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ NEW + LISSE ============ -->
+  <div class="section">
+    <h2>New layout · Lisse squircles applied</h2>
+    <p class="caption">Your proposed layout · superellipse corners (smoothing 0.6, Figma default) on every rounded surface</p>
+    <div class="lb lisse">
+      <div class="lb__media" data-squircle="20">
+        <button class="lb__close" aria-label="Close" data-squircle="12">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <span class="lb__media-label">Screenshot</span>
+      </div>
+      <aside class="lb__panel">
+        <h3 class="lb__title">BTC/USDT Spot Trade</h3>
+        <div class="lb__meta">
+          <div class="lb__meta-icon" data-squircle="6">V</div>
+          <div class="lb__meta-text">
+            <span><strong>Valr</strong> · <span class="accent">Spot Trade</span> · Dark / Web / Default</span>
+            <span class="lb__meta-time">13h ago</span>
+          </div>
+        </div>
+        <div class="lb__actions">
+          <button class="lb__btn" data-squircle="9" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="lb__btn" data-squircle="9" title="Crop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+          <button class="lb__btn" data-squircle="9" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+          <button class="lb__btn" data-squircle="9" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <span class="spacer"></span>
+          <button class="lb__btn" data-squircle="9" title="Comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></button>
+          <button class="lb__btn" data-squircle="9" title="Annotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-12a7 7 0 1 1 14 0c0 5.5-7 12-7 12Z"/></svg></button>
+          <button class="lb__btn" data-squircle="9" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+        </div>
+        <div class="lb__tabs">
+          <button class="lb__tab is-active">Comments (0)</button>
+          <button class="lb__tab">Annotations (0)</button>
+        </div>
+        <div class="lb__empty">No comments yet</div>
+        <div class="lb__composer">
+          <input class="lb__input" type="text" placeholder="Add a comment…" data-squircle="11" />
+          <button class="lb__send" aria-label="Send" data-squircle="9">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ============ TABLET ============ -->
+  <div class="section">
+    <h2>Tablet · ~820 px width</h2>
+    <p class="caption">Two-column layout retained but compressed · action toolbar tightens · right panel ~300 px · current vs Lisse side-by-side</p>
+    <div class="tablet-grid">
+
+      <!-- Tablet · Current -->
+      <div class="tablet-frame">
+        <div class="tablet-frame__inner">
+          <div class="lb tablet-lb tablet-current" style="padding: 0; border: 0;">
+            <div class="lb__media">
+              <button class="lb__close" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+              <span class="lb__media-label">Screenshot</span>
+            </div>
+            <aside class="lb__panel">
+              <h3 class="lb__title">BTC/USDT Spot Trade</h3>
+              <div class="lb__meta">
+                <div class="lb__meta-icon">V</div>
+                <div class="lb__meta-text">
+                  <span><strong>Valr</strong> · <span class="accent">Spot Trade</span></span>
+                  <span class="lb__meta-time">Dark / Web · 13h ago</span>
+                </div>
+              </div>
+              <div class="lb__actions">
+                <button class="lb__btn" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+                <button class="lb__btn" title="Crop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+                <button class="lb__btn" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/></svg></button>
+                <button class="lb__btn" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/></svg></button>
+                <span class="spacer"></span>
+                <button class="lb__btn" title="Comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></button>
+                <button class="lb__btn" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+              </div>
+              <div class="lb__tabs">
+                <button class="lb__tab is-active">Comments (0)</button>
+                <button class="lb__tab">Annotations</button>
+              </div>
+              <div class="lb__empty">No comments yet</div>
+              <div class="lb__composer">
+                <input class="lb__input" type="text" placeholder="Add a comment…" />
+                <button class="lb__send" aria-label="Send">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </aside>
+          </div>
+          <p style="margin: 14px 0 0; font-size: 11px; color: var(--text-dim); text-align: center;">Current · CSS border-radius</p>
+        </div>
+      </div>
+
+      <!-- Tablet · New + Lisse -->
+      <div class="tablet-frame">
+        <div class="tablet-frame__inner">
+          <div class="lb tablet-lb tablet-lisse" style="padding: 0; border: 0;">
+            <div class="lb__media" data-squircle="18">
+              <button class="lb__close" aria-label="Close" data-squircle="10">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+              <span class="lb__media-label">Screenshot</span>
+            </div>
+            <aside class="lb__panel">
+              <h3 class="lb__title">BTC/USDT Spot Trade</h3>
+              <div class="lb__meta">
+                <div class="lb__meta-icon" data-squircle="6">V</div>
+                <div class="lb__meta-text">
+                  <span><strong>Valr</strong> · <span class="accent">Spot Trade</span></span>
+                  <span class="lb__meta-time">Dark / Web · 13h ago</span>
+                </div>
+              </div>
+              <div class="lb__actions">
+                <button class="lb__btn" data-squircle="8" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+                <button class="lb__btn" data-squircle="8" title="Crop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+                <button class="lb__btn" data-squircle="8" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/></svg></button>
+                <button class="lb__btn" data-squircle="8" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/></svg></button>
+                <span class="spacer"></span>
+                <button class="lb__btn" data-squircle="8" title="Comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></button>
+                <button class="lb__btn" data-squircle="8" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+              </div>
+              <div class="lb__tabs">
+                <button class="lb__tab is-active">Comments (0)</button>
+                <button class="lb__tab">Annotations</button>
+              </div>
+              <div class="lb__empty">No comments yet</div>
+              <div class="lb__composer">
+                <input class="lb__input" type="text" placeholder="Add a comment…" data-squircle="10" />
+                <button class="lb__send" aria-label="Send" data-squircle="8">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </aside>
+          </div>
+          <p style="margin: 14px 0 0; font-size: 11px; color: var(--accent-hover); text-align: center;">New + Lisse · squircle clip-path</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ MOBILE ============ -->
+  <div class="section">
+    <h2>Mobile · ≤ 720 px width · bottom sheet (PR #184 layout)</h2>
+    <p class="caption">Image full-bleed · close X top-left · sheet in <em>min</em> state with the 4-button mini action bar (Delete · Crop · Save · Copy). Tap grabber to expand to <em>full</em> for meta + comments.</p>
+    <div class="mobile-grid">
+
+      <!-- Mobile · Current -->
+      <div class="mobile-col">
+        <h3>Current · CSS border-radius</h3>
+        <div class="phone mobile-current">
+          <div class="phone__inner">
+            <div class="phone__statusbar">
+              <span>9:41</span>
+              <span class="right">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 6h6v12H2zM10 4h4v14h-4zM16 8h6v10h-6z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+              </span>
+            </div>
+            <div class="phone__media">
+              <button class="phone__close" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+              <span class="phone__media-label">Screenshot</span>
+            </div>
+            <div class="phone__sheet">
+              <div class="phone__grabber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+              </div>
+              <div class="phone__minibar">
+                <button class="phone__minibtn" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                <button class="phone__minibtn" title="Crop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+                <button class="phone__minibtn" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/></svg></button>
+                <button class="phone__minibtn" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile · New + Lisse -->
+      <div class="mobile-col">
+        <h3 style="color: var(--accent-hover);">New + Lisse · squircle clip-path</h3>
+        <div class="phone mobile-lisse">
+          <div class="phone__inner">
+            <div class="phone__statusbar">
+              <span>9:41</span>
+              <span class="right">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 6h6v12H2zM10 4h4v14h-4zM16 8h6v10h-6z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+              </span>
+            </div>
+            <div class="phone__media" data-squircle="20">
+              <button class="phone__close" aria-label="Close" data-squircle="12">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+              <span class="phone__media-label">Screenshot</span>
+            </div>
+            <div class="phone__sheet">
+              <div class="phone__grabber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+              </div>
+              <div class="phone__minibar">
+                <button class="phone__minibtn" data-squircle="16" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                <button class="phone__minibtn" data-squircle="16" title="Crop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+                <button class="phone__minibtn" data-squircle="16" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/></svg></button>
+                <button class="phone__minibtn" data-squircle="16" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ Comparison swatch ============ -->
+  <div class="note">
+    <h3>How to read the difference</h3>
+    <p>
+      The squircle effect is intentionally subtle — most visible on larger surfaces (the media frame, the composer)
+      and on small frequently-seen elements (action buttons, send pill) where the rounded square shape registers
+      most strongly. Look at the corner of the screenshot frame in both blocks: the Current block's corner has a
+      clear inflection point where straight edge meets curve; the Lisse block's corner eases continuously into
+      the curve. The same easing applies to every rounded surface in the panel — composer, send, icon buttons,
+      meta icon — adding up to a noticeably more "designed" feel without any layout change.
+    </p>
+    <ul>
+      <li><strong>Big surfaces</strong> (media frame, composer): difference most visible — corner radius 16-20px</li>
+      <li><strong>Buttons</strong> (close, action toolbar, send): small radius (~9-12px) but huge repetition cost — Lisse compounds across 9 buttons per lightbox</li>
+      <li><strong>Inline avatars / meta icons</strong>: 6-8px radius — squircle starts to read like the iOS app icon shape</li>
+    </ul>
+
+    <div class="swatch-row">
+      <div>
+        <span class="swatch regular"></span>
+        <span class="label">Current · CSS border-radius (circular arc)</span>
+      </div>
+      <div>
+        <span class="swatch lisse" data-squircle="14"></span>
+        <span class="label">New + Lisse · superellipse (smoothing 0.6)</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ───────────────────────────────────────────────────────────────────────
+  // Minimal Figma-quality squircle path generator.
+  //
+  // Uses cubic bezier control points pulled inward from the corner so the
+  // curvature transitions smoothly from the edge — closer to a superellipse
+  // than CSS border-radius (which uses circular arcs with a hard inflection).
+  //
+  // Production would import figma-squircle / corner-smoothing / Lisse. This
+  // is a minimal stand-in tuned for the demo so you can see the difference
+  // without a runtime dependency on a third-party library in the mockup.
+  // ───────────────────────────────────────────────────────────────────────
+  function squirclePath(w, h, r, smoothing) {
+    if (smoothing == null) smoothing = 0.6;
+    var maxR = Math.min(w, h) / 2;
+    var cr = Math.min(r, maxR);
+    // Where the curve starts along each edge (further from corner than r → "spread")
+    var p = Math.min(cr * (1 + smoothing), maxR);
+    // Bezier handle perpendicular offset (smaller than p → "smooth in")
+    var c = cr * 0.55;
+    return [
+      'M ' + p + ',0',
+      'L ' + (w - p) + ',0',
+      'C ' + (w - c) + ',0 ' + w + ',' + c + ' ' + w + ',' + p,
+      'L ' + w + ',' + (h - p),
+      'C ' + w + ',' + (h - c) + ' ' + (w - c) + ',' + h + ' ' + (w - p) + ',' + h,
+      'L ' + p + ',' + h,
+      'C ' + c + ',' + h + ' 0,' + (h - c) + ' 0,' + (h - p),
+      'L 0,' + p,
+      'C 0,' + c + ' ' + c + ',0 ' + p + ',0',
+      'Z'
+    ].join(' ');
+  }
+
+  function applySquircles() {
+    var els = document.querySelectorAll('[data-squircle]');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      var rect = el.getBoundingClientRect();
+      var w = Math.round(rect.width);
+      var h = Math.round(rect.height);
+      if (!w || !h) continue;
+      var r = parseInt(el.getAttribute('data-squircle'), 10);
+      var d = squirclePath(w, h, r, 0.6);
+      // clip-path keeps content visible inside the squircle; the CSS
+      // border-radius stays as a fallback if JS is disabled.
+      el.style.clipPath = "path('" + d + "')";
+      el.style.webkitClipPath = "path('" + d + "')";
+    }
+  }
+
+  // Run after layout
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applySquircles);
+  } else {
+    applySquircles();
+  }
+  window.addEventListener('resize', function () {
+    // Throttle re-apply on resize
+    clearTimeout(window.__sqT);
+    window.__sqT = setTimeout(applySquircles, 80);
+  });
+</script>
+</body>
+</html>
