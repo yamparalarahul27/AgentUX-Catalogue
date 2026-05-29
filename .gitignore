@@ -10,3 +10,9 @@ site/designer/
 output/
 .tmp-screenshots/
 supabase/.temp/
+
+# Skills installed via `npx skills add ...` — personal-to-developer tooling,
+# not project source. Each contributor installs the skills they want locally.
+.agents/
+.claude/skills/
+skills-lock.json

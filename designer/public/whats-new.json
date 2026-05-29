@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-29-lightbox-squircles",
+    "date": "May 29, 2026",
+    "title": "Lightbox polish — Figma-quality squircle corners",
+    "imageUrl": "/designer/mockup-2026-05-29-lightbox-lisse-comparison.html",
+    "bullets": [
+      { "kind": "improved", "text": "Close button, action toolbar, mobile mini-action bar, and the comment composer now use squircle (superellipse) corners — the curve eases continuously into each edge instead of the abrupt circular-arc inflection point" },
+      { "kind": "improved", "text": "Mobile mini-action buttons (Delete · Crop · Save · Copy) shift from circles to squircles to match the rest of the toolbar" }
+    ]
+  },
+  {
     "id": "2026-05-28-coverage-score",
     "date": "May 28, 2026",
     "title": "Coverage score — see at a glance which apps are well-captured",

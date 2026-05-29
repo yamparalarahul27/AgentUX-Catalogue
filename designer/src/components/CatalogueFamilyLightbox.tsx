@@ -20,6 +20,7 @@ import { Check, ChevronUp, Copy, Crop, Save, Send, Trash2, X } from 'lucide-reac
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
 import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
+import { Squircle } from './Squircle';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { DotLoader } from './DotLoader';
@@ -969,9 +970,9 @@ export function CatalogueFamilyLightbox({
         {family.group && <span className="catalogue-lightbox-group" style={{ borderColor: groupColor, color: groupColor }}><CatalogueGroupLabel group={family.group} projectId={null} linkTo={`/g/${encodeURIComponent(family.group.trim().toLowerCase())}`} /></span>}
         {screenshot.platform && <span className="catalogue-lightbox-tag">{screenshot.platform}</span>}
         {screenshot.theme && <span className="catalogue-lightbox-tag">{screenshot.theme}</span>}
-        <button type="button" className="catalogue-lightbox-close" onClick={onClose}>
+        <Squircle as="button" cornerRadius={12} type="button" className="catalogue-lightbox-close" onClick={onClose}>
           <X size={20} aria-hidden="true" />
-        </button>
+        </Squircle>
       </div>
       <div className={`catalogue-lightbox-body${cropMode ? ' is-crop' : ''}`} onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-media">
@@ -1148,7 +1149,9 @@ export function CatalogueFamilyLightbox({
           <div className="catalogue-lightbox-mini-actions" aria-hidden={!sheetMinimized}>
             {/* Destructive / edit cluster on the left. */}
             {canDelete && (
-              <button
+              <Squircle
+                as="button"
+                cornerRadius={16}
                 type="button"
                 className="catalogue-lightbox-mini-actions__btn catalogue-lightbox-mini-actions__btn--danger"
                 onClick={() => void requestDeleteFamily()}
@@ -1156,10 +1159,12 @@ export function CatalogueFamilyLightbox({
                 aria-label="Delete"
               >
                 <Trash2 size={20} aria-hidden="true" />
-              </button>
+              </Squircle>
             )}
             {canEdit && imageSize && (
-              <button
+              <Squircle
+                as="button"
+                cornerRadius={16}
                 type="button"
                 className="catalogue-lightbox-mini-actions__btn"
                 onClick={() => {
@@ -1170,13 +1175,15 @@ export function CatalogueFamilyLightbox({
                 aria-label="Crop"
               >
                 <Crop size={20} aria-hidden="true" />
-              </button>
+              </Squircle>
             )}
             {/* Spacer separates destructive cluster from save/share. */}
             <span className="catalogue-lightbox-mini-actions__spacer" />
             {/* Save / share cluster on the right. */}
             {onToggleBookmark && screenshot && (
-              <button
+              <Squircle
+                as="button"
+                cornerRadius={16}
                 type="button"
                 className={`catalogue-lightbox-mini-actions__btn${bookmarkedIds?.has(screenshot.id) ? ' is-active' : ''}`}
                 onClick={() => {
@@ -1193,10 +1200,12 @@ export function CatalogueFamilyLightbox({
                 aria-pressed={Boolean(bookmarkedIds?.has(screenshot.id))}
               >
                 <Save size={20} aria-hidden="true" />
-              </button>
+              </Squircle>
             )}
             {onShareLink && screenshot && (
-              <button
+              <Squircle
+                as="button"
+                cornerRadius={16}
                 type="button"
                 className="catalogue-lightbox-mini-actions__btn"
                 onClick={() => onShareLink(screenshot.id)}
@@ -1204,7 +1213,7 @@ export function CatalogueFamilyLightbox({
                 aria-label="Copy share link"
               >
                 <Copy size={20} aria-hidden="true" />
-              </button>
+              </Squircle>
             )}
           </div>
           <div className="catalogue-family-lightbox">
@@ -1413,18 +1422,20 @@ export function CatalogueFamilyLightbox({
                     )}
                   </div>
                   <div className="catalogue-lightbox-comment-input">
-                    <input
+                    <Squircle
+                      as="input"
+                      cornerRadius={10}
                       type="text"
                       value={newComment}
-                      onChange={(event) => setNewComment(event.target.value)}
-                      onKeyDown={(event) => {
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNewComment(event.target.value)}
+                      onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
                         if (event.key === 'Enter') void addComment();
                       }}
                       placeholder="Add a comment..."
                     />
-                    <button type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
+                    <Squircle as="button" cornerRadius={10} type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
                       <Send size={16} />
-                    </button>
+                    </Squircle>
                   </div>
                 </>
               ) : (
