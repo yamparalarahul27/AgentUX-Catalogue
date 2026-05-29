@@ -73,9 +73,9 @@ import {
   parseFlowPresentation,
   type FlowPresentation,
 } from './CatalogueToolbar';
-import { WhatsNewPanel, getWhatsNewUnseenCount } from './WhatsNewPanel';
+import { WhatsNewPanel, getWhatsNewUnseenCount, markAllWhatsNewSeen } from './WhatsNewPanel';
 import { useSaveTrashAnimation } from './SaveTrashAnimation';
-import { loadWhatsNewReleases } from '../data/whats-new';
+import { getCachedWhatsNewReleases, loadWhatsNewReleases } from '../data/whats-new';
 import { AppUpdateToast } from './AppUpdateToast';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
 import { CatalogueVideosSection } from './CatalogueVideosSection';
@@ -1039,7 +1039,15 @@ export function Catalogue({
           }
           setBookmarkFilterOn((previous) => !previous);
         }}
-        onOpenWhatsNew={() => setShowWhatsNew(true)}
+        onOpenWhatsNew={() => {
+          // History icon in the header now opens the full Changelog
+          // page in a new tab. The WhatsNew sheet itself stays in code
+          // (still auto-opens after a build refresh via the sessionStorage
+          // flag below) but is no longer manually trigger-able from here.
+          window.open('/designer/changelog', '_blank', 'noopener,noreferrer');
+          markAllWhatsNewSeen(getCachedWhatsNewReleases());
+          setWhatsNewUnseen(0);
+        }}
         whatsNewUnseenCount={whatsNewUnseen}
       />
       <WhatsNewPanel isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
