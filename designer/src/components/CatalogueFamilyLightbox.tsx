@@ -976,6 +976,18 @@ export function CatalogueFamilyLightbox({
       </div>
       <div className={`catalogue-lightbox-body${cropMode ? ' is-crop' : ''}`} onClick={(event) => event.stopPropagation()}>
         <div className="catalogue-lightbox-media">
+          {/* Desktop-only close button overlaid on the screenshot (top-left).
+              Hidden on mobile via CSS — mobile keeps the close in the header. */}
+          <Squircle
+            as="button"
+            cornerRadius={10}
+            type="button"
+            className="catalogue-lightbox-media-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={18} aria-hidden="true" />
+          </Squircle>
           {cropMode && imageSize && screenshot.image_url ? (
             <CatalogueLightboxCrop
               imageUrl={screenshot.image_url}
@@ -1218,6 +1230,19 @@ export function CatalogueFamilyLightbox({
           </div>
           <div className="catalogue-family-lightbox">
             <div className="catalogue-family-lightbox__summary">
+              {/* Desktop-only title at the top of the side panel.
+                  Mirrors the header's <EditableTitle> so editing still
+                  works on desktop after the header is hidden via CSS.
+                  Hidden on mobile (mobile keeps the title in the header). */}
+              <div className="catalogue-lightbox-side-title">
+                <EditableTitle
+                  as="span"
+                  className="catalogue-lightbox-name"
+                  value={family.name}
+                  canEdit={canEditMetadata}
+                  onSave={(next) => onRenameFamily(family.id, next)}
+                />
+              </div>
               {/* Thumbnail shown only on mobile expanded — gives the
                   user a visual reference to the screenshot they're
                   commenting on once the sheet covers the main image.

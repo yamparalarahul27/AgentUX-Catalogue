@@ -141,7 +141,11 @@ Working clone is at `~/Desktop/tegaki-fork/` if review feedback comes.
 
 | PR | What | Closed items from this backlog |
 |---|---|---|
-| (this PR) | Coverage score per group (Mobile + Web) — diversity-based, ships in section headers + group detail hero; +5% bonus for all-variants. Also: Enter-to-submit Upload All in Quick Upload | **Coverage score per group ✅** (Phase 1; canonical-flow-list upgrade left as a future row) |
+| (this PR) | Lightbox layout redesign — title and meta in side panel, close button on screenshot top-left, underline tabs, 12px gutters all around, transparent side panel background | [`parked_lightbox_layout_redesign`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_lightbox_layout_redesign.md) ✅ |
+| #190 | Lightbox squircle corners (Lisse-style) — close, action toolbar, mobile mini-bar, composer + send | — |
+| #189 | iOS PWA: sticky toolbar safe-area inset (no overlap by status bar) | — |
+| #188 | iOS PWA: header safe-area inset | — |
+| #187 | Coverage score per group (Mobile + Web) — diversity-based, ships in section headers + group detail hero; +5% bonus for all-variants. Also: Enter-to-submit Upload All in Quick Upload | **Coverage score per group ✅** (Phase 1; canonical-flow-list upgrade left as a future row) |
 | #176 | Echo Ring loader — replaces button spinners + "Saving..." text-swaps across the app | — |
 | #175 | Mobile viewport: `vh` → `dvh` sweep across stylesheets | — |
 | #171 | Lightbox actions card — drop the cut-off look | — |

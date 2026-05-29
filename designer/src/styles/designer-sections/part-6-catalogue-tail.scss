@@ -1,14 +1,16 @@
 // Lightbox comments panel
+// Desktop default: no background fill — the panel sits directly on
+// the dark lightbox backdrop. Mobile keeps its own sheet background
+// via the rule inside @media (max-width: 720px).
 .catalogue-lightbox-comments {
   width: clamp(320px, 28vw, 360px);
   flex-shrink: 0;
   min-height: 0;
   box-sizing: border-box;
   padding: 16px;
-  background: #141418;
+  background: transparent;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid $border;
 }
 
 .catalogue-lightbox-comments-header {

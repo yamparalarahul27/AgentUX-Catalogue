@@ -1,8 +1,13 @@
 .catalogue-lightbox-body {
   display: flex;
   align-items: stretch;
-  width: min(95vw, 1600px);
-  height: 85dvh;
+  // Snug 12px gutter on every side. Width capped at 1800px so ultra-wide
+  // monitors don't stretch the lightbox absurdly; gutters grow naturally
+  // beyond the cap.
+  width: calc(100vw - 24px);
+  max-width: 1800px;
+  height: calc(100dvh - 24px);
+  max-height: none;
   gap: 0;
   border-radius: 8px;
   overflow: hidden;
@@ -761,6 +766,116 @@
   word-break: break-word;
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Desktop lightbox redesign (2026-05-29):
+//   - Title moves from the top header into the side panel
+//   - Close button (×) moves from the header to the top-left of the
+//     screenshot media area
+//   - Header is hidden on desktop (still mounted in JSX so mobile
+//     keeps its behavior unchanged via the existing mobile media query)
+//   - Tabs become underline-on-active text buttons instead of pills
+//   - "No comments yet" / "No annotations yet" empty state centres in
+//     the available vertical space when the list is empty
+// All rules below are default styles (desktop). Mobile overrides live
+// inside the @media (max-width: 720px) block further down.
+// ─────────────────────────────────────────────────────────────────────
+
+// Hide the header chrome on desktop. Header stays in JSX so the mobile
+// rules at line ~773 continue to work; only its visible presence is
+// suppressed here. Important: the X close in the header is also hidden
+// — the desktop replacement lives inside .catalogue-lightbox-media.
+.catalogue-lightbox-header {
+  display: none;
+}
+
+// Floating close button on the screenshot itself (top-left).
+.catalogue-lightbox-media-close {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s;
+
+  &:hover { background: rgba(0, 0, 0, 0.75); }
+}
+
+// Side-panel title — top of the summary card. Inherits .catalogue-lightbox-name
+// sizing from the existing rule; this wrap controls placement/padding only.
+.catalogue-lightbox-side-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-bottom: 2px;
+
+  .catalogue-lightbox-name {
+    font-size: 16px;
+    color: #fafafa;
+  }
+}
+
+// Underline-on-active tabs (replaces the pill style). Applies to both
+// tab sets (Comments+Annotations and Label+CopyPrompt) — they share the
+// .catalogue-lightbox-tab class.
+.catalogue-lightbox-tab {
+  border-radius: 0;
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #71717a;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+
+  &:hover {
+    background: transparent;
+    color: #d4d4d8;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  &.is-active {
+    color: #fafafa;
+    background: transparent;
+    border-color: transparent;
+    border-bottom-color: #fafafa;
+    box-shadow: none;
+  }
+}
+
+// Tabs container — tighten spacing, drop the chip-row bottom border so
+// the underline-on-active reads cleaner.
+.catalogue-lightbox-panel-tabs {
+  gap: 18px;
+  padding: 4px 14px 0;
+  background: transparent;
+  border-bottom: 1px solid #27272a;
+}
+
+// Empty-state ("No comments yet" / "No annotations yet") centres in the
+// available scroll-area when the list is empty. Populated lists keep
+// their existing scroll/flow behavior — these rules only target the
+// dedicated empty-state container, not the populated list.
+.catalogue-lightbox-comments-empty,
+.catalogue-gallery-annotations-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: #71717a;
+  font-size: 13px;
+}
+
 @media (max-width: 720px) {
   .catalogue-lightbox {
     align-items: stretch;
@@ -771,12 +886,36 @@
   }
 
   .catalogue-lightbox-header {
+    // Restore visibility on mobile — the desktop-redesign default rule
+    // hides the header so the title moves to the side panel, but mobile
+    // still wants its fixed header (with close + title at the top).
+    display: flex;
     position: fixed;
     inset: 0 0 auto;
     z-index: 6;
     padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
     gap: 8px;
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0) 100%);
+  }
+
+  // Mobile keeps its header-based close (just restored above), so hide
+  // the desktop floating close + the duplicate side-panel title here.
+  .catalogue-lightbox-media-close,
+  .catalogue-lightbox-side-title {
+    display: none;
+  }
+
+  // Mobile tabs keep their pill style (existing rules in this file at
+  // .catalogue-lightbox-comments.is-full .catalogue-lightbox-tab). The
+  // .is-full-scoped rules already override the desktop underline — so
+  // mobile pill tabs work without any extra rule here.
+  // Tabs container: restore the mobile padding/background that the
+  // desktop redesign default flattened.
+  .catalogue-lightbox-panel-tabs {
+    padding: 10px 12px 12px;
+    background: rgba(24, 24, 28, 0.9);
+    border-bottom: 1px solid #2a2a31;
+    gap: 8px;
   }
 
   .catalogue-lightbox-name-wrap {

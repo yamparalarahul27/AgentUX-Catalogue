@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Lightbox redesign — what could go wrong</title>
+<style>
+  :root {
+    --bg: #0d0d0e;
+    --surface: #161618;
+    --surface-2: #1d1d20;
+    --border: #27272a;
+    --text: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --good: #4ade80;
+    --warn: #f59e0b;
+    --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 48px 32px 64px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lede { color: var(--text-muted); margin: 0 0 16px; font-size: 15px; max-width: 760px; }
+  .why { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 0 0 40px; }
+  .why p { margin: 0; font-size: 14px; color: var(--text-muted); }
+
+  .risk {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+  .risk__head {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    background: var(--surface-2);
+  }
+  .risk__num {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .risk__title { font-size: 17px; font-weight: 600; margin: 0; }
+  .risk__sub { color: var(--text-dim); font-size: 13px; margin-left: auto; }
+
+  .risk__body { padding: 24px; }
+  .risk__cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 16px;
+  }
+  .col h4 { font-size: 12px; font-weight: 700; color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 10px; }
+  .col p { margin: 0; font-size: 14px; color: var(--text-muted); }
+
+  /* ── miniature lightbox previews ── */
+  .mini {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px;
+    aspect-ratio: 16/9;
+    display: flex;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .mini__header {
+    position: absolute;
+    top: 8px; left: 8px; right: 8px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 4px;
+  }
+  .mini__title { font-size: 10px; font-weight: 600; }
+  .mini__chip { font-size: 9px; color: var(--text-dim); padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px; }
+  .mini__close { margin-left: auto; width: 14px; height: 14px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1; }
+  .mini__close--squircle { border-radius: 4px; }
+  .mini__media {
+    flex: 1;
+    margin-top: 28px;
+    background: var(--surface-2);
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.12);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .mini__media-close {
+    position: absolute;
+    top: 4px; left: 4px;
+    width: 14px; height: 14px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    line-height: 1;
+  }
+  .mini__panel {
+    width: 38%;
+    margin-top: 28px;
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mini__panel-title { font-size: 9px; font-weight: 600; }
+  .mini__panel-meta { font-size: 8px; color: var(--text-dim); }
+  .mini__panel-meta .icon { display: inline-block; width: 8px; height: 8px; background: var(--accent); border-radius: 2px; vertical-align: text-bottom; margin-right: 3px; }
+  .mini__panel-actions { display: flex; gap: 2px; margin-top: 4px; }
+  .mini__panel-actions span { width: 12px; height: 12px; background: var(--surface-2); border-radius: 3px; }
+  .mini__panel-actions .spacer { flex: 1; background: transparent; }
+  .mini__panel-tabs { display: flex; gap: 8px; margin-top: 4px; font-size: 8px; color: var(--text-dim); border-bottom: 1px solid var(--border); padding-bottom: 3px; }
+  .mini__panel-tabs .is-active { color: var(--text); border-bottom: 1px solid var(--text); padding-bottom: 1px; margin-bottom: -2px; }
+  .mini__panel-tabs .pill { background: var(--accent); color: white; padding: 1px 5px; border-radius: 8px; border: 0; }
+  .mini__panel-empty { font-size: 8px; color: var(--text-dim); margin: auto 0; text-align: center; padding: 8px 0; }
+  .mini__panel-empty--center { display: flex; flex: 1; align-items: center; justify-content: center; }
+  .mini__panel-composer { background: var(--bg); border: 1px solid var(--border); height: 14px; border-radius: 6px; margin-top: auto; }
+
+  .label--what-could-break {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(248,113,113,0.06);
+    border: 1px solid rgba(248,113,113,0.25);
+  }
+  .label--how-i-prevent {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(74,222,128,0.06);
+    border: 1px solid rgba(74,222,128,0.25);
+  }
+  .label__head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .label--what-could-break .label__head { color: var(--bad); }
+  .label--how-i-prevent .label__head { color: var(--good); }
+  .label p { margin: 0; font-size: 13.5px; color: var(--text-muted); }
+
+  .safe-section {
+    background: rgba(74,222,128,0.04);
+    border: 1px solid rgba(74,222,128,0.18);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-top: 8px;
+  }
+  .safe-section h2 { font-size: 17px; font-weight: 600; margin: 0 0 12px; color: var(--good); }
+  .safe-section ul { margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 14px; }
+  .safe-section li { margin-bottom: 4px; }
+
+  .questions {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-top: 32px;
+  }
+  .questions h2 { font-size: 17px; font-weight: 600; margin: 0 0 14px; }
+  .questions ol { margin: 0; padding-left: 22px; color: var(--text); font-size: 14px; }
+  .questions ol li { margin-bottom: 10px; }
+  .questions ol li strong { color: var(--accent-hover); }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    margin-bottom: 24px;
+  }
+  .legend .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 5px; }
+  .legend .red { background: rgba(248,113,113,0.6); border: 1px solid rgba(248,113,113,0.8); }
+  .legend .green { background: rgba(74,222,128,0.6); border: 1px solid rgba(74,222,128,0.8); }
+
+  .arrow-moves {
+    position: relative;
+    margin: 16px auto;
+  }
+  .arrow-label {
+    display: inline-block;
+    background: rgba(99,102,241,0.18);
+    color: var(--accent-hover);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Lightbox redesign — what could go wrong</h1>
+  <p class="lede">
+    The redesign you sketched isn't just a paint job — pieces of the lightbox move from one spot to another.
+    Each of these moves could quietly break something if I'm not careful. Below, every "thing that moves" with a
+    picture of what's at risk and how I plan to keep it safe.
+  </p>
+
+  <div class="legend">
+    <span><span class="swatch red"></span>What could break</span>
+    <span><span class="swatch green"></span>How I'll prevent it</span>
+  </div>
+
+  <div class="why">
+    <p><strong>The rule you set:</strong> this is a UI-only change. Nothing functional should break. If I see anything that worries me, I tell you first.</p>
+  </div>
+
+  <!-- ============ RISK 1 — Title moves ============ -->
+  <div class="risk">
+    <div class="risk__head">
+      <span class="risk__num">1</span>
+      <h3 class="risk__title">The title moves from the top bar into the side panel</h3>
+      <span class="risk__sub">Editable title — click to rename</span>
+    </div>
+    <div class="risk__body">
+      <div class="risk__cols">
+        <div class="col">
+          <h4>Today</h4>
+          <p>The screenshot title (e.g. "BTC/USDT Spot Trade") sits across the top of the lightbox. You can click it to rename.</p>
+          <div class="mini" style="margin-top: 12px;">
+            <div class="mini__header">
+              <span class="mini__title">BTC/USDT Spot Trade</span>
+              <span class="mini__chip">web</span>
+              <span class="mini__chip">dark</span>
+              <span class="mini__close">×</span>
+            </div>
+            <div class="mini__media">Screenshot</div>
+            <div class="mini__panel">
+              <div class="mini__panel-actions">
+                <span></span><span></span><span></span><span></span>
+                <span class="spacer"></span>
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mini__panel-tabs">
+                <span class="is-active">Comments</span><span>Annotations</span>
+              </div>
+              <div class="mini__panel-empty">No comments yet</div>
+              <div class="mini__panel-composer"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <h4>After redesign</h4>
+          <p>Title moves into the side panel, just above the metadata row. Top bar shrinks or disappears.</p>
+          <div class="mini" style="margin-top: 12px;">
+            <div class="mini__media">
+              <span class="mini__media-close">×</span>
+              Screenshot
+            </div>
+            <div class="mini__panel">
+              <div class="mini__panel-title">BTC/USDT Spot Trade</div>
+              <div class="mini__panel-meta"><span class="icon"></span>Valr · Spot Trade · Dark / Web</div>
+              <div class="mini__panel-actions">
+                <span></span><span></span><span></span><span></span>
+                <span class="spacer"></span>
+                <span></span><span></span><span></span>
+              </div>
+              <div class="mini__panel-tabs">
+                <span class="is-active">Comments</span><span>Annotations</span>
+              </div>
+              <div class="mini__panel-empty">No comments yet</div>
+              <div class="mini__panel-composer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="label label--what-could-break">
+        <div class="label__head">What could break</div>
+        <p>The title is an editable component — click it, type, blur to save. Moving it to a new spot in the DOM <em>could</em> disturb the "click outside to save" logic or where the text input shows up.</p>
+      </div>
+      <div class="label label--how-i-prevent">
+        <div class="label__head">How I'll prevent it</div>
+        <p>I'll move the title's JSX <strong>as a single block</strong>, without touching its props or behavior. After the move, I'll click-rename in the dev preview to confirm save-on-blur still works before showing it to you.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RISK 2 — Group chip moves ============ -->
+  <div class="risk">
+    <div class="risk__head">
+      <span class="risk__num">2</span>
+      <h3 class="risk__title">The group chip (Valr, Coinbase…) moves and changes shape</h3>
+      <span class="risk__sub">It's also a link — clicking it goes to /g/&lt;group&gt;</span>
+    </div>
+    <div class="risk__body">
+      <div class="risk__cols">
+        <div class="col">
+          <h4>Today</h4>
+          <p>The group is rendered as a coloured chip in the top bar. Clicking it navigates to the group detail page.</p>
+        </div>
+        <div class="col">
+          <h4>After redesign</h4>
+          <p>The group becomes inline text next to a small icon in the metadata row of the side panel.</p>
+        </div>
+      </div>
+      <div class="label label--what-could-break">
+        <div class="label__head">What could break</div>
+        <p>The chip is a clickable link. If I rewrap its container or change its element type, the link could lose its click handler or its route navigation.</p>
+      </div>
+      <div class="label label--how-i-prevent">
+        <div class="label__head">How I'll prevent it</div>
+        <p>The group is rendered by an existing component (<code>CatalogueGroupLabel</code>) with a <code>linkTo</code> prop. I'll lift that component as-is into the new metadata row — same component, same prop. After moving, I'll click it in the dev preview to confirm it still navigates to the group page.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RISK 3 — Close button moves ============ -->
+  <div class="risk">
+    <div class="risk__head">
+      <span class="risk__num">3</span>
+      <h3 class="risk__title">The close (×) button moves from the top bar to the screenshot's top-left</h3>
+      <span class="risk__sub">Has to close the lightbox AND not get in the way of the image</span>
+    </div>
+    <div class="risk__body">
+      <div class="risk__cols">
+        <div class="col">
+          <h4>Today</h4>
+          <p>× sits in the top-right of the lightbox header.</p>
+        </div>
+        <div class="col">
+          <h4>After redesign</h4>
+          <p>× sits as a floating button in the top-left corner of the screenshot area.</p>
+        </div>
+      </div>
+      <div class="label label--what-could-break">
+        <div class="label__head">What could break</div>
+        <p>The × needs to <strong>(a)</strong> still close the lightbox when clicked, <strong>(b)</strong> appear above the image (not behind it), and <strong>(c)</strong> not interfere with any drag / right-click on the image itself.</p>
+      </div>
+      <div class="label label--how-i-prevent">
+        <div class="label__head">How I'll prevent it</div>
+        <p>I'll keep the exact same close button (same <code>onClick</code>, same icon), just position it absolutely inside the screenshot's container with a layered background so it's clearly readable on any image. After moving, I'll click × on the dev preview to confirm it closes; then click on the image itself to confirm no interference.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RISK 4 — Tabs change shape ============ -->
+  <div class="risk">
+    <div class="risk__head">
+      <span class="risk__num">4</span>
+      <h3 class="risk__title">Tabs change from a "pill" style to underline-on-active text</h3>
+      <span class="risk__sub">Pure styling — no behavior change expected</span>
+    </div>
+    <div class="risk__body">
+      <div class="risk__cols">
+        <div class="col">
+          <h4>Today</h4>
+          <div class="mini" style="margin-top: 12px;">
+            <div class="mini__panel" style="width: 100%; margin-top: 0;">
+              <div class="mini__panel-tabs">
+                <span class="pill">Comments (0)</span><span>Annotations (0)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <h4>After redesign</h4>
+          <div class="mini" style="margin-top: 12px;">
+            <div class="mini__panel" style="width: 100%; margin-top: 0;">
+              <div class="mini__panel-tabs">
+                <span class="is-active">Comments (0)</span><span>Annotations (0)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="label label--how-i-prevent">
+        <div class="label__head">Why it's safe</div>
+        <p>This is a CSS-only swap. The buttons themselves don't change — just how the active one looks. Click handlers stay the same. Lowest-risk change of the bunch.</p>
+      </div>
+      <div class="label label--what-could-break" style="background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.25);">
+        <div class="label__head" style="color: var(--warn);">Small thing to confirm</div>
+        <p>There are <strong>two different tab sets</strong> in the lightbox — one for Comments + Annotations, and one for Label + Copy-Prompt (when the AI-labelling editor is active). My new style needs to look right on both. I'll check both paths during dev preview.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RISK 5 — Empty state centering ============ -->
+  <div class="risk">
+    <div class="risk__head">
+      <span class="risk__num">5</span>
+      <h3 class="risk__title">"No comments yet" should sit centered in the empty area</h3>
+      <span class="risk__sub">Only when empty — when there ARE comments, list scrolls normally</span>
+    </div>
+    <div class="risk__body">
+      <div class="risk__cols">
+        <div class="col">
+          <h4>Today</h4>
+          <p>"No comments yet" sits at the top of the comments area.</p>
+          <div class="mini" style="margin-top: 12px;">
+            <div class="mini__panel" style="width: 100%; margin-top: 0;">
+              <div class="mini__panel-empty">No comments yet</div>
+              <div style="flex: 1;"></div>
+              <div class="mini__panel-composer"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <h4>After redesign</h4>
+          <p>"No comments yet" sits in the visual center of the available space.</p>
+          <div class="mini" style="margin-top: 12px;">
+            <div class="mini__panel" style="width: 100%; margin-top: 0;">
+              <div class="mini__panel-empty mini__panel-empty--center">No comments yet</div>
+              <div class="mini__panel-composer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="label label--what-could-break">
+        <div class="label__head">What could break</div>
+        <p>If I center the empty-state container by changing the layout of the WHOLE comments area, the populated list (when you HAVE comments) could end up scrolling differently or rendering in the wrong place.</p>
+      </div>
+      <div class="label label--how-i-prevent">
+        <div class="label__head">How I'll prevent it</div>
+        <p>I'll only centre when the comments array is empty — using a conditional class so the populated-list code path stays untouched. After the change, I'll test both: empty list (centered message) and populated list (normal scroll).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RISK 6 — Mobile preserved ============ -->
+  <div class="risk">
+    <div class="risk__head">
+      <span class="risk__num">6</span>
+      <h3 class="risk__title">Mobile keeps its existing bottom-sheet layout</h3>
+      <span class="risk__sub">Desktop change must not leak into mobile</span>
+    </div>
+    <div class="risk__body">
+      <p style="margin: 0 0 16px; color: var(--text-muted);">Mobile (phones, narrow tablets) uses a totally different lightbox layout — the bottom sheet from PR #184. The desktop redesign should <strong>not affect mobile at all.</strong></p>
+      <div class="label label--what-could-break">
+        <div class="label__head">What could break</div>
+        <p>If I write a new CSS rule that isn't scoped to desktop only, it could leak into the mobile bottom-sheet layout — same kind of bug we hit in PR #185 (the "leak" you're worried about).</p>
+      </div>
+      <div class="label label--how-i-prevent">
+        <div class="label__head">How I'll prevent it</div>
+        <p>Every new CSS rule for the redesign goes inside a desktop-only block (<code>@media (min-width: 721px)</code>) or stays outside any mobile media query. I'll explicitly open the lightbox on a phone-sized window during testing and verify it looks identical to today.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Safe section ============ -->
+  <div class="safe-section">
+    <h2>What's NOT changing (no risk, no work)</h2>
+    <ul>
+      <li>Action button bar (Edit · Crop · Save · Copy · Comment · Annotate · Delete) — already grouped the way your image shows</li>
+      <li>Comment composer position (already pinned to the bottom)</li>
+      <li>Squircle corners from PR #190 — the new redesign keeps them</li>
+      <li>All button click handlers, all keyboard shortcuts, all state — completely untouched</li>
+      <li>Mobile layout — completely untouched</li>
+      <li>Crop mode, comment add/edit, annotation add/edit — all untouched</li>
+    </ul>
+  </div>
+
+  <!-- ============ Questions for the user ============ -->
+  <div class="questions">
+    <h2>Three questions for you before I start</h2>
+    <ol>
+      <li><strong>Close button position</strong> — your image shows × on the top-left of the screenshot area. Is that right, or did you mean top-right? (Apple Photos / iOS uses top-right, your image looks like top-left — just want to confirm.)</li>
+      <li><strong>Group chip → inline text</strong> — do you want the existing colour cue (Valr's blue, Coinbase's orange, etc.) to carry through as coloured text, or should the metadata row be all neutral grey?</li>
+      <li><strong>Anything else</strong> — looking at the risks above, anything I should be MORE careful with, or anything missing?</li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>
