@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Advance Search — entity-aware search</title>
+<style>
+  :root {
+    --bg: #0d0d0e;
+    --surface: #161618;
+    --surface-2: #1d1d20;
+    --surface-3: #2a2a30;
+    --border: #27272a;
+    --border-light: rgba(255,255,255,0.06);
+    --text: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-bg: rgba(99,102,241,0.16);
+    --flow: #fbbf24;
+    --flow-bg: rgba(251,191,36,0.16);
+    --group: #4ade80;
+    --group-bg: rgba(74,222,128,0.14);
+    --good: #4ade80;
+    --warn: #f59e0b;
+    --highlight: rgba(251,191,36,0.32);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  .page { max-width: 1180px; margin: 0 auto; padding: 56px 32px 80px; }
+
+  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .lede { color: var(--text-muted); margin: 0 0 12px; font-size: 15px; max-width: 760px; }
+
+  .tldr {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 24px 0 48px;
+  }
+  .tldr h3 { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .tldr p { margin: 0 0 8px; color: var(--text-muted); font-size: 14px; line-height: 1.55; }
+  .tldr p:last-child { margin: 0; }
+  .tldr strong { color: var(--text); }
+
+  .section { margin-bottom: 56px; }
+  .section h2 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 12px; }
+  .section h2 .num {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    text-align: center; line-height: 32px;
+    font-size: 14px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .section .caption { color: var(--text-dim); font-size: 13.5px; margin: 0 0 24px; padding-left: 44px; max-width: 720px; }
+
+  /* ── Modal frame ── */
+  .frame {
+    background: rgba(0,0,0,0.55);
+    border-radius: 14px;
+    padding: 32px;
+  }
+  .modal {
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal__input {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 56px;
+  }
+  .modal__input .cursor {
+    display: inline-block;
+    width: 1px;
+    height: 18px;
+    background: var(--accent-hover);
+    animation: blink 1s infinite;
+    vertical-align: middle;
+  }
+  .modal__input .placeholder {
+    color: var(--text-dim);
+  }
+  @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+  /* ── Chips ── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px 2px 8px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    line-height: 1.4;
+  }
+  .chip__label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: 4px;
+    opacity: 0.7;
+  }
+  .chip--flow {
+    background: var(--flow-bg);
+    border-color: rgba(251,191,36,0.32);
+    color: var(--flow);
+  }
+  .chip--group {
+    background: var(--group-bg);
+    border-color: rgba(74,222,128,0.32);
+    color: var(--group);
+  }
+  .chip__x {
+    background: rgba(255,255,255,0.1);
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-left: 2px;
+  }
+
+  /* ── Suggestions dropdown ── */
+  .suggestions {
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+  }
+  .suggestions__head {
+    padding: 10px 20px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .suggestion {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+  .suggestion:hover, .suggestion.is-active {
+    background: rgba(99,102,241,0.08);
+    border-left-color: var(--accent);
+  }
+  .suggestion__icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--surface-3);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .suggestion__icon--flow { background: var(--flow-bg); color: var(--flow); }
+  .suggestion__icon--group { background: var(--group-bg); color: var(--group); }
+  .suggestion__body { flex: 1; min-width: 0; }
+  .suggestion__title { font-size: 13.5px; color: var(--text); }
+  .suggestion__title mark { background: var(--highlight); color: var(--text); padding: 0 2px; border-radius: 2px; }
+  .suggestion__hint { font-size: 11px; color: var(--text-dim); }
+  .suggestion__key {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font: 11px ui-monospace, SF Mono, Menlo, monospace;
+    color: var(--text-muted);
+  }
+
+  /* ── Results preview ── */
+  .results-mini {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+  }
+  .results-mini strong { color: var(--text); }
+
+  /* ── Stage caption ── */
+  .stage-caption {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .stage-caption strong { color: var(--text); }
+  .stage-caption code {
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  /* ── Open decisions ── */
+  .open-decisions {
+    background: rgba(99,102,241,0.05);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 14px;
+    padding: 22px 26px;
+  }
+  .open-decisions h3 { margin: 0 0 14px; font-size: 16px; color: var(--accent-hover); }
+  .open-decisions ol { margin: 0; padding-left: 22px; color: var(--text-muted); font-size: 14px; }
+  .open-decisions ol li { margin-bottom: 14px; line-height: 1.55; }
+  .open-decisions ol li strong { color: var(--text); }
+  .open-decisions ol li em { color: var(--accent-hover); font-style: normal; font-weight: 500; }
+
+  /* ── Comparison ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+  }
+  .compare-table th, .compare-table td {
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    font-size: 13.5px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .compare-table th {
+    background: var(--surface-2);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .compare-table td:first-child { color: var(--text); font-weight: 500; width: 240px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Advance Search · entity-aware</h1>
+  <p class="lede">
+    Free text that recognizes when you've typed a real <strong style="color: var(--flow);">flow</strong> or
+    <strong style="color: var(--group);">group</strong> name, and offers to convert it into a structured
+    filter chip — same input box, deeper intent.
+  </p>
+
+  <div class="tldr">
+    <h3>What I understood from your example</h3>
+    <p>You type <code style="background: var(--surface-2); padding: 2px 6px; border-radius: 4px;">Deposit screen in Weex</code>. Search recognizes <strong style="color: var(--flow);">Deposit</strong> as a flow and <strong style="color: var(--group);">Weex</strong> as a group. It offers inline chips for each. The leftover word <em>"screen"</em> stays as free text. Final query is <strong>flow=Deposit AND group=Weex AND text~"screen"</strong>.</p>
+    <p>Below: walk-through of how this could feel, frame by frame, with design decisions called out.</p>
+  </div>
+
+  <!-- ============ STAGE 1 ============ -->
+  <div class="section">
+    <h2><span class="num">1</span> User starts typing</h2>
+    <p class="caption">As they type, the modal looks like today — free-text input, no chips yet.</p>
+
+    <div class="frame">
+      <div class="modal">
+        <div class="modal__input">
+          <span>Deposit screen in W<span class="cursor"></span></span>
+        </div>
+        <div class="suggestions">
+          <div class="suggestions__head">Suggestions · 2</div>
+          <div class="suggestion is-active">
+            <div class="suggestion__icon suggestion__icon--flow">🔁</div>
+            <div class="suggestion__body">
+              <div class="suggestion__title"><mark>Deposit</mark> as <em style="color: var(--flow); font-style: normal;">Flow filter</em></div>
+              <div class="suggestion__hint">42 screenshots across 6 groups</div>
+            </div>
+            <span class="suggestion__key">Tab</span>
+          </div>
+          <div class="suggestion">
+            <div class="suggestion__icon suggestion__icon--group">📁</div>
+            <div class="suggestion__body">
+              <div class="suggestion__title"><mark>Weex</mark> as <em style="color: var(--group); font-style: normal;">Group filter</em></div>
+              <div class="suggestion__hint">18 screenshots</div>
+            </div>
+            <span class="suggestion__key">↓ Tab</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-caption">
+      <strong>What's happening:</strong> as the user types, two tokens already match known entities — "Deposit" (a flow you have) and "W…" (prefix-matching the Weex group). Suggestions appear in the dropdown beneath the input. User hits <code>Tab</code> to accept the top suggestion → it converts to a chip.
+    </div>
+  </div>
+
+  <!-- ============ STAGE 2 ============ -->
+  <div class="section">
+    <h2><span class="num">2</span> Top suggestion accepted (Tab)</h2>
+    <p class="caption">"Deposit" becomes a Flow chip inline. The cursor stays where it was, ready to continue.</p>
+
+    <div class="frame">
+      <div class="modal">
+        <div class="modal__input">
+          <span class="chip chip--flow">
+            <span class="chip__label">Flow</span>
+            Deposit
+            <span class="chip__x">×</span>
+          </span>
+          <span>screen in W<span class="cursor"></span></span>
+        </div>
+        <div class="suggestions">
+          <div class="suggestions__head">Suggestions · 1</div>
+          <div class="suggestion is-active">
+            <div class="suggestion__icon suggestion__icon--group">📁</div>
+            <div class="suggestion__body">
+              <div class="suggestion__title"><mark>Weex</mark> as <em style="color: var(--group); font-style: normal;">Group filter</em></div>
+              <div class="suggestion__hint">18 screenshots</div>
+            </div>
+            <span class="suggestion__key">Tab</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-caption">
+      The Deposit token has been <strong>replaced in place</strong> with a chip. The text-cursor sits where "W" was. Backspace on the chip removes it and restores "Deposit" as plain text.
+    </div>
+  </div>
+
+  <!-- ============ STAGE 3 ============ -->
+  <div class="section">
+    <h2><span class="num">3</span> Group chip applied, "screen" stays as free text</h2>
+    <p class="caption">User accepts the Weex suggestion. Final query is two filter chips + one free-text word.</p>
+
+    <div class="frame">
+      <div class="modal">
+        <div class="modal__input">
+          <span class="chip chip--flow">
+            <span class="chip__label">Flow</span>
+            Deposit
+            <span class="chip__x">×</span>
+          </span>
+          <span>screen in</span>
+          <span class="chip chip--group">
+            <span class="chip__label">Group</span>
+            Weex
+            <span class="chip__x">×</span>
+          </span>
+          <span class="cursor"></span>
+        </div>
+        <div class="results-mini">
+          <span><strong>9 screenshots</strong> · flow:Deposit · group:Weex · "screen"</span>
+          <span>Enter to view all in catalogue</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-caption">
+      <strong>The query is now structured:</strong> <code>flow=Deposit AND group=Weex AND text~"screen"</code>. The word <em>"in"</em> is kept as visible context inside the input (it doesn't filter anything) but disappears from the actual matcher. Pressing Enter sends the user to the catalogue grid with these three filters applied; clicking a result opens the lightbox on that screenshot (same as the PR you just merged).
+    </div>
+  </div>
+
+  <!-- ============ KEY DESIGN DECISIONS ============ -->
+  <div class="section">
+    <h2><span class="num">4</span> Key design decisions</h2>
+    <p class="caption">Decisions I want your input on before any code lands. Each one shapes the algorithm + UX.</p>
+
+    <div class="open-decisions">
+      <h3>Need your call on:</h3>
+      <ol>
+        <li>
+          <strong>When does a token become a chip?</strong><br>
+          <em>(a) Auto-convert</em> — if "weex" matches a known group exactly (or as a unique prefix), instantly chip it as the user types.<br>
+          <em>(b) Always require Tab / click</em> — show suggestion, user explicitly accepts to convert. Less magic, more control.<br>
+          <strong>My recommendation:</strong> (b). Auto-converting can feel jumpy and gets confusing when a token matches both a group and a flow.
+        </li>
+        <li>
+          <strong>Ambiguity:</strong> if "Login" matches both a flow named "Login" and a group called "Login Inc.", what do we do?<br>
+          <em>(a) Show both</em> as separate suggestions — user picks which.<br>
+          <em>(b) Show one</em> based on confidence (e.g. exact-match wins, ties go to flow).<br>
+          <strong>My recommendation:</strong> (a). Cheap to render two suggestions; user keeps control.
+        </li>
+        <li>
+          <strong>Stop words:</strong> the example has "screen in Weex" — the word <em>"in"</em> is grammatical glue. Do we ignore it in matching?<br>
+          <em>(a) Strip a small list</em> ("in", "of", "the", "on", "and") from the text-search bucket so they don't filter results.<br>
+          <em>(b) Don't strip — match literally</em> — risk: "screen in Weex" gets fewer results than "screen Weex".<br>
+          <strong>My recommendation:</strong> (a). The user is writing natural language, not a database query.
+        </li>
+        <li>
+          <strong>Order of chips:</strong> do chips preserve the typed position, or do they all jump to the front?<br>
+          <em>(a) Preserve position</em> — chips appear where the user typed them: <code>[Flow:Deposit] screen in [Group:Weex]</code>.<br>
+          <em>(b) Hoist to front</em> — all chips collect at the left; free text always trails: <code>[Flow:Deposit][Group:Weex] screen in</code>.<br>
+          <strong>My recommendation:</strong> (a). Reads more naturally; matches the user's mental model.
+        </li>
+        <li>
+          <strong>Multiple of the same kind:</strong> can the user have two group chips? (e.g. <code>[Group:Coinbase][Group:Weex] login</code>).<br>
+          <em>(a) Allow multiple chips, OR them together</em> — show screenshots in Coinbase OR Weex matching "login".<br>
+          <em>(b) Only one chip per kind</em> — typing a second group replaces the first.<br>
+          <strong>My recommendation:</strong> (a). Multi-select is already how the regular toolbar group filter works; consistency wins.
+        </li>
+        <li>
+          <strong>Scope of entity recognition:</strong> just groups + flows, or also <em>platforms</em> (web / mobile), <em>themes</em> (light / dark), <em>OS</em> (ios / android)?<br>
+          <em>(a) Just groups + flows (v1)</em> — ship the simple version, add others later.<br>
+          <em>(b) All structured fields from day one</em> — five entity types: group / flow / platform / theme / OS.<br>
+          <strong>My recommendation:</strong> (a). Each new entity type adds disambiguation complexity. Validate the pattern with the two highest-value types first.
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ============ HOW IT COMPARES ============ -->
+  <div class="section">
+    <h2><span class="num">5</span> How this compares to today's search</h2>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>Today</th>
+          <th>Advance Search (proposed)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>What you type</td>
+          <td>Free text → tokenized → all tokens must hit somewhere</td>
+          <td>Free text → tokens recognized as entities → structured filters + remaining free text</td>
+        </tr>
+        <tr>
+          <td>How a group is filtered</td>
+          <td>Token "Weex" matches if it appears in the screenshot's haystack (file_name, group, etc.)</td>
+          <td>Group chip applies the actual group filter (the same one in the toolbar)</td>
+        </tr>
+        <tr>
+          <td>Precision</td>
+          <td>"Weex" can accidentally match a screenshot named "weex-redesign-final.png" even if its group is Coinbase</td>
+          <td>Filter-based — only screenshots actually in the Weex group are included</td>
+        </tr>
+        <tr>
+          <td>Discoverability</td>
+          <td>You have to guess which words will match</td>
+          <td>Suggestions teach you what's possible as you type</td>
+        </tr>
+        <tr>
+          <td>Speed for power users</td>
+          <td>Type query, scan all three result categories, click</td>
+          <td>Type + Tab + Tab + Enter → exact answer</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tldr" style="background: rgba(74,222,128,0.04); border-color: rgba(74,222,128,0.2);">
+    <h3 style="color: var(--good);">Once you sign off on the 6 decisions above</h3>
+    <p>I'll scope the build: probably 2 PRs. <strong>PR 1:</strong> entity recognition + suggestions + chip UI for groups & flows. <strong>PR 2:</strong> filter integration so chips actually drive the existing toolbar filter state (rather than text-match). Both can land independently.</p>
+  </div>
+
+</div>
+</body>
+</html>
