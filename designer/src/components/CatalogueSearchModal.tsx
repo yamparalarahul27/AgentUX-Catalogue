@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Clock, Command, CornerDownLeft, Image as ImageIcon, LayoutGrid, Search as SearchIcon, Workflow, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Clock, CornerDownLeft, Image as ImageIcon, LayoutGrid, Search as SearchIcon, Workflow, X } from 'lucide-react';
 
 import { Fragment, type ReactNode } from 'react';
 import {
@@ -410,8 +410,7 @@ export function CatalogueSearchModal({
             close
           </span>
           <span className="catalogue-search-modal__footer-hint">
-            <kbd><Command size={11} aria-hidden="true" /></kbd>
-            <kbd>K</kbd>
+            <kbd>/</kbd>
             toggle
           </span>
         </div>
