@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Clock, Command, CornerDownLeft, Image as ImageIcon, LayoutGrid, Search as SearchIcon, Workflow, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Clock, CornerDownLeft, Image as ImageIcon, LayoutGrid, Search as SearchIcon, Workflow, X } from 'lucide-react';
 
 import { Fragment, type ReactNode } from 'react';
 import {
@@ -27,6 +27,13 @@ interface CatalogueSearchModalProps {
   appearanceMap: CatalogueGroupAppearanceMap;
   onSelectGroup: (group: string) => void;
   onSelectFlow: (group: string, flow: string) => void;
+  // Open the lightbox directly on a specific screenshot. Fired when a
+  // user picks a screenshot result (click or Enter while highlighted).
+  // We pass the whole ScreenshotNode (not just the id) so the parent
+  // can build a synthetic single-variant family at click time, without
+  // having to resolve through the family map — which can lag the
+  // full-scope hydration and silently fall back to the wrong variant.
+  onOpenScreenshot: (screenshot: ScreenshotNode) => void;
   // Commit the query into the catalogue scope — modal closes and the
   // catalogue grid scopes itself to the search query. Triggered by
   // the "View all in catalogue" CTA, Cmd/Ctrl+Enter, or plain Enter
@@ -70,6 +77,7 @@ export function CatalogueSearchModal({
   appearanceMap,
   onSelectGroup,
   onSelectFlow,
+  onOpenScreenshot,
   onCommitQuery,
 }: CatalogueSearchModalProps) {
   const [query, setQuery] = useState('');
@@ -130,14 +138,13 @@ export function CatalogueSearchModal({
       onClose();
       return;
     }
-    // Screenshot card: fill the input with the screenshot's full
-    // name so results narrow to it. User can then press Enter (or
-    // click the "View all" CTA) to commit and reach the card in the
-    // catalogue grid — clicking the card there opens the lightbox
-    // reliably (same data source as the rendered card).
-    setQuery(result.screenshot.name);
-    setHasInteracted(false);
-    inputRef.current?.focus();
+    // Screenshot card: open the lightbox directly on this screenshot.
+    // (Previously this refilled the input with the screenshot's full
+    // name to let the user narrow first; that meant 3 clicks to reach
+    // the lightbox. Direct-open is the natural intent.)
+    pushRecent(query);
+    onOpenScreenshot(result.screenshot);
+    onClose();
   }
 
   function selectRecent(entry: RecentEntry) {
@@ -410,8 +417,7 @@ export function CatalogueSearchModal({
             close
           </span>
           <span className="catalogue-search-modal__footer-hint">
-            <kbd><Command size={11} aria-hidden="true" /></kbd>
-            <kbd>K</kbd>
+            <kbd>/</kbd>
             toggle
           </span>
         </div>

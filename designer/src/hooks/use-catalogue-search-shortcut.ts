@@ -15,14 +15,15 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 // Global keyboard shortcut to open the catalogue search modal.
 // Bindings:
-//   - ⌘K / Ctrl+K — the web convention (Linear, GitHub, Slack, etc).
 //   - Option+Space — user-requested binding. May collide with macOS
 //     system shortcuts on some configurations.
 //   - `/` — Mobbin-style trigger (also matches Slack, GitHub, X, etc).
 //     Bare keypress with no modifiers; suppressed inside editable fields
 //     so it doesn't interrupt typing a literal "/".
-// All three are suppressed while an editable field is focused so they
-// don't stomp on in-field typing or paste behaviour.
+// (The ⌘K / Ctrl+K binding was removed 2026-05-29 — felt redundant
+// alongside `/`, and freed up the shortcut for other uses if needed.)
+// Both remaining shortcuts are suppressed while an editable field is
+// focused so they don't stomp on in-field typing or paste behaviour.
 export function useCatalogueSearchShortcut({ enabled, onOpen }: Args) {
   useEffect(() => {
     if (!enabled) return;
@@ -31,7 +32,6 @@ export function useCatalogueSearchShortcut({ enabled, onOpen }: Args) {
     function handleKeyDown(event: KeyboardEvent) {
       if (isEditableTarget(event.target)) return;
 
-      const isMetaK = (event.metaKey || event.ctrlKey) && (event.key === 'k' || event.key === 'K');
       const isOptionSpace = event.altKey && event.code === 'Space';
       // Bare `/` — no modifiers. Reject if any modifier is held so we
       // don't intercept things like ⌘? or shifted-slash combinations
@@ -42,7 +42,7 @@ export function useCatalogueSearchShortcut({ enabled, onOpen }: Args) {
         !event.ctrlKey &&
         !event.altKey &&
         !event.shiftKey;
-      if (!isMetaK && !isOptionSpace && !isSlash) return;
+      if (!isOptionSpace && !isSlash) return;
       event.preventDefault();
       onOpen();
     }

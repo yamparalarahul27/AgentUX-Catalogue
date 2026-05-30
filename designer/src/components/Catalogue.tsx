@@ -19,7 +19,7 @@ import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
-import { buildCatalogueFamilies, getActiveFamilyVariant } from '../lib/catalogue-families';
+import { buildCatalogueFamilies, buildSyntheticFamilyFromScreenshot, getActiveFamilyVariant } from '../lib/catalogue-families';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -392,6 +392,13 @@ export function Catalogue({
   const [previewScreenshotHint, setPreviewScreenshotHint] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
+  // Synthetic family used by search-result clicks. The search modal
+  // hands us the full ScreenshotNode at click time, and we build a
+  // one-variant family from it on the fly — bypassing the family-map
+  // resolution entirely, which was the source of the "wrong screenshot
+  // opens" bug. When set, the lightbox renders this in place of the
+  // fullScopeFamilyById lookup.
+  const [previewFamilyOverride, setPreviewFamilyOverride] = useState<CatalogueFamilyView | null>(null);
   const [recentlyViewedFamilyId, setRecentlyViewedFamilyId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'group' | 'flow' | null>(null);
@@ -542,9 +549,13 @@ export function Catalogue({
   // present (search-result clicks can target screenshots outside the
   // current filter or pagination window). Falls back to the scoped
   // map if for some reason the full scope hasn't hydrated yet.
-  const previewFamily = previewFamilyId
-    ? (fullScopeFamilyById[previewFamilyId] ?? familyById[previewFamilyId] ?? null)
-    : null;
+  // Override takes precedence so search-result clicks can render their
+  // synthetic family without competing with the (potentially-still-
+  // hydrating) full-scope lookup.
+  const previewFamily = previewFamilyOverride
+    ?? (previewFamilyId
+      ? (fullScopeFamilyById[previewFamilyId] ?? familyById[previewFamilyId] ?? null)
+      : null);
   const {
     handleAnnotationStateChange,
     handleChangeFamilyGroup,
@@ -684,6 +695,9 @@ export function Catalogue({
   // the list is empty).
   useEffect(() => {
     if (!previewFamilyId) return;
+    // Synthetic override is self-contained — don't trip the
+    // "family disappeared" recovery path for it.
+    if (previewFamilyOverride) return;
     if (familyById[previewFamilyId]) return; // still exists, no advance needed
     if (filteredFamilies.length === 0) {
       setPreviewFamilyId(null);
@@ -694,7 +708,7 @@ export function Catalogue({
       ? 0
       : Math.min(previousIndex, filteredFamilies.length - 1);
     setPreviewFamilyId(filteredFamilies[nextIndex].id);
-  }, [familyById, previewFamilyId, filteredFamilies]);
+  }, [familyById, previewFamilyId, previewFamilyOverride, filteredFamilies]);
   useEffect(() => {
     if (!canAdmin && (activeSection === 'team' || activeSection === 'studio')) {
       setActiveSection('catalogue');
@@ -716,7 +730,7 @@ export function Catalogue({
     },
   });
 
-  // Cmd+K (or Ctrl+K) / Option+Space / `/` opens the categorised search
+  // Option+Space / `/` opens the categorised search
   // modal. Restricted to the catalogue section so it doesn't fire on
   // other tabs.
   useCatalogueSearchShortcut({
@@ -843,6 +857,7 @@ export function Catalogue({
   function openPreview(familyId: string) {
     setPreviewStartInlineEdit(false);
     setPreviewScreenshotHint(null);
+    setPreviewFamilyOverride(null);
     setPreviewFamilyId(familyId);
   }
 
@@ -854,6 +869,7 @@ export function Catalogue({
     if (nextIndex >= 0 && nextIndex < filteredFamilies.length) {
       setPreviewStartInlineEdit(false);
       setPreviewScreenshotHint(null);
+      setPreviewFamilyOverride(null);
       setPreviewFamilyId(filteredFamilies[nextIndex].id);
       return;
     }
@@ -1442,6 +1458,7 @@ export function Catalogue({
             setPreviewFamilyId(null);
             setPreviewScreenshotHint(null);
             setPreviewStartInlineEdit(false);
+            setPreviewFamilyOverride(null);
             setPendingPreviewNext(false);
             setRecentlyViewedFamilyId(lastViewed);
           }}
@@ -1574,6 +1591,17 @@ export function Catalogue({
           setFilterGroup([group]);
           setFilterFlow([flow]);
           setFilterPlatform(null);
+        }}
+        onOpenScreenshot={(screenshot) => {
+          // Build a one-variant synthetic family from the screenshot
+          // record the search modal hands us — no family-map lookup,
+          // no async wait, no "wrong screenshot" fallback. The lightbox
+          // renders this directly via the previewFamilyOverride path.
+          const synthetic = buildSyntheticFamilyFromScreenshot(screenshot, presetByKey);
+          setPreviewStartInlineEdit(false);
+          setPreviewScreenshotHint(screenshot.id);
+          setPreviewFamilyId(synthetic.id);
+          setPreviewFamilyOverride(synthetic);
         }}
         onCommitQuery={(committed) => {
           // Push the search into the catalogue's actual filter

@@ -118,6 +118,38 @@ export function getVariantLabel(
   return `${themeLabel} / Unclassified`;
 }
 
+// Build a one-variant family view directly from a screenshot record.
+// Used by the search modal: when the user clicks a screenshot result,
+// we already have the full ScreenshotNode in hand from the search
+// matcher, so we don't need to resolve through fullScopeFamilyById
+// (which can lag full-scope hydration and silently fall back to the
+// wrong variant). The lightbox renders this synthetic family as a
+// single-variant view — sibling variants aren't shown, which matches
+// the user's intent (they clicked THIS exact screenshot in search,
+// not its family).
+export function buildSyntheticFamilyFromScreenshot(
+  screenshot: ScreenshotNode,
+  presetMap: Record<string, WebPreset>,
+): CatalogueFamilyView {
+  const flowLabel = getScreenshotFlowLabel(screenshot);
+  const familyId = getScreenshotFamilyId(screenshot);
+  return {
+    id: familyId,
+    name: screenshot.name,
+    group: screenshot.group,
+    flow_id: screenshot.flow_id,
+    flow_label: flowLabel,
+    created_at: screenshot.created_at,
+    isLegacy: familyId.startsWith(LEGACY_FAMILY_PREFIX),
+    variants: [{
+      id: screenshot.id,
+      key: getVariantKey(screenshot),
+      label: getVariantLabel(screenshot, presetMap),
+      screenshot,
+    }],
+  };
+}
+
 export function buildCatalogueFamilies(
   screenshots: ScreenshotNode[],
   screenFamilies: ScreenFamily[],
