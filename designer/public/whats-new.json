@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-29-advance-search",
+    "date": "May 29, 2026",
+    "title": "Advance Search — entity-aware chips",
+    "bullets": [
+      { "kind": "new", "text": "Type any group, flow, platform, theme, OS, page-type, UI-element, or UX-pattern name — Search now recognizes it and offers to convert it into a structured filter chip" },
+      { "kind": "new", "text": "Tab accepts the highlighted suggestion (or the top one). Chips stack inside the search box; Backspace on an empty input removes the most recent" },
+      { "kind": "improved", "text": "Hit Enter with chips applied and the catalogue grid filters to exactly that combination — search via chips and via the toolbar produce identical results" }
+    ]
+  },
+  {
     "id": "2026-05-29-search-direct-open",
     "date": "May 29, 2026",
     "title": "Search → click → lightbox, in one click",

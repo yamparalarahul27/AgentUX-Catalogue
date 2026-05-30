@@ -36,8 +36,21 @@
   flex-shrink: 0;
 }
 
+// Chip-flex row holds accepted chips inline with the typed input.
+// Flex with wrap means chips push the input down to the next line
+// once they overflow horizontally — works elegantly without measuring.
+.catalogue-search-modal__chiprow {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
 .catalogue-search-modal__input {
   flex: 1;
+  min-width: 120px;
   background: transparent;
   border: none;
   outline: none;
@@ -50,6 +63,123 @@
     color: #71717a;
     font-weight: 400;
   }
+}
+
+// ── Entity chips ───────────────────────────────────────
+// One pill per accepted chip. Coloured per kind so the eye can read
+// "this is a Flow filter vs a Group filter vs a Theme filter" at a
+// glance. Hover on × tints; click removes the chip.
+.catalogue-search-modal__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+
+  &--group {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: rgba(74, 222, 128, 0.32);
+    color: #4ade80;
+  }
+  &--flow {
+    background: rgba(251, 191, 36, 0.14);
+    border-color: rgba(251, 191, 36, 0.32);
+    color: #fbbf24;
+  }
+  &--platform, &--theme, &--mobile_os {
+    background: rgba(129, 140, 248, 0.14);
+    border-color: rgba(129, 140, 248, 0.32);
+    color: #818cf8;
+  }
+  &--page_type, &--ui_element, &--ux_pattern {
+    background: rgba(244, 114, 182, 0.14);
+    border-color: rgba(244, 114, 182, 0.32);
+    color: #f472b6;
+  }
+}
+
+.catalogue-search-modal__chip-kind {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+  margin-right: 2px;
+}
+
+.catalogue-search-modal__chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.18);
+  color: currentColor;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.12s, background 0.12s;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.35);
+  }
+}
+
+// ── Suggestion rows ────────────────────────────────────
+.catalogue-search-modal__section--suggestions {
+  padding-top: 6px;
+
+  .catalogue-search-modal__row {
+    border-radius: 6px;
+  }
+}
+
+.catalogue-search-modal__row--suggestion {
+  // Tint the row icon to match the chip kind it would create.
+  &.catalogue-search-modal__row--group .catalogue-search-modal__row-icon {
+    background: rgba(74, 222, 128, 0.14);
+    color: #4ade80;
+  }
+  &.catalogue-search-modal__row--flow .catalogue-search-modal__row-icon {
+    background: rgba(251, 191, 36, 0.14);
+    color: #fbbf24;
+  }
+  &.catalogue-search-modal__row--platform .catalogue-search-modal__row-icon,
+  &.catalogue-search-modal__row--theme .catalogue-search-modal__row-icon,
+  &.catalogue-search-modal__row--mobile_os .catalogue-search-modal__row-icon {
+    background: rgba(129, 140, 248, 0.14);
+    color: #818cf8;
+  }
+  &.catalogue-search-modal__row--page_type .catalogue-search-modal__row-icon,
+  &.catalogue-search-modal__row--ui_element .catalogue-search-modal__row-icon,
+  &.catalogue-search-modal__row--ux_pattern .catalogue-search-modal__row-icon {
+    background: rgba(244, 114, 182, 0.14);
+    color: #f472b6;
+  }
+}
+
+.catalogue-search-modal__row-kindbadge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.catalogue-search-modal__row-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #71717a;
+  font-weight: 400;
 }
 
 .catalogue-search-modal__close {

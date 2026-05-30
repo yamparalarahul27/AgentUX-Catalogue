@@ -1603,12 +1603,34 @@ export function Catalogue({
           setPreviewFamilyId(synthetic.id);
           setPreviewFamilyOverride(synthetic);
         }}
-        onCommitQuery={(committed) => {
-          // Push the search into the catalogue's actual filter
-          // pipeline so the grid scopes to results + a "Search: <q>"
-          // pill appears in the toolbar. Skips other filters; this
-          // is purely additive to the existing chip state.
-          setSearchQuery(committed);
+        onCommitSearch={({ query, chips }) => {
+          // Push the free-text portion AND every accepted entity chip
+          // into the catalogue's actual filter pipeline. Chip values
+          // map directly to toolbar filter state setters; the rest of
+          // the catalogue (grid, chip strip, count badges) reads from
+          // the same state, so search-via-chips and search-via-toolbar
+          // produce identical visible results.
+          setSearchQuery(query);
+          // Multi-value filters: OR-style — collect every chip of that
+          // kind into the array.
+          const groupChips = chips.filter((c) => c.kind === 'group').map((c) => c.value);
+          const flowChips = chips.filter((c) => c.kind === 'flow').map((c) => c.value);
+          const pageTypeChips = chips.filter((c) => c.kind === 'page_type').map((c) => c.value);
+          const uiElementChips = chips.filter((c) => c.kind === 'ui_element').map((c) => c.value);
+          const uxPatternChips = chips.filter((c) => c.kind === 'ux_pattern').map((c) => c.value);
+          if (groupChips.length > 0) setFilterGroup(groupChips);
+          if (flowChips.length > 0) setFilterFlow(flowChips);
+          if (pageTypeChips.length > 0) setFilterPageType(pageTypeChips);
+          if (uiElementChips.length > 0) setFilterUiElement(uiElementChips);
+          if (uxPatternChips.length > 0) setFilterUxPattern(uxPatternChips);
+          // Single-value filters: take the LAST chip of that kind
+          // (consistent with toolbar dropdown semantics — last wins).
+          const platformChip = [...chips].reverse().find((c) => c.kind === 'platform');
+          const themeChip = [...chips].reverse().find((c) => c.kind === 'theme');
+          const mobileOsChip = [...chips].reverse().find((c) => c.kind === 'mobile_os');
+          if (platformChip) setFilterPlatform(platformChip.value as 'web' | 'mobile');
+          if (themeChip) setFilterTheme(themeChip.value as 'light' | 'dark');
+          if (mobileOsChip) setFilterMobileOs(mobileOsChip.value);
         }}
       />
     </div>

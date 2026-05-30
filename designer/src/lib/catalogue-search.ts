@@ -5,6 +5,7 @@
 // per category for the modal preview.
 
 import { CATALOGUE_FLOW_LABEL_KEY } from './catalogue-families';
+import { applyChipFilters, stripStopWords, type EntityChip } from './catalogue-search-entities';
 import type { ScreenshotNode } from '../types';
 
 // Preview cap per bucket inside the search modal. Tight so the modal
@@ -142,11 +143,28 @@ interface DeriveArgs {
   screenshots: ScreenshotNode[];
   query: string;
   perCategory?: number;
+  // Entity chips accepted by the user pre-filter the screenshot list
+  // before the text matcher runs. Empty / undefined → no chip filter
+  // (original text-only search behavior).
+  chips?: EntityChip[];
 }
 
-export function deriveSearchResults({ screenshots, query, perCategory = SEARCH_PREVIEW_PER_CATEGORY }: DeriveArgs): SearchResults {
-  const tokens = tokensFromQuery(query);
-  if (tokens.length === 0) {
+export function deriveSearchResults({ screenshots: inputScreenshots, query, perCategory = SEARCH_PREVIEW_PER_CATEGORY, chips = [] }: DeriveArgs): SearchResults {
+  // Step 1: chip filtering — narrows the screenshot universe to ones
+  // that satisfy every accepted chip BEFORE text matching runs.
+  const screenshots = chips.length > 0 ? applyChipFilters(inputScreenshots, chips) : inputScreenshots;
+
+  // Step 2: text matching — strip stop words so "screen in Weex" with
+  // a Weex chip becomes "screen" instead of "screen in".
+  const cleanedQuery = stripStopWords(query);
+  const tokens = tokensFromQuery(cleanedQuery);
+
+  // No tokens AND no chips → empty modal preview. (No tokens WITH
+  // chips → fall through to the matcher; an empty token list passes
+  // `matchesAllTokens` trivially, so every screenshot in the chip-
+  // scoped set surfaces — gives "show me everything in Weex" with
+  // no text typed.)
+  if (tokens.length === 0 && chips.length === 0) {
     return {
       groups: [],
       flows: [],
