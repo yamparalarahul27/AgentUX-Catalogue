@@ -141,7 +141,8 @@ Working clone is at `~/Desktop/tegaki-fork/` if review feedback comes.
 
 | PR | What | Closed items from this backlog |
 |---|---|---|
-| (this PR) | Changelog page at `/changelog` (46 entries backfilled to Mar 2026) · header history icon opens it in new tab · landing-site changelog removed · WhatsNew panel code preserved for future per-feature intro-sheet work | — |
+| (this PR) | Search: clicking a screenshot result opens the lightbox directly via a synthetic 1-variant family · drops the ⌘K shortcut · removes the broken family-map resolution path | — |
+| #192 | Changelog page at `/changelog` (46 entries backfilled to Mar 2026) · header history icon opens it in new tab · landing-site changelog removed · WhatsNew panel code preserved for future per-feature intro-sheet work | — |
 | #191 | Lightbox layout redesign — title and meta in side panel, close button on screenshot top-left, underline tabs, 12px gutters all around, transparent side panel background | [`parked_lightbox_layout_redesign`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_lightbox_layout_redesign.md) ✅ |
 | #190 | Lightbox squircle corners (Lisse-style) — close, action toolbar, mobile mini-bar, composer + send | — |
 | #189 | iOS PWA: sticky toolbar safe-area inset (no overlap by status bar) | — |

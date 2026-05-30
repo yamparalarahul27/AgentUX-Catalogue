@@ -19,7 +19,7 @@ import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
-import { buildCatalogueFamilies, getActiveFamilyVariant } from '../lib/catalogue-families';
+import { buildCatalogueFamilies, buildSyntheticFamilyFromScreenshot, getActiveFamilyVariant } from '../lib/catalogue-families';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import {
   ensureCatalogueGroupAppearanceLoaded,
@@ -53,7 +53,6 @@ import { CatalogueDropOverlay } from './CatalogueDropOverlay';
 import { CatalogueUploadProgress } from './CatalogueUploadProgress';
 import { CatalogueShareModal } from './CatalogueShareModal';
 import { CatalogueSearchModal } from './CatalogueSearchModal';
-import { DotLoader } from './DotLoader';
 import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
@@ -393,12 +392,13 @@ export function Catalogue({
   const [previewScreenshotHint, setPreviewScreenshotHint] = useState<string | null>(null);
   const [previewStartInlineEdit, setPreviewStartInlineEdit] = useState(false);
   const [pendingPreviewNext, setPendingPreviewNext] = useState(false);
-  // Search-result click landed on a screenshot whose family isn't in
-  // the full-scope map yet (full-scope screenshots arrive in 1000-row
-  // pages async on app mount). We show a loading overlay until the
-  // data hydrates, then transition to the lightbox. Cleared on resolve
-  // or on timeout (see effects below).
-  const [pendingScreenshotId, setPendingScreenshotId] = useState<string | null>(null);
+  // Synthetic family used by search-result clicks. The search modal
+  // hands us the full ScreenshotNode at click time, and we build a
+  // one-variant family from it on the fly — bypassing the family-map
+  // resolution entirely, which was the source of the "wrong screenshot
+  // opens" bug. When set, the lightbox renders this in place of the
+  // fullScopeFamilyById lookup.
+  const [previewFamilyOverride, setPreviewFamilyOverride] = useState<CatalogueFamilyView | null>(null);
   const [recentlyViewedFamilyId, setRecentlyViewedFamilyId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'group' | 'flow' | null>(null);
@@ -524,57 +524,6 @@ export function Catalogue({
     }
     return map;
   }, [allFamilies]);
-  // Parallel inverse map covering the FULL scope. Needed for the
-  // search modal: search runs over fullScopeScreenshots, so it can
-  // surface screenshots whose families aren't in `allFamilies` (which
-  // is built from the paginated / filtered scope). The lightbox
-  // itself already falls back to `fullScopeFamilyById`, but the
-  // search-result handler needs a way to resolve screenshot → family
-  // for those out-of-scope picks.
-  const fullScopeScreenshotIdToFamilyId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const family of Object.values(fullScopeFamilyById)) {
-      for (const variant of family.variants) {
-        map.set(variant.id, family.id);
-      }
-    }
-    return map;
-  }, [fullScopeFamilyById]);
-
-  // Resolves a pending screenshot pick once its family hydrates into
-  // fullScopeFamilyById. Runs again on every full-scope update so the
-  // slow path eventually catches up. The lightbox-open call resets
-  // `pendingScreenshotId` so this effect short-circuits next render.
-  useEffect(() => {
-    if (!pendingScreenshotId) return;
-    const familyId = fullScopeScreenshotIdToFamilyId.get(pendingScreenshotId);
-    if (!familyId) return;
-    const family = fullScopeFamilyById[familyId];
-    if (!family) return;
-    // Confirm the family actually contains a variant matching the
-    // pending screenshot — guards against the case where the family
-    // is in the map but its variant list hasn't caught up yet.
-    const hasVariant = family.variants.some((variant) => variant.id === pendingScreenshotId);
-    if (!hasVariant) return;
-    setPreviewStartInlineEdit(false);
-    setPreviewScreenshotHint(pendingScreenshotId);
-    setPreviewFamilyId(familyId);
-    setPendingScreenshotId(null);
-  }, [pendingScreenshotId, fullScopeScreenshotIdToFamilyId, fullScopeFamilyById]);
-
-  // Loading-overlay safety net: if a pending screenshot doesn't
-  // hydrate within 5 s, abort with a toast instead of stranding the
-  // user in the loading state. Covers screenshots that have been
-  // deleted between the search-modal render and the click.
-  useEffect(() => {
-    if (!pendingScreenshotId) return;
-    const timeout = setTimeout(() => {
-      setToast({ message: 'Could not load that screenshot — try searching again', type: 'error' });
-      setPendingScreenshotId(null);
-    }, 5000);
-    return () => clearTimeout(timeout);
-  }, [pendingScreenshotId]);
-
   const [studioLabelOverrides, setStudioLabelOverrides] = useState<Map<string, ScreenshotLabel>>(new Map());
   const studioTotals = useLabelingStudioTotals();
   const handleStudioLabelPersisted = useCallback((screenshotId: string, label: ScreenshotLabel) => {
@@ -600,9 +549,13 @@ export function Catalogue({
   // present (search-result clicks can target screenshots outside the
   // current filter or pagination window). Falls back to the scoped
   // map if for some reason the full scope hasn't hydrated yet.
-  const previewFamily = previewFamilyId
-    ? (fullScopeFamilyById[previewFamilyId] ?? familyById[previewFamilyId] ?? null)
-    : null;
+  // Override takes precedence so search-result clicks can render their
+  // synthetic family without competing with the (potentially-still-
+  // hydrating) full-scope lookup.
+  const previewFamily = previewFamilyOverride
+    ?? (previewFamilyId
+      ? (fullScopeFamilyById[previewFamilyId] ?? familyById[previewFamilyId] ?? null)
+      : null);
   const {
     handleAnnotationStateChange,
     handleChangeFamilyGroup,
@@ -742,6 +695,9 @@ export function Catalogue({
   // the list is empty).
   useEffect(() => {
     if (!previewFamilyId) return;
+    // Synthetic override is self-contained — don't trip the
+    // "family disappeared" recovery path for it.
+    if (previewFamilyOverride) return;
     if (familyById[previewFamilyId]) return; // still exists, no advance needed
     if (filteredFamilies.length === 0) {
       setPreviewFamilyId(null);
@@ -752,7 +708,7 @@ export function Catalogue({
       ? 0
       : Math.min(previousIndex, filteredFamilies.length - 1);
     setPreviewFamilyId(filteredFamilies[nextIndex].id);
-  }, [familyById, previewFamilyId, filteredFamilies]);
+  }, [familyById, previewFamilyId, previewFamilyOverride, filteredFamilies]);
   useEffect(() => {
     if (!canAdmin && (activeSection === 'team' || activeSection === 'studio')) {
       setActiveSection('catalogue');
@@ -901,6 +857,7 @@ export function Catalogue({
   function openPreview(familyId: string) {
     setPreviewStartInlineEdit(false);
     setPreviewScreenshotHint(null);
+    setPreviewFamilyOverride(null);
     setPreviewFamilyId(familyId);
   }
 
@@ -912,6 +869,7 @@ export function Catalogue({
     if (nextIndex >= 0 && nextIndex < filteredFamilies.length) {
       setPreviewStartInlineEdit(false);
       setPreviewScreenshotHint(null);
+      setPreviewFamilyOverride(null);
       setPreviewFamilyId(filteredFamilies[nextIndex].id);
       return;
     }
@@ -1500,6 +1458,7 @@ export function Catalogue({
             setPreviewFamilyId(null);
             setPreviewScreenshotHint(null);
             setPreviewStartInlineEdit(false);
+            setPreviewFamilyOverride(null);
             setPendingPreviewNext(false);
             setRecentlyViewedFamilyId(lastViewed);
           }}
@@ -1633,27 +1592,16 @@ export function Catalogue({
           setFilterFlow([flow]);
           setFilterPlatform(null);
         }}
-        onOpenScreenshot={(screenshotId) => {
-          // Fast path: full-scope already has the family AND a variant
-          // matching this screenshot. Open the lightbox synchronously
-          // so there's no perceptible loading state.
-          const familyId = fullScopeScreenshotIdToFamilyId.get(screenshotId);
-          const family = familyId ? fullScopeFamilyById[familyId] : null;
-          if (familyId && family && family.variants.some((variant) => variant.id === screenshotId)) {
-            setPreviewStartInlineEdit(false);
-            // Hint the lightbox to land on this exact screenshot row,
-            // not just any variant in the family — necessary because
-            // search results can target a specific variant the user
-            // wouldn't see by clicking the catalogue card.
-            setPreviewScreenshotHint(screenshotId);
-            setPreviewFamilyId(familyId);
-            return;
-          }
-          // Slow path: full-scope is still hydrating (pages load 1000
-          // rows at a time async). Show the loading overlay; the
-          // resolver effect above transitions to the lightbox as
-          // soon as the family becomes available.
-          setPendingScreenshotId(screenshotId);
+        onOpenScreenshot={(screenshot) => {
+          // Build a one-variant synthetic family from the screenshot
+          // record the search modal hands us — no family-map lookup,
+          // no async wait, no "wrong screenshot" fallback. The lightbox
+          // renders this directly via the previewFamilyOverride path.
+          const synthetic = buildSyntheticFamilyFromScreenshot(screenshot, presetByKey);
+          setPreviewStartInlineEdit(false);
+          setPreviewScreenshotHint(screenshot.id);
+          setPreviewFamilyId(synthetic.id);
+          setPreviewFamilyOverride(synthetic);
         }}
         onCommitQuery={(committed) => {
           // Push the search into the catalogue's actual filter
@@ -1663,23 +1611,6 @@ export function Catalogue({
           setSearchQuery(committed);
         }}
       />
-      {/* Loading overlay shown when a search-result screenshot is
-          waiting for its family to hydrate. Click anywhere on the
-          backdrop to abort (clears pendingScreenshotId). */}
-      {pendingScreenshotId && (
-        <div
-          className="catalogue-screenshot-loading"
-          role="status"
-          aria-live="polite"
-          aria-label="Loading screenshot"
-          onClick={() => setPendingScreenshotId(null)}
-        >
-          <div className="catalogue-screenshot-loading__card">
-            <DotLoader size="md" ariaLabel="Loading screenshot" />
-            <span>Loading screenshot…</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

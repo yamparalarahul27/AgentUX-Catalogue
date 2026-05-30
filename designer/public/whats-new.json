@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-29-search-direct-open",
+    "date": "May 29, 2026",
+    "title": "Search → click → lightbox, in one click",
+    "bullets": [
+      { "kind": "improved", "text": "Clicking a screenshot result in Search now opens the lightbox directly on that exact screenshot — no more triple-click through narrow → commit → grid card" },
+      { "kind": "improved", "text": "Works for screenshots outside the current filter / pagination window — the lightbox renders the exact screenshot you picked, never a fallback" },
+      { "kind": "fix", "text": "Dropped the ⌘K search shortcut (redundant with `/`) — modal hint and tooltip updated to match" }
+    ]
+  },
+  {
     "id": "2026-05-29-changelog",
     "date": "May 29, 2026",
     "title": "Changelog has a home",

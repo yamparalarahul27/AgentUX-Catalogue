@@ -29,10 +29,11 @@ interface CatalogueSearchModalProps {
   onSelectFlow: (group: string, flow: string) => void;
   // Open the lightbox directly on a specific screenshot. Fired when a
   // user picks a screenshot result (click or Enter while highlighted).
-  // The parent resolves screenshot → family via screenshotIdToFamilyId
-  // and sets the preferred-variant hint so the lightbox lands on the
-  // exact screenshot row, not just any variant in the family.
-  onOpenScreenshot: (screenshotId: string) => void;
+  // We pass the whole ScreenshotNode (not just the id) so the parent
+  // can build a synthetic single-variant family at click time, without
+  // having to resolve through the family map — which can lag the
+  // full-scope hydration and silently fall back to the wrong variant.
+  onOpenScreenshot: (screenshot: ScreenshotNode) => void;
   // Commit the query into the catalogue scope — modal closes and the
   // catalogue grid scopes itself to the search query. Triggered by
   // the "View all in catalogue" CTA, Cmd/Ctrl+Enter, or plain Enter
@@ -142,7 +143,7 @@ export function CatalogueSearchModal({
     // name to let the user narrow first; that meant 3 clicks to reach
     // the lightbox. Direct-open is the natural intent.)
     pushRecent(query);
-    onOpenScreenshot(result.screenshot.id);
+    onOpenScreenshot(result.screenshot);
     onClose();
   }
 
