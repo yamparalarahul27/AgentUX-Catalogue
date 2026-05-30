@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Search → screenshot click should open the lightbox directly</title>
+<style>
+  :root {
+    --bg: #0d0d0e;
+    --surface: #161618;
+    --surface-2: #1d1d20;
+    --border: #27272a;
+    --text: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --good: #4ade80;
+    --warn: #f59e0b;
+    --bad: #f87171;
+    --highlight: rgba(251,191,36,0.32);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  .page { max-width: 1240px; margin: 0 auto; padding: 48px 32px 80px; }
+
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lede { color: var(--text-muted); margin: 0 0 8px; font-size: 14.5px; max-width: 760px; }
+
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 20px 0 48px;
+  }
+  .summary h3 { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .summary p { margin: 0 0 8px; font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+  .summary p:last-child { margin: 0; }
+  .summary strong { color: var(--text); }
+
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-bottom: 56px;
+  }
+  .lane {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .lane--bad { border-color: rgba(248,113,113,0.25); background: rgba(248,113,113,0.03); }
+  .lane--good { border-color: rgba(74,222,128,0.25); background: rgba(74,222,128,0.03); }
+
+  .lane h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .lane--bad h2 { color: var(--bad); }
+  .lane--good h2 { color: var(--good); }
+  .lane .clicks { color: var(--text-dim); font-size: 13px; margin: 0 0 18px; }
+  .lane--bad .clicks { color: var(--bad); }
+  .lane--good .clicks { color: var(--good); font-weight: 600; }
+
+  .step {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .step:last-child { margin-bottom: 0; }
+  .step__head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .step__num {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .lane--bad .step__num { background: rgba(248,113,113,0.18); color: var(--bad); }
+  .lane--good .step__num { background: rgba(74,222,128,0.18); color: var(--good); }
+  .step__title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .step__body { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+  .step__body code {
+    font: 11px/1.4 ui-monospace, SF Mono, Menlo, monospace;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--text);
+  }
+
+  .mini-modal {
+    margin-top: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .mini-modal__input {
+    background: var(--surface-2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--text);
+    font-family: ui-monospace, SF Mono, Menlo, monospace;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .mini-modal__row {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(99,102,241,0.12);
+    color: var(--text);
+    font-size: 11px;
+  }
+  .mini-modal mark { background: var(--highlight); color: var(--text); padding: 0 2px; border-radius: 2px; }
+
+  /* ── What stays / changes ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0;
+    overflow: hidden;
+    margin-bottom: 40px;
+  }
+  .table-card table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .table-card th, .table-card td {
+    text-align: left;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-card tr:last-child td { border-bottom: 0; }
+  .table-card th { color: var(--text-dim); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; background: var(--surface-2); }
+  .table-card td { color: var(--text-muted); }
+  .table-card td:first-child { color: var(--text); font-weight: 500; width: 200px; }
+  .table-card .yes { color: var(--good); font-weight: 600; }
+  .table-card .change { color: var(--warn); font-weight: 600; }
+  .table-card .no { color: var(--bad); font-weight: 600; }
+
+  .question {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    padding: 22px 26px;
+  }
+  .question h3 { margin: 0 0 12px; font-size: 16px; color: var(--accent-hover); }
+  .question p { margin: 0 0 8px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+  .question ul { margin: 0; padding-left: 22px; color: var(--text-muted); font-size: 13.5px; }
+  .question ul li { margin-bottom: 6px; }
+  .question strong { color: var(--text); }
+
+  .arrow {
+    text-align: center;
+    font-size: 18px;
+    color: var(--text-dim);
+    margin: 6px 0;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Search → click a screenshot should open it in the lightbox</h1>
+  <p class="lede">
+    Today: <strong style="color: var(--text);">3 clicks</strong> from search result to seeing the screenshot. Proposed: <strong style="color: var(--text);">1 click</strong>. Below is what I understood from your description — confirm before I touch any code.
+  </p>
+
+  <div class="summary">
+    <h3>What I think you meant</h3>
+    <p>When you click a <strong>screenshot result</strong> inside the search modal, you expect it to <strong>open the lightbox directly</strong> for that specific screenshot. Today it instead refills the search box with that screenshot's name, requires another click to commit, and then yet another click on the catalogue card to actually open the lightbox.</p>
+    <p>This change applies to <strong>screenshot results only</strong>. Group results and Flow results should keep their current behavior (close modal + apply filter), since "narrow the catalogue to this group/flow" is the natural intent there.</p>
+  </div>
+
+  <!-- ============ TODAY vs PROPOSED ============ -->
+  <div class="compare">
+
+    <!-- BAD lane -->
+    <div class="lane lane--bad">
+      <h2>Today</h2>
+      <p class="clicks">3 clicks to reach the lightbox</p>
+
+      <div class="step">
+        <div class="step__head">
+          <span class="step__num">1</span>
+          <span class="step__title">You type "deposit" and see results</span>
+        </div>
+        <div class="step__body">
+          Modal opens, three sections appear — Screenshots · Groups · Flows.
+          <div class="mini-modal">
+            <div class="mini-modal__input">deposit|</div>
+            <div class="mini-modal__row">🖼 BTC <mark>Deposit</mark> · Confirmation</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step__head">
+          <span class="step__num">2</span>
+          <span class="step__title">You click a screenshot result</span>
+        </div>
+        <div class="step__body">
+          Search box gets <strong style="color: var(--text);">refilled</strong> with the screenshot's full name. Modal stays open. Other results disappear.
+          <div class="mini-modal">
+            <div class="mini-modal__input">BTC Deposit · Confirmation|</div>
+            <div class="mini-modal__row">🖼 BTC Deposit · Confirmation</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step__head">
+          <span class="step__num">3</span>
+          <span class="step__title">You click again (Enter, the row, or "View all")</span>
+        </div>
+        <div class="step__body">
+          Modal closes, catalogue applies the search filter, shows the single matching card.
+          <code>?search=BTC+Deposit...</code>
+        </div>
+      </div>
+
+      <div class="arrow">↓</div>
+
+      <div class="step" style="border-color: var(--bad); background: rgba(248,113,113,0.06);">
+        <div class="step__head">
+          <span class="step__num">4</span>
+          <span class="step__title">You click the card in the grid to finally open the lightbox</span>
+        </div>
+        <div class="step__body" style="color: var(--bad);">
+          (You wanted this on click #2.)
+        </div>
+      </div>
+    </div>
+
+    <!-- GOOD lane -->
+    <div class="lane lane--good">
+      <h2>Proposed</h2>
+      <p class="clicks">1 click to reach the lightbox</p>
+
+      <div class="step">
+        <div class="step__head">
+          <span class="step__num">1</span>
+          <span class="step__title">You type "deposit" and see results</span>
+        </div>
+        <div class="step__body">
+          Same as today.
+          <div class="mini-modal">
+            <div class="mini-modal__input">deposit|</div>
+            <div class="mini-modal__row">🖼 BTC <mark>Deposit</mark> · Confirmation</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step__head">
+          <span class="step__num">2</span>
+          <span class="step__title">You click the screenshot result</span>
+        </div>
+        <div class="step__body">
+          Modal closes <strong style="color: var(--good);">and the lightbox opens immediately</strong> on that specific screenshot. Done.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ WHAT STAYS / CHANGES ============ -->
+  <h2 style="font-size: 18px; margin: 0 0 16px;">What stays, what changes</h2>
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Today</th>
+          <th>Proposed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Click a <strong>Screenshot</strong> result</td>
+          <td>Refills search input</td>
+          <td><span class="change">Open lightbox directly</span></td>
+        </tr>
+        <tr>
+          <td>Click a <strong>Group</strong> result</td>
+          <td>Close modal · filter catalogue to that group</td>
+          <td><span class="yes">Unchanged</span></td>
+        </tr>
+        <tr>
+          <td>Click a <strong>Flow</strong> result</td>
+          <td>Close modal · filter to that group + flow</td>
+          <td><span class="yes">Unchanged</span></td>
+        </tr>
+        <tr>
+          <td>Press <strong>Enter</strong> with no selection</td>
+          <td>Commit query · show all matches in catalogue grid</td>
+          <td><span class="yes">Unchanged</span></td>
+        </tr>
+        <tr>
+          <td>Press <strong>Enter</strong> with a screenshot row highlighted (arrow keys)</td>
+          <td>Refills search input (same as click)</td>
+          <td><span class="change">Open lightbox directly</span></td>
+        </tr>
+        <tr>
+          <td>Click <strong>"View all N results"</strong> button</td>
+          <td>Commit query · show all matches in catalogue grid</td>
+          <td><span class="yes">Unchanged</span></td>
+        </tr>
+        <tr>
+          <td>Save to <strong>Recents</strong></td>
+          <td>On Group / Flow click + on commit-query</td>
+          <td><span class="change">Also save on Screenshot click</span> (current code skips screenshot picks)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ CONFIRMATION ============ -->
+  <div class="question">
+    <h3>Two things to confirm before I code</h3>
+    <p><strong>1.</strong> Is there ever a case where you'd want to <em>narrow further</em> after clicking a screenshot result (the current behavior)? If yes, we'd need a way to keep that option — e.g. only the click goes to lightbox, while typing more still narrows. If no, we just remove the narrow-on-click behavior entirely.</p>
+    <p><strong>2.</strong> Should the screenshot click also save the query to <strong>Recents</strong>? Today screenshot clicks don't save; Group / Flow clicks do. Saving feels consistent — you clearly used the search successfully — but I want to make sure that aligns with what you have in mind.</p>
+    <p style="margin-top: 14px; color: var(--text-dim); font-size: 13px;">Once you answer these, I'll wire it up.</p>
+  </div>
+
+</div>
+</body>
+</html>

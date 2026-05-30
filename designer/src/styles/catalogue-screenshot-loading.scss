@@ -1,0 +1,39 @@
+// Loading overlay shown when a search-result screenshot is waiting
+// for its family data to hydrate from the full-scope fetch. Sits
+// above everything (matches lightbox z-index ladder) and dismisses
+// on click of the backdrop.
+
+.catalogue-screenshot-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: catalogue-screenshot-loading-fade 0.15s ease-out;
+}
+
+.catalogue-screenshot-loading__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 36px;
+  background: rgba(22, 22, 24, 0.96);
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  color: #f4f4f5;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: default;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes catalogue-screenshot-loading-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

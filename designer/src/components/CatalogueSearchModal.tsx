@@ -27,6 +27,12 @@ interface CatalogueSearchModalProps {
   appearanceMap: CatalogueGroupAppearanceMap;
   onSelectGroup: (group: string) => void;
   onSelectFlow: (group: string, flow: string) => void;
+  // Open the lightbox directly on a specific screenshot. Fired when a
+  // user picks a screenshot result (click or Enter while highlighted).
+  // The parent resolves screenshot → family via screenshotIdToFamilyId
+  // and sets the preferred-variant hint so the lightbox lands on the
+  // exact screenshot row, not just any variant in the family.
+  onOpenScreenshot: (screenshotId: string) => void;
   // Commit the query into the catalogue scope — modal closes and the
   // catalogue grid scopes itself to the search query. Triggered by
   // the "View all in catalogue" CTA, Cmd/Ctrl+Enter, or plain Enter
@@ -70,6 +76,7 @@ export function CatalogueSearchModal({
   appearanceMap,
   onSelectGroup,
   onSelectFlow,
+  onOpenScreenshot,
   onCommitQuery,
 }: CatalogueSearchModalProps) {
   const [query, setQuery] = useState('');
@@ -130,14 +137,13 @@ export function CatalogueSearchModal({
       onClose();
       return;
     }
-    // Screenshot card: fill the input with the screenshot's full
-    // name so results narrow to it. User can then press Enter (or
-    // click the "View all" CTA) to commit and reach the card in the
-    // catalogue grid — clicking the card there opens the lightbox
-    // reliably (same data source as the rendered card).
-    setQuery(result.screenshot.name);
-    setHasInteracted(false);
-    inputRef.current?.focus();
+    // Screenshot card: open the lightbox directly on this screenshot.
+    // (Previously this refilled the input with the screenshot's full
+    // name to let the user narrow first; that meant 3 clicks to reach
+    // the lightbox. Direct-open is the natural intent.)
+    pushRecent(query);
+    onOpenScreenshot(result.screenshot.id);
+    onClose();
   }
 
   function selectRecent(entry: RecentEntry) {

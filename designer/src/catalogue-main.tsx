@@ -30,6 +30,7 @@ import './styles/catalogue-scroll-top.scss';
 import './styles/catalogue-lightbox-crop.scss';
 import './styles/catalogue-group-coverage.scss';
 import './styles/changelog-page.scss';
+import './styles/catalogue-screenshot-loading.scss';
 import './styles/catalogue-quick-panel.scss';
 import './styles/catalogue-stack.scss';
 import './styles/catalogue-skeleton.scss';
