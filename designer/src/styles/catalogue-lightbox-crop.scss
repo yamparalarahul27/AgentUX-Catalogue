@@ -58,14 +58,16 @@
   height: 18px;
   cursor: ns-resize;
 
+  // Dashed guide line — matches Photoshop / Figma convention for the
+  // edges of a kept crop region. The element's bounding box has zero
+  // height beyond the border itself, so only the dashed stroke shows.
   &::before {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
     top: 50%;
-    height: 2px;
-    background: #6366f1;
+    border-top: 2px dashed #6366f1;
     transform: translateY(-50%);
   }
 }
@@ -80,8 +82,7 @@
     top: 0;
     bottom: 0;
     left: 50%;
-    width: 2px;
-    background: #6366f1;
+    border-left: 2px dashed #6366f1;
     transform: translateX(-50%);
   }
 }

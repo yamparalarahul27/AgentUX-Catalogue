@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-05-29-crop-dashed-guides",
+    "date": "May 29, 2026",
+    "title": "Crop — dashed guide lines",
+    "bullets": [
+      { "kind": "improved", "text": "The crop region's edge guides are now dashed indigo lines, matching the Photoshop / Figma convention. The round drag-grips stay solid" }
+    ]
+  },
+  {
     "id": "2026-05-29-icon-button-hover",
     "date": "May 29, 2026",
     "title": "Icon buttons feel alive",
