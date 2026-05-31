@@ -1,0 +1,58 @@
+// Subtle micro-interaction layer for every icon-button across the app.
+//
+// On hover: scale(1.06) — gentle "this is alive" feedback. Just enough
+// motion to register; not enough to feel cartoonish on a 30-button row.
+//
+// On active (mousedown / tap): scale(0.95) — tactile press confirmation.
+// Especially important on touchscreens where the press has no other
+// physical signal.
+//
+// On disabled: no transform — keeps the dead state actually dead.
+//
+// Respects prefers-reduced-motion: users who opt out of motion get
+// neither the hover nor the active transform. The buttons stay
+// functional; they just don't move.
+//
+// Implementation note: each rule below preserves any existing transform
+// the class already has (none today, but future-proof) by using a CSS
+// variable handoff would over-engineer this. If a future class needs
+// to layer transforms, refactor to a custom property at that time.
+
+$icon-button-hover-transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+%icon-button-interactions {
+  transition: $icon-button-hover-transition, background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    transform: scale(1.06);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  // Some buttons already declare their own `transition` — the rule
+  // above will override it. If a button needs a fancier transition,
+  // it should opt OUT by setting `transition` after `@extend`.
+}
+
+@media (prefers-reduced-motion: reduce) {
+  %icon-button-interactions {
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      transform: none;
+    }
+  }
+}
+
+// Apply the placeholder to every icon-button class in the app.
+.catalogue-header__icon-btn,
+.catalogue-lightbox-icon-btn,
+.catalogue-lightbox-close,
+.catalogue-lightbox-media-close,
+.catalogue-lightbox-mini-actions__btn,
+.catalogue-members__icon-btn {
+  @extend %icon-button-interactions;
+}
