@@ -27,7 +27,6 @@ Last updated: 2026-05-27 (latest) — Backlog audit pass after user QA. Moved 3 
 | Item | Area | Source |
 |---|---|---|
 | Rename "Bookmarks" → "Saved" + parabolic flight animation to the nav entry on save | Sidebar / micro-interaction | [Mobbin backlog #1 + #9](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
-| Subtle hover scale/rotate on every icon-button | Polish | [Mobbin backlog #2](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_mobbin_ux_backlog.md) |
 | Icons for Filter / Group / Flow / Group View in toolbar | Toolbar | [`parked_toolbar_filter_icons`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_toolbar_filter_icons.md) |
 | Concentric corner radii audit — apply `inner = outer − padding` wherever a rounded element sits inside another rounded container with non-zero padding | Polish / design system | [`feedback_concentric_corner_radii`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/feedback_concentric_corner_radii.md) |
 | Restyle Edit/Share buttons to match Figma design-system pill (needs Figma reference) | Group detail | [`parked_edit_share_pill_styling`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_edit_share_pill_styling.md) |
