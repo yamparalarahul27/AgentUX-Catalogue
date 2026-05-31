@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-05-29-videos-tabs",
+    "date": "May 29, 2026",
+    "title": "Videos — X (Twitter) and Family Values split into tabs",
+    "bullets": [
+      { "kind": "improved", "text": "The Videos section now has two tabs — X (Twitter) and Family Values — instead of stacking both grids on one page" },
+      { "kind": "improved", "text": "X (Twitter) opens by default; the URL remembers your choice (`?tab=family`) so you can bookmark or share it" },
+      { "kind": "improved", "text": "The Add X Post input, tag filter strip, and Sort dropdown only show on the X tab — Family Values stays clean" }
+    ]
+  },
+  {
     "id": "2026-05-29-advance-search",
     "date": "May 29, 2026",
     "title": "Advance Search — entity-aware chips",
