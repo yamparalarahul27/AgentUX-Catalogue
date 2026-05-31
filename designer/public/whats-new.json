@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-05-29-icon-button-hover",
+    "date": "May 29, 2026",
+    "title": "Icon buttons feel alive",
+    "bullets": [
+      { "kind": "improved", "text": "Every icon button (header, lightbox actions, mobile mini-bar, members panel) now subtly scales on hover and presses down on click — tactile feedback that compounds across surfaces" },
+      { "kind": "improved", "text": "Respects `prefers-reduced-motion` — users who opt out of motion get static buttons" }
+    ]
+  },
+  {
     "id": "2026-05-29-videos-tabs",
     "date": "May 29, 2026",
     "title": "Videos — X (Twitter) and Family Values split into tabs",
