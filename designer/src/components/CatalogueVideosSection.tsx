@@ -311,6 +311,7 @@ export function CatalogueVideosSection({
   userEmail,
 }: CatalogueVideosSectionProps) {
   const [previewItemKey, setPreviewItemKey] = useState<string | null>(null);
+
   // Lock body scroll while the video preview is open so the catalogue
   // page beneath doesn't scroll-through (the bug visible on mobile).
   // Mirrors the pattern in Catalogue.tsx's isAnyModalOpen effect, but
@@ -330,6 +331,39 @@ export function CatalogueVideosSection({
       document.body.style.paddingRight = previousPaddingRight;
     };
   }, [previewItemKey]);
+
+  // Two-tab split for the Videos section: X (Twitter) is the default
+  // because it's the growing collection (you keep adding posts), and
+  // Family Values is a fixed reference set. URL-synced via `?tab=`
+  // so the choice survives reload + can be shared.
+  type VideoTab = 'x' | 'family';
+  const [activeTab, setActiveTab] = useState<VideoTab>(() => {
+    if (typeof window === 'undefined') return 'x';
+    const param = new URLSearchParams(window.location.search).get('tab');
+    return param === 'family' ? 'family' : 'x';
+  });
+  // Mirror activeTab → URL on change; only touch `?tab=`, leave any
+  // other params untouched.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (activeTab === 'x') params.delete('tab'); // default — keep URL clean
+    else params.set('tab', activeTab);
+    const next = params.toString();
+    const url = next ? `${window.location.pathname}?${next}` : window.location.pathname;
+    window.history.replaceState({}, '', url);
+  }, [activeTab]);
+  // Back/forward button respect — sync from URL on popstate.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    function handlePopState() {
+      const param = new URLSearchParams(window.location.search).get('tab');
+      setActiveTab(param === 'family' ? 'family' : 'x');
+    }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [commentDraft, setCommentDraft] = useState('');
   const [commentsByVideo, setCommentsByVideo] = useState<Record<string, VideoComment[]>>({});
   const [xPostInput, setXPostInput] = useState('');
@@ -801,8 +835,35 @@ export function CatalogueVideosSection({
           </div>
         </header>
 
+        {/* Tab strip — X first (the growing collection), Family Values
+            second (fixed reference set). Tab choice URL-synced via ?tab. */}
+        <div className="catalogue-videos__tabs" role="tablist" aria-label="Video source">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'x'}
+            className={`catalogue-videos__tab${activeTab === 'x' ? ' is-active' : ''}`}
+            onClick={() => setActiveTab('x')}
+          >
+            X (Twitter)
+            <span className="catalogue-videos__tab-count">{xPosts.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'family'}
+            className={`catalogue-videos__tab${activeTab === 'family' ? ' is-active' : ''}`}
+            onClick={() => setActiveTab('family')}
+          >
+            Family Values
+            <span className="catalogue-videos__tab-count">{REFERENCE_VIDEOS.length}</span>
+          </button>
+        </div>
+
         {loadError && <p className="catalogue-videos__error">{loadError}</p>}
 
+        {activeTab === 'x' && (
+          <>
         <div className="catalogue-videos__add-row">
           <input
             type="text"
@@ -976,8 +1037,12 @@ export function CatalogueVideosSection({
                 </div>
               </>
             )}
+              </>
+            )}
+          </>
+        )}
 
-            <h3 className="catalogue-videos__section-title">Family Values Clips</h3>
+        {activeTab === 'family' && (
             <div className="catalogue-videos__grid">
               {REFERENCE_VIDEOS.map((video) => (
                 <article key={video.id} className="catalogue-videos__card">
@@ -1007,7 +1072,6 @@ export function CatalogueVideosSection({
                 </article>
               ))}
             </div>
-          </>
         )}
       </section>
 

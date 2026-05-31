@@ -29,6 +29,59 @@
   }
 }
 
+// Tab strip splitting the Videos section into X (Twitter) and Family
+// Values. Underline-on-active matches the lightbox tab style (PR #191).
+.catalogue-videos__tabs {
+  display: flex;
+  gap: 24px;
+  padding: 4px 0 0;
+  margin: 0 0 24px;
+  border-bottom: 1px solid #27272a;
+}
+
+.catalogue-videos__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 2px;
+  border: 0;
+  background: transparent;
+  color: #71717a;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: #d4d4d8;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  &.is-active {
+    color: #fafafa;
+    border-bottom-color: #fafafa;
+  }
+}
+
+.catalogue-videos__tab-count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #a1a1aa;
+  font-variant-numeric: tabular-nums;
+
+  .catalogue-videos__tab.is-active & {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fafafa;
+  }
+}
+
 .catalogue-videos__add-row {
   display: flex;
   align-items: center;
