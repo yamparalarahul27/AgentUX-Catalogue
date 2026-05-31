@@ -312,6 +312,26 @@ export function CatalogueVideosSection({
 }: CatalogueVideosSectionProps) {
   const [previewItemKey, setPreviewItemKey] = useState<string | null>(null);
 
+  // Lock body scroll while the video preview is open so the catalogue
+  // page beneath doesn't scroll-through (the bug visible on mobile).
+  // Mirrors the pattern in Catalogue.tsx's isAnyModalOpen effect, but
+  // owned here because previewItemKey is local to this section and
+  // isn't part of the catalogue-level modal aggregate.
+  useEffect(() => {
+    if (!previewItemKey) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, [previewItemKey]);
+
   // Two-tab split for the Videos section: X (Twitter) is the default
   // because it's the growing collection (you keep adding posts), and
   // Family Values is a fixed reference set. URL-synced via `?tab=`
