@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-05-29-videos-scroll-lock",
+    "date": "May 29, 2026",
+    "title": "Videos — preview locks background scroll on mobile",
+    "bullets": [
+      { "kind": "fix", "text": "Opening a video preview on mobile no longer lets the catalogue page scroll behind it" }
+    ]
+  },
+  {
     "id": "2026-05-29-advance-search",
     "date": "May 29, 2026",
     "title": "Advance Search — entity-aware chips",
