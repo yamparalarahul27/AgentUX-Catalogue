@@ -16,7 +16,7 @@ import {
   Volume2,
 } from 'lucide-react';
 
-import agentuxLogo from '../assets/agentux-logo.svg';
+import agentuxMark from '../assets/agentux-mark.svg';
 import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
 import { useViewportWidth } from '../hooks/use-viewport-width';
 import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
@@ -82,6 +82,10 @@ export function CatalogueHeader({
   // is a desktop-only surface.
   const showStudioEntry =
     canLabelingStudio && LABELING_STUDIO_ENABLED && viewportWidth >= LABELING_STUDIO_MIN_VIEWPORT_PX;
+  // Elements browse view isn't responsive-ready yet — drill-in grid +
+  // sub-tabs + drilldown filters all assume desktop widths. Hide the
+  // entry on mobile so users can't land somewhere broken.
+  const showElementsEntry = viewportWidth >= 768;
   // Mobile header: shorten the identity pill to the first letter of the
   // username so the absolute-centered tabs pill has room on the right and
   // doesn't overlap. Threshold matches the tab-collapse rule (900px).
@@ -153,7 +157,12 @@ export function CatalogueHeader({
   return (
     <header className="catalogue-header catalogue-header--centered">
       <div className="catalogue-header__title">
-        <img src={agentuxLogo} alt="AgentUX logo" className="catalogue-header-logo" />
+        <img
+          src={agentuxMark}
+          alt="AgentUX"
+          title="AgentUX"
+          className="catalogue-header-logo"
+        />
       </div>
 
       <div className="catalogue-header__tabs" role="tablist" aria-label="Catalogue sections">
@@ -167,16 +176,18 @@ export function CatalogueHeader({
         >
           Catalogue
         </button>
-        <button
-          type="button"
-          role="tab"
-          className={`catalogue-header__tab ${activeSection === 'elements' ? 'is-active' : ''}`}
-          aria-selected={activeSection === 'elements'}
-          onClick={() => onSectionChange('elements')}
-          data-short="E"
-        >
-          Elements
-        </button>
+        {showElementsEntry && (
+          <button
+            type="button"
+            role="tab"
+            className={`catalogue-header__tab ${activeSection === 'elements' ? 'is-active' : ''}`}
+            aria-selected={activeSection === 'elements'}
+            onClick={() => onSectionChange('elements')}
+            data-short="E"
+          >
+            Elements
+          </button>
+        )}
         <button
           type="button"
           role="tab"

@@ -27,7 +27,7 @@ import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { SharePageCarousel, type SharePageCarouselItem } from './SharePageCarousel';
 import { ThumbHashImage } from './ThumbHashImage';
 
-import agentuxLogo from '../assets/agentux-logo.svg';
+import agentuxMark from '../assets/agentux-mark.svg';
 
 type FetchState =
   | { kind: 'loading' }
@@ -272,8 +272,8 @@ export function SharePage() {
   return (
     <div className="share-page">
       <header className={`share-page__top${lastUpdatedRelative ? '' : ' share-page__top--centered'}`}>
-        <a href="/" className="share-page__brand" aria-label="AgentUX home">
-          <img src={agentuxLogo} alt="AgentUX" />
+        <a href="/" className="share-page__brand" aria-label="AgentUX home" title="AgentUX">
+          <img src={agentuxMark} alt="AgentUX" />
         </a>
         {lastUpdatedRelative && (
           <span
