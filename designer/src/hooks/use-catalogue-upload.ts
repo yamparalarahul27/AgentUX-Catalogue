@@ -40,6 +40,12 @@ interface UseCatalogueUploadArgs {
   allFamilies: CatalogueFamilyView[];
   fullScopeScreenshots?: ScreenshotNode[];
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
+  // Dual-scope: every screenshot mutation MUST update both arrays or
+  // surfaces that read full-scope (Studio, chip strip, facet counters)
+  // go stale. Optional only so existing callers without full-scope
+  // wiring don't break; callers that want Studio + similar surfaces
+  // to see fresh uploads must pass this.
+  setFullScopeScreenshots?: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
   userEmail?: string | null;
   userId: string;
@@ -50,6 +56,7 @@ export function useCatalogueUpload({
   allFamilies,
   fullScopeScreenshots,
   setScreenshots,
+  setFullScopeScreenshots,
   setToast,
   userEmail,
   userId,
@@ -380,6 +387,12 @@ export function useCatalogueUpload({
 
     if (inserted.length > 0) {
       setScreenshots((previous) => [...inserted, ...previous]);
+      // Dual-scope sync — full-scope is what the Studio + chip strip +
+      // facet counters read. Without this, fresh uploads never appear
+      // in those surfaces until a hard refresh.
+      if (setFullScopeScreenshots) {
+        setFullScopeScreenshots((previous) => [...inserted, ...previous]);
+      }
       inserted.forEach((item) => {
         updateActiveVariant(getScreenshotFamilyId(item), getVariantKey(item));
       });
@@ -543,6 +556,10 @@ export function useCatalogueUpload({
 
     if (inserted.length > 0) {
       setScreenshots((previous) => [...inserted, ...previous]);
+      // Dual-scope sync — see comment in handleUploadAll's insert path.
+      if (setFullScopeScreenshots) {
+        setFullScopeScreenshots((previous) => [...inserted, ...previous]);
+      }
       inserted.forEach((item) => {
         updateActiveVariant(getScreenshotFamilyId(item), getVariantKey(item));
       });

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-01-studio-fixes-trio",
+    "date": "June 1, 2026",
+    "title": "Labelling Studio — three fixes",
+    "bullets": [
+      { "kind": "fix", "text": "Opening the Studio now refetches the full screenshot set, so anything that landed in the catalogue from any source (Quick Upload, Telegram bot, other sessions) appears immediately" },
+      { "kind": "fix", "text": "Clicking a Studio card now opens the lightbox on the screenshot you clicked, not the latest variant in that family" },
+      { "kind": "improved", "text": "Studio grid paginates 50 cards per page with explicit page tabs — was mounting the entire library in one render (~2,000+ cards) and tanking performance" }
+    ]
+  },
+  {
     "id": "2026-06-01-studio-lightbox-fix",
     "date": "June 1, 2026",
     "title": "Labelling Studio — lightbox opens correctly on every card",

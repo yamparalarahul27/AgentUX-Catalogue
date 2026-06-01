@@ -91,6 +91,83 @@ $success: #22c55e;
   text-align: center;
 }
 
+// Pagination — page-number tabs + Prev/Next at the bottom of the grid.
+.labeling-studio__pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0 16px;
+}
+
+.labeling-studio__pagination-status {
+  color: $text-dim;
+  font-size: 12px;
+  margin: 0;
+
+  strong {
+    color: $text;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.labeling-studio__pagination-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.labeling-studio__page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #27272a;
+  background: transparent;
+  color: $text-dim;
+  font-family: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled):not(.is-active) {
+    color: $text;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: #3f3f46;
+  }
+
+  &.is-active {
+    background: rgba(99, 102, 241, 0.20);
+    border-color: rgba(99, 102, 241, 0.40);
+    color: #c7d2fe;
+    cursor: default;
+  }
+
+  &:disabled {
+    opacity: 0.40;
+    cursor: not-allowed;
+  }
+}
+
+.labeling-studio__page-btn--nav {
+  padding: 0 6px;
+}
+
+.labeling-studio__page-gap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  color: $text-dim;
+  font-size: 13px;
+  user-select: none;
+}
+
 .labeling-studio-card {
   display: flex;
   flex-direction: column;
