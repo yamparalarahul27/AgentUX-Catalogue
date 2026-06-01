@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-06-02-resize-handles-and-ui-e-tab",
+    "date": "June 2, 2026",
+    "title": "Lightbox: resize handles + UI-E tab + cleaner Comments view",
+    "bullets": [
+      { "kind": "new", "text": "Area annotations now have 8 resize handles — drag any corner or edge to re-bbox without delete-and-redraw. Works for both saved annotations and the draft frame when refining AI suggestions" },
+      { "kind": "new", "text": "New UI-E (UI Elements) tab in the lightbox listing every annotation tagged as a UI Element. Click any row to highlight that region on the screenshot" },
+      { "kind": "improved", "text": "Comments tab now shows a clean screenshot — annotations are tab-scoped so the image isn't cluttered when you're reading or writing comments. Annotation overlay only shows on Ann + UI-E tabs" },
+      { "kind": "improved", "text": "Tab labels shortened to Com / Ann / UI-E to fit the narrower tab row" }
+    ]
+  },
+  {
     "id": "2026-06-02-elements-cropped-view",
     "date": "June 2, 2026",
     "title": "Elements browse + detail: Cropped view",

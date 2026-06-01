@@ -10,6 +10,7 @@ import {
   deleteAnnotation as deleteAnnotationApi,
   fetchAnnotationsForScreenshot,
   insertAnnotation,
+  updateAnnotationGeometry,
   type ScreenshotAnnotation,
 } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
@@ -17,6 +18,7 @@ import { thumbHashToPixelatedUrl } from '../lib/thumbhash';
 import type { MobileOs, WebPreset } from '../types';
 import { Check, ChevronUp, Copy, Crop, Save, Send, Trash2, X } from 'lucide-react';
 
+import { AnnotationResizeHandles } from './AnnotationResizeHandles';
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
 import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
@@ -105,7 +107,7 @@ interface CatalogueFamilyLightboxProps {
   onToast?: (message: string, type?: 'info' | 'success' | 'error') => void;
 }
 type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; is_public?: boolean };
-type LightboxPanel = 'label' | 'comments' | 'annotations';
+type LightboxPanel = 'label' | 'comments' | 'annotations' | 'ui-elements';
 type AnnotationDraft = { shape: 'pin' | 'area'; x: number; y: number; width: number; height: number };
 type DrawingState = { startX: number; startY: number; currentX: number; currentY: number };
 
@@ -331,6 +333,17 @@ export function CatalogueFamilyLightbox({
   const uiElementLookup = useMemo(
     () => new Set(combinedUiElements.map((value) => value.toLowerCase())),
     [combinedUiElements],
+  );
+
+  // Annotations that are also in the UI Element taxonomy. These are
+  // the ones that surface in the UI Elements tab — filtered subset of
+  // the full annotation list, area shape only (pins don't represent
+  // a region with a name).
+  const uiElementAnnotations = useMemo(
+    () => annotations.filter((annotation) => (
+      annotation.shape === 'area' && uiElementLookup.has(annotation.text.toLowerCase())
+    )),
+    [annotations, uiElementLookup],
   );
 
   // AI-suggested anchors that haven't yet been accepted (no matching
@@ -934,6 +947,44 @@ export function CatalogueFamilyLightbox({
       }
     }
   }
+  // Local-then-remote resize. The handles call onResize on every
+  // pointermove (live) — we just patch the in-memory annotations
+  // array so the frame redraws. onResizeEnd fires once on pointerup
+  // with the final bbox, where we hit the DB. Failure rolls the
+  // annotation back to its previous geometry.
+  function applyLocalAnnotationResize(annotationId: string, next: { x: number; y: number; width: number; height: number }) {
+    setAnnotations((current) => current.map((annotation) => (
+      annotation.id === annotationId
+        ? { ...annotation, x: next.x, y: next.y, width: next.width, height: next.height }
+        : annotation
+    )));
+  }
+  async function commitAnnotationResize(annotationId: string, final: { x: number; y: number; width: number; height: number }) {
+    if (!ensureCanEdit() || !screenshot) return;
+    const ok = await updateAnnotationGeometry(annotationId, {
+      x: final.x,
+      y: final.y,
+      width: final.width,
+      height: final.height,
+    });
+    if (!ok) {
+      setAnnotationError('Could not save the new size. Reverting.');
+      // Refetch to roll back. Cheap — annotations are tiny rows.
+      const rows = await fetchAnnotationsForScreenshot(screenshot.id);
+      setAnnotations(rows.map(toLightboxAnnotation));
+      return;
+    }
+    // Dual-write to ui_element_anchors if this annotation's text is in
+    // the UI Element taxonomy — keeps Cropped view / Elements browse
+    // showing the LATEST bbox, not the stale one written at creation.
+    const annotation = annotations.find((a) => a.id === annotationId);
+    if (annotation && uiElementLookup.has(annotation.text.toLowerCase())) {
+      const canonical = normalizeUiElementName(annotation.text);
+      void promoteAnnotationToUiElement(screenshot, canonical, userEmail || null, {
+        bbox: [final.x, final.y, final.width, final.height],
+      });
+    }
+  }
   async function deleteAnnotation(annotationId: string) {
     if (!ensureCanEdit()) return;
     const ok = await deleteAnnotationApi(annotationId);
@@ -1191,7 +1242,14 @@ export function CatalogueFamilyLightbox({
           />
           {mediaLayout && (
             <div className="catalogue-lightbox-pin-layer" aria-hidden="true">
-              {annotations.map((annotation, index) => (
+              {/* Annotations on the canvas are tab-scoped: Comments &
+                * Label show a clean screenshot, Annotations shows
+                * everything, UI Elements shows just the taxonomy
+                * subset. Outside those tabs the overlay is hidden.
+                * Drafts + drawing always render regardless of tab —
+                * those are active interaction state. */}
+              {(lightboxPanel === 'annotations' || lightboxPanel === 'ui-elements')
+                ? (lightboxPanel === 'ui-elements' ? uiElementAnnotations : annotations).map((annotation, index) => (
                 annotation.shape === 'area' && annotation.width !== null && annotation.height !== null ? (
                   <button
                     key={annotation.id}
@@ -1236,7 +1294,27 @@ export function CatalogueFamilyLightbox({
                     <span>{index + 1}</span>
                   </button>
                 )
-              ))}
+              )) : null}
+              {/* Resize handles for the SELECTED saved annotation —
+                * 8 grab points around the bbox. Hidden while drawing
+                * a new annotation or composing a draft so layers
+                * don't collide. Only area annotations (width/height
+                * non-null) can be resized; pins are points, nothing
+                * to resize. */}
+              {(lightboxPanel === 'annotations' || lightboxPanel === 'ui-elements')
+                && selectedAnnotationId && !drawing && !annotationDraft && canEdit && (() => {
+                const selected = annotations.find((a) => a.id === selectedAnnotationId);
+                if (!selected || selected.shape !== 'area' || selected.width === null || selected.height === null) return null;
+                const selectedId = selected.id;
+                return (
+                  <AnnotationResizeHandles
+                    bbox={{ x: selected.x, y: selected.y, width: selected.width, height: selected.height }}
+                    mediaLayout={mediaLayout}
+                    onResize={(next) => applyLocalAnnotationResize(selectedId, next)}
+                    onResizeEnd={(final) => { void commitAnnotationResize(selectedId, final); }}
+                  />
+                );
+              })()}
               {drawing && (
                 <div
                   className="catalogue-lightbox-area catalogue-lightbox-area--draft"
@@ -1249,15 +1327,27 @@ export function CatalogueFamilyLightbox({
                 />
               )}
               {annotationDraft && annotationDraft.shape === 'area' && (
-                <div
-                  className="catalogue-lightbox-area catalogue-lightbox-area--draft is-active"
-                  style={{
-                    left: `${mediaLayout.left + (annotationDraft.x / 100) * mediaLayout.width}px`,
-                    top: `${mediaLayout.top + (annotationDraft.y / 100) * mediaLayout.height}px`,
-                    width: `${(annotationDraft.width / 100) * mediaLayout.width}px`,
-                    height: `${(annotationDraft.height / 100) * mediaLayout.height}px`,
-                  }}
-                />
+                <>
+                  <div
+                    className="catalogue-lightbox-area catalogue-lightbox-area--draft is-active"
+                    style={{
+                      left: `${mediaLayout.left + (annotationDraft.x / 100) * mediaLayout.width}px`,
+                      top: `${mediaLayout.top + (annotationDraft.y / 100) * mediaLayout.height}px`,
+                      width: `${(annotationDraft.width / 100) * mediaLayout.width}px`,
+                      height: `${(annotationDraft.height / 100) * mediaLayout.height}px`,
+                    }}
+                  />
+                  <AnnotationResizeHandles
+                    bbox={{
+                      x: annotationDraft.x,
+                      y: annotationDraft.y,
+                      width: annotationDraft.width,
+                      height: annotationDraft.height,
+                    }}
+                    mediaLayout={mediaLayout}
+                    onResize={(next) => setAnnotationDraft({ shape: 'area', x: next.x, y: next.y, width: next.width, height: next.height })}
+                  />
+                </>
               )}
               {annotationDraft && annotationDraft.shape === 'pin' && (
                 <button
@@ -1582,7 +1672,7 @@ export function CatalogueFamilyLightbox({
                       className={`catalogue-lightbox-tab ${lightboxPanel === 'comments' ? 'is-active' : ''}`}
                       onClick={() => setLightboxPanel('comments')}
                     >
-                      Comments ({comments.length})
+                      Com ({comments.length})
                     </button>
                     <button
                       type="button"
@@ -1591,7 +1681,16 @@ export function CatalogueFamilyLightbox({
                       className={`catalogue-lightbox-tab ${lightboxPanel === 'annotations' ? 'is-active' : ''}`}
                       onClick={() => setLightboxPanel('annotations')}
                     >
-                      Annotations ({annotations.length + pendingAnchors.length})
+                      Ann ({annotations.length + pendingAnchors.length})
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={lightboxPanel === 'ui-elements'}
+                      className={`catalogue-lightbox-tab ${lightboxPanel === 'ui-elements' ? 'is-active' : ''}`}
+                      onClick={() => setLightboxPanel('ui-elements')}
+                    >
+                      UI-E ({uiElementAnnotations.length})
                     </button>
                   </>
                 )}
@@ -1642,6 +1741,55 @@ export function CatalogueFamilyLightbox({
                       <Send size={16} />
                     </Squircle>
                   </div>
+                </>
+              ) : lightboxPanel === 'ui-elements' ? (
+                <>
+                  <p className="catalogue-lightbox-ui-elements-help">
+                    Annotations tagged as UI Elements. Click any row to highlight that
+                    region on the screenshot. Hidden in Comments / Label views so the
+                    image stays clean.
+                  </p>
+                  {uiElementAnnotations.length === 0 ? (
+                    <p className="catalogue-lightbox-comments-empty">
+                      No UI Elements tagged yet. Add an area annotation in the
+                      Annotations tab and check "Tag as UI Element."
+                    </p>
+                  ) : (
+                    <div className="catalogue-lightbox-ui-elements-list">
+                      {uiElementAnnotations.map((annotation, index) => (
+                        <div
+                          key={annotation.id}
+                          role="button"
+                          tabIndex={0}
+                          className={`catalogue-lightbox-ui-element-row${selectedAnnotationId === annotation.id ? ' is-active' : ''}`}
+                          onClick={() => setSelectedAnnotationId(annotation.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedAnnotationId(annotation.id);
+                            }
+                          }}
+                        >
+                          <span className="catalogue-lightbox-ui-element-row__index">{index + 1}</span>
+                          <span className="catalogue-lightbox-ui-element-row__name">{annotation.text}</span>
+                          {(isAdmin || annotation.user_email === userEmail) && (
+                            <button
+                              type="button"
+                              className="catalogue-lightbox-ui-element-row__delete"
+                              title="Delete UI Element"
+                              aria-label="Delete UI Element"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void deleteAnnotation(annotation.id);
+                              }}
+                            >
+                              <Trash2 size={12} aria-hidden="true" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
