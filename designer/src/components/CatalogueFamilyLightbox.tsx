@@ -1273,11 +1273,12 @@ export function CatalogueFamilyLightbox({
                 </button>
               )}
               {/* AI ghost overlay — dashed indigo bboxes for pending
-                * suggestions. Click loads into the annotation draft so
-                * the user can refine corners and save via the existing
-                * "Save area" flow. Hidden while drawing or while a
-                * draft is being edited so the layers don't collide. */}
-              {!drawing && !annotationDraft && pendingAnchors.map((anchor) => {
+                * suggestions. Only visible when the user is on the
+                * Annotations tab (otherwise the ghosts compete with
+                * the Comments / Label workflows visually). Hidden
+                * while drawing or while a draft is being edited so
+                * the layers don't collide. */}
+              {lightboxPanel === 'annotations' && !drawing && !annotationDraft && pendingAnchors.map((anchor) => {
                 const [ax, ay, aw, ah] = anchor.bbox!;
                 return (
                   <button
@@ -1300,7 +1301,7 @@ export function CatalogueFamilyLightbox({
                       {anchor.name}
                       {anchor.confidence !== null && (
                         <span className="catalogue-lightbox-ghost-confidence">
-                          {anchor.confidence.toFixed(2)}
+                          {Math.round(anchor.confidence * 100)}%
                         </span>
                       )}
                     </span>
@@ -1492,7 +1493,7 @@ export function CatalogueFamilyLightbox({
             <div className="catalogue-lightbox-collapsible">
               <div className="catalogue-lightbox-collapsible__inner">
               <CatalogueFamilyLightboxActions
-                annotationsCount={annotations.length}
+                annotationsCount={annotations.length + pendingAnchors.length}
                 canCrop={Boolean(canEdit && imageSize && !cropMode)}
                 commentsCount={comments.length}
                 hideCatalogueActions={showLabelTab}
@@ -1590,7 +1591,7 @@ export function CatalogueFamilyLightbox({
                       className={`catalogue-lightbox-tab ${lightboxPanel === 'annotations' ? 'is-active' : ''}`}
                       onClick={() => setLightboxPanel('annotations')}
                     >
-                      Annotations ({annotations.length})
+                      Annotations ({annotations.length + pendingAnchors.length})
                     </button>
                   </>
                 )}
@@ -1740,7 +1741,7 @@ export function CatalogueFamilyLightbox({
                               <strong className="catalogue-lightbox-ai-anchor__name">{anchor.name}</strong>
                               <span className="catalogue-lightbox-ai-anchor__meta">
                                 {anchor.confidence !== null
-                                  ? `${anchor.confidence.toFixed(2)} confidence`
+                                  ? `${Math.round(anchor.confidence * 100)}% confidence`
                                   : 'no confidence'}
                               </span>
                             </div>
