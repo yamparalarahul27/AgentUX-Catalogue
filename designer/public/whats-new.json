@@ -10,6 +10,14 @@
     ]
   },
   {
+    "id": "2026-05-29-lightbox-group-combobox-icons",
+    "date": "May 29, 2026",
+    "title": "Lightbox edit — group dropdown now shows brand icons",
+    "bullets": [
+      { "kind": "improved", "text": "When editing a screenshot's group from inside the lightbox, the dropdown options now show each group's brand icon next to the name — same visual as the catalogue cards and chip strip" }
+    ]
+  },
+  {
     "id": "2026-05-29-crop-dashed-guides",
     "date": "May 29, 2026",
     "title": "Crop — dashed guide lines",
