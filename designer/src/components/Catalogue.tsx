@@ -1036,7 +1036,13 @@ export function Catalogue({
         canAdmin={canAdmin}
         canLabelingStudio={canLabelingStudio}
         onOpenSettings={() => setShowSettings(true)}
-        onSectionChange={setActiveSection}
+        onSectionChange={(section) => {
+          if (section === 'elements') {
+            navigate('/elements');
+            return;
+          }
+          setActiveSection(section);
+        }}
         userEmail={user.email ?? null}
         onSignIn={() => setShowAuthPrompt(true)}
         onLogout={() => {
