@@ -782,6 +782,18 @@ export function Catalogue({
     }
   }, [activeSection, canAdmin]);
 
+  // Refresh the full-scope screenshot cache every time the user enters
+  // the Studio. Module cache is otherwise warm for the page's lifetime,
+  // so screenshots added since this tab opened (Telegram bot uploads,
+  // teammate's uploads, etc.) wouldn't appear until a hard refresh.
+  // Refetching on Studio entry is the cheapest correct behaviour —
+  // we don't need to poll while the user is INSIDE the Studio.
+  useEffect(() => {
+    if (activeSection === 'studio' && canLabelingStudio) {
+      invalidateCatalogueFullScopeCache();
+    }
+  }, [activeSection, canLabelingStudio]);
+
   // Cmd+V (or Ctrl+V) on the catalogue page reads the clipboard, queues any
   // image into Quick Upload, and opens the modal. Suppressed when an input is
   // focused so normal paste-into-field behaviour wins.

@@ -4,9 +4,9 @@
     "date": "June 1, 2026",
     "title": "Labelling Studio — three fixes",
     "bullets": [
-      { "kind": "fix", "text": "Fresh uploads now appear in the Studio without a refresh — the upload path was syncing the catalogue but missing the full-scope mirror the Studio reads" },
+      { "kind": "fix", "text": "Opening the Studio now refetches the full screenshot set, so anything that landed in the catalogue from any source (Quick Upload, Telegram bot, other sessions) appears immediately" },
       { "kind": "fix", "text": "Clicking a Studio card now opens the lightbox on the screenshot you clicked, not the latest variant in that family" },
-      { "kind": "improved", "text": "Studio grid paginates 50 cards at a time via infinite scroll — was mounting the entire library in one render (~2,000+ cards) and tanking performance" }
+      { "kind": "improved", "text": "Studio grid paginates 50 cards per page with explicit page tabs — was mounting the entire library in one render (~2,000+ cards) and tanking performance" }
     ]
   },
   {
