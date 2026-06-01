@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-01-fall-in-empty-state-studio",
+    "date": "June 1, 2026",
+    "title": "Catalogue lands with a flourish — plus polish",
+    "bullets": [
+      { "kind": "new", "text": "On cold launch, the catalogue chrome (header, chip strip, sidebar) and the first rows of cards now fall in from above with a tilt + blur — once per session, respects reduced-motion" },
+      { "kind": "improved", "text": "Replaced the line-art empty state with a friendlier illustration — same artwork used across the catalogue grid, Labelling Studio, and Elements pages when no results match" },
+      { "kind": "fix", "text": "Labelling Studio status filters were inadvertently linked to the catalogue toolbar — they're now properly independent, operating on the full screenshot set regardless of what the catalogue is filtered to" }
+    ]
+  },
+  {
     "id": "2026-06-01-refresh-toast-rework",
     "date": "June 1, 2026",
     "title": "Refresh toast — rainbow ring + shorter snooze",

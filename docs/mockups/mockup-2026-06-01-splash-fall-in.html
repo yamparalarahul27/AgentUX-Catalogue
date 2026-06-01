@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Splash → 3D fall-in mockup</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f0f10;
+    color: #e4e4e7;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── 3D fall-in motion ─────────────────────────────────────────── */
+  /* Parent needs perspective for the rotateX/translateZ to register
+   * as actual depth, not as flat scaling. 1200px lands somewhere
+   * between subtle and dramatic. */
+  .scene {
+    perspective: 1200px;
+    perspective-origin: 50% -10%;  /* cards fall from above */
+  }
+
+  /* Each fall-in element starts above + tilted + blurred, lands flat. */
+  .fall {
+    animation: splash-fall-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: 50% 0%;
+  }
+
+  @keyframes splash-fall-in {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, -80px, -300px) rotateX(20deg);
+      filter: blur(10px);
+    }
+    60% {
+      filter: blur(2px);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) rotateX(0deg);
+      filter: blur(0);
+    }
+  }
+
+  /* Stagger via per-element delays. Header lands first, then chip
+   * strip, then sidebar, then the cards row by row. */
+  .fall--header     { animation-delay:   0ms; }
+  .fall--chipstrip  { animation-delay:  80ms; }
+  .fall--sidebar    { animation-delay: 140ms; }
+  .fall--card       { animation-delay: 220ms; }
+  /* Per-card incremental delays via inline style for the demo. The
+   * real impl will use --i index → calc(220ms + var(--i) * 50ms). */
+
+  @media (prefers-reduced-motion: reduce) {
+    .fall { animation: none; }
+  }
+
+  /* ── Fake catalogue chrome ─────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid #2a2a30;
+    background: #0a0a0c;
+  }
+  .header__logo {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-weight: 600;
+  }
+  .header__logo img { width: 28px; height: 28px; }
+  .header__tabs {
+    display: inline-flex;
+    background: #16161a;
+    border: 1px solid #2a2a30;
+    border-radius: 999px;
+    padding: 4px;
+    gap: 2px;
+  }
+  .header__tab {
+    padding: 6px 14px;
+    border-radius: 999px;
+    color: #a1a1aa;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .header__tab.is-active {
+    background: rgba(99, 102, 241, 0.32);
+    color: #fff;
+  }
+  .header__pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid #2a2a30;
+    font-size: 12px;
+  }
+
+  .chipstrip {
+    display: flex;
+    gap: 8px;
+    padding: 12px 24px;
+    border-bottom: 1px solid #18181b;
+    overflow-x: auto;
+  }
+  .chip {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid #2a2a30;
+    background: rgba(255, 255, 255, 0.02);
+    font-size: 12px;
+    color: #d4d4d8;
+  }
+  .chip.is-active {
+    background: rgba(99, 102, 241, 0.16);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #c7d2fe;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 24px;
+    padding: 20px 24px;
+  }
+
+  .sidebar {
+    background: #16161a;
+    border: 1px solid #2a2a30;
+    border-radius: 12px;
+    padding: 16px;
+    height: fit-content;
+  }
+  .sidebar h3 {
+    font-size: 11px;
+    color: #71717a;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .sidebar__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #d4d4d8;
+    cursor: pointer;
+  }
+  .sidebar__item:hover { background: rgba(255, 255, 255, 0.04); }
+  .sidebar__dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #818cf8, #c084fc);
+    flex-shrink: 0;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .card {
+    aspect-ratio: 4 / 3;
+    background: linear-gradient(180deg, #1a1a1f, #111114);
+    border: 1px solid #2a2a30;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #52525b;
+    font-size: 11px;
+  }
+
+  /* Replay button — devs want to re-trigger without reloading */
+  .replay {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+  <div class="scene" id="scene">
+    <!-- Header -->
+    <header class="header fall fall--header">
+      <div class="header__logo">
+        <img src="../../designer/src/assets/agentux-mark.svg" alt="" />
+        AgentUX
+      </div>
+      <nav class="header__tabs">
+        <span class="header__tab is-active">Catalogue</span>
+        <span class="header__tab">Elements</span>
+        <span class="header__tab">Videos</span>
+      </nav>
+      <span class="header__pill">R</span>
+    </header>
+
+    <!-- Chip strip -->
+    <div class="chipstrip fall fall--chipstrip">
+      <span class="chip is-active">All</span>
+      <span class="chip">Binance</span>
+      <span class="chip">Coinbase</span>
+      <span class="chip">Phantom</span>
+      <span class="chip">MetaMask</span>
+      <span class="chip">Uniswap</span>
+      <span class="chip">OKX</span>
+      <span class="chip">Bybit</span>
+    </div>
+
+    <!-- Sidebar + grid -->
+    <div class="layout">
+      <aside class="sidebar fall fall--sidebar">
+        <h3>Filter by</h3>
+        <div class="sidebar__item"><span class="sidebar__dot"></span>Group</div>
+        <div class="sidebar__item"><span class="sidebar__dot"></span>Flow</div>
+        <div class="sidebar__item"><span class="sidebar__dot"></span>Platform</div>
+        <div class="sidebar__item"><span class="sidebar__dot"></span>Theme</div>
+        <div class="sidebar__item"><span class="sidebar__dot"></span>OS</div>
+      </aside>
+
+      <div class="grid">
+        <!-- 12 cards with incremental delays -->
+        <div class="card fall fall--card" style="animation-delay:220ms">card 1</div>
+        <div class="card fall fall--card" style="animation-delay:265ms">card 2</div>
+        <div class="card fall fall--card" style="animation-delay:310ms">card 3</div>
+        <div class="card fall fall--card" style="animation-delay:355ms">card 4</div>
+        <div class="card fall fall--card" style="animation-delay:400ms">card 5</div>
+        <div class="card fall fall--card" style="animation-delay:445ms">card 6</div>
+        <div class="card fall fall--card" style="animation-delay:490ms">card 7</div>
+        <div class="card fall fall--card" style="animation-delay:535ms">card 8</div>
+        <div class="card fall fall--card" style="animation-delay:580ms">card 9</div>
+        <div class="card fall fall--card" style="animation-delay:625ms">card 10</div>
+        <div class="card fall fall--card" style="animation-delay:670ms">card 11</div>
+        <div class="card fall fall--card" style="animation-delay:715ms">card 12</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="replay" onclick="
+    const scene = document.getElementById('scene');
+    const clone = scene.cloneNode(true);
+    scene.replaceWith(clone);
+    clone.id = 'scene';
+  ">↻ Replay animation</button>
+</body>
+</html>

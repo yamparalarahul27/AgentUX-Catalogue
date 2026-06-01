@@ -177,11 +177,16 @@ $kind-page: #fbbf24; // amber-400
 }
 
 .catalogue-elements__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   padding: 64px 16px;
   text-align: center;
   color: #71717a;
   font-size: 14px;
 
+  p { margin: 0; }
   strong {
     color: #fafafa;
     font-weight: 600;
@@ -485,10 +490,16 @@ $kind-page: #fbbf24; // amber-400
 }
 
 .catalogue-element-detail__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   padding: 48px 16px;
   text-align: center;
   color: #71717a;
   font-size: 14px;
+
+  p { margin: 0; }
 }
 
 // ── lightweight preview overlay (mirrors group-detail) ─────────────

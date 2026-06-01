@@ -1,0 +1,69 @@
+// Splash → 3D fall-in motion.
+//
+// Plays once per session right after the boot splash hides on cold
+// launch. Header / chip strip / sidebar / cards stagger in from above
+// with a blur + perspective tilt, like the UI is physically landing.
+// Gated by sessionStorage flag `agentux:splash-played` (set in
+// Catalogue.tsx) so subsequent route re-mounts within the same tab
+// skip the animation.
+//
+// Mockup: docs/mockups/mockup-2026-06-01-splash-fall-in.html
+
+@keyframes catalogue-splash-fall-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -80px, -300px) rotateX(20deg);
+    filter: blur(10px);
+  }
+  60% {
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(0deg);
+    filter: blur(0);
+  }
+}
+
+// Parent provides the perspective so rotateX + translateZ register as
+// real depth, not flat scale. Origin slightly above the page so cards
+// appear to fall from above the viewport.
+.catalogue-page.is-splash-falling {
+  perspective: 1200px;
+  perspective-origin: 50% -10%;
+}
+
+// Shared animation token applied to each fall-in element.
+@mixin splash-fall-in-anim($delay: 0ms) {
+  animation: catalogue-splash-fall-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: $delay;
+  transform-origin: 50% 0%;
+}
+
+// Stagger: header lands first, then chip strip, sidebar, cards.
+.catalogue-page.is-splash-falling .catalogue-header { @include splash-fall-in-anim(0ms); }
+.catalogue-page.is-splash-falling .catalogue-chip-strip { @include splash-fall-in-anim(80ms); }
+.catalogue-page.is-splash-falling .catalogue-flow-sidebar { @include splash-fall-in-anim(140ms); }
+
+// Cards: first 20 stagger; anything beyond gets the final delay so
+// the animation doesn't trail off into the multi-second range on
+// large datasets.
+.catalogue-page.is-splash-falling .catalogue-family-card {
+  @include splash-fall-in-anim(220ms + 19 * 45ms);
+
+  @for $i from 1 through 20 {
+    &:nth-child(#{$i}) {
+      animation-delay: 220ms + ($i - 1) * 45ms;
+    }
+  }
+}
+
+// Respect motion preferences.
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-page.is-splash-falling .catalogue-header,
+  .catalogue-page.is-splash-falling .catalogue-chip-strip,
+  .catalogue-page.is-splash-falling .catalogue-flow-sidebar,
+  .catalogue-page.is-splash-falling .catalogue-family-card {
+    animation: none;
+  }
+}

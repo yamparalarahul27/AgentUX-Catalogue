@@ -94,6 +94,8 @@ type CatalogueSection =
   | 'links'
   | 'team'
   | 'studio';
+
+function noop() { /* intentional no-op */ }
 export function Catalogue({
   user,
   onLogout,
@@ -493,6 +495,19 @@ export function Catalogue({
     );
   }, [canEditMetadata, canDeleteOwn, myEmailLower]);
   const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
+  // Splash → 3D fall-in motion. Plays once per session: after the boot
+  // splash hides on cold launch, header / chip strip / sidebar / cards
+  // stagger in from above with a blur + tilt. Subsequent route re-mounts
+  // skip the animation. Gated by sessionStorage.
+  const [playSplashFall] = useState(() => {
+    try {
+      if (window.sessionStorage.getItem('agentux:splash-played') === '1') return false;
+      window.sessionStorage.setItem('agentux:splash-played', '1');
+      return true;
+    } catch {
+      return false;
+    }
+  });
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
     [presetByKey, scopedScreenFamilies, scopedScreenshots],
@@ -1030,7 +1045,7 @@ export function Catalogue({
     });
   }
   return (
-    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}${canvasGalleryActive ? ' is-canvas-gallery-active' : ''}`}>
+    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}${canvasGalleryActive ? ' is-canvas-gallery-active' : ''}${playSplashFall ? ' is-splash-falling' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
         canAdmin={canAdmin}
@@ -1108,10 +1123,14 @@ export function Catalogue({
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
             <CatalogueLabelingStudio
-              screenshots={screenshots}
-              hasMore={hasMore}
-              loadMore={loadMore}
-              loadingMore={loadingMore}
+              // Studio works on the full unfiltered superset — the catalogue
+              // toolbar's filter / search / sort must NOT bleed into here.
+              // Status chip counts come from `totals` (DB-direct) and the
+              // grid + chip-filtered list run off the full scope.
+              screenshots={fullScopeScreenshots}
+              hasMore={false}
+              loadMore={noop}
+              loadingMore={false}
               overrides={studioLabelOverrides}
               selectedScreenshotId={previewFamilyId}
               onCardClick={handleStudioCardClick}

@@ -1,4 +1,6 @@
-import { CheckSquare, ImageIcon, Square } from 'lucide-react';
+import { CheckSquare, Square } from 'lucide-react';
+
+import notFoundIllustration from '../assets/not-found.png';
 
 import { useMemo } from 'react';
 
@@ -174,7 +176,7 @@ export function CatalogueContent({
   if (filteredFamilies.length === 0) {
     return (
       <div className="empty-state">
-        <ImageIcon size={64} strokeWidth={1.5} />
+        <img src={notFoundIllustration} alt="" className="empty-state__illustration" />
         <h2>{hasActiveFilters ? 'No matching screen families' : 'No screenshots yet'}</h2>
         <p>{hasActiveFilters ? 'Try adjusting your search or filters, or click below to explore the latest.' : 'Upload screenshots to get started.'}</p>
         {hasActiveFilters && (

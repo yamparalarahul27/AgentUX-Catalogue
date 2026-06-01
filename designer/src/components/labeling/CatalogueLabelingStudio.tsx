@@ -6,6 +6,7 @@ import { useViewportWidth } from '../../hooks/use-viewport-width';
 import { useLabelingStudioStatus } from '../../hooks/use-labeling-studio-status';
 import type { StudioTotals } from '../../hooks/use-labeling-studio-totals';
 import type { ScreenshotLabel } from '../../lib/labeling/types';
+import notFoundIllustration from '../../assets/not-found.png';
 import { LabelingStudioCard } from './LabelingStudioCard';
 import { LabelingStudioStatusChips } from './LabelingStudioStatusChips';
 import { LabelingStudioPlaceholder } from './LabelingStudioPlaceholder';
@@ -93,9 +94,10 @@ export function CatalogueLabelingStudio({
       />
 
       {filtered.length === 0 ? (
-        <p className="labeling-studio__empty">
-          No screenshots in this status. Try a different filter.
-        </p>
+        <div className="labeling-studio__empty">
+          <img src={notFoundIllustration} alt="" className="empty-state__illustration" />
+          <p>No screenshots in this status. Try a different filter.</p>
+        </div>
       ) : (
         <>
           <div className="labeling-studio__grid">
