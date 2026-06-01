@@ -189,13 +189,16 @@ a { color: inherit; text-decoration: none; }
  * see real apps they recognise as a credibility signal. Each tile
  * links to that group's detail page in the catalogue. */
 .group-masonry {
-  /* 6 cols × 5 rows ≈ 30 tiles fits cleanly. Narrower max-width keeps
-   * the wall feeling intentional, not sparse. */
-  column-count: 6;
-  column-gap: 10px;
-  max-width: 720px;
+  /* CSS Grid (not columns) — explicit column count gives us reliable
+   * per-column nth-child math for the zigzag. 50 tiles across 10
+   * columns at desktop, fewer at narrower viewports. */
+  --cols: 10;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  gap: 12px;
+  max-width: 1440px;
   margin: 64px auto 0;
-  padding: 0 4px;
+  padding: 0 24px;
   /* Fade the masonry into the background at the edges so it reads as
    * texture, not a hard-edged section. */
   -webkit-mask-image: linear-gradient(
@@ -216,19 +219,29 @@ a { color: inherit; text-decoration: none; }
 
 .group-tile {
   display: block;
-  margin-bottom: 10px;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--line-soft);
   background: var(--surface);
-  break-inside: avoid;
+  aspect-ratio: 1 / 1;
   transition: transform 0.18s ease-out, border-color 0.18s ease-out;
-  /* Slight per-tile colour shift via cumulative odd/even — keeps the
-   * grid from looking machine-uniform without per-tile JS. */
 }
-.group-tile:nth-child(odd)  { transform: translateY(2px); }
-.group-tile:nth-child(3n)   { transform: translateY(-3px); }
-.group-tile:nth-child(5n+1) { transform: translateY(4px); }
+
+/* Per-column zigzag — whole columns shifted up/down so the wall reads
+ * as deliberately staggered. Each nth-child(10n+K) selects every tile
+ * in column K (since there are exactly 10 columns at desktop). The
+ * pattern: even columns shifted down ~20px; column 4 + 8 shifted a
+ * little extra so the rhythm reads as wave-like, not pure on/off. */
+.group-masonry .group-tile:nth-child(10n+1)  { transform: translateY(0); }
+.group-masonry .group-tile:nth-child(10n+2)  { transform: translateY(18px); }
+.group-masonry .group-tile:nth-child(10n+3)  { transform: translateY(6px); }
+.group-masonry .group-tile:nth-child(10n+4)  { transform: translateY(24px); }
+.group-masonry .group-tile:nth-child(10n+5)  { transform: translateY(0); }
+.group-masonry .group-tile:nth-child(10n+6)  { transform: translateY(18px); }
+.group-masonry .group-tile:nth-child(10n+7)  { transform: translateY(6px); }
+.group-masonry .group-tile:nth-child(10n+8)  { transform: translateY(24px); }
+.group-masonry .group-tile:nth-child(10n+9)  { transform: translateY(0); }
+.group-masonry .group-tile:nth-child(10n)    { transform: translateY(18px); }
 
 .group-tile:hover {
   transform: translateY(-2px) !important;
@@ -244,8 +257,22 @@ a { color: inherit; text-decoration: none; }
    * non-square icons still feel native to the wall. */
 }
 
-@media (max-width: 768px)  { .group-masonry { column-count: 5; column-gap: 8px; max-width: 480px; } .group-tile { margin-bottom: 8px; border-radius: 10px; } }
-@media (max-width: 480px)  { .group-masonry { column-count: 4; } }
+/* Narrower viewports reduce the column count. The per-column zigzag
+ * rules above are written for 10 columns; at smaller column counts
+ * they still create a staggered look but the rhythm shifts (since
+ * nth-child(10n+K) maps to different physical columns once the grid
+ * reflows). That's fine — the wall still reads as staggered. */
+@media (max-width: 1280px) { .group-masonry { --cols: 8; } }
+@media (max-width: 1024px) { .group-masonry { --cols: 7; } }
+@media (max-width: 768px)  {
+  .group-masonry { --cols: 5; gap: 8px; max-width: 480px; padding: 0 12px; }
+  .group-tile { border-radius: 10px; }
+  /* Tighter zigzag on mobile — full 24px shift looks broken at small sizes. */
+  .group-masonry .group-tile { transform: translateY(0); }
+  .group-masonry .group-tile:nth-child(5n+2) { transform: translateY(10px); }
+  .group-masonry .group-tile:nth-child(5n+4) { transform: translateY(10px); }
+}
+@media (max-width: 480px)  { .group-masonry { --cols: 4; } }
 
 /* ─── Footer ───────────────────────────────────────────────────────── */
 .footer {
