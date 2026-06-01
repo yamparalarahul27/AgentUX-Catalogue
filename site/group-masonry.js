@@ -22,7 +22,7 @@
   const grid = document.getElementById('group-masonry');
   if (!url || !key || !grid) return;
 
-  const TOP_N = 30;
+  const TOP_N = 50;
 
   const groupsEndpoint =
     url +
