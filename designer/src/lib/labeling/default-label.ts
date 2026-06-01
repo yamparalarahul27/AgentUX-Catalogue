@@ -62,6 +62,7 @@ export function createDefaultLabel({ userEmail, screenshot }: CreateDefaultLabel
       layout: '',
       functions: '',
       ui_elements: [],
+      ui_element_anchors: [],
       ux_patterns: [],
       colors: [],
       visible_text: [],

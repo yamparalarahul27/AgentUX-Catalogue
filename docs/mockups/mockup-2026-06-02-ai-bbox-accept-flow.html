@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AI bbox accept flow — lightbox mockup</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0c;
+    color: #fafafa;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    padding: 32px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  h1 { font-size: 18px; font-weight: 600; }
+  h2 { font-size: 13px; font-weight: 500; color: #71717a; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 8px; }
+  p.note { font-size: 13px; color: #a1a1aa; max-width: 70ch; line-height: 1.5; }
+
+  /* ── Lightbox shell mock ──────────────────────────────────────────── */
+  .lightbox {
+    background: #0f0f10;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    min-height: 540px;
+  }
+  .lightbox__stage {
+    position: relative;
+    background: #111113;
+    overflow: hidden;
+    /* fake screenshot — a flat colour with structure */
+    background-image:
+      linear-gradient(180deg, #1a1a22 0%, #0f0f10 100%),
+      radial-gradient(circle at 80% 30%, rgba(99, 102, 241, 0.08), transparent 50%);
+  }
+  /* "Screenshot" structure inside the stage so the bbox positions look real. */
+  .lightbox__shot-mock {
+    position: absolute;
+    inset: 0;
+  }
+  .lightbox__shot-mock .header-bar { position: absolute; top: 4%; left: 4%; right: 4%; height: 6%; background: rgba(255,255,255,0.04); border-radius: 6px; }
+  .lightbox__shot-mock .search { position: absolute; top: 12%; left: 4%; right: 30%; height: 5%; background: rgba(255,255,255,0.08); border-radius: 999px; }
+  .lightbox__shot-mock .card { position: absolute; top: 24%; left: 4%; right: 4%; height: 18%; background: rgba(255,255,255,0.05); border-radius: 8px; }
+  .lightbox__shot-mock .row { position: absolute; left: 4%; right: 4%; height: 8%; background: rgba(255,255,255,0.03); border-radius: 6px; }
+  .lightbox__shot-mock .row1 { top: 46%; }
+  .lightbox__shot-mock .row2 { top: 56%; }
+  .lightbox__shot-mock .row3 { top: 66%; }
+  .lightbox__shot-mock .cta { position: absolute; bottom: 6%; left: 30%; right: 30%; height: 6%; background: #6366f1; border-radius: 999px; }
+  .lightbox__shot-mock .tab-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 4%; background: rgba(255,255,255,0.06); }
+
+  .lightbox__panel {
+    background: #16161a;
+    border-left: 1px solid #27272a;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  .lightbox__panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .lightbox__panel-title { font-size: 13px; font-weight: 600; }
+  .lightbox__tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #27272a; padding-bottom: 0; }
+  .lightbox__tab { font-size: 12px; color: #a1a1aa; padding: 6px 8px; border-bottom: 2px solid transparent; cursor: pointer; }
+  .lightbox__tab.is-active { color: #fafafa; border-bottom-color: #6366f1; }
+
+  /* ── Ghost bbox overlay ───────────────────────────────────────────── */
+  /* AI-suggested bboxes render as dashed indigo rectangles on the
+   * screenshot. Visually distinct from real annotations (which are
+   * solid white). Each ghost shows the element name + confidence as a
+   * floating label. Three states: idle / hovered / selected. */
+  .ghost {
+    position: absolute;
+    border: 2px dashed rgba(129, 140, 248, 0.85);
+    background: rgba(99, 102, 241, 0.08);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .ghost:hover {
+    background: rgba(99, 102, 241, 0.16);
+    border-color: rgba(165, 180, 252, 1);
+  }
+  .ghost.is-selected {
+    border-style: solid;
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.20);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.45), 0 0 24px rgba(99, 102, 241, 0.25);
+  }
+  .ghost.is-accepted {
+    /* Once accepted, the ghost stays visible briefly as a confirmation,
+     * then would be replaced by a real annotation render. */
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.16);
+    border-style: solid;
+  }
+  .ghost.is-rejected {
+    opacity: 0.18;
+    border-color: #ef4444;
+    border-style: dotted;
+    pointer-events: none;
+  }
+  .ghost__label {
+    position: absolute;
+    bottom: 100%;
+    left: -2px;
+    margin-bottom: 4px;
+    padding: 2px 8px;
+    background: rgba(15, 15, 16, 0.95);
+    border: 1px solid rgba(129, 140, 248, 0.6);
+    border-radius: 999px;
+    font-size: 11px;
+    white-space: nowrap;
+    color: #c7d2fe;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ghost.is-selected .ghost__label {
+    border-color: #6366f1;
+    color: #fafafa;
+    background: #0f0f10;
+  }
+  .ghost.is-accepted .ghost__label { border-color: #22c55e; color: #4ade80; }
+  .ghost__confidence {
+    font-size: 9px;
+    background: rgba(99, 102, 241, 0.32);
+    color: #c7d2fe;
+    padding: 1px 5px;
+    border-radius: 999px;
+  }
+
+  /* Selection handles when selected — corner squares to indicate the
+   * bbox is editable. (Real impl would re-use the area-annotation
+   * editor's resize-handle component.) */
+  .ghost.is-selected::before,
+  .ghost.is-selected::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #fafafa;
+    border: 1px solid #6366f1;
+    border-radius: 2px;
+  }
+  .ghost.is-selected::before { top: -6px; left: -6px; }
+  .ghost.is-selected::after { bottom: -6px; right: -6px; }
+
+  /* ── Right panel: AI suggestions list ─────────────────────────────── */
+  .ai-suggestions-banner {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.30);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #c7d2fe;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-suggestions-banner .dot { width: 6px; height: 6px; border-radius: 50%; background: #6366f1; flex-shrink: 0; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); }
+  .ai-suggestions-banner strong { color: #fafafa; font-weight: 600; }
+
+  .anchor-list { display: flex; flex-direction: column; gap: 6px; }
+  .anchor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .anchor:hover { border-color: #3f3f46; }
+  .anchor.is-selected { border-color: #6366f1; background: rgba(99, 102, 241, 0.10); }
+  .anchor.is-accepted { border-color: rgba(34, 197, 94, 0.40); background: rgba(34, 197, 94, 0.06); }
+  .anchor.is-rejected { opacity: 0.45; border-style: dashed; }
+
+  .anchor__name { flex: 1; font-size: 13px; }
+  .anchor__name strong { display: block; color: #fafafa; }
+  .anchor__name span { font-size: 11px; color: #71717a; }
+  .anchor__actions { display: flex; gap: 4px; }
+  .anchor__btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid #27272a;
+    background: transparent;
+    color: #a1a1aa;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .anchor__btn:hover { color: #fafafa; border-color: #3f3f46; }
+  .anchor__btn--accept { color: #22c55e; }
+  .anchor__btn--accept:hover { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.40); }
+  .anchor__btn--reject { color: #ef4444; }
+  .anchor__btn--reject:hover { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.40); }
+  .anchor.is-accepted .anchor__name strong::after { content: ' ✓'; color: #22c55e; }
+
+  .bulk-actions { display: flex; gap: 6px; margin: 12px 0 16px; }
+  .bulk-btn {
+    flex: 1;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid #27272a;
+    background: transparent;
+    color: #e4e4e7;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .bulk-btn:hover { background: rgba(255, 255, 255, 0.04); border-color: #3f3f46; }
+  .bulk-btn--primary { background: #6366f1; color: white; border-color: #6366f1; }
+  .bulk-btn--primary:hover { background: #818cf8; border-color: #818cf8; }
+</style>
+</head>
+<body>
+  <h1>AI bbox accept flow — lightbox mockup</h1>
+  <p class="note">
+    When a screenshot's label has <code>ui_element_anchors</code> from the AI, the
+    lightbox renders each as a dashed indigo "ghost" rectangle over the screenshot.
+    The right panel lists the same anchors with accept / reject / edit controls.
+    Clicking a ghost OR an anchor row selects it (with resize handles); clicking the
+    green tick promotes it into a real annotation row and the ghost turns solid green
+    momentarily before settling as a normal annotation.
+  </p>
+
+  <!-- ─────────────── State 1: AI just suggested 5 anchors ─────────── -->
+  <div>
+    <h2>State 1 · Initial — 5 ghost anchors visible</h2>
+    <div class="lightbox">
+      <div class="lightbox__stage">
+        <div class="lightbox__shot-mock">
+          <div class="header-bar"></div>
+          <div class="search"></div>
+          <div class="card"></div>
+          <div class="row row1"></div>
+          <div class="row row2"></div>
+          <div class="row row3"></div>
+          <div class="cta"></div>
+          <div class="tab-bar"></div>
+        </div>
+        <!-- Ghosts positioned roughly over the screen-mock elements -->
+        <div class="ghost" style="left:4%; top:4%; width:92%; height:6%;">
+          <span class="ghost__label">Top nav <span class="ghost__confidence">0.92</span></span>
+        </div>
+        <div class="ghost" style="left:4%; top:12%; width:66%; height:5%;">
+          <span class="ghost__label">Search bar <span class="ghost__confidence">0.88</span></span>
+        </div>
+        <div class="ghost" style="left:4%; top:24%; width:92%; height:18%;">
+          <span class="ghost__label">Featured card <span class="ghost__confidence">0.76</span></span>
+        </div>
+        <div class="ghost" style="left:30%; bottom:6%; width:40%; height:6%;">
+          <span class="ghost__label">Primary CTA <span class="ghost__confidence">0.95</span></span>
+        </div>
+        <div class="ghost" style="left:0; bottom:0; width:100%; height:4%;">
+          <span class="ghost__label">Bottom tab bar <span class="ghost__confidence">0.84</span></span>
+        </div>
+      </div>
+      <div class="lightbox__panel">
+        <div class="lightbox__tabs">
+          <span class="lightbox__tab is-active">Annotations</span>
+          <span class="lightbox__tab">Label</span>
+        </div>
+        <div class="ai-suggestions-banner">
+          <span class="dot"></span>
+          <span><strong>AI suggested 5 anchors.</strong> Click a ghost to review.</span>
+        </div>
+        <div class="bulk-actions">
+          <button class="bulk-btn bulk-btn--primary">Accept all</button>
+          <button class="bulk-btn">Dismiss all</button>
+        </div>
+        <h2 style="margin-bottom: 8px; margin-top: 4px;">Suggestions</h2>
+        <div class="anchor-list">
+          <div class="anchor">
+            <div class="anchor__name"><strong>Top nav</strong><span>0.92 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept" title="Accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject" title="Dismiss">✕</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Search bar</strong><span>0.88 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Featured card</strong><span>0.76 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Primary CTA</strong><span>0.95 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Bottom tab bar</strong><span>0.84 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────── State 2: One ghost selected, with handles ───── -->
+  <div>
+    <h2>State 2 · Selected — corner handles to resize before accepting</h2>
+    <div class="lightbox">
+      <div class="lightbox__stage">
+        <div class="lightbox__shot-mock">
+          <div class="header-bar"></div>
+          <div class="search"></div>
+          <div class="card"></div>
+          <div class="row row1"></div>
+          <div class="row row2"></div>
+          <div class="row row3"></div>
+          <div class="cta"></div>
+          <div class="tab-bar"></div>
+        </div>
+        <div class="ghost" style="left:4%; top:4%; width:92%; height:6%;">
+          <span class="ghost__label">Top nav <span class="ghost__confidence">0.92</span></span>
+        </div>
+        <div class="ghost" style="left:4%; top:12%; width:66%; height:5%;">
+          <span class="ghost__label">Search bar <span class="ghost__confidence">0.88</span></span>
+        </div>
+        <div class="ghost is-selected" style="left:4%; top:24%; width:92%; height:18%;">
+          <span class="ghost__label">Featured card <span class="ghost__confidence">0.76</span></span>
+        </div>
+        <div class="ghost" style="left:30%; bottom:6%; width:40%; height:6%;">
+          <span class="ghost__label">Primary CTA <span class="ghost__confidence">0.95</span></span>
+        </div>
+      </div>
+      <div class="lightbox__panel">
+        <div class="lightbox__tabs">
+          <span class="lightbox__tab is-active">Annotations</span>
+          <span class="lightbox__tab">Label</span>
+        </div>
+        <div class="ai-suggestions-banner">
+          <span class="dot"></span>
+          <span><strong>Featured card</strong> selected · drag corners to refine</span>
+        </div>
+        <div class="bulk-actions">
+          <button class="bulk-btn bulk-btn--primary">Accept this</button>
+          <button class="bulk-btn">Dismiss</button>
+        </div>
+        <h2 style="margin-bottom: 8px; margin-top: 4px;">All suggestions</h2>
+        <div class="anchor-list">
+          <div class="anchor">
+            <div class="anchor__name"><strong>Top nav</strong><span>0.92 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Search bar</strong><span>0.88 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+          <div class="anchor is-selected">
+            <div class="anchor__name"><strong>Featured card</strong><span>0.76 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Primary CTA</strong><span>0.95 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Bottom tab bar</strong><span>0.84 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────── State 3: Mixed — some accepted, some rejected, two pending ─ -->
+  <div>
+    <h2>State 3 · Mixed — 2 accepted, 1 rejected, 2 pending</h2>
+    <div class="lightbox">
+      <div class="lightbox__stage">
+        <div class="lightbox__shot-mock">
+          <div class="header-bar"></div>
+          <div class="search"></div>
+          <div class="card"></div>
+          <div class="row row1"></div>
+          <div class="row row2"></div>
+          <div class="row row3"></div>
+          <div class="cta"></div>
+          <div class="tab-bar"></div>
+        </div>
+        <div class="ghost is-accepted" style="left:4%; top:4%; width:92%; height:6%;">
+          <span class="ghost__label">Top nav</span>
+        </div>
+        <div class="ghost" style="left:4%; top:12%; width:66%; height:5%;">
+          <span class="ghost__label">Search bar <span class="ghost__confidence">0.88</span></span>
+        </div>
+        <div class="ghost is-rejected" style="left:4%; top:24%; width:92%; height:18%;">
+          <span class="ghost__label">Featured card</span>
+        </div>
+        <div class="ghost is-accepted" style="left:30%; bottom:6%; width:40%; height:6%;">
+          <span class="ghost__label">Primary CTA</span>
+        </div>
+        <div class="ghost" style="left:0; bottom:0; width:100%; height:4%;">
+          <span class="ghost__label">Bottom tab bar <span class="ghost__confidence">0.84</span></span>
+        </div>
+      </div>
+      <div class="lightbox__panel">
+        <div class="lightbox__tabs">
+          <span class="lightbox__tab is-active">Annotations</span>
+          <span class="lightbox__tab">Label</span>
+        </div>
+        <div class="ai-suggestions-banner">
+          <span class="dot"></span>
+          <span><strong>2 of 5 accepted</strong> · 2 pending · 1 dismissed</span>
+        </div>
+        <div class="bulk-actions">
+          <button class="bulk-btn bulk-btn--primary">Accept remaining</button>
+          <button class="bulk-btn">Done</button>
+        </div>
+        <h2 style="margin-bottom: 8px; margin-top: 4px;">All suggestions</h2>
+        <div class="anchor-list">
+          <div class="anchor is-accepted">
+            <div class="anchor__name"><strong>Top nav</strong><span>Accepted · added to annotations</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn" title="Undo">↶</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Search bar</strong><span>0.88 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+          <div class="anchor is-rejected">
+            <div class="anchor__name"><strong>Featured card</strong><span>Dismissed</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn" title="Undo">↶</button>
+            </div>
+          </div>
+          <div class="anchor is-accepted">
+            <div class="anchor__name"><strong>Primary CTA</strong><span>Accepted · added to annotations</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn" title="Undo">↶</button>
+            </div>
+          </div>
+          <div class="anchor">
+            <div class="anchor__name"><strong>Bottom tab bar</strong><span>0.84 confidence</span></div>
+            <div class="anchor__actions">
+              <button class="anchor__btn anchor__btn--accept">✓</button>
+              <button class="anchor__btn anchor__btn--reject">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">
+    Implementation notes for the React side:
+    <br>· Each ghost is positioned <code>%</code>-based off the bbox (matches how the existing area-annotation editor positions handles).
+    <br>· Resize handles re-use the existing area-annotation resize logic. No new geometry math.
+    <br>· "Accept" calls <code>upsertAnnotation(...)</code> with the current bbox + name + <code>tagAsUiElement: true</code> so it lands in both <code>screenshot_annotations</code> and the label's <code>ui_element_anchors</code> (the bbox-aware promote we just shipped).
+    <br>· "Dismiss" removes the anchor from <code>label.screen_analysis.ui_element_anchors</code> on save — no annotation row created.
+    <br>· "Undo" toggles state back to pending. Until the lightbox closes / saves, all state is local.
+    <br>· Ghost layer is non-clickable while the area-annotation draw tool is active (otherwise drag-to-draw would collide).
+  </p>
+</body>
+</html>

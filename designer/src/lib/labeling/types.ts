@@ -31,11 +31,30 @@ export interface LabelJourney {
   inference_notes: string;
 }
 
+// Bbox in normalised 0-100 percentages: [x, y, w, h] where x/y are the
+// top-left corner of the rectangle and w/h are width/height. AI returns
+// these alongside ui_elements; manual annotations promote into this
+// field too. Optional bbox means "AI knows this element exists but
+// couldn't locate it confidently."
+export type UiElementBbox = [number, number, number, number];
+
+export interface UiElementAnchor {
+  name: string;
+  bbox: UiElementBbox | null;
+  confidence: number | null;
+}
+
 export interface LabelScreenAnalysis {
   description: string;
   layout: string;
   functions: string;
   ui_elements: string[];
+  // Per-element location hints. Kept as a parallel array to ui_elements
+  // (rather than embedded in ui_elements) so the existing taxonomy
+  // string[] shape stays intact for filters, search, JSONB queries, etc.
+  // Names in this array should match values in ui_elements; entries
+  // without a known location can still appear with bbox: null.
+  ui_element_anchors: UiElementAnchor[];
   ux_patterns: string[];
   colors: string[];
   visible_text: string[];

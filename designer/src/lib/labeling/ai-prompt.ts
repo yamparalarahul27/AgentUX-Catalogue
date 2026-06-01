@@ -39,6 +39,9 @@ Create structured metadata for a design-reference catalogue using this schema:
     "layout": "",
     "functions": "",
     "ui_elements": [],
+    "ui_element_anchors": [
+      { "name": "", "bbox": [0, 0, 0, 0], "confidence": 0.0 }
+    ],
     "ux_patterns": [],
     "colors": [],
     "visible_text": []
@@ -74,6 +77,15 @@ screen_state: default, loading, empty, error, success, disabled, selected, expan
 theme: light, dark, mixed, unknown
 density: sparse, comfortable, compact, dense, unknown
 For page_types, ui_elements, and ux_patterns, choose concise design terms.
+For ui_element_anchors, return one entry per visible UI element with:
+  - "name": the same term you used in ui_elements (case-sensitive match).
+  - "bbox": [x, y, w, h] in PERCENT 0-100 of the visible screen. x/y is the
+    top-left corner of the element's bounding rectangle; w/h is its size.
+    Set bbox to null if you cannot place the element confidently.
+  - "confidence": 0.0-1.0 — how sure you are the element exists AND the
+    bbox is roughly right. Low confidence is fine, just be honest.
+Anchor the DOMINANT instance of each element type — don't enumerate
+every menu icon. Cap at ~12 anchors total.
 For colors, use hex values if visually clear, otherwise use color names.
 For similar_reference_queries, write 5-8 natural language queries useful for Refero, Mobbin, or an internal catalogue.
 For patterns_to_steal, write specific reusable design tactics.
