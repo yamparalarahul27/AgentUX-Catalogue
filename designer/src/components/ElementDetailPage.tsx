@@ -3,6 +3,8 @@ import type { User } from '@supabase/supabase-js';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
 
+import notFoundIllustration from '../assets/not-found.png';
+
 import {
   buildElementCatalog,
   elementKindLabel,
@@ -194,7 +196,10 @@ export function ElementDetailPage({ user, onLogout, onLogoutEverywhere }: Elemen
             </div>
 
             {visibleScreenshots.length === 0 ? (
-              <p className="catalogue-element-detail__empty">No screenshots match these filters.</p>
+              <div className="catalogue-element-detail__empty">
+                <img src={notFoundIllustration} alt="" className="empty-state__illustration" />
+                <p>No screenshots match these filters.</p>
+              </div>
             ) : (
               <div className="catalogue-element-detail__grid">
                 {visibleScreenshots.map((shot) => (

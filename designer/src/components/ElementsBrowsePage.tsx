@@ -8,6 +8,7 @@ import {
   type ElementKind,
 } from '../lib/element-catalog';
 import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
+import notFoundIllustration from '../assets/not-found.png';
 import { CatalogueHeader } from './CatalogueHeader';
 import { ElementCard } from './ElementCard';
 
@@ -129,11 +130,14 @@ export function ElementsBrowsePage({ user, onLogout, onLogoutEverywhere }: Eleme
         {loading && catalog.length === 0 ? (
           <p className="catalogue-elements__empty">Loading the catalogue…</p>
         ) : visible.length === 0 ? (
-          <p className="catalogue-elements__empty">
-            {searchQuery
-              ? <>No elements match <strong>{searchQuery}</strong>.</>
-              : 'No labelled screenshots yet. Add labels in the Labelling Studio to populate this page.'}
-          </p>
+          <div className="catalogue-elements__empty">
+            <img src={notFoundIllustration} alt="" className="empty-state__illustration" />
+            <p>
+              {searchQuery
+                ? <>No elements match <strong>{searchQuery}</strong>.</>
+                : 'No labelled screenshots yet. Add labels in the Labelling Studio to populate this page.'}
+            </p>
+          </div>
         ) : (
           <div className="catalogue-elements__grid">
             {visible.map((entry) => (

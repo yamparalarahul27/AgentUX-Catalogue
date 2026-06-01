@@ -774,10 +774,18 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.52); }
     max-width: 360px;
   }
 
-  // The Lucide image-icon used to be hardcoded #3f3f46 inline (set in
-  // CatalogueContent.tsx). After removing that, it inherits the
-  // parent `color: $text-muted` via currentColor — visible against
-  // the dark surface, soft against the green glow at the bottom.
+  // Replaced the Lucide ImageIcon with a custom illustration
+  // (designer/src/assets/not-found.png) so the empty state has a bit
+  // more personality than a stock glyph. Sits above the h2 / p block.
+}
+
+.empty-state__illustration {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  display: block;
+  // Slight drop-shadow to lift the illustration off the indigo glow.
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
 }
 
 // "Explore latest" CTA on the filtered-empty state — clears every
