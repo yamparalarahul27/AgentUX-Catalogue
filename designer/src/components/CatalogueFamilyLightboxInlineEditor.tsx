@@ -1,9 +1,15 @@
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useRef } from 'react';
-import { CornerDownLeft, Monitor, Moon, Smartphone, Sun } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CornerDownLeft, LayoutGrid, Monitor, Moon, Smartphone, Sun } from 'lucide-react';
 
 import androidLogo from '../assets/android-logo.svg';
 import appleLogo from '../assets/apple-logo.svg';
+import {
+  ensureCatalogueGroupAppearanceLoaded,
+  readCatalogueGroupAppearanceMap,
+  resolveCatalogueGroupAppearance,
+  subscribeCatalogueGroupAppearance,
+} from '../lib/catalogue-group-appearance';
 import { REFERENCE_IMAGES_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 import { DotLoader } from './DotLoader';
@@ -143,13 +149,34 @@ export function CatalogueFamilyLightboxInlineEditor({
     return () => window.removeEventListener('keydown', handleKey);
   }, [isSaving, onCancel, onSave]);
 
+  // Subscribe to the appearance map so the group-dropdown can render
+  // each option with its brand icon (same visual the cards / chip strip
+  // already use). Module-level store + subscribe pattern mirrors
+  // CatalogueGroupLabel — no prop drilling needed.
+  const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
+  useEffect(() => {
+    void ensureCatalogueGroupAppearanceLoaded(null);
+    const unsubscribe = subscribeCatalogueGroupAppearance(() => {
+      setAppearanceMap(readCatalogueGroupAppearanceMap());
+    });
+    return unsubscribe;
+  }, []);
+
   // Merge the current draft into the option list so a freshly-typed value
-  // renders as the selected label, not as the placeholder.
+  // renders as the selected label, not as the placeholder. Each option
+  // also carries the group's icon (or a small fallback Lucide) so the
+  // dropdown matches the catalogue card / chip strip visual language.
   const groupOptions = useMemo(() => {
     const all = new Set(existingGroups);
     if (groupDraft.trim()) all.add(groupDraft.trim());
-    return [...all].sort().map((name) => ({ value: name, label: name }));
-  }, [existingGroups, groupDraft]);
+    return [...all].sort().map((name) => {
+      const appearance = resolveCatalogueGroupAppearance(appearanceMap, name, null);
+      const icon: ReactNode = appearance.iconUrl
+        ? <img src={appearance.iconUrl} alt="" aria-hidden="true" className="dropdown__item-icon-img" />
+        : <LayoutGrid size={13} aria-hidden="true" />;
+      return { value: name, label: name, icon };
+    });
+  }, [existingGroups, groupDraft, appearanceMap]);
 
   const flowOptions = useMemo(() => {
     const all = new Set(existingFlows);
