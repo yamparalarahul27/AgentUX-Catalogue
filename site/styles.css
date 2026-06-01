@@ -103,6 +103,20 @@ a { color: inherit; text-decoration: none; }
 .nav-cta { font-size: 14px; }
 
 /* ─── Buttons ──────────────────────────────────────────────────────── */
+/*
+ * Two scales:
+ *
+ *  .button       — small pill, used in the topbar nav CTA. Indigo
+ *                  primary on dark, transparent secondary. Same brand
+ *                  language as the catalogue header.
+ *
+ *  .button-hero  — large neutral pair (Preview/Deploy style). Used in
+ *                  the hero + bottom CTA. Borrowed from a shared design
+ *                  reference: chunky 56px buttons with tactile depth
+ *                  (inset highlight + offset bottom shadow). Two
+ *                  flavours: deploy (dark glossy gradient, primary) and
+ *                  preview (off-white card, secondary).
+ */
 .button {
   display: inline-flex;
   align-items: center;
@@ -137,6 +151,62 @@ a { color: inherit; text-decoration: none; }
 .button-secondary:hover {
   border-color: #3f3f46;
   background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Hero / CTA — neutral Preview/Deploy pair ─────────────────────── */
+.button-hero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  min-width: 176px;
+  padding: 0 22px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter 0.15s ease-out, transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.button-hero:hover {
+  filter: brightness(1.04);
+  transform: translateY(-2px);
+}
+.button-hero:active {
+  transform: translateY(1px);
+}
+.button-hero:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 5px;
+}
+
+/* Deploy — dark glossy gradient with inset highlight + offset shadow */
+.button-deploy {
+  border-color: #111116;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 34%),
+    linear-gradient(180deg, #5a5a63 0%, #303038 45%, #111116 100%);
+  color: #ffffff;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+    0 5px 0 #09090d,
+    0 8px 12px rgba(0, 0, 0, 0.24);
+}
+
+/* Preview — off-white card with inset highlight + offset shadow */
+.button-preview {
+  border-color: #e1e1e4;
+  background: #ffffff;
+  color: #17181d;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 4px 0 #d6d6d8,
+    0 7px 10px rgba(0, 0, 0, 0.10);
 }
 
 /* ─── Eyebrow tag ──────────────────────────────────────────────────── */
@@ -317,7 +387,7 @@ a { color: inherit; text-decoration: none; }
 
   .hero { padding: 56px 0 48px; }
   .hero h1 { font-size: clamp(36px, 9vw, 48px); }
-  .hero-actions .button { width: 100%; }
+  .hero-actions .button-hero { width: 100%; }
   .hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin: 0 auto; }
 
   .tiles {
@@ -327,7 +397,7 @@ a { color: inherit; text-decoration: none; }
   .tile { padding: 20px; }
 
   .cta { padding: 48px 0 56px; }
-  .cta-actions .button { width: 100%; }
+  .cta-actions .button-hero { width: 100%; }
   .cta-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin: 0 auto; }
 
   .footer {
@@ -341,6 +411,6 @@ a { color: inherit; text-decoration: none; }
 /* ─── Reduced motion ───────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .button, .tile { transition: none; }
-  .button:hover, .tile:hover { transform: none; }
+  .button, .button-hero, .tile { transition: none; }
+  .button:hover, .button-hero:hover, .tile:hover { transform: none; }
 }
