@@ -368,6 +368,23 @@
 // convention (Slack, browser, Vercel) and stays clear of the
 // magnified dock at the bottom. Mobile shifts to a full-width pill
 // above the safe-area inset — no dock conflict there.
+// Animated rainbow ring — Kevin Powell's conic-gradient + mask trick
+// (https://codepen.io/kevinpowell/pen/WbbXRPL). The @property
+// declaration is what lets the conic-gradient's `from` angle actually
+// animate; browsers without @property support fall back to a static
+// ring, which is still visible. Replaces the old left-edge indigo→green
+// stripe + indigo dot mosaic — same "action required" affordance, more
+// brand-forward.
+@property --app-update-rainbow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes app-update-toast-rainbow {
+  to { --app-update-rainbow-angle: 360deg; }
+}
+
 .app-update-toast {
   position: fixed;
   // 80px lands the toast just below the catalogue header on desktop.
@@ -376,15 +393,10 @@
   top: calc(80px + env(safe-area-inset-top));
   right: 20px;
   width: 360px;
-  background: #16161a;
-  border: 1px solid #3a3a44;
+  background: #0a0a0c;
+  border: none;
   border-radius: 16px;
-  // overflow:hidden clips the ::before gradient stripe to the toast's
-  // 16px rounded corners. Without it the stripe's own border-radius
-  // can't honour 16px on a 3px-wide element, so the corners poked
-  // past the toast outline at top-left and bottom-left.
-  overflow: hidden;
-  padding: 16px 16px 16px 20px;
+  padding: 16px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   display: flex;
   gap: 12px;
@@ -393,60 +405,31 @@
   animation: app-update-slide-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-// Mosaic dot pattern — two horizontal layers that span the whole
-// toast: a blurry one anchored to the LEFT (soft halo behind the
-// icon + text) and a sharp one anchored to the RIGHT (crisp dot
-// grid). Each is masked with an opposing linear gradient so they
-// blend smoothly through the middle of the toast. Opacity pulses
-// on a 3.4s loop. The 3px left inset keeps both layers clear of
-// the stripe.
-.app-update-toast__mosaic-blur {
-  position: absolute;
-  inset: 0 0 0 3px;
-  pointer-events: none;
-  z-index: 0;
-  background: radial-gradient(circle, rgba(129, 132, 255, 1) 1.8px, transparent 2.2px) 0 0 / 5px 5px;
-  filter: blur(2.5px);
-  mask-image: linear-gradient(to right, #000 0%, #000 30%, transparent 75%);
-  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 30%, transparent 75%);
-  animation: app-update-toast-mosaic 3.4s ease-in-out infinite;
-}
-
-.app-update-toast::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 0 3px;
-  pointer-events: none;
-  z-index: 0;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.55) 1px, transparent 1.4px) 0 0 / 4px 4px;
-  mask-image: linear-gradient(to right, transparent 25%, #000 70%);
-  -webkit-mask-image: linear-gradient(to right, transparent 25%, #000 70%);
-  animation: app-update-toast-mosaic 3.4s ease-in-out infinite;
-}
-
-@keyframes app-update-toast-mosaic {
-  0%, 100% { opacity: 0.45; }
-  50%      { opacity: 0.85; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-update-toast__mosaic-blur,
-  .app-update-toast::after { animation: none; opacity: 0.6; }
-}
-
-// Indigo→green gradient stripe on the left edge — visually
-// distinct from the regular notification toast (which has no
-// stripe) so users learn "stripe = action required".
+// Rotating rainbow ring around the toast. `inset: -1px` + `padding: 1px`
+// + mask-composite: exclude paints a 1px gradient ring on the outermost
+// edge with a transparent center, so the toast content shows through.
 .app-update-toast::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, #6366f1, #22c55e);
-  border-radius: 16px 0 0 16px;
-  z-index: 1;
+  inset: -1px;
+  border-radius: 17px; // outer radius = inner 16px + 1px inset
+  background: conic-gradient(
+    from var(--app-update-rainbow-angle),
+    #ff3b3b, #ff7a59, #ffd166, #34d399, #2dd4bf, #60a5fa, #8b5cf6, #f472b6, #ff3b3b
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 1px;
+  animation: app-update-toast-rainbow 6s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-update-toast::before { animation: none; }
 }
 
 @keyframes app-update-slide-in {
@@ -459,13 +442,16 @@
   z-index: 2;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  background: rgba(99, 102, 241, 0.16);
-  color: #c7d2fe;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+
+  img {
+    display: block;
+    width: 32px;
+    height: 32px;
+  }
 }
 
 .app-update-toast__body {

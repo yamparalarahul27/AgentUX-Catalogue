@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-01-refresh-toast-rework",
+    "date": "June 1, 2026",
+    "title": "Refresh toast — rainbow ring + shorter snooze",
+    "bullets": [
+      { "kind": "improved", "text": "The \"new version available\" toast now wears the AgentUX brandmark and an animated rainbow ring around the edge — same prompt, more brand presence" },
+      { "kind": "improved", "text": "\"Later\" is now \"Remind me in 10 mins\" — was 30, which was easy to forget about" },
+      { "kind": "improved", "text": "Quieter background — dropped the indigo dot pattern and left gradient stripe so the message and CTA read first" }
+    ]
+  },
+  {
     "id": "2026-06-01-new-logo-and-mobile-tweaks",
     "date": "June 1, 2026",
     "title": "New AgentUX brandmark + mobile polish",
