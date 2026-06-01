@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Sparkles, X } from 'lucide-react';
+import { X } from 'lucide-react';
+
+import agentuxMark from '../assets/agentux-mark.svg';
 
 // Build-time identifier baked into the bundle by vite.config.ts.
 // We compare against the live /designer/build-id.json on a polling
@@ -9,7 +11,7 @@ declare const __BUILD_ID__: string;
 
 const BUILD_ID_URL = '/designer/build-id.json';
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min, the Linear-style cadence
-const SNOOZE_MS = 30 * 60 * 1000; // 30 min when user picks "Later"
+const SNOOZE_MS = 10 * 60 * 1000; // 10 min when user picks "Remind me"
 const SNOOZE_KEY = 'agentux:update-snoozed-until';
 const DISMISSED_BUILD_KEY = 'agentux:update-dismissed-for';
 
@@ -116,9 +118,8 @@ export function AppUpdateToast({ onRefresh }: AppUpdateToastProps) {
 
   return (
     <div className="app-update-toast" role="status" aria-live="polite">
-      <span className="app-update-toast__mosaic-blur" aria-hidden="true" />
       <span className="app-update-toast__icon" aria-hidden="true">
-        <Sparkles size={16} />
+        <img src={agentuxMark} alt="" width={32} height={32} />
       </span>
       <div className="app-update-toast__body">
         <p className="app-update-toast__title">A new version is available</p>
@@ -135,9 +136,9 @@ export function AppUpdateToast({ onRefresh }: AppUpdateToastProps) {
             type="button"
             className="app-update-toast__secondary"
             onClick={handleLater}
-            title="Hide for 30 minutes"
+            title="Re-prompt in 10 minutes"
           >
-            Later
+            Remind me in 10 mins
           </button>
         </div>
       </div>

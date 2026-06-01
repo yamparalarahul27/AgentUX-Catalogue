@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Refresh toast — AgentUX mark mockup</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0;
+    padding: 48px;
+    background: #0f0f10;
+    color: #e4e4e7;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    align-items: flex-start;
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0; color: #a1a1aa; }
+  h2 { font-size: 13px; font-weight: 500; margin: 0; color: #71717a; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* ── Live toast styles (mirrored from whats-new.scss) ──────────── */
+  /* Animated rainbow ring — Kevin Powell's conic-gradient + mask trick.
+   * @property declaration lets the conic-gradient `from` angle animate.
+   * Browsers without @property support fall back to a static ring. */
+  @property --rainbow-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes rainbow-rotate {
+    to { --rainbow-angle: 360deg; }
+  }
+
+  .toast {
+    position: relative;
+    width: 360px;
+    background: #0a0a0c;
+    border: none;
+    border-radius: 16px;
+    padding: 16px 16px 16px 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  /* Rotating rainbow ring around the whole toast */
+  .toast::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 17px;
+    background: conic-gradient(
+      from var(--rainbow-angle),
+      #ff3b3b, #ff7a59, #ffd166, #34d399, #2dd4bf, #60a5fa, #8b5cf6, #f472b6, #ff3b3b
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    padding: 1px;
+    animation: rainbow-rotate 6s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toast::before { animation: none; }
+  }
+
+  .toast__icon {
+    position: relative;
+    z-index: 2;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .toast__icon img {
+    display: block;
+  }
+
+  .toast__body {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    min-width: 0;
+  }
+  .toast__title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 2px;
+    color: #fafafa;
+    letter-spacing: -0.01em;
+  }
+  .toast__text {
+    font-size: 13px;
+    margin: 0 0 10px;
+    color: #a1a1aa;
+  }
+  .toast__actions {
+    display: flex;
+    gap: 8px;
+  }
+  .toast__primary {
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: none;
+    background: #6366f1;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .toast__secondary {
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid #3a3a44;
+    background: transparent;
+    color: #e4e4e7;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .toast__close {
+    position: relative;
+    z-index: 2;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #a1a1aa;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Inline lucide-X */
+  .lucide-x {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+</style>
+</head>
+<body>
+  <h1>Refresh toast — rainbow ring, 10-min snooze</h1>
+
+  <div class="stack">
+    <h2>Variant B · animated rainbow ring · gradient stripe removed · CTA = Remind me in 10 mins</h2>
+    <div class="toast">
+      <span class="toast__icon" aria-hidden="true">
+        <img src="../../designer/src/assets/agentux-mark.svg" alt="" width="32" height="32" />
+      </span>
+      <div class="toast__body">
+        <p class="toast__title">A new version is available</p>
+        <p class="toast__text">Refresh to get the latest fixes and features.</p>
+        <div class="toast__actions">
+          <button class="toast__primary">Refresh</button>
+          <button class="toast__secondary">Remind me in 10 mins</button>
+        </div>
+      </div>
+      <button class="toast__close" aria-label="Dismiss">
+        <svg class="lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+</body>
+</html>

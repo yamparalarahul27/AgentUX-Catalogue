@@ -232,10 +232,10 @@
   text-decoration: none;
 
   img {
-    // Full AgentUX logo (icon + wordmark). Natural aspect ~3.195:1 from
-    // the 1278×400 SVG; height 36 → width auto keeps proportions intact.
+    // AgentUX mark — square 120×120 icon. Rendered at 36px on the share
+    // header so it reads as a brandmark, not page chrome.
+    width: 36px;
     height: 36px;
-    width: auto;
     object-fit: contain;
     display: block;
   }
