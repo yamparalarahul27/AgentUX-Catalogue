@@ -6,6 +6,8 @@ import { Catalogue } from './components/Catalogue';
 import { CatalogueGroupDetail } from './components/CatalogueGroupDetail';
 import { CatalogueNotFound } from './components/CatalogueNotFound';
 import { ChangelogPage } from './components/ChangelogPage';
+import { ElementDetailPage } from './components/ElementDetailPage';
+import { ElementsBrowsePage } from './components/ElementsBrowsePage';
 import { PasscodeLogin } from './components/PasscodeLogin';
 import { SaveTrashAnimationProvider } from './components/SaveTrashAnimation';
 import { SharePage } from './components/SharePage';
@@ -79,6 +81,26 @@ export function CatalogueApp() {
           )}
         />
         <Route path="/changelog" element={<ChangelogPage />} />
+        <Route
+          path="/elements"
+          element={(
+            <ElementsBrowsePage
+              user={user}
+              onLogout={logout}
+              onLogoutEverywhere={logoutEverywhere}
+            />
+          )}
+        />
+        <Route
+          path="/elements/:kind/:slug"
+          element={(
+            <ElementDetailPage
+              user={user}
+              onLogout={logout}
+              onLogoutEverywhere={logoutEverywhere}
+            />
+          )}
+        />
         <Route
           path="*"
           element={(

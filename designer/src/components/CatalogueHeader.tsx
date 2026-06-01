@@ -22,6 +22,7 @@ import { useTypingKeycapEnabled } from './TypingKeycap';
 
 type CatalogueSection =
   | 'catalogue'
+  | 'elements'
   | 'videos'
   | 'links'
   | 'team'
@@ -160,6 +161,16 @@ export function CatalogueHeader({
           data-short="C"
         >
           Catalogue
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className={`catalogue-header__tab ${activeSection === 'elements' ? 'is-active' : ''}`}
+          aria-selected={activeSection === 'elements'}
+          onClick={() => onSectionChange('elements')}
+          data-short="E"
+        >
+          Elements
         </button>
         <button
           type="button"

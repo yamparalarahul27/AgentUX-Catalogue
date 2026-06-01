@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-01-elements-browse",
+    "date": "June 1, 2026",
+    "title": "Browse the catalogue by element",
+    "bullets": [
+      { "kind": "new", "text": "New \"Elements\" tab in the header — browse every UI element, UX pattern, and page type the AI has labelled, with a sample of how four different products handle each one" },
+      { "kind": "new", "text": "Drill into any element to see every screenshot using it across the catalogue, filtered by group, platform, or theme" },
+      { "kind": "improved", "text": "Sub-tabs split the view into UI Elements, UX Patterns, and Page Types — or browse all at once with search + sort" }
+    ]
+  },
+  {
     "id": "2026-05-29-lightbox-group-combobox-icons",
     "date": "May 29, 2026",
     "title": "Lightbox edit — group dropdown now shows brand icons",
