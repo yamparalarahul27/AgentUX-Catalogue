@@ -47,8 +47,22 @@ export function CatalogueLabelingStudio({
     });
   }, [overrides, screenshots]);
 
-  const { filter, setFilter, buckets: loadedBuckets, filtered, statusByScreenshotId } =
+  const { filter, setFilter, buckets: loadedBuckets, filtered: filteredRaw, statusByScreenshotId } =
     useLabelingStudioStatus(overlaidScreenshots);
+
+  // `fullScopeScreenshots` is fetched id-ascending (oldest first) so the
+  // catalogue's chip strip / facet counters are stable across paginated
+  // loads. The Studio wants the opposite — show the LATEST screenshots
+  // on page 1 so reviewers don't have to navigate to the last page to
+  // see what just landed.
+  const filtered = useMemo(() => {
+    return [...filteredRaw].sort((a, b) => {
+      const at = a.created_at ? Date.parse(a.created_at) : 0;
+      const bt = b.created_at ? Date.parse(b.created_at) : 0;
+      if (at === bt) return 0;
+      return bt - at;
+    });
+  }, [filteredRaw]);
 
   // Replace each chip's count with the database total. Filtering remains based
   // on the loaded set (filtered grid) — totals are display-only.
