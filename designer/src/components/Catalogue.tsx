@@ -95,7 +95,6 @@ type CatalogueSection =
   | 'team'
   | 'studio';
 
-function noop() { /* intentional no-op */ }
 export function Catalogue({
   user,
   onLogout,
@@ -596,9 +595,16 @@ export function Catalogue({
   }, [studioTotals]);
   const handleStudioCardClick = useCallback((screenshotId: string) => {
     const familyId = screenshotIdToFamilyId.get(screenshotId);
-    if (familyId) {
-      setPreviewFamilyId(familyId);
-    }
+    if (!familyId) return;
+    // Mirror the Search modal's open-screenshot path: set the screenshot
+    // hint AND the family ID. Without the hint, the lightbox falls back
+    // to the family's primary variant (usually the latest by date), so
+    // clicking an older screenshot would land on the newest variant
+    // within the same family. setPreviewStartInlineEdit kept false so
+    // the lightbox opens in view mode, not the labeling editor.
+    setPreviewStartInlineEdit(false);
+    setPreviewScreenshotHint(screenshotId);
+    setPreviewFamilyId(familyId);
   }, [screenshotIdToFamilyId]);
   const presetUsage = useMemo(() => buildPresetUsage(scopedScreenshots), [scopedScreenshots]);
   const selectedVisibleCount = useMemo(
@@ -665,6 +671,7 @@ export function Catalogue({
     allFamilies,
     fullScopeScreenshots,
     setScreenshots,
+    setFullScopeScreenshots,
     setToast,
     userEmail: user.email || null,
     userId: user.id,
@@ -1171,13 +1178,16 @@ export function Catalogue({
               // Studio works on the full unfiltered superset — the catalogue
               // toolbar's filter / search / sort must NOT bleed into here.
               // Status chip counts come from `totals` (DB-direct) and the
-              // grid + chip-filtered list run off the full scope.
+              // grid + chip-filtered list run off the full scope. The
+              // Studio paginates internally (50 cards per page) via its
+              // own IntersectionObserver — no outer pagination plumbing.
               screenshots={fullScopeScreenshots}
-              hasMore={false}
-              loadMore={noop}
-              loadingMore={false}
               overrides={studioLabelOverrides}
-              selectedScreenshotId={previewFamilyId}
+              // The Studio's selected-card highlight needs a SCREENSHOT
+              // ID (not a family ID). `previewScreenshotHint` is what
+              // `handleStudioCardClick` writes; pairing them here is what
+              // gives the clicked card its ring.
+              selectedScreenshotId={previewScreenshotHint}
               onCardClick={handleStudioCardClick}
               totals={studioTotals.totals}
               totalsLoading={studioTotals.loading}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ScreenshotNode } from '../../types';
 import { LABELING_STUDIO_MIN_VIEWPORT_PX } from '../../lib/feature-flags';
@@ -13,9 +13,6 @@ import { LabelingStudioPlaceholder } from './LabelingStudioPlaceholder';
 
 interface Props {
   screenshots: ScreenshotNode[];
-  hasMore: boolean;
-  loadMore: () => void;
-  loadingMore: boolean;
   overrides: Map<string, ScreenshotLabel>;
   selectedScreenshotId: string | null;
   onCardClick: (screenshotId: string) => void;
@@ -23,11 +20,16 @@ interface Props {
   totalsLoading: boolean;
 }
 
+// How many cards to render on the first paint, and how many more to
+// reveal each time the sentinel scrolls into view. The Studio receives
+// the FULL unfiltered superset (~2,000+ screenshots today), so without
+// internal pagination the grid mounts ~2,000 LabelingStudioCards in one
+// React commit. 50 + 50 keeps the initial mount cheap and the
+// infinite-scroll smooth as the user explores.
+const PAGE_SIZE = 50;
+
 export function CatalogueLabelingStudio({
   screenshots,
-  hasMore,
-  loadMore,
-  loadingMore,
   overrides,
   selectedScreenshotId,
   onCardClick,
@@ -57,20 +59,35 @@ export function CatalogueLabelingStudio({
     [loadedBuckets, totals],
   );
 
+  // Local pagination state. Reset whenever the active chip changes so
+  // each filter starts on page 1.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [filter]);
+
+  const visibleScreenshots = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount],
+  );
+  const hasMore = visibleCount < filtered.length;
+
   useEffect(() => {
     const node = sentinelRef.current;
     if (!node || !hasMore) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
-          loadMore();
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((current) =>
+            Math.min(current + PAGE_SIZE, filtered.length),
+          );
         }
       },
-      { rootMargin: '400px 0px' },
+      { rootMargin: '600px 0px' },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, loadMore]);
+  }, [hasMore, filtered.length]);
 
   if (viewportWidth < LABELING_STUDIO_MIN_VIEWPORT_PX) {
     return <LabelingStudioPlaceholder />;
@@ -101,7 +118,7 @@ export function CatalogueLabelingStudio({
       ) : (
         <>
           <div className="labeling-studio__grid">
-            {filtered.map((screenshot) => (
+            {visibleScreenshots.map((screenshot) => (
               <LabelingStudioCard
                 key={screenshot.id}
                 screenshot={screenshot}
@@ -111,9 +128,13 @@ export function CatalogueLabelingStudio({
               />
             ))}
           </div>
-          <div ref={sentinelRef} className="labeling-studio__sentinel" aria-hidden="true" />
-          {loadingMore && (
-            <p className="labeling-studio__footnote">Loading more…</p>
+          {hasMore && (
+            <>
+              <div ref={sentinelRef} className="labeling-studio__sentinel" aria-hidden="true" />
+              <p className="labeling-studio__footnote">
+                Showing {visibleScreenshots.length} of {filtered.length} · scroll for more
+              </p>
+            </>
           )}
         </>
       )}
