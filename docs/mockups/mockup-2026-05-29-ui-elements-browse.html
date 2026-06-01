@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>/ui-elements browse view — design directions</title>
+<style>
+  :root {
+    --bg: #0d0d0e;
+    --surface: #161618;
+    --surface-2: #1d1d20;
+    --surface-3: #25252b;
+    --border: #27272a;
+    --border-light: rgba(255,255,255,0.06);
+    --text: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-bg: rgba(99,102,241,0.18);
+    --ui-element: #818cf8;
+    --ux-pattern: #f472b6;
+    --page-type: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 56px 32px 96px; }
+
+  h1 { font-size: 32px; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .lede { color: var(--text-muted); margin: 0 0 12px; font-size: 16px; max-width: 760px; }
+  .lede strong { color: var(--text); }
+
+  .section { margin-bottom: 64px; }
+  .section > h2 {
+    font-size: 22px;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .section > h2 .num {
+    display: inline-block;
+    width: 30px; height: 30px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    text-align: center; line-height: 30px;
+    font-size: 13px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .section > .caption { color: var(--text-dim); margin: 0 0 24px; padding-left: 44px; font-size: 14px; max-width: 720px; }
+
+  /* ───── Browser frame ───── */
+  .frame {
+    background: #050507;
+    border-radius: 14px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .frame__chrome {
+    background: #1a1a1d;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .frame__dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.18); }
+  .frame__url { margin-left: 14px; padding: 4px 12px; background: rgba(0,0,0,0.4); border-radius: 6px; font-size: 11px; color: var(--text-muted); font-family: ui-monospace, SF Mono, monospace; }
+  .frame__body { padding: 32px; background: var(--bg); }
+
+  /* ───── Header bar (matching the real app) ───── */
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .app-header__logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+  .app-header__tabs { display: flex; gap: 20px; font-size: 13px; }
+  .app-header__tab { color: var(--text-dim); padding: 6px 0; }
+  .app-header__tab.is-active { color: var(--text); position: relative; }
+  .app-header__tab.is-active::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -21px; height: 2px; background: var(--text);
+  }
+  .app-header__icons { display: flex; gap: 12px; font-size: 14px; color: var(--text-dim); }
+
+  /* ───── Page heading ───── */
+  .page-title { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .page-lede { color: var(--text-muted); margin: 0 0 28px; font-size: 14px; max-width: 600px; }
+
+  /* ───── Sub-tabs ───── */
+  .subtabs {
+    display: flex;
+    gap: 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+    padding: 0;
+  }
+  .subtab {
+    padding: 12px 2px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .subtab.is-active { color: var(--text); border-bottom-color: var(--text); }
+  .subtab__count {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .subtab.is-active .subtab__count { background: rgba(255,255,255,0.14); color: white; }
+
+  /* ───── Toolbar (search + sort) ───── */
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .toolbar__search {
+    flex: 1;
+    max-width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .toolbar__sort {
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ───── Element card (Concept B) ───── */
+  .el-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .el-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .el-card:hover { border-color: rgba(99,102,241,0.4); transform: translateY(-1px); }
+
+  .el-card__strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--bg);
+    aspect-ratio: 4 / 1.2;
+  }
+  .el-card__sample {
+    background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
+    position: relative;
+    overflow: hidden;
+  }
+  .el-card__sample::before, .el-card__sample::after {
+    content: ''; position: absolute; inset: 0;
+    background-image: linear-gradient(to top right, transparent calc(50% - 1px), rgba(255,255,255,0.03) 50%, transparent calc(50% + 1px));
+  }
+  .el-card__sample::after {
+    background-image: linear-gradient(to top left, transparent calc(50% - 1px), rgba(255,255,255,0.03) 50%, transparent calc(50% + 1px));
+  }
+
+  .el-card__body {
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .el-card__name { font-size: 14px; font-weight: 500; color: var(--text); text-transform: capitalize; }
+  .el-card__count {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .el-card__kind-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .el-card__kind-dot--ui-element { background: var(--ui-element); }
+  .el-card__kind-dot--ux-pattern { background: var(--ux-pattern); }
+  .el-card__kind-dot--page-type  { background: var(--page-type); }
+
+  /* ───── Concept A: Sectioned ───── */
+  .section-block { margin-bottom: 32px; }
+  .section-block__head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .section-block__title { font-size: 16px; font-weight: 600; }
+  .section-block__count { font-size: 12px; color: var(--text-dim); }
+  .chip-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip-cloud__chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text);
+    text-transform: capitalize;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chip-cloud__chip:hover { border-color: var(--accent); }
+  .chip-cloud__chip span {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ───── Drill-in: element detail ───── */
+  .drill-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+  .drill-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .drill-back:hover { color: var(--text); }
+  .drill-meta { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; padding-left: 22px; }
+
+  .drill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .drill-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .drill-card__media {
+    aspect-ratio: 4 / 3;
+    background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
+    position: relative;
+  }
+  .drill-card__media::before, .drill-card__media::after {
+    content: ''; position: absolute; inset: 0;
+    background-image: linear-gradient(to top right, transparent calc(50% - 1px), rgba(255,255,255,0.04) 50%, transparent calc(50% + 1px));
+  }
+  .drill-card__media::after {
+    background-image: linear-gradient(to top left, transparent calc(50% - 1px), rgba(255,255,255,0.04) 50%, transparent calc(50% + 1px));
+  }
+  .drill-card__body { padding: 10px 12px; font-size: 12px; }
+  .drill-card__title { color: var(--text); margin-bottom: 2px; }
+  .drill-card__sub { color: var(--text-dim); font-size: 11px; }
+
+  /* ───── Open decisions ───── */
+  .decisions {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-top: 32px;
+  }
+  .decisions h3 { margin: 0 0 14px; font-size: 16px; color: var(--accent-hover); }
+  .decisions ol { margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 14px; }
+  .decisions ol li { margin-bottom: 12px; line-height: 1.55; }
+  .decisions ol li strong { color: var(--text); }
+  .decisions ol li em { color: var(--accent-hover); font-style: normal; font-weight: 500; }
+
+  /* ───── Concept switcher tag ───── */
+  .concept-tag {
+    display: inline-block;
+    background: var(--accent-bg);
+    color: var(--accent-hover);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>/ui-elements browse view</h1>
+  <p class="lede">
+    A new section that inverts the catalogue's organization — browse <strong>by element</strong> instead of by app. Click "button" to see every login button across every app. Click "onboarding" to see every welcome flow. Surfaces the AI labels already on each screenshot.
+  </p>
+  <p class="lede" style="font-size: 14px; color: var(--text-dim); margin-top: 12px;">
+    Three concepts below — each frames the same idea differently. Drill-in flow (what you see after clicking an element) is the same regardless of which top-level concept you pick.
+  </p>
+
+  <!-- ============ CONCEPT A — Sectioned chip-cloud ============ -->
+  <div class="section">
+    <h2><span class="num">A</span> Sectioned chip-cloud (lightest)</h2>
+    <p class="caption">All elements on one page, grouped by kind. Compact chip cloud per section. Best for "I want to scan all categories at once."</p>
+
+    <div class="frame">
+      <div class="frame__chrome">
+        <div class="frame__dot"></div><div class="frame__dot"></div><div class="frame__dot"></div>
+        <div class="frame__url">designer.hirahul.xyz/ui-elements</div>
+      </div>
+      <div class="frame__body">
+        <div class="app-header">
+          <span class="app-header__logo">AgentUX</span>
+          <span class="app-header__tabs">
+            <span class="app-header__tab">Catalogue</span>
+            <span class="app-header__tab is-active">Elements</span>
+            <span class="app-header__tab">Videos</span>
+            <span class="app-header__tab">Links</span>
+          </span>
+          <span class="app-header__icons">🔍 🕒 ⭐ ⚙</span>
+        </div>
+
+        <h1 class="page-title">Elements</h1>
+        <p class="page-lede">Every UI element, pattern, and page type across the catalogue. Click to see every screenshot containing one.</p>
+
+        <div class="toolbar">
+          <div class="toolbar__search">🔍 &nbsp;Search elements…</div>
+          <div class="toolbar__sort">Sort: by count ▾</div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-block__head">
+            <span class="section-block__title"><span class="el-card__kind-dot el-card__kind-dot--ui-element"></span>UI Elements</span>
+            <span class="section-block__count">· 42 categories · 2,140 screenshots</span>
+          </div>
+          <div class="chip-cloud">
+            <div class="chip-cloud__chip">button <span>312</span></div>
+            <div class="chip-cloud__chip">dropdown <span>184</span></div>
+            <div class="chip-cloud__chip">input <span>176</span></div>
+            <div class="chip-cloud__chip">modal <span>142</span></div>
+            <div class="chip-cloud__chip">tab <span>128</span></div>
+            <div class="chip-cloud__chip">checkbox <span>96</span></div>
+            <div class="chip-cloud__chip">card <span>92</span></div>
+            <div class="chip-cloud__chip">switch <span>78</span></div>
+            <div class="chip-cloud__chip">tooltip <span>64</span></div>
+            <div class="chip-cloud__chip">avatar <span>58</span></div>
+            <div class="chip-cloud__chip">badge <span>54</span></div>
+            <div class="chip-cloud__chip">progress bar <span>42</span></div>
+            <div class="chip-cloud__chip">accordion <span>38</span></div>
+            <div class="chip-cloud__chip">stepper <span>32</span></div>
+            <div class="chip-cloud__chip">snackbar <span>28</span></div>
+            <div class="chip-cloud__chip">slider <span>24</span></div>
+            <div class="chip-cloud__chip">radio <span>22</span></div>
+            <div class="chip-cloud__chip">breadcrumb <span>14</span></div>
+            <div class="chip-cloud__chip">datepicker <span>12</span></div>
+            <div class="chip-cloud__chip">+22 more</div>
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-block__head">
+            <span class="section-block__title"><span class="el-card__kind-dot el-card__kind-dot--ux-pattern"></span>UX Patterns</span>
+            <span class="section-block__count">· 28 categories · 1,420 screenshots</span>
+          </div>
+          <div class="chip-cloud">
+            <div class="chip-cloud__chip">empty state <span>148</span></div>
+            <div class="chip-cloud__chip">error state <span>132</span></div>
+            <div class="chip-cloud__chip">loading <span>118</span></div>
+            <div class="chip-cloud__chip">infinite scroll <span>92</span></div>
+            <div class="chip-cloud__chip">drag & drop <span>74</span></div>
+            <div class="chip-cloud__chip">multi-select <span>68</span></div>
+            <div class="chip-cloud__chip">masked input <span>54</span></div>
+            <div class="chip-cloud__chip">undo/redo <span>42</span></div>
+            <div class="chip-cloud__chip">+20 more</div>
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-block__head">
+            <span class="section-block__title"><span class="el-card__kind-dot el-card__kind-dot--page-type"></span>Page Types</span>
+            <span class="section-block__count">· 24 categories · 1,840 screenshots</span>
+          </div>
+          <div class="chip-cloud">
+            <div class="chip-cloud__chip">onboarding <span>248</span></div>
+            <div class="chip-cloud__chip">settings <span>186</span></div>
+            <div class="chip-cloud__chip">dashboard <span>164</span></div>
+            <div class="chip-cloud__chip">profile <span>142</span></div>
+            <div class="chip-cloud__chip">payments <span>118</span></div>
+            <div class="chip-cloud__chip">notifications <span>96</span></div>
+            <div class="chip-cloud__chip">+18 more</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top: 14px; color: var(--text-dim); font-size: 13px;">
+      <strong style="color: var(--text);">Tradeoff:</strong> Compact + scannable, but no visual preview — you have to click a chip to see what "tooltip" actually looks like across the catalogue. Best if the user already knows which element they're looking for.
+    </p>
+  </div>
+
+  <!-- ============ CONCEPT B — Visual card grid ============ -->
+  <div class="section">
+    <h2><span class="num">B</span> Visual card grid <span style="font-size: 13px; color: var(--accent-hover); font-weight: 500; margin-left: 8px;">— Recommended</span></h2>
+    <p class="caption">Each element is a card with a 4-up sample strip + name + count. Browse visually like a Pinterest board. Sub-tabs to switch between UI Elements / UX Patterns / Page Types. Sort + search.</p>
+
+    <div class="frame">
+      <div class="frame__chrome">
+        <div class="frame__dot"></div><div class="frame__dot"></div><div class="frame__dot"></div>
+        <div class="frame__url">designer.hirahul.xyz/ui-elements</div>
+      </div>
+      <div class="frame__body">
+        <div class="app-header">
+          <span class="app-header__logo">AgentUX</span>
+          <span class="app-header__tabs">
+            <span class="app-header__tab">Catalogue</span>
+            <span class="app-header__tab is-active">Elements</span>
+            <span class="app-header__tab">Videos</span>
+            <span class="app-header__tab">Links</span>
+          </span>
+          <span class="app-header__icons">🔍 🕒 ⭐ ⚙</span>
+        </div>
+
+        <h1 class="page-title">Elements</h1>
+        <p class="page-lede">Browse 94 distinct UI elements, patterns, and page types across 2,140 screenshots. Click any card to see every screenshot using it.</p>
+
+        <div class="subtabs">
+          <span class="subtab"><span class="el-card__kind-dot el-card__kind-dot--ui-element"></span>All <span class="subtab__count">94</span></span>
+          <span class="subtab is-active"><span class="el-card__kind-dot el-card__kind-dot--ui-element"></span>UI Elements <span class="subtab__count">42</span></span>
+          <span class="subtab"><span class="el-card__kind-dot el-card__kind-dot--ux-pattern"></span>UX Patterns <span class="subtab__count">28</span></span>
+          <span class="subtab"><span class="el-card__kind-dot el-card__kind-dot--page-type"></span>Page Types <span class="subtab__count">24</span></span>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar__search">🔍 &nbsp;Search elements…</div>
+          <div class="toolbar__sort">Sort: by count ▾</div>
+        </div>
+
+        <div class="el-grid">
+          <div class="el-card">
+            <div class="el-card__strip">
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #6366f1, #c084fc);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #14b8a6, #06b6d4);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);"></div>
+            </div>
+            <div class="el-card__body">
+              <span class="el-card__name">Button</span>
+              <span class="el-card__count">312 screens</span>
+            </div>
+          </div>
+          <div class="el-card">
+            <div class="el-card__strip">
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #10b981, #3b82f6);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #f97316, #db2777);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #6366f1, #818cf8);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #ec4899, #f59e0b);"></div>
+            </div>
+            <div class="el-card__body">
+              <span class="el-card__name">Dropdown</span>
+              <span class="el-card__count">184 screens</span>
+            </div>
+          </div>
+          <div class="el-card">
+            <div class="el-card__strip">
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #ef4444, #f59e0b);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #06b6d4, #10b981);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #f472b6, #c084fc);"></div>
+            </div>
+            <div class="el-card__body">
+              <span class="el-card__name">Input field</span>
+              <span class="el-card__count">176 screens</span>
+            </div>
+          </div>
+          <div class="el-card">
+            <div class="el-card__strip">
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #3b82f6, #ec4899);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #fbbf24, #ef4444);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #818cf8, #06b6d4);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #ec4899, #6366f1);"></div>
+            </div>
+            <div class="el-card__body">
+              <span class="el-card__name">Modal</span>
+              <span class="el-card__count">142 screens</span>
+            </div>
+          </div>
+          <div class="el-card">
+            <div class="el-card__strip">
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #f59e0b, #6366f1);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #c084fc, #ef4444);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #10b981, #f97316);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #ec4899, #818cf8);"></div>
+            </div>
+            <div class="el-card__body">
+              <span class="el-card__name">Tab</span>
+              <span class="el-card__count">128 screens</span>
+            </div>
+          </div>
+          <div class="el-card">
+            <div class="el-card__strip">
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #06b6d4, #ec4899);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #6366f1, #fbbf24);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #f472b6, #10b981);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #c084fc, #3b82f6);"></div>
+            </div>
+            <div class="el-card__body">
+              <span class="el-card__name">Checkbox</span>
+              <span class="el-card__count">96 screens</span>
+            </div>
+          </div>
+          <div class="el-card">
+            <div class="el-card__strip">
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #ef4444, #818cf8);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #f97316, #06b6d4);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #8b5cf6, #fbbf24);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #ec4899, #10b981);"></div>
+            </div>
+            <div class="el-card__body">
+              <span class="el-card__name">Card</span>
+              <span class="el-card__count">92 screens</span>
+            </div>
+          </div>
+          <div class="el-card">
+            <div class="el-card__strip">
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #6366f1, #06b6d4);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #fbbf24, #c084fc);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #ec4899, #f97316);"></div>
+              <div class="el-card__sample" style="background: linear-gradient(135deg, #10b981, #818cf8);"></div>
+            </div>
+            <div class="el-card__body">
+              <span class="el-card__name">Toggle / switch</span>
+              <span class="el-card__count">78 screens</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top: 14px; color: var(--text-dim); font-size: 13px;">
+      <strong style="color: var(--text);">Why this wins:</strong> Visual + scannable. The 4-up sample strip gives a preview of what's inside before you commit a click. Adapts to taxonomy growth — works the same with 30 elements or 300. Sub-tabs let you stay focused on one kind.
+    </p>
+  </div>
+
+  <!-- ============ CONCEPT C — Sample-on-hover (Mobbin pattern) ============ -->
+  <div class="section">
+    <h2><span class="num">C</span> Hover-shuffling cards (Mobbin pattern)</h2>
+    <p class="caption">Same card layout as B, but each card shows a single thumbnail that shuffles through samples on hover. Higher per-card visual density, encourages mouse-driven exploration. More implementation work.</p>
+
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; font-size: 14px; color: var(--text-muted); line-height: 1.55;">
+      Visual logic, since this is hover-driven and HTML can't easily show that frozen:
+      <ul style="margin: 12px 0 0 18px;">
+        <li>Card resting state: 1 sample thumbnail filling the card</li>
+        <li>Mouse enters card: thumbnail cross-fades to the next sample every ~600ms</li>
+        <li>Mouse leaves: cycle pauses on the current sample</li>
+        <li>Click: drills into the element's screenshots (same drill-in as B)</li>
+      </ul>
+      <p style="margin: 12px 0 0; color: var(--text-dim);">Add-on, not standalone — you'd build B first and then optionally layer the hover-shuffle in a follow-up PR. Worth doing if it actually helps you skim faster, but skip if you don't want the extra animation surface.</p>
+    </div>
+  </div>
+
+  <!-- ============ DRILL-IN PAGE ============ -->
+  <div class="section">
+    <h2><span class="num">→</span> Drill-in page: clicking an element</h2>
+    <p class="caption">Same regardless of which top-level concept you pick. Lands you on a grid of every screenshot in the catalogue that contains the element. Sortable. Filterable by app / theme / platform.</p>
+
+    <div class="frame">
+      <div class="frame__chrome">
+        <div class="frame__dot"></div><div class="frame__dot"></div><div class="frame__dot"></div>
+        <div class="frame__url">designer.hirahul.xyz/ui-elements/button</div>
+      </div>
+      <div class="frame__body">
+        <div class="app-header">
+          <span class="app-header__logo">AgentUX</span>
+          <span class="app-header__tabs">
+            <span class="app-header__tab">Catalogue</span>
+            <span class="app-header__tab is-active">Elements</span>
+            <span class="app-header__tab">Videos</span>
+            <span class="app-header__tab">Links</span>
+          </span>
+          <span class="app-header__icons">🔍 🕒 ⭐ ⚙</span>
+        </div>
+
+        <div class="drill-head">
+          <span class="drill-back">← Back to Elements</span>
+        </div>
+        <h1 class="page-title">Button <span style="color: var(--text-dim); font-weight: 500; font-size: 18px;">— 312 screenshots across 47 groups</span></h1>
+        <p class="drill-meta">UI Element · Avg. 7 buttons per app · Most common in <span style="color: var(--text);">Coinbase, Binance, Weex, Valr</span></p>
+
+        <div class="toolbar">
+          <div class="toolbar__sort">All groups ▾</div>
+          <div class="toolbar__sort">Platform: all ▾</div>
+          <div class="toolbar__sort">Theme: all ▾</div>
+          <div class="toolbar__sort">Sort: recent ▾</div>
+        </div>
+
+        <div class="drill-grid">
+          <div class="drill-card"><div class="drill-card__media" style="background: linear-gradient(135deg, #6366f1, #c084fc);"></div><div class="drill-card__body"><div class="drill-card__title">Login screen</div><div class="drill-card__sub">Coinbase · Web · Dark</div></div></div>
+          <div class="drill-card"><div class="drill-card__media" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div><div class="drill-card__body"><div class="drill-card__title">KYC submit</div><div class="drill-card__sub">Binance · Mobile · Light</div></div></div>
+          <div class="drill-card"><div class="drill-card__media" style="background: linear-gradient(135deg, #14b8a6, #06b6d4);"></div><div class="drill-card__body"><div class="drill-card__title">Deposit confirmation</div><div class="drill-card__sub">Weex · Web · Dark</div></div></div>
+          <div class="drill-card"><div class="drill-card__media" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);"></div><div class="drill-card__body"><div class="drill-card__title">Trade panel</div><div class="drill-card__sub">Valr · Web · Dark</div></div></div>
+          <div class="drill-card"><div class="drill-card__media" style="background: linear-gradient(135deg, #10b981, #3b82f6);"></div><div class="drill-card__body"><div class="drill-card__title">Onboarding step 2</div><div class="drill-card__sub">Coinbase · Mobile · Dark</div></div></div>
+          <div class="drill-card"><div class="drill-card__media" style="background: linear-gradient(135deg, #f97316, #db2777);"></div><div class="drill-card__body"><div class="drill-card__title">Withdraw amount</div><div class="drill-card__sub">Binance · Web · Light</div></div></div>
+          <div class="drill-card"><div class="drill-card__media" style="background: linear-gradient(135deg, #6366f1, #818cf8);"></div><div class="drill-card__body"><div class="drill-card__title">Settings → Security</div><div class="drill-card__sub">Valr · Web · Dark</div></div></div>
+          <div class="drill-card"><div class="drill-card__media" style="background: linear-gradient(135deg, #ec4899, #f59e0b);"></div><div class="drill-card__body"><div class="drill-card__title">Profile page</div><div class="drill-card__sub">Weex · Mobile · iOS</div></div></div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top: 14px; color: var(--text-dim); font-size: 13px;">
+      Click any thumbnail → opens the lightbox on that exact screenshot. Familiar flow — same as the catalogue grid.
+    </p>
+  </div>
+
+  <!-- ============ DECISIONS ============ -->
+  <div class="decisions">
+    <h3>Decisions I'd love your call on before code lands</h3>
+    <ol>
+      <li>
+        <strong>Pick a concept:</strong> A (chip cloud), B (card grid), or C (B + hover-shuffle). My recommendation is <em>B — visual card grid</em>, with the option to layer C in a follow-up PR if hover-shuffle adds value.
+      </li>
+      <li>
+        <strong>Nav entry name:</strong> "Elements" (recommended — short, ambiguous in a good way, fits next to "Catalogue"/"Videos"/"Links") OR "UI Elements" (more specific but tighter on space and slightly redundant since the catalogue itself is full of UI).
+      </li>
+      <li>
+        <strong>Default sort:</strong> <em>by count (most-used first)</em> so the highest-value elements are top, OR <em>alphabetical</em> for predictability. The grid view supports both; pick the default.
+      </li>
+      <li>
+        <strong>Card sample strip — which 4 samples?</strong> <em>4 most recent</em> (always fresh), <em>4 most-diverse-by-group</em> (a mix across apps so the strip reads as variety), or <em>4 random per page load</em>? Diverse-by-group is most informative but slightly more compute.
+      </li>
+      <li>
+        <strong>Drill-in URL pattern:</strong> <em><code>/ui-elements/button</code></em> (clean, shareable, matches <code>/g/&lt;group&gt;</code> already in use) OR <em><code>/?ui_element=button</code></em> (lands in the regular catalogue with that filter pre-applied). The first is more "library", the second is more "filter".
+      </li>
+      <li>
+        <strong>Three kinds in one section, or three sections?</strong> Today the AI labels three things on each screenshot: UI elements, UX patterns, page types. Sub-tabs (Concept B) bundle them in one section. Alternative: three separate top-level entries in nav (UI Elements, UX Patterns, Page Types). Sub-tabs are cheaper; separate entries are more discoverable.
+      </li>
+    </ol>
+  </div>
+
+  <p style="margin-top: 32px; color: var(--text-dim); font-size: 13px; text-align: center;">
+    Once you've picked, I'll commit this mockup to the planning branch + scope the PR1 build (data flow, route, components).
+  </p>
+
+</div>
+</body>
+</html>
