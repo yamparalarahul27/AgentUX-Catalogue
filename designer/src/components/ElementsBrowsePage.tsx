@@ -8,7 +8,7 @@ import {
   type ElementKind,
 } from '../lib/element-catalog';
 import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
-import notFoundIllustration from '../assets/not-found.png';
+import notFoundIllustration from '../assets/not-found.svg';
 import { CatalogueHeader } from './CatalogueHeader';
 import { ElementCard } from './ElementCard';
 

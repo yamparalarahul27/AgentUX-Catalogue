@@ -27,8 +27,10 @@
 
 // Parent provides the perspective so rotateX + translateZ register as
 // real depth, not flat scale. Origin slightly above the page so cards
-// appear to fall from above the viewport.
-.catalogue-page.is-splash-falling {
+// appear to fall from above the viewport. Applied to both phases —
+// chrome (splash) and cards (cards-arriving) need depth.
+.catalogue-page.is-splash-falling,
+.catalogue-page.is-cards-arriving {
   perspective: 1200px;
   perspective-origin: 50% -10%;
 }
@@ -40,20 +42,23 @@
   transform-origin: 50% 0%;
 }
 
-// Stagger: header lands first, then chip strip, sidebar, cards.
+// Stagger phase 1 — chrome that mounts on first paint. Header lands
+// first, then chip strip, then sidebar.
 .catalogue-page.is-splash-falling .catalogue-header { @include splash-fall-in-anim(0ms); }
 .catalogue-page.is-splash-falling .catalogue-chip-strip { @include splash-fall-in-anim(80ms); }
 .catalogue-page.is-splash-falling .catalogue-flow-sidebar { @include splash-fall-in-anim(140ms); }
 
-// Cards: first 20 stagger; anything beyond gets the final delay so
-// the animation doesn't trail off into the multi-second range on
-// large datasets.
-.catalogue-page.is-splash-falling .catalogue-family-card {
-  @include splash-fall-in-anim(220ms + 19 * 45ms);
+// Stagger phase 2 — cards arrive AFTER the skeleton resolves, so they
+// trigger off a separate class (`is-cards-arriving`) flipped by
+// Catalogue.tsx when the first batch of families is in the DOM.
+// First 20 stagger; anything beyond gets the final delay so the
+// sequence doesn't trail multi-second on large datasets.
+.catalogue-page.is-cards-arriving .catalogue-family-card {
+  @include splash-fall-in-anim(0ms + 19 * 45ms);
 
   @for $i from 1 through 20 {
     &:nth-child(#{$i}) {
-      animation-delay: 220ms + ($i - 1) * 45ms;
+      animation-delay: ($i - 1) * 45ms;
     }
   }
 }
@@ -63,7 +68,7 @@
   .catalogue-page.is-splash-falling .catalogue-header,
   .catalogue-page.is-splash-falling .catalogue-chip-strip,
   .catalogue-page.is-splash-falling .catalogue-flow-sidebar,
-  .catalogue-page.is-splash-falling .catalogue-family-card {
+  .catalogue-page.is-cards-arriving .catalogue-family-card {
     animation: none;
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import type { WebPreset } from '../types';
@@ -512,6 +512,29 @@ export function Catalogue({
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
     [presetByKey, scopedScreenFamilies, scopedScreenshots],
   );
+
+  // Splash fall-in — second phase. Chrome (header / chips / sidebar)
+  // animates on first mount via `is-splash-falling`. Cards arrive later
+  // (after the skeleton resolves), so we toggle a *separate* class
+  // when the first batch of real families lands. useLayoutEffect runs
+  // before paint, so the class is on the page when the cards' first
+  // pixels would otherwise show — they start in the animation's 0%
+  // keyframe (opacity 0, translated up, blurred) and fall in.
+  //
+  // A ref guard ensures load-more pagination doesn't re-trigger the
+  // animation on subsequent batches; the class also auto-clears after
+  // ~2.3s so any cards that mount post-window render instantly.
+  const cardsArrivingPlayedRef = useRef(false);
+  const [cardsArriving, setCardsArriving] = useState(false);
+  useLayoutEffect(() => {
+    if (!playSplashFall) return;
+    if (cardsArrivingPlayedRef.current) return;
+    if (loading || allFamilies.length === 0) return;
+    cardsArrivingPlayedRef.current = true;
+    setCardsArriving(true);
+    const handle = window.setTimeout(() => setCardsArriving(false), 2300);
+    return () => window.clearTimeout(handle);
+  }, [playSplashFall, loading, allFamilies.length]);
   const familyById = useMemo(
     () => Object.fromEntries(allFamilies.map((family) => [family.id, family])),
     [allFamilies],
@@ -1045,7 +1068,7 @@ export function Catalogue({
     });
   }
   return (
-    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}${canvasGalleryActive ? ' is-canvas-gallery-active' : ''}${playSplashFall ? ' is-splash-falling' : ''}`}>
+    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}${canvasGalleryActive ? ' is-canvas-gallery-active' : ''}${playSplashFall ? ' is-splash-falling' : ''}${cardsArriving ? ' is-cards-arriving' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
         canAdmin={canAdmin}
