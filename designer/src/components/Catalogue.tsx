@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
-import type { WebPreset } from '../types';
+import type { ScreenshotNode, WebPreset } from '../types';
 import { useBookmarks } from '../hooks/use-bookmarks';
 import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
 import { useIsAdmin } from '../lib/auth-passcode';
@@ -585,14 +585,30 @@ export function Catalogue({
   }, [fullScopeFamilyById]);
   const [studioLabelOverrides, setStudioLabelOverrides] = useState<Map<string, ScreenshotLabel>>(new Map());
   const studioTotals = useLabelingStudioTotals();
-  const handleStudioLabelPersisted = useCallback((screenshotId: string, label: ScreenshotLabel) => {
-    setStudioLabelOverrides((previous) => {
-      const next = new Map(previous);
-      next.set(screenshotId, label);
-      return next;
-    });
-    studioTotals.refetch();
-  }, [studioTotals]);
+
+  // Push a freshly-saved label into both screenshots arrays so consumers
+  // reading `metadata.label` directly (lightbox AI anchors, ui_elements
+  // chip-strip on cards, etc.) see the new data without a page refresh.
+  // Same dual-scope discipline as every screenshot mutation. Studio
+  // bits — overrides map + DB-direct totals refetch — only run when the
+  // user is actually in the Studio surface.
+  const handleLabelPersisted = useCallback((screenshotId: string, label: ScreenshotLabel) => {
+    const updateMeta = (screenshot: ScreenshotNode): ScreenshotNode => {
+      if (screenshot.id !== screenshotId) return screenshot;
+      const metadata = (screenshot.metadata as Record<string, unknown> | null) ?? {};
+      return { ...screenshot, metadata: { ...metadata, label } };
+    };
+    setScreenshots((previous) => previous.map(updateMeta));
+    setFullScopeScreenshots((previous) => previous.map(updateMeta));
+    if (activeSection === 'studio') {
+      setStudioLabelOverrides((previous) => {
+        const next = new Map(previous);
+        next.set(screenshotId, label);
+        return next;
+      });
+      studioTotals.refetch();
+    }
+  }, [activeSection, setFullScopeScreenshots, setScreenshots, studioTotals]);
   const handleStudioCardClick = useCallback((screenshotId: string) => {
     const familyId = screenshotIdToFamilyId.get(screenshotId);
     if (!familyId) return;
@@ -1538,7 +1554,7 @@ export function Catalogue({
           isLoadingNext={pendingPreviewNext}
           onRequireAuth={() => setShowAuthPrompt(true)}
           showLabelTab={activeSection === 'studio'}
-          onLabelPersisted={activeSection === 'studio' ? handleStudioLabelPersisted : undefined}
+          onLabelPersisted={handleLabelPersisted}
           startInlineEdit={previewStartInlineEdit}
           webPresets={webPresets}
           userEmail={user.email || ''}

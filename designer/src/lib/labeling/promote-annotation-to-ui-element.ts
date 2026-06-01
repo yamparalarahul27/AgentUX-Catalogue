@@ -1,7 +1,7 @@
 import { supabase } from '../supabase';
 import { createDefaultLabel } from './default-label';
 import { saveLabel } from './save-label';
-import type { ScreenshotLabel } from './types';
+import type { ScreenshotLabel, UiElementAnchor, UiElementBbox } from './types';
 import type { ScreenshotNode } from '../../types';
 
 // Read-merge-write the screenshot's metadata.label.screen_analysis.ui_elements
@@ -18,10 +18,21 @@ import type { ScreenshotNode } from '../../types';
 // Failure surface: best-effort second write. If this returns ok:false, the
 // annotation row is still saved (it was written first). Caller should log
 // + surface a non-blocking notice to the user.
+// Optional bbox carried in from the annotation row. When the user draws
+// an area annotation in the lightbox, we get the coordinates and pass
+// them here so the label's ui_element_anchors stays in sync with the
+// annotations table — that's what the Elements browse view's "cropped"
+// mode will read from. Old call-sites that pre-date bboxes can omit;
+// the function still works for them, just without a bbox.
+export interface PromoteOptions {
+  bbox?: UiElementBbox | null;
+}
+
 export async function promoteAnnotationToUiElement(
   screenshot: ScreenshotNode,
   uiElementName: string,
   userEmail: string | null,
+  options: PromoteOptions = {},
 ): Promise<{ ok: boolean; error?: string }> {
   const normalized = uiElementName.trim();
   if (!normalized) return { ok: false, error: 'Empty UI Element name' };
@@ -41,23 +52,48 @@ export async function promoteAnnotationToUiElement(
   const existingLabel = metadata.label as ScreenshotLabel | undefined;
 
   // Bootstrap a fresh label when none exists; otherwise clone the live one
-  // and patch only the ui_elements array.
+  // and patch the ui_elements + ui_element_anchors arrays.
   const label: ScreenshotLabel = existingLabel?.screen_analysis
     ? existingLabel
     : createDefaultLabel({ userEmail, screenshot });
 
-  const current = label.screen_analysis.ui_elements ?? [];
+  const currentNames = label.screen_analysis.ui_elements ?? [];
+  const currentAnchors = label.screen_analysis.ui_element_anchors ?? [];
   const lower = normalized.toLowerCase();
-  if (current.some((value) => value.toLowerCase() === lower)) {
-    // Already present (possibly with different casing). No-op success.
+  const nameAlreadyPresent = currentNames.some((value) => value.toLowerCase() === lower);
+  const anchorIndex = currentAnchors.findIndex((anchor) => anchor.name.toLowerCase() === lower);
+  const bbox: UiElementBbox | null = options.bbox ?? null;
+
+  // No-op when nothing would change: name already in taxonomy AND
+  // (no bbox to add OR an anchor with this name already exists).
+  if (nameAlreadyPresent && (bbox === null || anchorIndex >= 0)) {
     return { ok: true };
+  }
+
+  const nextNames = nameAlreadyPresent ? currentNames : [...currentNames, normalized];
+
+  let nextAnchors: UiElementAnchor[];
+  if (bbox === null) {
+    // Drawing without a bbox shouldn't add an anchor — only the
+    // taxonomy entry. The anchors array stays untouched.
+    nextAnchors = currentAnchors;
+  } else if (anchorIndex >= 0) {
+    // Replace the existing anchor's bbox with the new one. Manual
+    // re-promotion is treated as the latest source of truth.
+    nextAnchors = currentAnchors.map((anchor, i) =>
+      i === anchorIndex ? { ...anchor, bbox, confidence: 1 } : anchor,
+    );
+  } else {
+    // First anchor for this element. Manual draws are full confidence.
+    nextAnchors = [...currentAnchors, { name: normalized, bbox, confidence: 1 }];
   }
 
   const next: ScreenshotLabel = {
     ...label,
     screen_analysis: {
       ...label.screen_analysis,
-      ui_elements: [...current, normalized],
+      ui_elements: nextNames,
+      ui_element_anchors: nextAnchors,
     },
   };
 

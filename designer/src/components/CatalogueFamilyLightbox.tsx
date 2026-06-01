@@ -32,6 +32,8 @@ import {
   promoteAnnotationToUiElement,
   normalizeUiElementName,
 } from '../lib/labeling/promote-annotation-to-ui-element';
+import { saveLabel as saveLabelToDb } from '../lib/labeling/save-label';
+import type { ScreenshotLabel, UiElementAnchor } from '../lib/labeling/types';
 import { UiElementComposerExtras } from './CatalogueLightboxUiElementExtras';
 import { ANNOTATION_EDIT_MIN_VIEWPORT_PX, PIN_ANNOTATIONS_ENABLED } from '../lib/feature-flags';
 import { ConfirmModal } from './ConfirmModal';
@@ -278,6 +280,17 @@ export function CatalogueFamilyLightbox({
   // `existingUiElements` prop so the UI badge reflects the just-saved
   // value without waiting for a catalogue refetch.
   const [sessionUiElements, setSessionUiElements] = useState<string[]>([]);
+  // AI-suggested anchor names the user dismissed in this session. The
+  // dismissAnchor handler persists removal to the DB via saveLabel +
+  // onLabelPersisted, but we also keep a session-local set so the ghost
+  // disappears immediately (the parent's screenshot prop only updates
+  // after onLabelPersisted propagates). Cleared on screenshot change.
+  const [dismissedAnchorNames, setDismissedAnchorNames] = useState<Set<string>>(new Set());
+  // When the user clicks an AI ghost to edit/accept it, we mark the
+  // anchor name here so the existing saveAnnotation handler knows
+  // "this draft promotes an AI anchor — confidence should land as 1.0,
+  // not append a duplicate name."
+  const [promotingAnchorName, setPromotingAnchorName] = useState<string | null>(null);
   const [annotationEditAllowed, setAnnotationEditAllowed] = useState<boolean>(() => isAnnotationEditAllowedNow());
   const [imageSize, setImageSize] = useState<ImageSize | null>(null); const [mediaSize, setMediaSize] = useState<ImageSize | null>(null);
   // Tracks whether the full image has finished loading so we can
@@ -320,7 +333,122 @@ export function CatalogueFamilyLightbox({
     [combinedUiElements],
   );
 
+  // AI-suggested anchors that haven't yet been accepted (no matching
+  // annotation row by name) AND haven't been dismissed in this session.
+  // These render as dashed indigo "ghost" rectangles on the screenshot
+  // and as rows in the right-panel AI suggestions section. Bbox-less
+  // anchors are skipped — the AI couldn't locate them, so there's
+  // nothing to render.
+  const pendingAnchors = useMemo<UiElementAnchor[]>(() => {
+    const raw = (screenshot?.metadata as Record<string, unknown> | null)?.label as ScreenshotLabel | undefined;
+    const anchors = raw?.screen_analysis?.ui_element_anchors ?? [];
+    const promotedNames = new Set(
+      annotations
+        .filter((a) => a.shape === 'area')
+        .map((a) => a.text.toLowerCase()),
+    );
+    return anchors.filter((anchor) => {
+      if (!anchor.bbox) return false;
+      const lower = anchor.name.toLowerCase();
+      if (promotedNames.has(lower)) return false;
+      if (dismissedAnchorNames.has(lower)) return false;
+      return true;
+    });
+  }, [annotations, dismissedAnchorNames, screenshot]);
+
   function ensureCanEdit() { if (canEdit) return true; onRequireAuth?.(); return false; }
+
+  // Load an AI-suggested anchor into the existing annotation draft
+  // editor. Reuses the manual-draw / save-area flow — user can drag
+  // corners to refine before clicking "Save area," and on save the
+  // annotation row + ui_element_anchors entry are both written via the
+  // existing saveAnnotation handler (with tagAsUiElement: true).
+  const acceptAnchor = useCallback((anchor: UiElementAnchor) => {
+    if (!ensureCanEdit()) return;
+    if (!anchor.bbox) return;
+    const [x, y, w, h] = anchor.bbox;
+    setAnnotationMode(true);
+    setAnnotationDraft({ shape: 'area', x, y, width: w, height: h });
+    setAnnotationDraftText(anchor.name);
+    setTagAsUiElement(true);
+    setAnnotationError('');
+    setPromotingAnchorName(anchor.name);
+  }, [canEdit, onRequireAuth]);
+
+  // Remove an anchor from the label without creating an annotation
+  // row. Optimistic local-state update + persisted via saveLabel +
+  // onLabelPersisted so the parent's screenshot prop refreshes.
+  const dismissAnchor = useCallback(async (anchor: UiElementAnchor) => {
+    if (!ensureCanEdit() || !screenshot) return;
+    const lower = anchor.name.toLowerCase();
+    // Optimistic local hide.
+    setDismissedAnchorNames((prev) => {
+      if (prev.has(lower)) return prev;
+      const next = new Set(prev);
+      next.add(lower);
+      return next;
+    });
+    const raw = (screenshot.metadata as Record<string, unknown> | null)?.label as ScreenshotLabel | undefined;
+    if (!raw) return;
+    const nextLabel: ScreenshotLabel = {
+      ...raw,
+      screen_analysis: {
+        ...raw.screen_analysis,
+        ui_element_anchors: (raw.screen_analysis?.ui_element_anchors ?? []).filter(
+          (entry) => entry.name.toLowerCase() !== lower,
+        ),
+      },
+    };
+    const result = await saveLabelToDb(screenshot.id, nextLabel);
+    if (result.ok) {
+      onLabelPersisted?.(screenshot.id, nextLabel);
+    } else {
+      // Roll back the optimistic dismissal on failure.
+      setDismissedAnchorNames((prev) => {
+        const next = new Set(prev);
+        next.delete(lower);
+        return next;
+      });
+      setAnnotationError('Could not dismiss the suggestion right now.');
+    }
+  }, [canEdit, onLabelPersisted, onRequireAuth, screenshot]);
+
+  // "Dismiss all" — bulk-remove every pending anchor from the label.
+  // Same persistence path as dismissAnchor, batched.
+  const dismissAllAnchors = useCallback(async () => {
+    if (!ensureCanEdit() || !screenshot || pendingAnchors.length === 0) return;
+    const names = pendingAnchors.map((a) => a.name.toLowerCase());
+    // Optimistic.
+    setDismissedAnchorNames((prev) => {
+      const next = new Set(prev);
+      names.forEach((n) => next.add(n));
+      return next;
+    });
+    const raw = (screenshot.metadata as Record<string, unknown> | null)?.label as ScreenshotLabel | undefined;
+    if (!raw) return;
+    const nameSet = new Set(names);
+    const nextLabel: ScreenshotLabel = {
+      ...raw,
+      screen_analysis: {
+        ...raw.screen_analysis,
+        ui_element_anchors: (raw.screen_analysis?.ui_element_anchors ?? []).filter(
+          (entry) => !nameSet.has(entry.name.toLowerCase()),
+        ),
+      },
+    };
+    const result = await saveLabelToDb(screenshot.id, nextLabel);
+    if (result.ok) {
+      onLabelPersisted?.(screenshot.id, nextLabel);
+    } else {
+      // Roll back.
+      setDismissedAnchorNames((prev) => {
+        const next = new Set(prev);
+        names.forEach((n) => next.delete(n));
+        return next;
+      });
+      setAnnotationError('Could not dismiss the suggestions right now.');
+    }
+  }, [canEdit, onLabelPersisted, onRequireAuth, pendingAnchors, screenshot]);
 
   useEffect(() => {
     if (!isOpen || !screenshot) return;
@@ -338,6 +466,8 @@ export function CatalogueFamilyLightbox({
     setAnnotationDraftText('');
     setAnnotationError('');
     setSessionUiElements([]);
+    setDismissedAnchorNames(new Set());
+    setPromotingAnchorName(null);
     setImageSize(null);
     setMediaSize(null);
     setCropMode(false);
@@ -772,13 +902,27 @@ export function CatalogueFamilyLightbox({
     setSelectedAnnotationId(inserted.id);
     setAnnotationDraft(null);
     setAnnotationDraftText('');
+    // Clear the AI-anchor promotion flag if this draft originated
+    // from a ghost click. The ghost render filter will hide this
+    // anchor on next render since `annotations` now contains a
+    // matching-name row.
+    if (promotingAnchorName) setPromotingAnchorName(null);
     // Second write — promote the annotation label into the screenshot's
     // ui_elements list. Best-effort; annotation row is already saved if
     // we got here. Failure surfaces as a non-blocking notice but doesn't
     // roll back the annotation.
     if (tagAsUiElement && annotationDraft.shape === 'area') {
       const canonical = normalizeUiElementName(trimmed);
-      const result = await promoteAnnotationToUiElement(screenshot, canonical, userEmail || null);
+      // Pass the area's bbox through so the label's ui_element_anchors
+      // stays in sync with the annotations table. Coordinates are
+      // already in 0-100 percent (annotationDraft.{x,y,width,height}).
+      const bbox: [number, number, number, number] = [
+        annotationDraft.x,
+        annotationDraft.y,
+        annotationDraft.width,
+        annotationDraft.height,
+      ];
+      const result = await promoteAnnotationToUiElement(screenshot, canonical, userEmail || null, { bbox });
       if (result.ok) {
         setSessionUiElements((current) => (
           current.some((value) => value.toLowerCase() === canonical.toLowerCase())
@@ -1128,6 +1272,42 @@ export function CatalogueFamilyLightbox({
                   <span>+</span>
                 </button>
               )}
+              {/* AI ghost overlay — dashed indigo bboxes for pending
+                * suggestions. Only visible when the user is on the
+                * Annotations tab (otherwise the ghosts compete with
+                * the Comments / Label workflows visually). Hidden
+                * while drawing or while a draft is being edited so
+                * the layers don't collide. */}
+              {lightboxPanel === 'annotations' && !drawing && !annotationDraft && pendingAnchors.map((anchor) => {
+                const [ax, ay, aw, ah] = anchor.bbox!;
+                return (
+                  <button
+                    key={`ghost:${anchor.name}`}
+                    type="button"
+                    className="catalogue-lightbox-ghost"
+                    style={{
+                      left: `${mediaLayout.left + (ax / 100) * mediaLayout.width}px`,
+                      top: `${mediaLayout.top + (ay / 100) * mediaLayout.height}px`,
+                      width: `${(aw / 100) * mediaLayout.width}px`,
+                      height: `${(ah / 100) * mediaLayout.height}px`,
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      acceptAnchor(anchor);
+                    }}
+                    title={`AI suggestion: ${anchor.name} (click to refine & accept)`}
+                  >
+                    <span className="catalogue-lightbox-ghost-label">
+                      {anchor.name}
+                      {anchor.confidence !== null && (
+                        <span className="catalogue-lightbox-ghost-confidence">
+                          {Math.round(anchor.confidence * 100)}%
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
           {annotationMode && annotationEditAllowed && (
@@ -1313,7 +1493,7 @@ export function CatalogueFamilyLightbox({
             <div className="catalogue-lightbox-collapsible">
               <div className="catalogue-lightbox-collapsible__inner">
               <CatalogueFamilyLightboxActions
-                annotationsCount={annotations.length}
+                annotationsCount={annotations.length + pendingAnchors.length}
                 canCrop={Boolean(canEdit && imageSize && !cropMode)}
                 commentsCount={comments.length}
                 hideCatalogueActions={showLabelTab}
@@ -1411,7 +1591,7 @@ export function CatalogueFamilyLightbox({
                       className={`catalogue-lightbox-tab ${lightboxPanel === 'annotations' ? 'is-active' : ''}`}
                       onClick={() => setLightboxPanel('annotations')}
                     >
-                      Annotations ({annotations.length})
+                      Annotations ({annotations.length + pendingAnchors.length})
                     </button>
                   </>
                 )}
@@ -1534,6 +1714,61 @@ export function CatalogueFamilyLightbox({
                         </button>
                       </div>
                     </form>
+                  )}
+                  {pendingAnchors.length > 0 && (
+                    <div className="catalogue-lightbox-ai-anchors">
+                      <div className="catalogue-lightbox-ai-anchors__banner">
+                        <span className="catalogue-lightbox-ai-anchors__dot" aria-hidden="true" />
+                        <span>
+                          AI suggested <strong>{pendingAnchors.length}</strong>{' '}
+                          {pendingAnchors.length === 1 ? 'anchor' : 'anchors'}
+                          {' · '}click a ghost to refine
+                        </span>
+                      </div>
+                      <div className="catalogue-lightbox-ai-anchors__bulk">
+                        <button
+                          type="button"
+                          className="catalogue-lightbox-ai-anchors__bulk-btn"
+                          onClick={() => { void dismissAllAnchors(); }}
+                        >
+                          Dismiss all
+                        </button>
+                      </div>
+                      <div className="catalogue-lightbox-ai-anchors__list">
+                        {pendingAnchors.map((anchor) => (
+                          <div key={`anchor:${anchor.name}`} className="catalogue-lightbox-ai-anchor">
+                            <div className="catalogue-lightbox-ai-anchor__main">
+                              <strong className="catalogue-lightbox-ai-anchor__name">{anchor.name}</strong>
+                              <span className="catalogue-lightbox-ai-anchor__meta">
+                                {anchor.confidence !== null
+                                  ? `${Math.round(anchor.confidence * 100)}% confidence`
+                                  : 'no confidence'}
+                              </span>
+                            </div>
+                            <div className="catalogue-lightbox-ai-anchor__actions">
+                              <button
+                                type="button"
+                                className="catalogue-lightbox-ai-anchor__btn catalogue-lightbox-ai-anchor__btn--accept"
+                                onClick={() => acceptAnchor(anchor)}
+                                title="Refine & accept this AI suggestion"
+                                aria-label={`Accept ${anchor.name}`}
+                              >
+                                <Check size={14} aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                className="catalogue-lightbox-ai-anchor__btn catalogue-lightbox-ai-anchor__btn--reject"
+                                onClick={() => { void dismissAnchor(anchor); }}
+                                title="Dismiss this AI suggestion"
+                                aria-label={`Dismiss ${anchor.name}`}
+                              >
+                                <X size={14} aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                   <div className="catalogue-lightbox-annotation-list">
                     {annotations.length === 0 ? (

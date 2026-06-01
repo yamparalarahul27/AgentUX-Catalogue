@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-02-ai-bbox-anchors",
+    "date": "June 2, 2026",
+    "title": "AI labelling now suggests element locations",
+    "bullets": [
+      { "kind": "new", "text": "The AI labelling prompt now asks for a bbox + confidence per UI element. Open a screenshot in the lightbox and AI-suggested anchors render as dashed indigo ghost rectangles over the image" },
+      { "kind": "new", "text": "Right panel shows the suggestion list above your annotations — click ✓ to refine and accept (loads the bbox into the existing area-annotation draft so you can drag corners before saving), or ✕ to dismiss" },
+      { "kind": "improved", "text": "Manual area annotations tagged as UI Elements now also persist their bbox to the label, so the Elements tab can show real cropped views per app in a follow-up" }
+    ]
+  },
+  {
     "id": "2026-06-01-studio-fixes-trio",
     "date": "June 1, 2026",
     "title": "Labelling Studio — three fixes",

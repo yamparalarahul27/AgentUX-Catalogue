@@ -180,10 +180,62 @@ function mergeScreenAnalysis(
     layout: takeString(ctx, 'screen_analysis', 'layout', raw, current.layout),
     functions: takeString(ctx, 'screen_analysis', 'functions', raw, current.functions),
     ui_elements: takeStringArray(ctx, 'screen_analysis', 'ui_elements', raw, current.ui_elements),
+    ui_element_anchors: takeUiElementAnchors(ctx, raw, current.ui_element_anchors),
     ux_patterns: takeStringArray(ctx, 'screen_analysis', 'ux_patterns', raw, current.ux_patterns),
     colors: takeStringArray(ctx, 'screen_analysis', 'colors', raw, current.colors),
     visible_text: takeStringArray(ctx, 'screen_analysis', 'visible_text', raw, current.visible_text),
   };
+}
+
+// Parse the new ui_element_anchors array. Tolerant by design — the AI
+// is the primary source and may return malformed entries. Each anchor
+// is normalised into { name, bbox|null, confidence|null }:
+//   - name: required non-empty string; entries without are dropped.
+//   - bbox: required [x, y, w, h] tuple of 4 numbers in [0, 100];
+//     values outside the range get clamped, missing/malformed → null.
+//   - confidence: optional 0-1 float; out-of-range → clamped.
+//
+// Absent field on the pasted JSON keeps the existing anchors (same
+// pattern as takeStringArray).
+function takeUiElementAnchors(
+  ctx: MergeContext,
+  raw: Record<string, unknown>,
+  current: ScreenshotLabel['screen_analysis']['ui_element_anchors'],
+): ScreenshotLabel['screen_analysis']['ui_element_anchors'] {
+  const field = 'ui_element_anchors';
+  if (!(field in raw)) return current;
+  const value = raw[field];
+  if (!Array.isArray(value)) {
+    ctx.typeMismatchCount += 1;
+    return current;
+  }
+  const normalised: ScreenshotLabel['screen_analysis']['ui_element_anchors'] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') continue;
+    const obj = entry as Record<string, unknown>;
+    const name = typeof obj.name === 'string' ? obj.name.trim() : '';
+    if (!name) continue;
+    let bbox: [number, number, number, number] | null = null;
+    if (Array.isArray(obj.bbox) && obj.bbox.length === 4 && obj.bbox.every((n) => typeof n === 'number' && Number.isFinite(n))) {
+      const [x, y, w, h] = obj.bbox as [number, number, number, number];
+      bbox = [clampPct(x), clampPct(y), clampPct(w), clampPct(h)];
+    }
+    let confidence: number | null = null;
+    if (typeof obj.confidence === 'number' && Number.isFinite(obj.confidence)) {
+      confidence = Math.max(0, Math.min(1, obj.confidence));
+    }
+    normalised.push({ name, bbox, confidence });
+  }
+  if (JSON.stringify(normalised) === JSON.stringify(current)) return current;
+  ctx.changes.push({ section: 'screen_analysis', field, oldValue: current, newValue: normalised });
+  return normalised;
+}
+
+function clampPct(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return value;
 }
 
 function mergeVisualDesign(

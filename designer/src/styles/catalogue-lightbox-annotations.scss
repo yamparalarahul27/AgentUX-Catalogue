@@ -1260,3 +1260,195 @@
     font-size: 11px;
   }
 }
+
+// ─── AI bbox ghosts ──────────────────────────────────────────────────
+// Pending AI suggestions overlaid on the screenshot. Dashed indigo to
+// visually distinguish from real annotations (which are solid white).
+// Click to load into the annotation draft for refine + accept via the
+// existing "Save area" flow.
+.catalogue-lightbox-ghost {
+  position: absolute;
+  border: 2px dashed rgba(129, 140, 248, 0.85);
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: background 0.15s, border-color 0.15s;
+  z-index: 4;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(165, 180, 252, 1);
+  }
+}
+
+.catalogue-lightbox-ghost-label {
+  position: absolute;
+  bottom: 100%;
+  left: -2px;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  background: rgba(15, 15, 16, 0.95);
+  border: 1px solid rgba(129, 140, 248, 0.6);
+  border-radius: 999px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #c7d2fe;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.catalogue-lightbox-ghost-confidence {
+  font-size: 9px;
+  background: rgba(99, 102, 241, 0.32);
+  color: #c7d2fe;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+// ─── AI anchors — right-panel section ────────────────────────────────
+// Appears above the regular annotation list when the screenshot's
+// label has pending ui_element_anchors. Each row mirrors a ghost
+// overlay on the canvas; accept opens the refine-and-save draft;
+// dismiss removes the anchor from the label without creating an
+// annotation row.
+.catalogue-lightbox-ai-anchors {
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalogue-lightbox-ai-anchors__banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #c7d2fe;
+  line-height: 1.4;
+
+  strong { color: #fafafa; font-weight: 600; }
+}
+
+.catalogue-lightbox-ai-anchors__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  flex-shrink: 0;
+}
+
+.catalogue-lightbox-ai-anchors__bulk {
+  display: flex;
+  gap: 6px;
+}
+
+.catalogue-lightbox-ai-anchors__bulk-btn {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid #27272a;
+  background: transparent;
+  color: #e4e4e7;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: #3f3f46;
+  }
+}
+
+.catalogue-lightbox-ai-anchors__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.catalogue-lightbox-ai-anchor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 8px;
+  background: rgba(15, 15, 16, 0.4);
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover { border-color: rgba(129, 140, 248, 0.40); }
+}
+
+.catalogue-lightbox-ai-anchor__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.catalogue-lightbox-ai-anchor__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fafafa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogue-lightbox-ai-anchor__meta {
+  font-size: 11px;
+  color: #71717a;
+  font-variant-numeric: tabular-nums;
+}
+
+.catalogue-lightbox-ai-anchor__actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.catalogue-lightbox-ai-anchor__btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #27272a;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover { color: #fafafa; border-color: #3f3f46; }
+}
+
+.catalogue-lightbox-ai-anchor__btn--accept {
+  color: #22c55e;
+  &:hover {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.40);
+    color: #4ade80;
+  }
+}
+
+.catalogue-lightbox-ai-anchor__btn--reject {
+  color: #ef4444;
+  &:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.40);
+    color: #f87171;
+  }
+}
