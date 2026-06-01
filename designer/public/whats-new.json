@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-01-studio-lightbox-fix",
+    "date": "June 1, 2026",
+    "title": "Labelling Studio — lightbox opens correctly on every card",
+    "bullets": [
+      { "kind": "fix", "text": "Clicking a screenshot in the Labelling Studio now opens the lightbox even when that screenshot lives outside the catalogue's current filter — fallout from the recent Studio scope fix that surfaced clicks couldn't resolve to a family. The click handler now uses the full-scope family map." }
+    ]
+  },
+  {
     "id": "2026-06-01-fall-in-cards-and-svg-empty-state",
     "date": "June 1, 2026",
     "title": "Catalogue cards now join the splash fall-in + crisper empty-state art",

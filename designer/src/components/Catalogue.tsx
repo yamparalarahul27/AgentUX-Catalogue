@@ -568,15 +568,22 @@ export function Catalogue({
     ),
     [fullScopeScreenshots, scopedScreenFamilies, presetByKey],
   );
+  // Reverse map for the Studio's "click a card to open the lightbox"
+  // path. Sourced from `fullScopeFamilyById` (full unfiltered set, built
+  // from fullScopeScreenshots) rather than the catalogue's filter-scoped
+  // `allFamilies` — otherwise clicks on Studio screenshots that live
+  // outside the catalogue's current filter window resolve to nothing
+  // and the lightbox silently fails to open. (Bug from PR #203 when the
+  // Studio's screenshots prop was switched to the full scope.)
   const screenshotIdToFamilyId = useMemo(() => {
     const map = new Map<string, string>();
-    for (const family of allFamilies) {
+    for (const family of Object.values(fullScopeFamilyById)) {
       for (const variant of family.variants) {
         map.set(variant.id, family.id);
       }
     }
     return map;
-  }, [allFamilies]);
+  }, [fullScopeFamilyById]);
   const [studioLabelOverrides, setStudioLabelOverrides] = useState<Map<string, ScreenshotLabel>>(new Map());
   const studioTotals = useLabelingStudioTotals();
   const handleStudioLabelPersisted = useCallback((screenshotId: string, label: ScreenshotLabel) => {
