@@ -7,6 +7,7 @@ import { compressImage } from '../lib/catalogue-image';
 import { buildConventionName, parseScreenshotName } from '../lib/naming';
 import { insertScreenshotWithUploader } from '../lib/screenshot-write';
 import { supabase } from '../lib/supabase';
+import { useFeedback } from './use-feedback';
 import { generateThumbHash } from '../lib/thumbhash';
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 
@@ -54,6 +55,7 @@ export function useCatalogueUpload({
   userId,
   webPresets,
 }: UseCatalogueUploadArgs) {
+  const { fire } = useFeedback();
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProjectId, setUploadProjectId] = useState<string | null>(null);
@@ -388,6 +390,7 @@ export function useCatalogueUpload({
       const messages = [`${successCount} file${successCount > 1 ? 's' : ''} uploaded`];
       if (failedCount > 0) messages.push(`${failedCount} skipped`);
       setToast({ message: messages.join(' • '), type: failedCount > 0 ? 'info' : 'success' });
+      fire('upload');
     } else if (failedCount > 0) {
       setToast({ message: `Upload failed for ${failedCount} file${failedCount > 1 ? 's' : ''}`, type: 'error' });
     }
@@ -543,6 +546,7 @@ export function useCatalogueUpload({
       inserted.forEach((item) => {
         updateActiveVariant(getScreenshotFamilyId(item), getVariantKey(item));
       });
+      fire('upload');
     }
 
     setUploading(false);

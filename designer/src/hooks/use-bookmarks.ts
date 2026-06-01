@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { addBookmark, fetchBookmarkIds, removeBookmark } from '../lib/bookmarks';
+import { useFeedback } from './use-feedback';
 
 export function useBookmarks(email: string | null | undefined) {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const { fire } = useFeedback();
 
   useEffect(() => {
     if (!email) {
@@ -26,6 +28,7 @@ export function useBookmarks(email: string | null | undefined) {
       else next.add(screenshotId);
       return next;
     });
+    fire('save');
     const result = isBookmarked
       ? await removeBookmark(email, screenshotId)
       : await addBookmark(email, screenshotId);
@@ -38,7 +41,7 @@ export function useBookmarks(email: string | null | undefined) {
       });
     }
     return result;
-  }, [email, bookmarkedIds]);
+  }, [email, bookmarkedIds, fire]);
 
   return {
     bookmarkedIds,

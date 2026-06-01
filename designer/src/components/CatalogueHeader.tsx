@@ -12,12 +12,15 @@ import {
   Save,
   Settings,
   Sparkles,
+  Vibrate,
+  Volume2,
 } from 'lucide-react';
 
 import agentuxLogo from '../assets/agentux-logo.svg';
 import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
 import { useViewportWidth } from '../hooks/use-viewport-width';
 import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
+import { useHapticsEnabled, useSoundEnabled } from '../lib/feedback-prefs';
 import { useTypingKeycapEnabled } from './TypingKeycap';
 
 type CatalogueSection =
@@ -69,6 +72,8 @@ export function CatalogueHeader({
   const [logoutMoreOpen, setLogoutMoreOpen] = useState(false);
   const [typingKeycapEnabled, setTypingKeycapEnabled] = useTypingKeycapEnabled();
   const [canvasGalleryEnabled, setCanvasGalleryEnabled] = useCanvasGalleryEnabled();
+  const [soundEnabled, setSoundEnabled] = useSoundEnabled();
+  const [hapticsEnabled, setHapticsEnabled] = useHapticsEnabled();
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLButtonElement>(null);
   const viewportWidth = useViewportWidth();
@@ -291,6 +296,36 @@ export function CatalogueHeader({
             <Keyboard size={14} aria-hidden="true" />
             <span>Typing key feedback</span>
             <span className={`catalogue-header-menu__switch${typingKeycapEnabled ? ' is-on' : ''}`} aria-hidden="true">
+              <span className="catalogue-header-menu__switch-thumb" />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--row catalogue-header-menu__item--toggle"
+            role="menuitemcheckbox"
+            aria-checked={soundEnabled}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title="Play a subtle sound on save, delete, restore and upload"
+          >
+            <Volume2 size={14} aria-hidden="true" />
+            <span>Sound effects</span>
+            <span className={`catalogue-header-menu__switch${soundEnabled ? ' is-on' : ''}`} aria-hidden="true">
+              <span className="catalogue-header-menu__switch-thumb" />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--row catalogue-header-menu__item--toggle"
+            role="menuitemcheckbox"
+            aria-checked={hapticsEnabled}
+            onClick={() => setHapticsEnabled(!hapticsEnabled)}
+            title="Vibrate on save, delete, restore and upload (supported devices)"
+          >
+            <Vibrate size={14} aria-hidden="true" />
+            <span>Haptic feedback</span>
+            <span className={`catalogue-header-menu__switch${hapticsEnabled ? ' is-on' : ''}`} aria-hidden="true">
               <span className="catalogue-header-menu__switch-thumb" />
             </span>
           </button>

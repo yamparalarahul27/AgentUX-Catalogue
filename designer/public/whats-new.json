@@ -10,6 +10,16 @@
     ]
   },
   {
+    "id": "2026-06-01-sound-and-haptics",
+    "date": "June 1, 2026",
+    "title": "Sound effects & haptic feedback",
+    "bullets": [
+      { "kind": "new", "text": "Save, delete, restore and upload-complete now play a subtle CC0 sound — turn on \"Sound effects\" in the account menu (off by default)" },
+      { "kind": "new", "text": "The same actions can buzz on phones — \"Haptic feedback\" works on iPhone too (on by default on touch devices, off on desktop)" },
+      { "kind": "improved", "text": "Both respect `prefers-reduced-motion` and can be toggled independently from the account menu" }
+    ]
+  },
+  {
     "id": "2026-05-29-lightbox-group-combobox-icons",
     "date": "May 29, 2026",
     "title": "Lightbox edit — group dropdown now shows brand icons",

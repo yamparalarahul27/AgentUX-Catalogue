@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import type { MobileOs, ScreenFamily, ScreenshotNode } from '../types';
 import { invalidateCatalogueFullScopeCache } from './use-catalogue-full-scope';
 import { useCatalogueImageActions } from './use-catalogue-image-actions';
+import { useFeedback } from './use-feedback';
 
 interface ToastState {
   message: string;
@@ -66,6 +67,8 @@ export function useCatalogueFamilyActions({
   webPresets,
   canSeeTrash = true,
 }: UseCatalogueFamilyActionsArgs) {
+  const { fire } = useFeedback();
+
   const setFamilyScreenshotsPatch = useCallback((familyId: string, patch: Partial<ScreenshotNode>) => {
     setScreenshots((previous) => previous.map((screenshot) => (
       getScreenshotFamilyId(screenshot) === familyId ? { ...screenshot, ...patch } : screenshot
@@ -424,7 +427,8 @@ export function useCatalogueFamilyActions({
       ? 'Moved to Trash. Recoverable for 15 days.'
       : 'Deleted.';
     setToast({ message, type: 'success' });
-  }, [canSeeTrash, onFamilyDeleted, screenshots, setScreenshots, setToast, userEmail]);
+    fire('delete');
+  }, [canSeeTrash, fire, onFamilyDeleted, screenshots, setScreenshots, setToast, userEmail]);
 
   // Trash → Restore: clears deleted_at on every screenshot in the family.
   // The screenshots reappear in the catalogue once their rows refetch.
@@ -439,8 +443,9 @@ export function useCatalogueFamilyActions({
       return { ok: false as const, error: error.message };
     }
     setToast({ message: 'Restored from Trash.', type: 'success' });
+    fire('restore');
     return { ok: true as const };
-  }, [setToast]);
+  }, [fire, setToast]);
 
   const handleAssignFlow = useCallback(async (familyId: string, flowId: string | null) => {
     const family = familyById[familyId];
