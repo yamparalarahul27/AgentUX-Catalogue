@@ -1,609 +1,416 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap");
+/* AgentUX landing — dark, value-forward, short for mobile.
+ *
+ * Palette matches the catalogue app (designer/) so the landing → app
+ * transition feels continuous, not like crossing into a different
+ * product. Indigo accent + cream highlights mirror the brand mark.
+ *
+ * Goals:
+ *  - Single-fold hero on desktop, ~1 viewport on mobile
+ *  - ~3 mobile-viewports total page height (was ~10 on the old site)
+ *  - No expanded <details>, no FAQ accordion, no telegram band
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap");
 
 :root {
-  --bg: #f6f0e8;
-  --surface: #fffaf4;
-  --surface-strong: #f1e6d7;
-  --ink: #1f2a2e;
-  --muted: #5f6c72;
-  --line: #d7c7b4;
-  --accent: #c85b2d;
-  --accent-ink: #fff7f1;
-  --shadow: 0 18px 45px rgba(31, 42, 46, 0.08);
-  --radius-xl: 30px;
-  --radius-lg: 22px;
-  --radius-md: 16px;
-  --max-width: 1180px;
+  --bg:           #0a0a0c;
+  --surface:      #0f0f10;
+  --surface-2:    #16161a;
+  --line:         #2a2a30;
+  --line-soft:    #1a1a1f;
+  --ink:          #fafafa;
+  --ink-muted:    #a1a1aa;
+  --ink-dim:      #71717a;
+  --accent:       #6366f1;   /* indigo — matches catalogue brand */
+  --accent-hover: #818cf8;
+  --accent-soft:  rgba(99, 102, 241, 0.16);
+  --cream:        #F8EFE3;   /* glyph cream — used sparingly for headline lift */
+
+  --radius-pill: 999px;
+  --radius-lg:   18px;
+  --radius-md:   12px;
+
+  --max-width:   1080px;
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; overflow-x: hidden; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
-  margin: 0;
   min-height: 100vh;
   background: var(--bg);
   color: var(--ink);
-  font-family: "Instrument Sans", sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.55;
+  font-feature-settings: "ss01", "cv11";
   overflow-x: hidden;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.5;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23dbcdbb' stroke-width='1'%3E%3Cpath d='M20 20h40v40H20z'/%3E%3Cpath d='M96 36h28v28H96z'/%3E%3Ccircle cx='56' cy='114' r='6'/%3E%3Ccircle cx='118' cy='110' r='10'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 160px 160px;
+  /* Subtle indigo glow behind the hero — anchors the page brand-wise
+   * without being loud. Single radial, vignette-falloff. */
+  background-image:
+    radial-gradient(
+      ellipse 60% 50% at 50% 0%,
+      rgba(99, 102, 241, 0.10) 0%,
+      rgba(99, 102, 241, 0.04) 35%,
+      transparent 75%
+    );
+  background-attachment: fixed;
 }
 
 a { color: inherit; text-decoration: none; }
-img, svg { display: block; max-width: 100%; height: auto; }
-main, section, article, header, footer { min-width: 0; }
 
-/* ─── Shell ─── */
-
-.site-shell {
-  position: relative;
-  z-index: 1;
-  width: min(calc(100% - 32px), var(--max-width));
+.site {
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: 24px 0 48px;
+  padding: 0 24px;
 }
 
-/* ─── Topbar ─── */
-
+/* ─── Topbar ───────────────────────────────────────────────────────── */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 18px 22px;
-  margin-bottom: 26px;
-  border: 1px solid rgba(95, 108, 114, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 250, 244, 0.9);
-  box-shadow: 0 10px 25px rgba(31, 42, 46, 0.05);
-  backdrop-filter: saturate(110%);
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
+.brand img { display: block; }
 
 .nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  row-gap: 10px;
+  display: inline-flex;
   align-items: center;
-  max-width: 100%;
-  color: var(--muted);
-  font-weight: 500;
+  gap: 16px;
 }
-
-.nav a { white-space: nowrap; }
-.nav a:hover, .footer-links a:hover { color: var(--accent); }
-
-.nav-divider {
-  width: 1px;
-  height: 16px;
-  background: var(--line);
+.nav-link {
+  font-size: 14px;
+  color: var(--ink-muted);
+  transition: color 0.15s;
 }
+.nav-link:hover { color: var(--ink); }
 
-.nav-product-link {
-  color: var(--accent) !important;
-  font-weight: 600;
-}
+.nav-cta { font-size: 14px; }
 
-/* ─── Typography ─── */
-
-h1, h2, h3 {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  text-wrap: balance;
-}
-
-h1 { font-size: clamp(2.6rem, 5.5vw, 4.6rem); line-height: 0.98; }
-h2 { font-size: clamp(1.8rem, 3.8vw, 2.6rem); line-height: 1.05; max-width: 20ch; }
-h3 { font-size: 1.18rem; line-height: 1.15; }
-p, li { text-wrap: pretty; }
-
-.eyebrow {
-  display: inline-block;
-  margin: 0 0 14px;
-  color: var(--accent);
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-/* ─── Buttons ─── */
-
+/* ─── Buttons ──────────────────────────────────────────────────────── */
+/*
+ * Two scales:
+ *
+ *  .button       — small pill, used in the topbar nav CTA. Indigo
+ *                  primary on dark, transparent secondary. Same brand
+ *                  language as the catalogue header.
+ *
+ *  .button-hero  — large neutral pair (Preview/Deploy style). Used in
+ *                  the hero + bottom CTA. Borrowed from a shared design
+ *                  reference: chunky 56px buttons with tactile depth
+ *                  (inset highlight + offset bottom shadow). Two
+ *                  flavours: deploy (dark glossy gradient, primary) and
+ *                  preview (off-white card, secondary).
+ */
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 50px;
-  padding: 0 20px;
-  border-radius: 999px;
-  font-weight: 700;
+  gap: 6px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
 }
-
-.button-primary { background: var(--accent); color: var(--accent-ink); }
-.button-secondary { border: 1px solid rgba(95, 108, 114, 0.18); background: #fff; }
-
-/* ─── Lists ─── */
-
-.check-list { margin: 0; padding: 0; list-style: none; }
-.check-list li { position: relative; padding-left: 18px; margin-top: 8px; color: var(--muted); }
-.check-list li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.6em;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
+.button-primary {
   background: var(--accent);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25);
+}
+.button-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+.button-secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.button-secondary:hover {
+  border-color: #3f3f46;
+  background: rgba(255, 255, 255, 0.02);
 }
 
-/* ─── Install Command ─── */
-
-.install-command {
+/* ── Hero / CTA — neutral Preview/Deploy pair ─────────────────────── */
+.button-hero {
   display: inline-flex;
-  align-items: center;
-  margin-top: 24px;
-  padding: 12px 16px;
-  border: 1px solid rgba(95, 108, 114, 0.16);
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 8px 20px rgba(31, 42, 46, 0.05);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 0.95rem;
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-.install-command-sm {
-  margin-top: 0;
-  padding: 10px 14px;
-  font-size: 0.82rem;
-}
-
-/* ─── Section ─── */
-
-.section { padding: 34px 0; }
-
-.section-band {
-  padding: 34px 28px;
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  border-radius: var(--radius-xl);
-  background: rgba(255, 250, 244, 0.84);
-}
-
-.section-heading {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 22px;
-}
-
-/* ─── Hero ─── */
-
-.hero {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 28px;
-  padding: 34px 0 24px;
-  align-items: stretch;
-}
-
-.hero-copy {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  border-radius: var(--radius-xl);
-  padding: 42px;
-  min-width: 0;
-}
-
-.hero-copy::after {
-  content: "";
-  position: absolute;
-  right: -24px;
-  bottom: -24px;
-  width: 160px;
-  height: 160px;
-  border: 1px solid rgba(200, 91, 45, 0.25);
-  border-radius: 50%;
-}
-
-.hero-text {
-  max-width: 34rem;
-  margin: 18px 0 0;
-  font-size: 1.1rem;
-  color: var(--muted);
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin: 28px 0 0;
-}
-
-/* Hero Story (right side) */
-
-.hero-story {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  border-radius: var(--radius-xl);
-  padding: 32px 22px;
+  min-height: 56px;
+  min-width: 176px;
+  padding: 0 22px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter 0.15s ease-out, transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.button-hero:hover {
+  filter: brightness(1.04);
+  transform: translateY(-2px);
+}
+.button-hero:active {
+  transform: translateY(1px);
+}
+.button-hero:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 5px;
 }
 
-.story-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+/* Deploy — dark glossy gradient with inset highlight + offset shadow */
+.button-deploy {
+  border-color: #111116;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 34%),
+    linear-gradient(180deg, #5a5a63 0%, #303038 45%, #111116 100%);
+  color: #ffffff;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+    0 5px 0 #09090d,
+    0 8px 12px rgba(0, 0, 0, 0.24);
+}
+
+/* Preview — off-white card with inset highlight + offset shadow */
+.button-preview {
+  border-color: #e1e1e4;
+  background: #ffffff;
+  color: #17181d;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 4px 0 #d6d6d8,
+    0 7px 10px rgba(0, 0, 0, 0.10);
+}
+
+/* ─── Eyebrow tag ──────────────────────────────────────────────────── */
+.eyebrow,
+.section-eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.section-eyebrow {
+  color: var(--ink-dim);
+}
+
+/* ─── Hero ─────────────────────────────────────────────────────────── */
+.hero {
+  padding: 96px 0 80px;
+  max-width: 720px;
+  margin: 0 auto;
   text-align: center;
 }
-
-.story-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: #fff3ea;
-  color: var(--accent);
-  font-size: 0.82rem;
-  font-weight: 700;
+.hero h1 {
+  /* Instrument Serif italic for the headline gives the landing a
+   * "library / atlas" character — a deliberate contrast against the
+   * catalogue's UI-dense Inter, while still feeling sibling. */
+  font-family: "Instrument Serif", "Inter", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(42px, 7vw, 72px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--cream);
+  margin-bottom: 24px;
 }
-
-.story-label {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-
-.story-desc {
-  font-size: 0.85rem;
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.story-arrow {
-  color: var(--accent);
-  transform: rotate(90deg);
-}
-
-/* ─── Product Grid ─── */
-
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.product-card {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  border-radius: var(--radius-lg);
-  padding: 26px;
-  min-width: 0;
-}
-
-.product-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  margin-bottom: 16px;
-}
-
-.product-icon-dev { background: #eef2ff; color: #4f46e5; }
-.product-icon-builder { background: #fff3ea; color: var(--accent); }
-.product-icon-catalogue { background: #ecfdf5; color: #059669; }
-
-.product-card h3 { font-size: 1.3rem; }
-
-.product-tagline {
-  color: var(--muted);
-  margin: 8px 0 12px;
-  font-size: 0.95rem;
-}
-
-.product-audience {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: var(--surface-strong);
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  margin-bottom: 16px;
-  align-self: flex-start;
-}
-
-/* Product Accordion */
-
-.product-details {
-  border: 1px solid rgba(95, 108, 114, 0.12);
-  border-radius: var(--radius-md);
-  margin-top: 10px;
-  overflow: hidden;
-}
-
-.product-details summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.92rem;
-  background: rgba(255, 250, 244, 0.6);
-  transition: background 0.2s;
-  list-style: none;
-}
-
-.product-details summary::-webkit-details-marker { display: none; }
-
-.product-details summary::after {
-  content: "+";
-  font-size: 1.2rem;
-  color: var(--accent);
-  font-weight: 700;
-  flex-shrink: 0;
-  margin-left: 12px;
-  transition: transform 0.2s;
-}
-
-.product-details[open] summary::after {
-  content: "\2212";
-}
-
-.product-details summary:hover { background: var(--surface-strong); }
-
-.product-details > :not(summary) {
-  padding: 0 16px 14px;
-}
-
-.product-details .check-list { margin-top: 0; }
-
-.product-code {
-  margin: 0;
-  overflow-x: auto;
-  border-radius: var(--radius-md);
-  padding: 14px;
-  background: #132225;
-  color: #f9f2e8;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  max-width: 100%;
-}
-
-.product-code-hint {
-  color: var(--muted);
-  font-size: 0.85rem;
-  margin: 8px 0 0;
-}
-
-.product-naming-example {
-  color: var(--muted);
-  font-size: 0.9rem;
+.hero-text {
+  font-size: clamp(16px, 1.6vw, 18px);
+  color: var(--ink-muted);
+  max-width: 560px;
+  margin: 0 auto 32px;
   line-height: 1.6;
 }
-
-.product-naming-example code {
-  padding: 2px 6px;
-  background: var(--surface-strong);
-  border-radius: 4px;
-  font-size: 0.85rem;
+.hero-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.product-cta {
-  margin-top: auto;
-  padding-top: 18px;
+/* ─── What — 3 tiles ──────────────────────────────────────────────── */
+.what {
+  padding: 60px 0 60px;
+  text-align: center;
 }
-
-.product-cta .button { width: 100%; }
-
-/* ─── Steps Grid ─── */
-
-.steps-grid {
+.tiles {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 24px 0 32px;
+  text-align: left;
 }
-
-.step-card {
-  border: 1px solid rgba(95, 108, 114, 0.14);
+.tile {
+  position: relative;
   background: var(--surface);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 22px;
-  min-width: 0;
+  padding: 22px 22px 22px;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
 }
-
-.step-number {
+.tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.32);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+}
+.tile-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  min-height: 38px;
-  border-radius: 999px;
-  background: #fff3ea;
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  margin-bottom: 16px;
 }
-
-.step-card h3 { margin-top: 16px; }
-.step-card p { color: var(--muted); margin-top: 8px; }
-
-/* ─── FAQ Accordion ─── */
-
-.faq-accordion {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.faq-item {
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.faq-item summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 22px;
-  cursor: pointer;
-  font-family: "Space Grotesk", sans-serif;
+.tile h3 {
+  font-size: 17px;
   font-weight: 600;
-  font-size: 1.05rem;
-  list-style: none;
-  transition: background 0.2s;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.tile p {
+  font-size: 14px;
+  color: var(--ink-muted);
+  line-height: 1.55;
+}
+.what-coda {
+  font-size: 13px;
+  color: var(--ink-dim);
+  font-style: italic;
 }
 
-.faq-item summary::-webkit-details-marker { display: none; }
-
-.faq-item summary::after {
-  content: "+";
-  font-size: 1.3rem;
-  color: var(--accent);
-  font-weight: 700;
-  flex-shrink: 0;
-  margin-left: 16px;
+/* ─── CTA section ──────────────────────────────────────────────────── */
+.cta {
+  padding: 64px 0 80px;
+  text-align: center;
+  border-top: 1px solid var(--line-soft);
+}
+.cta h2 {
+  font-family: "Instrument Serif", "Inter", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--cream);
+  margin-bottom: 24px;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.cta-actions {
+  display: inline-flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.faq-item[open] summary::after {
-  content: "\2212";
-}
-
-.faq-item summary:hover { background: rgba(241, 230, 215, 0.5); }
-
-.faq-item p {
-  padding: 0 22px 18px;
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.65;
-}
-
-/* ─── Footer ─── */
-
+/* ─── Footer ───────────────────────────────────────────────────────── */
 .footer {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  margin-top: 22px;
-  border: 1px solid rgba(95, 108, 114, 0.14);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  border-radius: var(--radius-xl);
-  padding: 22px 24px;
-}
-
-.footer p { color: var(--muted); }
-
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
   gap: 16px;
-  color: var(--muted);
-  font-weight: 600;
+  padding: 24px 0 40px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 13px;
+  color: var(--ink-dim);
+  flex-wrap: wrap;
 }
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.footer-brand img { display: block; opacity: 0.8; }
+.footer-brand strong {
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+.footer-sep { color: var(--line); }
+.footer-author { color: var(--ink-dim); }
+.footer-links {
+  display: inline-flex;
+  gap: 16px;
+}
+.footer-links a {
+  color: var(--ink-dim);
+  transition: color 0.15s;
+}
+.footer-links a:hover { color: var(--ink); }
 
-/* ─── Responsive ─── */
+/* ─── Mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .site { padding: 0 16px; }
 
-@media (max-width: 1080px) {
-  .hero,
-  .product-grid,
-  .steps-grid {
+  .topbar { padding: 16px 0; }
+  .nav-link { display: none; }   /* hide GitHub text on mobile, keep CTA */
+  .nav-cta {
+    height: 36px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  .hero { padding: 56px 0 48px; }
+  .hero h1 { font-size: clamp(36px, 9vw, 48px); }
+  .hero-actions .button-hero { width: 100%; }
+  .hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin: 0 auto; }
+
+  .tiles {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
+  .tile { padding: 20px; }
 
-  .hero-story {
-    flex-direction: row;
-    justify-content: center;
-  }
-
-  .story-arrow { transform: none; }
-}
-
-@media (max-width: 960px) {
-  .topbar {
-    border-radius: 28px;
-    padding: 18px;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .nav { width: 100%; gap: 12px; }
-  .nav-divider { display: none; }
-}
-
-@media (max-width: 720px) {
-  .site-shell {
-    width: min(calc(100% - 20px), var(--max-width));
-    padding-top: 14px;
-  }
-
-  .hero-copy, .section-band { padding: 22px; }
-  .hero-story { padding: 22px 16px; flex-direction: column; }
-  .story-arrow { transform: rotate(90deg); }
+  .cta { padding: 48px 0 56px; }
+  .cta-actions .button-hero { width: 100%; }
+  .cta-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin: 0 auto; }
 
   .footer {
-    border-radius: 28px;
-    padding: 18px;
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+    padding: 20px 0 32px;
   }
+}
 
-  .button { width: 100%; }
-
-  .install-command {
-    width: 100%;
-    border-radius: var(--radius-md);
-  }
-
-  .install-command code, .product-code {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  .nav { width: 100%; gap: 12px; }
-  h1 { max-width: 12ch; }
+/* ─── Reduced motion ───────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .button, .button-hero, .tile { transition: none; }
+  .button:hover, .button-hero:hover, .tile:hover { transform: none; }
 }
