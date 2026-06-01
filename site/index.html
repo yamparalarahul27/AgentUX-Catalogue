@@ -3,223 +3,79 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgentUX Catalogue | Screenshot Library for Product Teams</title>
+    <title>AgentUX Catalogue — A living atlas of crypto product UX</title>
     <meta
       name="description"
-      content="Organize screenshots, collect video references, and save links — all in one workspace. Telegram bot integration, ThumbHash instant previews, and team analytics."
+      content="Screenshots, video references, and shared flows — organised by app, searchable by pattern, sliceable by anything you've labelled."
     />
+    <meta name="theme-color" content="#0a0a0c" />
     <link rel="icon" type="image/svg+xml" href="./logo.svg" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="site-shell">
+    <div class="site">
       <header class="topbar">
         <a class="brand" href="#top" aria-label="AgentUX home">
           <img src="./logo.svg" alt="" width="28" height="28" />
-          <span>AgentUX Catalogue</span>
+          <span>AgentUX</span>
         </a>
         <nav class="nav">
-          <a href="#features">Features</a>
-          <a href="#for-designers">For Designers</a>
-          <a href="#how-it-works">How It Works</a>
-          <a href="#faq">FAQ</a>
-          <a href="./ideation.html">Ideation</a>
-          <span class="nav-divider"></span>
-          <a href="/designer/" class="nav-product-link">Open Catalogue</a>
+          <a class="nav-link" href="https://github.com/yamparalarahul27/agentux">GitHub</a>
+          <a class="button button-primary nav-cta" href="/designer/">Open Catalogue →</a>
         </nav>
       </header>
 
       <main id="top">
         <!-- ─── Hero ─── -->
-        <section class="hero" id="overview">
-          <div class="hero-copy">
-            <p class="eyebrow">Screenshot library for product teams</p>
-            <h1>Screenshots. Videos. Links.</h1>
-            <p class="hero-text">
-              Your team's single source of truth for product screenshots,
-              competitive video references, and saved links — organized by
-              brand, searchable, and accessible from anywhere including Telegram.
-            </p>
-            <div class="hero-actions">
-              <a class="button button-primary" href="/designer/">Open Catalogue</a>
-              <a class="button button-secondary" href="https://github.com/yamparalarahul27/agentux">View GitHub</a>
-            </div>
-          </div>
-
-          <div class="hero-story">
-            <div class="story-step">
-              <span class="story-number">1</span>
-              <span class="story-label">Capture</span>
-              <span class="story-desc">Screenshots</span>
-            </div>
-            <div class="story-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
-            <div class="story-step">
-              <span class="story-number">2</span>
-              <span class="story-label">Collect</span>
-              <span class="story-desc">Videos &amp; Links</span>
-            </div>
-            <div class="story-arrow">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
-            <div class="story-step">
-              <span class="story-number">3</span>
-              <span class="story-label">Organize</span>
-              <span class="story-desc">By Brand</span>
-            </div>
+        <section class="hero">
+          <p class="eyebrow">Open source · Self-hosted</p>
+          <h1>A living atlas of crypto product UX.</h1>
+          <p class="hero-text">
+            Screenshots, video references, and shared flows — organised by app,
+            searchable by pattern, sliceable by anything you've labelled.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="/designer/">Open the catalogue →</a>
+            <a class="button button-secondary" href="https://github.com/yamparalarahul27/agentux">Browse the code</a>
           </div>
         </section>
 
-        <!-- ─── Features ─── -->
-        <section class="section" id="features">
-          <div class="section-heading">
-            <p class="eyebrow">Features</p>
-            <h2>Everything your team needs in one place</h2>
-          </div>
-
-          <div class="product-grid">
-            <article class="product-card">
-              <div class="product-icon product-icon-catalogue">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- ─── What it is — 3 tiles ─── -->
+        <section class="what">
+          <p class="section-eyebrow">What it is</p>
+          <div class="tiles">
+            <article class="tile">
+              <div class="tile-icon tile-icon--screens" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="18" height="18" rx="2"/>
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
               </div>
               <h3>Screenshots</h3>
-              <p class="product-tagline">Upload, organize, and browse product screenshots across brands with four view modes and instant ThumbHash previews.</p>
-              <span class="product-audience">Core</span>
-
-              <details class="product-details" open>
-                <summary>What it does</summary>
-                <ul class="check-list">
-                  <li>Three views: Grid, List, and Gallery</li>
-                  <li>Group chip strip above the toolbar — one chip per group with a paused-by-default ticker, sort menu (Recent · A–Z · Count) shared with Grid section ordering, and a shareable <code>?group=</code> URL</li>
-                  <li>ThumbHash placeholders — instant blurry previews before full images load (28 bytes per image)</li>
-                  <li>Lightbox with arrow-key navigation, auto-loading next at the paginated boundary, comments, and inline editing</li>
-                  <li>Lightbox keyboard shortcuts — <kbd>E</kbd> edit · <kbd>D</kbd> delete · <kbd>C</kbd> crop · <kbd>B</kbd> save · <kbd>A</kbd> annotate. Inside the inline editor: name field pre-focused, <kbd>Tab</kbd> walks through fields with a visible focus ring, <kbd>↑</kbd>/<kbd>↓</kbd> arrow nav through dropdown results, <kbd>Enter</kbd> saves, <kbd>Esc</kbd> cancels. Inside crop: arrow keys nudge each handle (1% / 5% with <kbd>Shift</kbd>).</li>
-                  <li>Save → parabolic flight animation. A small thumbnail of the screenshot arcs from the clicked Save button to the toolbar's Saved filter — confirmation you can <em>see</em>, not just a toast. Share buttons morph to a green checkmark on copy with a cubic-bezier overshoot.</li>
-                  <li>Flow chip strip below the toolbar — optional alternative to the Flow dropdown. Pick "Flow as strip" in the Filters ▾ menu and every flow becomes a one-click chip; the dropdown variant uses a chip-cloud layout instead of a vertical list. Multi-select either way.</li>
-                  <li>Lightbox crop — trim any side (top, bottom, left, right) of a screenshot in one pass; annotations re-project to the new bounds. <kbd>Enter</kbd> applies, <kbd>Esc</kbd> cancels.</li>
-                  <li>Area annotations — drag a box around a region (a modal, a button, a state) and name it; the catalogue is filterable by annotation label across the full DB</li>
-                  <li>Lightbox area focus — clicking an area annotation dims the rest of the screenshot so the region you're discussing pops. Click outside or press <kbd>Esc</kbd> to clear.</li>
-                  <li>Label-driven filters and search — Page type, UI element, UX pattern, and Screen state chips appear in the filter sheet as labelled screenshots accumulate. Search also matches the structured title and one-line summary.</li>
-                  <li>Quick Upload with search-and-add comboboxes for Flow and Group (sourced from your full project scope), filename-parsed fallbacks, smart defaults that stick within a session, and first-open prefill from active toolbar filters</li>
-                  <li>Quick Upload shortcuts — <kbd>Cmd</kbd>+<kbd>V</kbd> on the catalogue page pastes any clipboard image into the queue; drag-and-drop files (or a top-level folder of images) anywhere on the grid does the same</li>
-                  <li>Bulk operations — rename, re-group, re-assign flow, or delete multiple families at once</li>
-                  <li>Trash with 15-day Restore — deletes move to a Trash tab in Team Settings; restore any time within 15 days, otherwise auto-purged nightly. Cards animate out with a soft dissolve so the removal feels intentional, not abrupt.</li>
-                  <li>Multi-select toolbar filters for group, flow, and annotation labels (with built-in search), plus platform, theme, and view-by</li>
-                  <li>Toolbar search across screenshot names, filenames, and group names — type a group like "Binance" and the catalogue narrows to everything in it</li>
-                  <li>Catalogue search modal — <kbd>Cmd</kbd>+<kbd>K</kbd> (or <kbd>Option</kbd>+<kbd>Space</kbd>) opens a Spotlight-style search across <strong>Groups</strong>, <strong>Flows</strong>, and <strong>Screenshots</strong> at once. Screenshot results render as cards with thumbnails; pick any to narrow the catalogue to that exact view. Recents persist across sessions; mobile gets the same modal full-screen.</li>
-                  <li>Group appearance — paste, drop, or click to upload a custom group icon; first-letter avatar fallback. Tag each group as <strong>CEX/DEX</strong> and <strong>India/Global</strong>; a new filter bar above the Groups admin narrows by Type, Region, or text query, with URL params for shareable views.</li>
-                  <li>Group detail page at <code>/g/&lt;key&gt;</code> — every group label across the catalogue (cards, lightbox header, comments-panel meta chip) is clickable and lands on a dedicated page with header, sub-nav, and a breakpoint-bucketed thumb grid (single-col + 2-col-wide tiles packed via <code>grid-auto-flow: dense</code>). 50/page infinite scroll; Group View dock chips redirect here too.</li>
-                  <li>Shareable read-only view — generate a public URL for any group + flow + platform combo. Recipients see a brand-light page with a Clock pill showing freshness; toggle between <strong>List</strong> and <strong>Carousel</strong> modes (peek layout on desktop, swipe-only on mobile). Deep-link to a specific step in the carousel via URL.</li>
-                </ul>
-              </details>
+              <p>
+                Upload, label, and browse product screens across apps. Six-section
+                structured metadata, area annotations, label-driven filters.
+              </p>
             </article>
 
-            <article class="product-card">
-              <div class="product-icon product-icon-dev">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <article class="tile">
+              <div class="tile-icon tile-icon--videos" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <polygon points="23 7 16 12 23 17 23 7"/>
                   <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
               </div>
               <h3>Videos</h3>
-              <p class="product-tagline">Collect design reference videos and X (Twitter) posts for competitive UX research — thumbnail-first cards, click to load.</p>
-              <span class="product-audience">References</span>
-
-              <details class="product-details" open>
-                <summary>What it does</summary>
-                <ul class="check-list">
-                  <li>Curated video library for design references and competitive UX studies</li>
-                  <li>X (Twitter) posts render as thumbnail-first cards — author + handle + text excerpt + media poster — without loading <code>widgets.js</code> on first paint. Click any card to open the lightbox with the embed inside.</li>
-                  <li>Lightbox nav with <kbd>←</kbd> / <kbd>→</kbd> arrow keys + prev/next buttons walks between saved references</li>
-                  <li>Add references from the web UI or directly from Telegram</li>
-                  <li>Comments per video for team discussion and annotation</li>
-                </ul>
-              </details>
+              <p>
+                Curated design-reference videos and X posts. Thumbnail-first,
+                click to load. Built for competitive research.
+              </p>
             </article>
 
-            <article class="product-card">
-              <div class="product-icon" style="background: #eef2ff; color: #4f46e5;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                </svg>
-              </div>
-              <h3>Links</h3>
-              <p class="product-tagline">Save and organize important URLs — competitor pages, design inspiration, documentation, and more.</p>
-              <span class="product-audience">Coming Soon</span>
-
-              <details class="product-details" open>
-                <summary>Planned</summary>
-                <ul class="check-list">
-                  <li>Save URLs with title, description, and optional thumbnail</li>
-                  <li>Organize links by category or brand</li>
-                  <li>Share links via Telegram bot</li>
-                  <li>Comments and team discussion per link</li>
-                </ul>
-              </details>
-            </article>
-          </div>
-        </section>
-
-        <!-- ─── For Designers ─── -->
-        <section class="section" id="for-designers">
-          <div class="section-heading">
-            <p class="eyebrow">For designers</p>
-            <h2>A research library, not just a screenshot dump</h2>
-          </div>
-
-          <div class="product-grid">
-            <article class="product-card">
-              <div class="product-icon" style="background: #ecfdf5; color: #059669;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-                  <line x1="7" y1="7" x2="7.01" y2="7"/>
-                </svg>
-              </div>
-              <h3>Capture the thinking</h3>
-              <p class="product-tagline">Six-section structured metadata per screen, not just tags. The catalogue stores what each screen <em>is</em>, not just what it looks like.</p>
-              <span class="product-audience">Labelling Studio</span>
-
-              <details class="product-details" open>
-                <summary>What you get</summary>
-                <ul class="check-list">
-                  <li>Page type, UI element, UX pattern, screen state per screen — six labelled sections built specifically for design research, not generic notes</li>
-                  <li>Area annotations with labels — drag a box around a modal, button, or empty state and name it; the whole library becomes filterable by annotation label</li>
-                  <li>AI-friendly JSON paste — feed in an LLM-generated label blob in one click; verified status auto-downgrades to draft so AI can't bypass human review</li>
-                  <li>Inline comments per screen for team discussion</li>
-                </ul>
-              </details>
-            </article>
-
-            <article class="product-card">
-              <div class="product-icon" style="background: #f5f3ff; color: #7c3aed;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                </svg>
-              </div>
-              <h3>Slice by anything</h3>
-              <p class="product-tagline">Filter the entire library by any axis you've captured, not just filename keywords. "Show me every empty state on a checkout page" is a single click away.</p>
-              <span class="product-audience">Discovery</span>
-
-              <details class="product-details" open>
-                <summary>What you get</summary>
-                <ul class="check-list">
-                  <li>Label-driven filter chips — UX pattern, page type, UI element, screen state — appear automatically as labelled screens accumulate</li>
-                  <li>Group taxonomy filters — tag groups as <strong>CEX/DEX</strong> and <strong>India/Global</strong> (or whatever taxonomy fits your domain), then filter the admin Groups view by Type, Region, or text search</li>
-                  <li>Multi-axis grouping — every screen sits at the intersection of Group × Flow × Platform × Theme; you're never forced into a single hierarchy</li>
-                  <li>Search across structured fields — matches the labelled title and one-line summary, not just filenames</li>
-                </ul>
-              </details>
-            </article>
-
-            <article class="product-card">
-              <div class="product-icon" style="background: #fdf2f8; color: #db2777;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <article class="tile">
+              <div class="tile-icon tile-icon--share" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="18" cy="5" r="3"/>
                   <circle cx="6" cy="12" r="3"/>
                   <circle cx="18" cy="19" r="3"/>
@@ -227,122 +83,40 @@
                   <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                 </svg>
               </div>
-              <h3>Share a flow, not a folder</h3>
-              <p class="product-tagline">Public read-only URLs by group + flow + platform, with two viewing modes. Send "Onboarding on mobile across 14 neobanks" as one link.</p>
-              <span class="product-audience">Share view</span>
-
-              <details class="product-details" open>
-                <summary>What you get</summary>
-                <ul class="check-list">
-                  <li>Public read-only URL, no login required — recipients see a clean, brand-light page</li>
-                  <li>Toggle between <strong>List</strong> (vertical scroll of the whole flow) and <strong>Carousel</strong> modes — peek layout on desktop, swipe + dots on mobile</li>
-                  <li>Deep-link to a specific step in the carousel via <code>?step=N</code> — "look at step 3" lands directly on it</li>
-                  <li>Last-updated pill so viewers always know how fresh the screens are</li>
-                </ul>
-              </details>
+              <h3>Share flows</h3>
+              <p>
+                Send a public URL of any group + flow + platform. List or
+                carousel mode, deep-link to a specific step. No login needed.
+              </p>
             </article>
           </div>
+
+          <p class="what-coda">
+            Built for designers, not just storage.
+          </p>
         </section>
 
-        <!-- ─── Telegram Bot ─── -->
-        <section class="section section-band" id="telegram">
-          <div class="section-heading">
-            <p class="eyebrow">Mobile-first</p>
-            <h2>Share from your phone via Telegram</h2>
-          </div>
-
-          <div class="product-grid" style="grid-template-columns: 1fr 1fr;">
-            <article class="product-card">
-              <h3>Screenshots</h3>
-              <p class="product-tagline">Share a screenshot image from your phone and it lands in the Catalogue "Social" group automatically.</p>
-              <ul class="check-list">
-                <li>Send any image to the bot — it uploads to Supabase and appears in Catalogue</li>
-                <li>Auto-named with date-based sequencing</li>
-                <li>Allowlist-based access control</li>
-              </ul>
-            </article>
-            <article class="product-card">
-              <h3>X Video Links</h3>
-              <p class="product-tagline">Paste an X (Twitter) post URL and it's added to the Videos section as an embedded reference.</p>
-              <ul class="check-list">
-                <li>Supports x.com and twitter.com URLs</li>
-                <li>Duplicate detection — bot tells you if it's already saved</li>
-                <li>Normalizes URLs to canonical format</li>
-              </ul>
-            </article>
-          </div>
-        </section>
-
-        <!-- ─── How It Works ─── -->
-        <section class="section" id="how-it-works">
-          <div class="section-heading">
-            <p class="eyebrow">How it works</p>
-            <h2>Three ways to add content</h2>
-          </div>
-
-          <div class="steps-grid">
-            <article class="step-card">
-              <span class="step-number">1</span>
-              <h3>Upload from browser</h3>
-              <p>Drag and drop screenshots into the Catalogue, or paste X post URLs into the Videos section.</p>
-            </article>
-            <article class="step-card">
-              <span class="step-number">2</span>
-              <h3>Share from Telegram</h3>
-              <p>Send screenshots or X links to the Telegram bot from your phone — they appear in the Catalogue instantly.</p>
-            </article>
-            <article class="step-card">
-              <span class="step-number">3</span>
-              <h3>Browse and organize</h3>
-              <p>Use Grid, List, Gallery, or Folder views. Filter by brand, platform, or theme. Annotate and comment inline.</p>
-            </article>
-          </div>
-        </section>
-
-        <!-- ─── FAQ ─── -->
-        <section class="section" id="faq">
-          <div class="section-heading">
-            <p class="eyebrow">FAQ</p>
-            <h2>Common questions</h2>
-          </div>
-
-          <div class="faq-accordion">
-            <details class="faq-item">
-              <summary>What is AgentUX Catalogue?</summary>
-              <p>A web-based screenshot library and reference collection tool for product teams. Organize screenshots by brand, save video references, and collect links — all in one place.</p>
-            </details>
-            <details class="faq-item">
-              <summary>Can I add screenshots from my phone?</summary>
-              <p>Yes. The Telegram bot lets you share screenshot images or X (Twitter) post URLs directly from your phone. Images go to the Catalogue and X links go to the Videos section — no desktop needed.</p>
-            </details>
-            <details class="faq-item">
-              <summary>What are ThumbHash placeholders?</summary>
-              <p>Each screenshot is encoded into a tiny 28-byte hash on upload. This hash renders as a blurry preview instantly — before the full image loads. You see color and shape immediately, then the real image fades in.</p>
-            </details>
-            <details class="faq-item">
-              <summary>Is this free?</summary>
-              <p>Yes. AgentUX Catalogue is open source. You need a Supabase project for the database and storage backend.</p>
-            </details>
-            <details class="faq-item">
-              <summary>Who can see what's in my catalogue?</summary>
-              <p>Only team members you invite. The catalogue is gated behind a per-email passcode — admins mint passcodes from <strong>Settings → Team → Members</strong> and share them through a secure channel. Row-level security on the database means even direct API access requires a real session, so nobody can scrape the catalogue with just the URL. Public share links (<code>/share/...</code>) stay anonymous on purpose so you can send specific flows to outside reviewers without giving them edit access.</p>
-            </details>
-            <details class="faq-item">
-              <summary>Can different team members have different access?</summary>
-              <p>Yes — every member holds a <strong>role</strong>, and roles map to capabilities like <em>upload</em>, <em>delete own / any</em>, <em>edit metadata</em>, <em>share</em>, <em>labelling studio</em>, and admin reach. The five seeded roles (Admin, Researcher, ResearcherAI, Marketing, QA) cover most teams; admins can also create <strong>custom roles</strong> and toggle capabilities per role from <strong>Settings → Team → Roles</strong>. The Marketing role gets a dedicated <strong>Marketing Bucket</strong> — their uploads land in one group with a free-text "suggested catalogue group" hint, and admins promote items into the main catalogue by editing the group on each screenshot. RLS enforces every capability server-side, so the UI gates are mirrored at the database.</p>
-            </details>
+        <!-- ─── Get in ─── -->
+        <section class="cta">
+          <p class="section-eyebrow">Get in</p>
+          <h2>Open-source. Self-hosted on Supabase. Free.</h2>
+          <div class="cta-actions">
+            <a class="button button-primary" href="/designer/">Open the catalogue →</a>
+            <a class="button button-secondary" href="https://github.com/yamparalarahul27/agentux">★ GitHub</a>
           </div>
         </section>
       </main>
 
       <footer class="footer">
-        <div>
+        <div class="footer-brand">
+          <img src="./logo.svg" alt="" width="20" height="20" />
           <strong>AgentUX Catalogue</strong>
-          <p>Screenshot library for product teams.</p>
-          <p>Engineered by Yamparala Rahul.</p>
+          <span class="footer-sep">·</span>
+          <span class="footer-author">Built by Yamparala Rahul</span>
         </div>
         <div class="footer-links">
           <a href="https://github.com/yamparalarahul27/agentux">GitHub</a>
+          <a href="/designer/changelog">Changelog</a>
         </div>
       </footer>
     </div>
