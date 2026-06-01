@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-02-elements-cropped-view",
+    "date": "June 2, 2026",
+    "title": "Elements browse + detail: Cropped view",
+    "bullets": [
+      { "kind": "new", "text": "New Full / Cropped toggle on the Elements browse page and every element detail page — switch between showing full screenshots or just the bbox region for the labelled element. Pref persists per page in localStorage" },
+      { "kind": "improved", "text": "Browse cards now prefer screenshots with anchors when picking the 4-up sample strip, so Cropped mode looks substantive even when most of the catalogue isn't anchored yet" },
+      { "kind": "improved", "text": "Screenshots without an anchor for the element show a hatched 'No anchor' placeholder in Cropped mode — visible signal that AI labelling hasn't reached that screen yet" }
+    ]
+  },
+  {
     "id": "2026-06-02-ai-bbox-anchors",
     "date": "June 2, 2026",
     "title": "AI labelling now suggests element locations",

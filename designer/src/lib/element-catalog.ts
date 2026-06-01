@@ -40,17 +40,28 @@ export function slugifyElement(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-// One per group, up to N. Returns the original order of `screenshots`
-// inside each group's first hit — the caller decides sort order
-// upstream. Falls through to non-distinct samples if there are
-// fewer than N groups.
+// One per group, up to N. Falls through to non-distinct samples if
+// there are fewer than N groups. When `preferred` is provided,
+// screenshots matching the predicate get first pick — useful for
+// Cropped view, where the strip should fill with screenshots that
+// actually have an anchor before falling back to unanchored ones.
 export function pickDiverseByGroup(
   screenshots: ScreenshotNode[],
   n: number,
+  preferred?: (screenshot: ScreenshotNode) => boolean,
 ): ScreenshotNode[] {
+  // Two-pass: preferred screenshots first, others second. Within each
+  // pass the group-dedupe rule still applies — order inside the same
+  // "preference class" stays the same.
+  const ordered = preferred
+    ? [
+        ...screenshots.filter(preferred),
+        ...screenshots.filter((s) => !preferred(s)),
+      ]
+    : screenshots;
   const seen = new Set<string>();
   const out: ScreenshotNode[] = [];
-  for (const shot of screenshots) {
+  for (const shot of ordered) {
     const groupKey = (shot.group ?? '').trim().toLowerCase() || '__ungrouped';
     if (seen.has(groupKey)) continue;
     seen.add(groupKey);
@@ -60,13 +71,40 @@ export function pickDiverseByGroup(
   // Not enough distinct groups — backfill with screenshots already
   // chosen-from groups so the strip stays full.
   if (out.length < n) {
-    for (const shot of screenshots) {
+    for (const shot of ordered) {
       if (out.includes(shot)) continue;
       out.push(shot);
       if (out.length >= n) break;
     }
   }
   return out;
+}
+
+// Look up the bbox for a given UI element on a specific screenshot.
+// Returns null if the screenshot's label doesn't have a matching anchor
+// (case-insensitive name match) or doesn't carry the field at all.
+// Used by Cropped view to render the bbox region of the screenshot.
+export function getElementBbox(
+  screenshot: ScreenshotNode,
+  elementName: string,
+): [number, number, number, number] | null {
+  const metadata = screenshot.metadata as Record<string, unknown> | null | undefined;
+  const label = metadata?.label as Record<string, unknown> | undefined;
+  const screenAnalysis = label?.screen_analysis as Record<string, unknown> | undefined;
+  const anchors = screenAnalysis?.ui_element_anchors;
+  if (!Array.isArray(anchors)) return null;
+  const lower = elementName.toLowerCase();
+  for (const entry of anchors) {
+    if (!entry || typeof entry !== 'object') continue;
+    const obj = entry as Record<string, unknown>;
+    const name = typeof obj.name === 'string' ? obj.name : '';
+    if (name.toLowerCase() !== lower) continue;
+    const bbox = obj.bbox;
+    if (!Array.isArray(bbox) || bbox.length !== 4) return null;
+    if (!bbox.every((v) => typeof v === 'number' && Number.isFinite(v))) return null;
+    return [bbox[0], bbox[1], bbox[2], bbox[3]];
+  }
+  return null;
 }
 
 function getLabelArray(screenshot: ScreenshotNode, path: readonly string[]): string[] {
@@ -140,7 +178,14 @@ export function buildElementCatalog(screenshots: ScreenshotNode[]): ElementCatal
       name: bestName,
       slug,
       screenshots: entry.screenshots,
-      samples: pickDiverseByGroup(entry.screenshots, 4),
+      // Prefer samples that actually have a bbox anchor for this element —
+      // they're the ones that will show meaningful content in Cropped view.
+      // Falls back to unanchored when fewer than 4 anchors exist.
+      samples: pickDiverseByGroup(
+        entry.screenshots,
+        4,
+        (shot) => getElementBbox(shot, bestName) !== null,
+      ),
       groupCount: groupKeys.size,
     });
   }

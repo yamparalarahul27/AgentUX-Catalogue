@@ -9,12 +9,16 @@ import {
   buildElementCatalog,
   elementKindLabel,
   findElementEntry,
+  getElementBbox,
   type ElementKind,
 } from '../lib/element-catalog';
 import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
+import { useElementViewMode } from '../hooks/use-element-view-mode';
 import type { ScreenshotNode } from '../types';
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueNotFound } from './CatalogueNotFound';
+import { CroppedImage } from './CroppedImage';
+import { ElementViewToggle } from './ElementViewToggle';
 import { ThumbHashImage } from './ThumbHashImage';
 
 interface ElementDetailPageProps {
@@ -47,6 +51,11 @@ export function ElementDetailPage({ user, onLogout, onLogoutEverywhere }: Elemen
   const [groupFilter, setGroupFilter] = useState<string>('all');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [themeFilter, setThemeFilter] = useState<string>('all');
+  // Per-element pref so flipping one element's view doesn't change
+  // every other detail page. Scope: detail:<kind>:<slug>.
+  const [viewMode, setViewMode] = useElementViewMode(
+    kind && slug ? `detail:${kind}:${slug}` : 'detail:_',
+  );
 
   // Reset filters when the element changes (navigating between elements).
   useEffect(() => {
@@ -190,6 +199,7 @@ export function ElementDetailPage({ user, onLogout, onLogoutEverywhere }: Elemen
                 <option value="light">Light</option>
                 <option value="dark">Dark</option>
               </select>
+              <ElementViewToggle mode={viewMode} onChange={setViewMode} />
               <span className="catalogue-element-detail__count">
                 {visibleScreenshots.length} of {entry.screenshots.length}
               </span>
@@ -202,27 +212,47 @@ export function ElementDetailPage({ user, onLogout, onLogoutEverywhere }: Elemen
               </div>
             ) : (
               <div className="catalogue-element-detail__grid">
-                {visibleScreenshots.map((shot) => (
-                  <button
-                    type="button"
-                    key={shot.id}
-                    className="catalogue-element-detail__thumb"
-                    onClick={() => openPreview(shot)}
-                    aria-label={shot.name || 'Screenshot'}
-                  >
-                    {shot.image_url ? (
-                      <ThumbHashImage src={shot.image_url} thumbHash={shot.thumb_hash ?? null} alt={shot.name || ''} />
-                    ) : (
-                      <span className="catalogue-element-detail__thumb-empty">
-                        <ImageIcon size={20} aria-hidden="true" />
+                {visibleScreenshots.map((shot) => {
+                  // In Cropped mode, look up this element's bbox on each
+                  // screenshot. Anchored screenshots render the cropped
+                  // region; unanchored fall back to a hatched "no anchor"
+                  // placeholder so the viewer can tell which screens
+                  // have AI-labelled locations vs not.
+                  const bbox = viewMode === 'cropped' ? getElementBbox(shot, entry.name) : null;
+                  const isMissingAnchor = viewMode === 'cropped' && !bbox;
+                  return (
+                    <button
+                      type="button"
+                      key={shot.id}
+                      className={`catalogue-element-detail__thumb${isMissingAnchor ? ' catalogue-element-detail__thumb--no-anchor' : ''}`}
+                      onClick={() => openPreview(shot)}
+                      aria-label={shot.name || 'Screenshot'}
+                    >
+                      {isMissingAnchor ? (
+                        <span className="catalogue-element-detail__no-anchor">
+                          <span className="catalogue-element-detail__no-anchor-badge">No anchor</span>
+                        </span>
+                      ) : viewMode === 'cropped' && bbox && shot.image_url ? (
+                        <CroppedImage
+                          src={shot.image_url}
+                          bbox={bbox}
+                          alt={shot.name || ''}
+                          className="catalogue-element-detail__thumb-crop"
+                        />
+                      ) : shot.image_url ? (
+                        <ThumbHashImage src={shot.image_url} thumbHash={shot.thumb_hash ?? null} alt={shot.name || ''} />
+                      ) : (
+                        <span className="catalogue-element-detail__thumb-empty">
+                          <ImageIcon size={20} aria-hidden="true" />
+                        </span>
+                      )}
+                      <span className="catalogue-element-detail__thumb-caption">
+                        <span>{shot.name || 'Untitled'}</span>
+                        <span className="catalogue-element-detail__thumb-meta">{shot.group ?? '—'}</span>
                       </span>
-                    )}
-                    <span className="catalogue-element-detail__thumb-caption">
-                      <span>{shot.name || 'Untitled'}</span>
-                      <span className="catalogue-element-detail__thumb-meta">{shot.group ?? '—'}</span>
-                    </span>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </>
