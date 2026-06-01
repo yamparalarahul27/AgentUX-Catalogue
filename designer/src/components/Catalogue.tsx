@@ -508,6 +508,21 @@ export function Catalogue({
       return false;
     }
   });
+
+  // The .is-splash-falling class carries `perspective: 1200px` on the
+  // page root. That creates a containing block for any descendant with
+  // `position: fixed` — meaning the toast, AppUpdateToast, etc. would
+  // scroll WITH the page instead of staying anchored to the viewport
+  // (CSS spec: transform/perspective/filter on an ancestor overrides
+  // fixed positioning). So the class must come off after the chrome
+  // animation completes, otherwise uploads / scrolls cause fixed UI
+  // to mis-render. Chrome anim: 140ms delay (sidebar) + 900ms = 1040ms.
+  const [splashFallActive, setSplashFallActive] = useState(playSplashFall);
+  useEffect(() => {
+    if (!splashFallActive) return;
+    const handle = window.setTimeout(() => setSplashFallActive(false), 1300);
+    return () => window.clearTimeout(handle);
+  }, [splashFallActive]);
   const allFamilies = useMemo(
     () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
     [presetByKey, scopedScreenFamilies, scopedScreenshots],
@@ -1068,7 +1083,7 @@ export function Catalogue({
     });
   }
   return (
-    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}${canvasGalleryActive ? ' is-canvas-gallery-active' : ''}${playSplashFall ? ' is-splash-falling' : ''}${cardsArriving ? ' is-cards-arriving' : ''}`}>
+    <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}${canvasGalleryActive ? ' is-canvas-gallery-active' : ''}${splashFallActive ? ' is-splash-falling' : ''}${cardsArriving ? ' is-cards-arriving' : ''}`}>
       <CatalogueHeader
         activeSection={activeSection}
         canAdmin={canAdmin}
