@@ -11,18 +11,16 @@
     <meta name="theme-color" content="#0a0a0c" />
     <link rel="icon" type="image/svg+xml" href="./logo.svg" />
     <link rel="stylesheet" href="./styles.css" />
+    <script defer src="./supabase-config.js"></script>
+    <script defer src="./group-masonry.js"></script>
   </head>
   <body>
     <div class="site">
       <header class="topbar">
-        <a class="brand" href="#top" aria-label="AgentUX home">
-          <img src="./logo.svg" alt="" width="28" height="28" />
+        <a class="brand" href="#top" aria-label="AgentUX home" title="AgentUX">
+          <img src="./logo.svg" alt="" width="32" height="32" />
           <span>AgentUX</span>
         </a>
-        <nav class="nav">
-          <a class="nav-link" href="https://github.com/yamparalarahul27/agentux">GitHub</a>
-          <a class="button button-primary nav-cta" href="/designer/">Open Catalogue →</a>
-        </nav>
       </header>
 
       <main id="top">
@@ -36,75 +34,11 @@
           </p>
           <div class="hero-actions">
             <a class="button-hero button-deploy" href="/designer/">Open the catalogue →</a>
-            <a class="button-hero button-preview" href="https://github.com/yamparalarahul27/agentux">Browse the code</a>
           </div>
         </section>
 
-        <!-- ─── What it is — 3 tiles ─── -->
-        <section class="what">
-          <p class="section-eyebrow">What it is</p>
-          <div class="tiles">
-            <article class="tile">
-              <div class="tile-icon tile-icon--screens" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-              </div>
-              <h3>Screenshots</h3>
-              <p>
-                Upload, label, and browse product screens across apps. Six-section
-                structured metadata, area annotations, label-driven filters.
-              </p>
-            </article>
-
-            <article class="tile">
-              <div class="tile-icon tile-icon--videos" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="23 7 16 12 23 17 23 7"/>
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                </svg>
-              </div>
-              <h3>Videos</h3>
-              <p>
-                Curated design-reference videos and X posts. Thumbnail-first,
-                click to load. Built for competitive research.
-              </p>
-            </article>
-
-            <article class="tile">
-              <div class="tile-icon tile-icon--share" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="18" cy="5" r="3"/>
-                  <circle cx="6" cy="12" r="3"/>
-                  <circle cx="18" cy="19" r="3"/>
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                </svg>
-              </div>
-              <h3>Share flows</h3>
-              <p>
-                Send a public URL of any group + flow + platform. List or
-                carousel mode, deep-link to a specific step. No login needed.
-              </p>
-            </article>
-          </div>
-
-          <p class="what-coda">
-            Built for designers, not just storage.
-          </p>
-        </section>
-
-        <!-- ─── Get in ─── -->
-        <section class="cta">
-          <p class="section-eyebrow">Get in</p>
-          <h2>Open-source. Self-hosted on Supabase. Free.</h2>
-          <div class="cta-actions">
-            <a class="button-hero button-deploy" href="/designer/">Open the catalogue →</a>
-            <a class="button-hero button-preview" href="https://github.com/yamparalarahul27/agentux">★ GitHub</a>
-          </div>
-        </section>
+        <!-- Group icons masonry — fetched live from Supabase anon -->
+        <div class="group-masonry" id="group-masonry" aria-label="Apps in the catalogue"></div>
       </main>
 
       <footer class="footer">
