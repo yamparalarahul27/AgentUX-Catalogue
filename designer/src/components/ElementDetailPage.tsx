@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
 
-import notFoundIllustration from '../assets/not-found.png';
+import notFoundIllustration from '../assets/not-found.svg';
 
 import {
   buildElementCatalog,

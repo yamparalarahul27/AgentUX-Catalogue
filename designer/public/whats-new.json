@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-01-fall-in-cards-and-svg-empty-state",
+    "date": "June 1, 2026",
+    "title": "Catalogue cards now join the splash fall-in + crisper empty-state art",
+    "bullets": [
+      { "kind": "improved", "text": "The splash fall-in now waits for the skeleton to resolve before animating the cards, so the whole sequence (header → chips → sidebar → cards) reads as one continuous landing instead of cards popping in after the chrome" },
+      { "kind": "improved", "text": "Empty-state illustration is now a vector — no more soft-edge pixelation on retina displays or large surfaces" },
+      { "kind": "fix", "text": "Upload toast was getting cropped at the viewport bottom after the page scrolled — the splash fall-in's perspective context was overriding the toast's fixed positioning. The class now clears after the animation completes so subsequent uploads / toasts behave correctly" }
+    ]
+  },
+  {
     "id": "2026-06-01-fall-in-empty-state-studio",
     "date": "June 1, 2026",
     "title": "Catalogue lands with a flourish — plus polish",

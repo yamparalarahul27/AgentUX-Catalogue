@@ -6,7 +6,7 @@ import { useViewportWidth } from '../../hooks/use-viewport-width';
 import { useLabelingStudioStatus } from '../../hooks/use-labeling-studio-status';
 import type { StudioTotals } from '../../hooks/use-labeling-studio-totals';
 import type { ScreenshotLabel } from '../../lib/labeling/types';
-import notFoundIllustration from '../../assets/not-found.png';
+import notFoundIllustration from '../../assets/not-found.svg';
 import { LabelingStudioCard } from './LabelingStudioCard';
 import { LabelingStudioStatusChips } from './LabelingStudioStatusChips';
 import { LabelingStudioPlaceholder } from './LabelingStudioPlaceholder';

@@ -1,6 +1,6 @@
 import { CheckSquare, Square } from 'lucide-react';
 
-import notFoundIllustration from '../assets/not-found.png';
+import notFoundIllustration from '../assets/not-found.svg';
 
 import { useMemo } from 'react';
 
