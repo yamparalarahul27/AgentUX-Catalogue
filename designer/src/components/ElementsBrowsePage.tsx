@@ -8,9 +8,11 @@ import {
   type ElementKind,
 } from '../lib/element-catalog';
 import { useCatalogueFullScope } from '../hooks/use-catalogue-full-scope';
+import { useElementViewMode } from '../hooks/use-element-view-mode';
 import notFoundIllustration from '../assets/not-found.svg';
 import { CatalogueHeader } from './CatalogueHeader';
 import { ElementCard } from './ElementCard';
+import { ElementViewToggle } from './ElementViewToggle';
 
 type TabKind = 'all' | ElementKind;
 type SortMode = 'alpha' | 'count';
@@ -28,6 +30,7 @@ export function ElementsBrowsePage({ user, onLogout, onLogoutEverywhere }: Eleme
   const [activeTab, setActiveTab] = useState<TabKind>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('alpha');
+  const [viewMode, setViewMode] = useElementViewMode('browse');
 
   // Catalog is heavy to compute (every screenshot's label arrays) —
   // memoise on the screenshot array reference.
@@ -125,6 +128,7 @@ export function ElementsBrowsePage({ user, onLogout, onLogoutEverywhere }: Eleme
               <option value="count">By count</option>
             </select>
           </label>
+          <ElementViewToggle mode={viewMode} onChange={setViewMode} />
         </div>
 
         {loading && catalog.length === 0 ? (
@@ -141,7 +145,7 @@ export function ElementsBrowsePage({ user, onLogout, onLogoutEverywhere }: Eleme
         ) : (
           <div className="catalogue-elements__grid">
             {visible.map((entry) => (
-              <ElementCard key={`${entry.kind}:${entry.slug}`} entry={entry} />
+              <ElementCard key={`${entry.kind}:${entry.slug}`} entry={entry} viewMode={viewMode} />
             ))}
           </div>
         )}

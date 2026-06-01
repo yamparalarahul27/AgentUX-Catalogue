@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Elements — Cropped view mockup</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0c;
+    color: #fafafa;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    padding: 32px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  h2 { font-size: 12px; font-weight: 500; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 8px; }
+  h3 { font-size: 16px; font-weight: 600; }
+  p.note { font-size: 13px; color: #a1a1aa; max-width: 80ch; line-height: 1.55; }
+  code { font-family: ui-monospace, monospace; font-size: 12px; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; }
+
+  /* ── Page chrome ─────────────────────────────────────────────────── */
+  .page {
+    background: #0f0f10;
+    border: 1px solid #27272a;
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .page__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .page__title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .page__lede { font-size: 13px; color: #a1a1aa; margin-top: 4px; }
+
+  /* ── View toggle ─────────────────────────────────────────────────── */
+  .view-toggle {
+    display: inline-flex;
+    background: #16161a;
+    border: 1px solid #27272a;
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .view-toggle button {
+    height: 28px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: #a1a1aa;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .view-toggle button.is-active {
+    background: rgba(99, 102, 241, 0.32);
+    color: #fff;
+  }
+
+  /* ── Browse grid (cards) ─────────────────────────────────────────── */
+  .browse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .element-card {
+    background: #111113;
+    border: 1px solid #27272a;
+    border-radius: 14px;
+    padding: 8px;
+    cursor: pointer;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+  .element-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.32);
+  }
+
+  /* Sample strip — 4 mini thumbs, same layout in both modes for grid stability */
+  .element-card__strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0a0a0c;
+    aspect-ratio: 4 / 1;
+  }
+  .element-card__sample {
+    position: relative;
+    background: #0a0a0c;
+    overflow: hidden;
+  }
+  .element-card__sample img,
+  .element-card__sample__crop {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  /* Cropped sample — background-image at bbox-derived position+size */
+  .element-card__sample__crop {
+    background-repeat: no-repeat;
+  }
+  .element-card__sample--missing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #52525b;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: repeating-linear-gradient(45deg, #18181b 0 6px, #14141a 6px 12px);
+  }
+  .element-card__sample--missing span {
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .element-card__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 8px 4px;
+  }
+  .element-card__name {
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .element-card__kind-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    background: #818cf8;
+  }
+  .element-card__count {
+    font-size: 12px;
+    color: #71717a;
+  }
+
+  /* ── Detail page grid ────────────────────────────────────────────── */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .detail-tile {
+    position: relative;
+    background: #111113;
+    border: 1px solid #27272a;
+    border-radius: 18px;
+    padding: 10px;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+  .detail-tile:hover {
+    border-color: rgba(99, 102, 241, 0.32);
+    transform: translateY(-2px);
+  }
+  .detail-tile__media {
+    width: 100%;
+    height: calc(100% - 36px);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0a0a0c;
+  }
+  .detail-tile__media img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-tile__crop {
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+  }
+  .detail-tile__caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 2px 0;
+    font-size: 12px;
+  }
+  .detail-tile__caption-name {
+    color: #fafafa;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .detail-tile__caption-group {
+    color: #71717a;
+    flex-shrink: 0;
+  }
+
+  /* ── Fallback variants on the detail tile ────────────────────────── */
+  .detail-tile--missing {
+    border-style: dashed;
+    border-color: #2a2a30;
+  }
+  .detail-tile--missing .detail-tile__media {
+    background:
+      repeating-linear-gradient(45deg, #18181b 0 6px, #14141a 6px 12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #52525b;
+    font-size: 11px;
+  }
+  .detail-tile__badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(15, 15, 16, 0.9);
+    border: 1px solid #27272a;
+    color: #71717a;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Side-by-side comparison helper */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 8px;
+  }
+  .compare > div { min-width: 0; }
+</style>
+</head>
+<body>
+  <h1>Elements — Cropped view mockup</h1>
+  <p class="note">
+    Three rendered scenarios using real bbox math. Hand-crafted bboxes simulate the
+    AI output for the few screenshots that have anchors today. Compare with the Full
+    mode (current behaviour) side-by-side and tell me which fallback strategy reads
+    best for the ~99% of screenshots that don't have anchors yet.
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────── -->
+  <h2>Scenario 1 · Browse page card — Full vs Cropped sample strip</h2>
+  <p class="note">
+    The card on <code>/elements</code>. Today it shows 4 random sample screenshots full-bleed.
+    In Cropped mode, the same 4 samples render just their bbox region for the element.
+    Cards with all 4 cropped feel like a "specimen sheet" — visual comparison of how
+    different apps style the same element.
+  </p>
+
+  <div class="compare">
+    <div>
+      <h3 style="margin-bottom: 8px;">Full (today)</h3>
+      <div class="element-card">
+        <div class="element-card__strip">
+          <div class="element-card__sample">
+            <img src="https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/binance/1775714330107-binance.png" />
+          </div>
+          <div class="element-card__sample">
+            <img src="https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/coinbase/1775714386858-coinbase.png" />
+          </div>
+          <div class="element-card__sample">
+            <img src="https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/bybit/1775714370611-bybit.png" />
+          </div>
+          <div class="element-card__sample">
+            <img src="https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/phantom/1775720472427-phantom.png" />
+          </div>
+        </div>
+        <div class="element-card__body">
+          <span class="element-card__name"><span class="element-card__kind-dot"></span>Primary CTA</span>
+          <span class="element-card__count">28 screens</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="margin-bottom: 8px;">Cropped (proposed)</h3>
+      <div class="element-card">
+        <div class="element-card__strip">
+          <!-- Each sample is the same screenshot, but background-position+size simulate cropping to a bbox area -->
+          <!-- bbox roughly [30, 86, 40, 6] — Primary CTA at bottom-centre, 40% wide, 6% tall -->
+          <div class="element-card__sample">
+            <div class="element-card__sample__crop" style="
+              background-image: url('https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/binance/1775714330107-binance.png');
+              background-size: 250% 1667%;
+              background-position: 50% 91.5%;
+            "></div>
+          </div>
+          <div class="element-card__sample">
+            <div class="element-card__sample__crop" style="
+              background-image: url('https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/coinbase/1775714386858-coinbase.png');
+              background-size: 250% 1667%;
+              background-position: 50% 91.5%;
+            "></div>
+          </div>
+          <div class="element-card__sample element-card__sample--missing">
+            <span>no anchor</span>
+          </div>
+          <div class="element-card__sample element-card__sample--missing">
+            <span>no anchor</span>
+          </div>
+        </div>
+        <div class="element-card__body">
+          <span class="element-card__name"><span class="element-card__kind-dot"></span>Primary CTA</span>
+          <span class="element-card__count">28 screens · 2 cropped</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:8px;">
+    <strong>Decision needed:</strong> when fewer than 4 samples have anchors, how does
+    the strip fill? Above shows striped "no anchor" tiles in the remaining slots.
+    Alternative: omit them (3-up or 2-up strip), or pad with full-screenshot thumbs.
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────── -->
+  <h2>Scenario 2 · Detail page grid — full screenshot vs cropped tile</h2>
+  <p class="note">
+    The drill-in view at <code>/elements/ui/primary-cta</code>. Today: 4-col grid of
+    full screenshots. In Cropped mode each tile shows just the bbox region. The crop
+    makes per-app variation in CTA styling immediately scannable.
+  </p>
+
+  <h3>Cropped mode — 8 tiles, mix of anchored + missing</h3>
+  <div class="detail-grid">
+    <!-- 4 anchored tiles using simulated bboxes -->
+    <div class="detail-tile">
+      <div class="detail-tile__media">
+        <div class="detail-tile__crop" style="
+          background-image: url('https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/binance/1775714330107-binance.png');
+          background-size: 250% 1667%;
+          background-position: 50% 91.5%;
+        "></div>
+      </div>
+      <div class="detail-tile__caption">
+        <span class="detail-tile__caption-name">Continue</span>
+        <span class="detail-tile__caption-group">Binance</span>
+      </div>
+    </div>
+
+    <div class="detail-tile">
+      <div class="detail-tile__media">
+        <div class="detail-tile__crop" style="
+          background-image: url('https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/coinbase/1775714386858-coinbase.png');
+          background-size: 250% 1667%;
+          background-position: 50% 91.5%;
+        "></div>
+      </div>
+      <div class="detail-tile__caption">
+        <span class="detail-tile__caption-name">Get started</span>
+        <span class="detail-tile__caption-group">Coinbase</span>
+      </div>
+    </div>
+
+    <div class="detail-tile">
+      <div class="detail-tile__media">
+        <div class="detail-tile__crop" style="
+          background-image: url('https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/bybit/1775714370611-bybit.png');
+          background-size: 250% 1667%;
+          background-position: 50% 91.5%;
+        "></div>
+      </div>
+      <div class="detail-tile__caption">
+        <span class="detail-tile__caption-name">Sign up</span>
+        <span class="detail-tile__caption-group">Bybit</span>
+      </div>
+    </div>
+
+    <div class="detail-tile">
+      <div class="detail-tile__media">
+        <div class="detail-tile__crop" style="
+          background-image: url('https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/catalogue-group-icons/all-projects/phantom/1775720472427-phantom.png');
+          background-size: 250% 1667%;
+          background-position: 50% 91.5%;
+        "></div>
+      </div>
+      <div class="detail-tile__caption">
+        <span class="detail-tile__caption-name">Connect wallet</span>
+        <span class="detail-tile__caption-group">Phantom</span>
+      </div>
+    </div>
+
+    <!-- 4 missing-anchor tiles in different fallback styles -->
+    <div class="detail-tile detail-tile--missing">
+      <span class="detail-tile__badge">No anchor</span>
+      <div class="detail-tile__media">No anchor</div>
+      <div class="detail-tile__caption">
+        <span class="detail-tile__caption-name">Continue</span>
+        <span class="detail-tile__caption-group">Kraken</span>
+      </div>
+    </div>
+
+    <div class="detail-tile detail-tile--missing">
+      <span class="detail-tile__badge">No anchor</span>
+      <div class="detail-tile__media">No anchor</div>
+      <div class="detail-tile__caption">
+        <span class="detail-tile__caption-name">Subscribe</span>
+        <span class="detail-tile__caption-group">OKX</span>
+      </div>
+    </div>
+
+    <div class="detail-tile detail-tile--missing">
+      <span class="detail-tile__badge">No anchor</span>
+      <div class="detail-tile__media">No anchor</div>
+      <div class="detail-tile__caption">
+        <span class="detail-tile__caption-name">Trade now</span>
+        <span class="detail-tile__caption-group">Asgard</span>
+      </div>
+    </div>
+
+    <div class="detail-tile detail-tile--missing">
+      <span class="detail-tile__badge">No anchor</span>
+      <div class="detail-tile__media">No anchor</div>
+      <div class="detail-tile__caption">
+        <span class="detail-tile__caption-name">Get app</span>
+        <span class="detail-tile__caption-group">Trust Wallet</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:16px;">
+    <strong>Decision needed:</strong> in Cropped mode, the four no-anchor tiles
+    above show as a hatched placeholder with a "No anchor" badge — visible reminder
+    that the data is incomplete. Alternatives:
+    <br>· <strong>Hide entirely</strong> — Cropped mode only shows anchored tiles. Page collapses dramatically (today: 1 tile out of 28).
+    <br>· <strong>Show as full screenshot with a "no anchor" tag</strong> — Cropped mode falls back to full thumbnail, badge tells the viewer this isn't actually cropped.
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────── -->
+  <h2>Scenario 3 · Toggle placement (top-right of each page)</h2>
+
+  <div class="page">
+    <div class="page__head">
+      <div>
+        <div class="page__title">Primary CTA</div>
+        <p class="page__lede">UI Element · 28 screenshots across 14 groups</p>
+      </div>
+      <div class="view-toggle">
+        <button class="is-active">Full</button>
+        <button>Cropped</button>
+      </div>
+    </div>
+    <p class="note">The toggle remembers per-element preference in <code>localStorage</code>, so flipping to Cropped for one element doesn't change the default for others. (Or: global, simpler — your call.)</p>
+  </div>
+
+</body>
+</html>
