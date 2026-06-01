@@ -1452,3 +1452,129 @@
     color: #f87171;
   }
 }
+
+// ─── Area annotation resize handles ──────────────────────────────────
+// 8 small grab-points around the bbox of either an annotation draft or
+// the currently-selected saved annotation. Positioned absolutely
+// inside .catalogue-lightbox-pin-layer (same coordinate system as the
+// annotation rectangles). Each handle is centered on its anchor point
+// via the translate trick, and uses an axis-appropriate resize cursor.
+.annotation-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #fafafa;
+  border: 1.5px solid #6366f1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  pointer-events: auto;
+  // Slight grow on hover so the user can tell which is hot.
+  transition: transform 0.12s ease, background 0.12s ease;
+
+  &:hover {
+    transform: translate(-50%, -50%) scale(1.15);
+    background: #ffffff;
+  }
+}
+
+// Per-handle cursor variants — match the resize direction.
+.annotation-handle--nw,
+.annotation-handle--se { cursor: nwse-resize; }
+.annotation-handle--ne,
+.annotation-handle--sw { cursor: nesw-resize; }
+.annotation-handle--n,
+.annotation-handle--s  { cursor: ns-resize; }
+.annotation-handle--e,
+.annotation-handle--w  { cursor: ew-resize; }
+
+// ─── UI Elements tab — list panel ──────────────────────────────────
+// Filtered subset of annotations (those whose text is in the UI Element
+// taxonomy). Each row is clickable to select + highlight the bbox on
+// the screenshot. Visual rhythm matches the Annotations list but with
+// tighter row chrome — this is a browsing surface, not a composer.
+.catalogue-lightbox-ui-elements-help {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.catalogue-lightbox-ui-elements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catalogue-lightbox-ui-element-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: #3f3f46;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.is-active {
+    border-color: rgba(99, 102, 241, 0.42);
+    background: rgba(99, 102, 241, 0.10);
+  }
+}
+
+.catalogue-lightbox-ui-element-row__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d4d4d8;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.catalogue-lightbox-ui-element-row__name {
+  flex: 1;
+  font-size: 13px;
+  color: #fafafa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogue-lightbox-ui-element-row__delete {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.30);
+    background: rgba(239, 68, 68, 0.08);
+  }
+}
