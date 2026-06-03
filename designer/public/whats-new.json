@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-06-03-icon-refresh",
+    "date": "June 3, 2026",
+    "title": "Refreshed favicon + home-screen icons",
+    "bullets": [
+      { "kind": "fix", "text": "Favicon and home-screen icons re-rendered from the source SVG with a softer warm-dark background — the cream A reads cleanly across browser tabs and mobile launchers" },
+      { "kind": "fix", "text": "Icon filenames bumped so iOS and Android fetch the new icons on next visit. Already added the app to your home screen? Remove and re-add the shortcut to pick up the new icon" }
+    ]
+  },
+  {
     "id": "2026-06-02-resize-handles-and-ui-e-tab",
     "date": "June 2, 2026",
     "title": "Lightbox: resize handles + UI-E tab + cleaner Comments view",
