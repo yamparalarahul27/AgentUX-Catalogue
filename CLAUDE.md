@@ -31,7 +31,7 @@ These bias toward caution over speed. For trivial tasks, use judgment.
 
 ### File size
 
-- 700 LOC cap for files under `src/`. Excludes generated files, tests, lockfiles, `*.d.ts`.
+- 1000 LOC cap for files under `src/`. Excludes generated files, tests, lockfiles, `*.d.ts`. (Raised from 700 on 2026-06-02 — integration components legitimately aggregate domains; the tighter cap was forcing premature splits.)
 - Split by responsibility before a file hits the cap: extract hooks, components, utilities, types into their own files.
 - Prefer colocation over deep nesting — types near usage, helpers near callers.
 - Vendored third-party code is exempt.
