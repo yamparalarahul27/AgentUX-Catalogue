@@ -825,6 +825,19 @@
   font-weight: 500;
 }
 
+.catalogue-paste-link__sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: $text-dim;
+  flex-shrink: 0;
+}
+
+.catalogue-paste-link__hint {
+  font-size: 12px;
+  color: $text-dim;
+}
+
 // Focused — surface is armed to receive ⌘V.
 .catalogue-paste-link--active {
   color: #c7d2fe;
@@ -837,6 +850,7 @@
   background: rgba(34, 197, 94, 0.08);
 
   .catalogue-paste-link__icon { color: #22c55e; }
+  .catalogue-paste-link__hint { color: #86efac; }
 }
 
 // Warning — amber for empty clipboard / permission denied.
@@ -845,6 +859,7 @@
   background: rgba(245, 158, 11, 0.06);
 
   .catalogue-paste-link__icon { color: #f59e0b; }
+  .catalogue-paste-link__hint { color: #fcd34d; }
 }
 
 .catalogue-quick-upload-right .catalogue-upload-hint {

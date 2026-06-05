@@ -100,14 +100,17 @@ export function PasteFromClipboardButton({ onFilesSelected, disabled = false }: 
     : feedback.kind === 'focused' ? 'active'
     : 'idle';
 
-  const label = (() => {
+  const label = feedback.kind === 'success' ? 'Pasted' : 'Paste from clipboard';
+  const hint = (() => {
     switch (feedback.kind) {
+      case 'focused':
+        return 'Press ⌘V — or long-press → Paste';
       case 'success':
-        return `Pasted · ${feedback.count} image${feedback.count === 1 ? '' : 's'}`;
+        return `Added ${feedback.count} image${feedback.count === 1 ? '' : 's'}`;
       case 'empty':
         return 'No image in clipboard';
       default:
-        return 'Paste from clipboard';
+        return 'iPhone supported · long-press → Paste';
     }
   })();
 
@@ -145,6 +148,10 @@ export function PasteFromClipboardButton({ onFilesSelected, disabled = false }: 
       </span>
       <span className="catalogue-paste-link__label" contentEditable={false}>
         {label}
+      </span>
+      <span className="catalogue-paste-link__sep" contentEditable={false} aria-hidden="true" />
+      <span className="catalogue-paste-link__hint" contentEditable={false}>
+        {hint}
       </span>
     </div>
   );
