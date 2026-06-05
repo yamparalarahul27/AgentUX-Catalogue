@@ -376,9 +376,6 @@ export function CatalogueQuickUploadPanel({
           </>
         )}
 
-        <p className="catalogue-upload-hint" style={{ textAlign: 'left', padding: '8px 0' }}>
-          Naming format: <code>01-deposit-select-coin.png</code>
-        </p>
         <div className="catalogue-quick-upload-drop-row">
           <UploadZone onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />
           <PasteFromClipboardButton onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />

@@ -800,15 +800,6 @@
   user-select: none;
   transition: color 0.15s ease, background 0.15s ease;
 
-  &:hover {
-    color: #c7d2fe;
-    background: rgba(99, 102, 241, 0.06);
-
-    .catalogue-paste-link__label {
-      border-bottom-color: rgba(199, 210, 254, 0.55);
-    }
-  }
-
   &:focus,
   &:focus-visible {
     outline: 2px solid rgba(99, 102, 241, 0.55);
@@ -832,34 +823,12 @@
 
 .catalogue-paste-link__label {
   font-weight: 500;
-  border-bottom: 1px dashed transparent;
-  padding-bottom: 1px;
-  transition: border-color 0.15s ease;
 }
 
-.catalogue-paste-link__sep {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: $text-dim;
-  flex-shrink: 0;
-}
-
-.catalogue-paste-link__hint {
-  font-size: 12px;
-  color: $text-dim;
-}
-
-// Focused — surface is armed to receive ⌘V. Indigo border-bottom on
-// the label so the user sees the prompt without a heavy button shape.
+// Focused — surface is armed to receive ⌘V.
 .catalogue-paste-link--active {
   color: #c7d2fe;
   background: rgba(99, 102, 241, 0.10);
-
-  .catalogue-paste-link__label {
-    border-bottom-color: rgba(199, 210, 254, 0.65);
-    border-bottom-style: solid;
-  }
 }
 
 // Success — transient green flash after files are pasted.
@@ -868,8 +837,6 @@
   background: rgba(34, 197, 94, 0.08);
 
   .catalogue-paste-link__icon { color: #22c55e; }
-  .catalogue-paste-link__hint { color: #86efac; }
-  .catalogue-paste-link__label { border-bottom-color: transparent; }
 }
 
 // Warning — amber for empty clipboard / permission denied.
@@ -878,8 +845,6 @@
   background: rgba(245, 158, 11, 0.06);
 
   .catalogue-paste-link__icon { color: #f59e0b; }
-  .catalogue-paste-link__hint { color: #fcd34d; }
-  .catalogue-paste-link__label { border-bottom-color: transparent; }
 }
 
 .catalogue-quick-upload-right .catalogue-upload-hint {
