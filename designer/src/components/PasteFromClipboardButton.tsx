@@ -14,16 +14,66 @@ type Feedback =
   | { kind: 'success'; count: number }
   | { kind: 'empty' };
 
+// Pull image files out of a synchronous paste event's DataTransfer —
+// DataTransferItemList first, then `files` as a fallback, filtered to
+// images and given a generated name.
+function extractClipboardImages(clipboardData: DataTransfer | null): File[] {
+  if (!clipboardData) return [];
+  const itemFiles = Array.from(clipboardData.items)
+    .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file));
+
+  const rawFiles = itemFiles.length > 0 ? itemFiles : Array.from(clipboardData.files || []);
+  return rawFiles
+    .filter((file) => isImageFile(file))
+    .map((file, index) => withGeneratedName(file, index));
+}
+
+// Async fallback for when the synchronous paste event reports an image
+// type but hands over zero files — a documented iPadOS behaviour when the
+// image was copied from another app (e.g. X): clipboardData.types shows
+// `image/png` but `files` is empty. navigator.clipboard.read() surfaces the
+// bytes the paste event withheld. Called from inside the paste handler so
+// it stays within the user's paste gesture, which is what WebKit requires
+// to grant the read. No-ops on browsers without the async API.
+async function readClipboardImagesAsync(): Promise<File[]> {
+  if (typeof navigator === 'undefined' || !navigator.clipboard || typeof navigator.clipboard.read !== 'function') {
+    return [];
+  }
+  let items: ClipboardItem[];
+  try {
+    items = await navigator.clipboard.read();
+  } catch {
+    return [];
+  }
+  const collected: File[] = [];
+  for (const item of items) {
+    const imageType = item.types.find((type) => type.startsWith('image/'));
+    if (!imageType) continue;
+    try {
+      const blob = await item.getType(imageType);
+      collected.push(new File([blob], '', { type: imageType }));
+    } catch {
+      // Skip this item; keep walking.
+    }
+  }
+  return collected.map((file, index) => withGeneratedName(file, index));
+}
+
 // Compact paste-from-clipboard link, rendered beneath the drop zone in
 // the Quick Upload panel. The visible element is a contenteditable
 // surface styled as a text link — clicking focuses it (cursor lands
 // inside), then the user pastes via ⌘V on desktop or long-press →
 // Paste on iOS Universal Clipboard.
 //
-// The contenteditable mechanic is what makes iOS work — the native
-// `paste` event delivers the clipboard bytes (including images
-// transferred via Universal Clipboard), which `navigator.clipboard.read()`
-// doesn't reliably provide on iOS Safari.
+// Paste delivery has two iOS gaps, so the handler tries both primitives:
+//   1. The synchronous `paste` event's DataTransfer — works for ⌘V on
+//      desktop and Universal Clipboard images from an iPhone.
+//   2. navigator.clipboard.read() — the only path that surfaces images
+//      copied from another app on iPadOS, where the paste event reports
+//      an image type but zero files.
+// Sync first; fall back to the async read only when sync yields nothing.
 //
 // Child elements are marked `contentEditable={false}` so the icon and
 // labels are not editable — only the outer surface accepts paste.
@@ -39,41 +89,38 @@ export function PasteFromClipboardButton({ onFilesSelected, disabled = false }: 
     return () => clearTimeout(timeout);
   }, [feedback]);
 
+  function commitFiles(files: File[]) {
+    onFilesSelected(files);
+    setFeedback({ kind: 'success', count: files.length });
+    clearEditable();
+    editableRef.current?.blur();
+  }
+
   function handlePaste(event: ReactClipboardEvent<HTMLDivElement>) {
     // Always swallow the paste so nothing visible lands inside the
     // contenteditable. The outer element gets cleared post-handle.
     event.preventDefault();
     event.stopPropagation();
     if (disabled) return;
-    const clipboardData = event.clipboardData;
-    if (!clipboardData) {
-      setFeedback({ kind: 'empty' });
+
+    // Read the DataTransfer synchronously — it is only valid inside the
+    // event, before any await.
+    const syncFiles = extractClipboardImages(event.clipboardData);
+    if (syncFiles.length > 0) {
+      commitFiles(syncFiles);
       return;
     }
 
-    // Extract image files the same way UploadZone's window paste handler
-    // does — DataTransferItemList first, then clipboardData.files as a
-    // fallback. Filter to image MIME types.
-    const itemFiles = Array.from(clipboardData.items)
-      .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
-      .map((item) => item.getAsFile())
-      .filter((file): file is File => Boolean(file));
-
-    const rawFiles = itemFiles.length > 0 ? itemFiles : Array.from(clipboardData.files || []);
-    const files = rawFiles
-      .filter((file) => isImageFile(file))
-      .map((file, index) => withGeneratedName(file, index));
-
-    if (files.length === 0) {
-      setFeedback({ kind: 'empty' });
-      clearEditable();
-      return;
-    }
-
-    onFilesSelected(files);
-    setFeedback({ kind: 'success', count: files.length });
-    clearEditable();
-    editableRef.current?.blur();
+    // Sync paste delivered no image bytes (the iPadOS cross-app case).
+    // Try the async Clipboard API before declaring the clipboard empty.
+    void readClipboardImagesAsync().then((asyncFiles) => {
+      if (asyncFiles.length > 0) {
+        commitFiles(asyncFiles);
+      } else {
+        setFeedback({ kind: 'empty' });
+        clearEditable();
+      }
+    });
   }
 
   function clearEditable() {
