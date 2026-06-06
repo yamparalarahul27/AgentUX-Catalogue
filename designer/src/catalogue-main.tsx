@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { CatalogueApp } from './CatalogueApp';
+import { playBootSoundAtEntry } from './hooks/use-app-sounds';
 import './styles/designer.scss';
 import './styles/catalogue-sidebar.scss';
 import './styles/catalogue-views.scss';
@@ -48,6 +49,12 @@ import './styles/catalogue-splash-fall-in.scss';
 import './styles/catalogue-not-found.scss';
 import './styles/welcome-modal.scss';
 import './styles/save-trash-animation.scss';
+
+// Fire the boot chime as early as possible — at module entry, while the
+// pre-React boot-screen in catalogue.html is still painted. Anything
+// later (CatalogueApp useEffect, post-auth) introduces an audible lag
+// between the visual splash and the sound.
+playBootSoundAtEntry();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

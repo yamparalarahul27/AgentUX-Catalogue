@@ -2,6 +2,7 @@ import { Agentation } from 'agentation';
 import { Route, Routes } from 'react-router-dom';
 
 import { useAuth } from './lib/useAuth';
+import { useGlobalClickSound } from './hooks/use-app-sounds';
 import { Catalogue } from './components/Catalogue';
 import { CatalogueGroupDetail } from './components/CatalogueGroupDetail';
 import { CatalogueNotFound } from './components/CatalogueNotFound';
@@ -29,6 +30,12 @@ export function CatalogueApp() {
   }
 
   const { user, loading, logout, logoutEverywhere } = useAuth();
+
+  // Audio feedback: global click sound on interactive elements. Boot
+  // chime is fired earlier at module load — see catalogue-main.tsx — so
+  // it syncs with the pre-React boot-screen splash instead of waiting
+  // for auth + mount.
+  useGlobalClickSound();
 
   // Render a neutral dark backdrop while `getSession()` resolves so a
   // slow first response doesn't briefly paint the login screen for

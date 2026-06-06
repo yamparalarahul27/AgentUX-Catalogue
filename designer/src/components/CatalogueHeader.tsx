@@ -9,6 +9,8 @@ import {
   LogOut,
   MonitorCog,
   MoreHorizontal,
+  MousePointerClick,
+  Power,
   Save,
   Settings,
   Sparkles,
@@ -20,7 +22,12 @@ import agentuxMark from '../assets/agentux-mark.svg';
 import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
 import { useViewportWidth } from '../hooks/use-viewport-width';
 import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
-import { useHapticsEnabled, useSoundEnabled } from '../lib/feedback-prefs';
+import {
+  useBootSoundEnabled,
+  useClickSoundEnabled,
+  useHapticsEnabled,
+  useSoundEnabled,
+} from '../lib/feedback-prefs';
 import { useTypingKeycapEnabled } from './TypingKeycap';
 
 type CatalogueSection =
@@ -73,6 +80,8 @@ export function CatalogueHeader({
   const [typingKeycapEnabled, setTypingKeycapEnabled] = useTypingKeycapEnabled();
   const [canvasGalleryEnabled, setCanvasGalleryEnabled] = useCanvasGalleryEnabled();
   const [soundEnabled, setSoundEnabled] = useSoundEnabled();
+  const [clickSoundEnabled, setClickSoundEnabled] = useClickSoundEnabled();
+  const [bootSoundEnabled, setBootSoundEnabled] = useBootSoundEnabled();
   const [hapticsEnabled, setHapticsEnabled] = useHapticsEnabled();
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLButtonElement>(null);
@@ -317,11 +326,43 @@ export function CatalogueHeader({
             role="menuitemcheckbox"
             aria-checked={soundEnabled}
             onClick={() => setSoundEnabled(!soundEnabled)}
-            title="Play a subtle sound on save, delete, restore and upload"
+            title="Master switch for all audio feedback (save, delete, restore, upload, click, boot)"
           >
             <Volume2 size={14} aria-hidden="true" />
             <span>Sound effects</span>
             <span className={`catalogue-header-menu__switch${soundEnabled ? ' is-on' : ''}`} aria-hidden="true">
+              <span className="catalogue-header-menu__switch-thumb" />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--row catalogue-header-menu__item--toggle"
+            role="menuitemcheckbox"
+            aria-checked={clickSoundEnabled}
+            onClick={() => setClickSoundEnabled(!clickSoundEnabled)}
+            disabled={!soundEnabled}
+            title="Soft click sound on tabs, buttons, and links (requires Sound effects on)"
+          >
+            <MousePointerClick size={14} aria-hidden="true" />
+            <span>Click sound</span>
+            <span className={`catalogue-header-menu__switch${clickSoundEnabled && soundEnabled ? ' is-on' : ''}`} aria-hidden="true">
+              <span className="catalogue-header-menu__switch-thumb" />
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--row catalogue-header-menu__item--toggle"
+            role="menuitemcheckbox"
+            aria-checked={bootSoundEnabled}
+            onClick={() => setBootSoundEnabled(!bootSoundEnabled)}
+            disabled={!soundEnabled}
+            title="Welcome chime once when the app opens (requires Sound effects on)"
+          >
+            <Power size={14} aria-hidden="true" />
+            <span>Boot sound</span>
+            <span className={`catalogue-header-menu__switch${bootSoundEnabled && soundEnabled ? ' is-on' : ''}`} aria-hidden="true">
               <span className="catalogue-header-menu__switch-thumb" />
             </span>
           </button>
