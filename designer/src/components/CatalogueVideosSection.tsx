@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Minus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
 import { DotLoader } from './DotLoader';
+import { YouTubeLightbox } from './YouTubeLightbox';
 
 // Wrap each case-insensitive occurrence of `query` inside `text` with a
 // <mark> span so the catalogue-videos search highlight CSS can paint it.
@@ -50,6 +51,19 @@ interface XPostReference {
   posterUrl: string | null;
   likedCount: number | null;
   postedAt: string | null;
+  metadataFetchedAt: string | null;
+  tags: string[];
+}
+
+interface YouTubeReference {
+  id: string;
+  videoId: string;
+  url: string;
+  addedAt: string;
+  title: string | null;
+  channelName: string | null;
+  channelHandle: string | null;
+  thumbnailUrl: string | null;
   metadataFetchedAt: string | null;
   tags: string[];
 }
@@ -174,6 +188,24 @@ function toXPostReference(row: CatalogueVideoReferenceRow): XPostReference {
   };
 }
 
+function toYouTubeReference(row: CatalogueVideoReferenceRow): YouTubeReference {
+  return {
+    id: `yt-${row.external_id}`,
+    videoId: row.external_id,
+    url: row.url,
+    addedAt: row.created_at,
+    // Video title lives in text_excerpt because that's the column the
+    // table reuses across source types. Channel name + handle live in
+    // author_name / author_handle. Poster URL becomes the thumbnail.
+    title: row.text_excerpt,
+    channelName: row.author_name,
+    channelHandle: row.author_handle,
+    thumbnailUrl: row.poster_url,
+    metadataFetchedAt: row.metadata_fetched_at,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+  };
+}
+
 function normalizeTag(input: string): string {
   // Lowercase + collapse internal whitespace to single spaces. Trim
   // edge whitespace. Strip leading "#" so "#crypto" and "crypto" are
@@ -220,6 +252,58 @@ function parseXPostInput(raw: string): { tweetId: string; normalizedUrl: string 
     return {
       tweetId,
       normalizedUrl: `https://x.com/i/status/${tweetId}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Accept any of the 5 common YouTube URL shapes and return the canonical
+// 11-character video id + a normalized watch URL. Returns null when the
+// input doesn't resolve to a recognizable YouTube video — caller surfaces
+// that as a user-visible "URL not recognized" error.
+//   - https://www.youtube.com/watch?v={id}
+//   - https://youtu.be/{id}
+//   - https://www.youtube.com/embed/{id}
+//   - https://www.youtube.com/shorts/{id}
+//   - https://www.youtube.com/live/{id}
+// Mobile (m.youtube.com) and the privacy-friendly youtube-nocookie.com
+// variant are accepted with the same path shapes.
+function parseYouTubeInput(raw: string): { videoId: string; normalizedUrl: string } | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '');
+    const isYouTubeHost =
+      host === 'youtube.com' ||
+      host === 'youtube-nocookie.com' ||
+      host === 'youtu.be';
+    if (!isYouTubeHost) return null;
+
+    let videoId: string | null = null;
+    if (host === 'youtu.be') {
+      // youtu.be/{id}
+      const parts = url.pathname.split('/').filter(Boolean);
+      videoId = parts[0] ?? null;
+    } else {
+      const parts = url.pathname.split('/').filter(Boolean);
+      const first = parts[0];
+      if (first === 'watch') {
+        videoId = url.searchParams.get('v');
+      } else if (first === 'embed' || first === 'shorts' || first === 'live' || first === 'v') {
+        videoId = parts[1] ?? null;
+      }
+    }
+
+    // YouTube video ids are always 11 chars from [A-Za-z0-9_-]. Reject
+    // anything else so playlist URLs / channel URLs / search pages don't
+    // sneak through as bogus ids.
+    if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) return null;
+
+    return {
+      videoId,
+      normalizedUrl: `https://www.youtube.com/watch?v=${videoId}`,
     };
   } catch {
     return null;
@@ -364,11 +448,13 @@ export function CatalogueVideosSection({
   // because it's the growing collection (you keep adding posts), and
   // Family Values is a fixed reference set. URL-synced via `?tab=`
   // so the choice survives reload + can be shared.
-  type VideoTab = 'x' | 'family';
+  type VideoTab = 'x' | 'youtube' | 'family';
   const [activeTab, setActiveTab] = useState<VideoTab>(() => {
     if (typeof window === 'undefined') return 'x';
     const param = new URLSearchParams(window.location.search).get('tab');
-    return param === 'family' ? 'family' : 'x';
+    if (param === 'family') return 'family';
+    if (param === 'youtube') return 'youtube';
+    return 'x';
   });
   // Mirror activeTab → URL on change; only touch `?tab=`, leave any
   // other params untouched.
@@ -386,7 +472,9 @@ export function CatalogueVideosSection({
     if (typeof window === 'undefined') return undefined;
     function handlePopState() {
       const param = new URLSearchParams(window.location.search).get('tab');
-      setActiveTab(param === 'family' ? 'family' : 'x');
+      if (param === 'family') setActiveTab('family');
+      else if (param === 'youtube') setActiveTab('youtube');
+      else setActiveTab('x');
     }
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -412,6 +500,12 @@ export function CatalogueVideosSection({
   const [xPostInput, setXPostInput] = useState('');
   const [xPostError, setXPostError] = useState<string | null>(null);
   const [xPosts, setXPosts] = useState<XPostReference[]>([]);
+  const [youtubeInput, setYouTubeInput] = useState('');
+  const [youtubeError, setYouTubeError] = useState<string | null>(null);
+  const [youtubeVideos, setYouTubeVideos] = useState<YouTubeReference[]>([]);
+  const [savingYouTube, setSavingYouTube] = useState(false);
+  const [openYouTubeId, setOpenYouTubeId] = useState<string | null>(null);
+  const [pendingDeleteYouTubeId, setPendingDeleteYouTubeId] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [savingComment, setSavingComment] = useState(false);
@@ -638,11 +732,16 @@ export function CatalogueVideosSection({
       setLoadingData(true);
       setLoadError(null);
 
-      const [xPostsResult, commentsResult] = await Promise.all([
+      const [xPostsResult, youtubeResult, commentsResult] = await Promise.all([
         supabase
           .from('catalogue_video_references')
           .select('source_type, external_id, url, created_at, author_handle, author_name, text_excerpt, poster_url, liked_count, posted_at, metadata_fetched_at, tags')
           .eq('source_type', 'x_post')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('catalogue_video_references')
+          .select('source_type, external_id, url, created_at, author_handle, author_name, text_excerpt, poster_url, liked_count, posted_at, metadata_fetched_at, tags')
+          .eq('source_type', 'youtube')
           .order('created_at', { ascending: false }),
         supabase
           .from('catalogue_video_comments')
@@ -652,16 +751,18 @@ export function CatalogueVideosSection({
 
       if (cancelled) return;
 
-      if (xPostsResult.error || commentsResult.error) {
+      if (xPostsResult.error || youtubeResult.error || commentsResult.error) {
         setLoadError('Unable to load saved references. Run the latest catalogue video SQL migration.');
         setLoadingData(false);
         return;
       }
 
       const xRows = (xPostsResult.data || []) as CatalogueVideoReferenceRow[];
+      const ytRows = (youtubeResult.data || []) as CatalogueVideoReferenceRow[];
       const commentRows = (commentsResult.data || []) as CatalogueVideoCommentRow[];
 
       setXPosts(xRows.map(toXPostReference));
+      setYouTubeVideos(ytRows.map(toYouTubeReference));
       setCommentsByVideo(commentRows.reduce<Record<string, VideoComment[]>>((accumulator, row) => {
         const nextItem: VideoComment = {
           id: row.id,
@@ -887,6 +988,140 @@ export function CatalogueVideosSection({
     }
   }
 
+  // Insert a YouTube row from a pasted URL. Parses the URL, dedupes on
+  // video id, fires the oEmbed backfill so the card lands with title +
+  // thumbnail populated. Save → fetch metadata → patch the row.
+  async function addYouTubeVideo() {
+    if (savingYouTube) return;
+    if (!ensureCanEdit()) return;
+
+    const parsed = parseYouTubeInput(youtubeInput);
+    if (!parsed) {
+      setYouTubeError('Enter a valid YouTube URL (watch, youtu.be, shorts, live, or embed).');
+      return;
+    }
+    if (youtubeVideos.some((video) => video.videoId === parsed.videoId)) {
+      setYouTubeError('This YouTube video is already added.');
+      return;
+    }
+
+    setSavingYouTube(true);
+    const { data, error } = await supabase
+      .from('catalogue_video_references')
+      .insert({
+        source_type: 'youtube',
+        external_id: parsed.videoId,
+        url: parsed.normalizedUrl,
+        added_by_email: userEmail,
+      })
+      .select('source_type, external_id, url, created_at, author_handle, author_name, text_excerpt, poster_url, liked_count, posted_at, metadata_fetched_at, tags')
+      .single();
+    setSavingYouTube(false);
+
+    if (error) {
+      if (error.code === '23505') {
+        setYouTubeError('This YouTube video is already added.');
+        return;
+      }
+      setYouTubeError('Unable to save this YouTube video right now.');
+      return;
+    }
+    if (!data) {
+      setYouTubeError('Unable to save this YouTube video right now.');
+      return;
+    }
+
+    const fresh = toYouTubeReference(data as CatalogueVideoReferenceRow);
+    setYouTubeVideos((previous) => [fresh, ...previous]);
+    setYouTubeInput('');
+    setYouTubeError(null);
+
+    // Fire-and-forget metadata backfill so the card hydrates with title
+    // + thumbnail + channel without blocking the insert path.
+    void backfillYouTubeMetadata([fresh.videoId]);
+  }
+
+  async function removeYouTubeVideo(videoRowId: string) {
+    if (!ensureCanEdit()) return;
+    const target = youtubeVideos.find((item) => item.id === videoRowId);
+    if (!target) return;
+
+    const { error } = await supabase
+      .from('catalogue_video_references')
+      .delete()
+      .eq('source_type', 'youtube')
+      .eq('external_id', target.videoId);
+
+    if (error) return;
+
+    setYouTubeVideos((previous) => previous.filter((video) => video.id !== videoRowId));
+    if (openYouTubeId === videoRowId) {
+      setOpenYouTubeId(null);
+    }
+  }
+
+  // Hits the fetch-youtube-metadata Edge Function for the given video
+  // ids, then patches the rows that came back populated. No-ops silently
+  // on network error — metadata is best-effort.
+  async function backfillYouTubeMetadata(videoIds: string[]) {
+    if (videoIds.length === 0) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-youtube-metadata', {
+        body: { videoIds },
+      });
+      if (error || !data?.results) return;
+      type YouTubeMetadataResult = {
+        videoId: string;
+        title: string | null;
+        authorName: string | null;
+        authorHandle: string | null;
+        thumbnailUrl: string | null;
+      };
+      const results = data.results as YouTubeMetadataResult[];
+      const fetchedAt = new Date().toISOString();
+      for (const result of results) {
+        const patch = {
+          text_excerpt: result.title,
+          author_name: result.authorName,
+          author_handle: result.authorHandle,
+          poster_url: result.thumbnailUrl,
+          metadata_fetched_at: fetchedAt,
+        };
+        await supabase
+          .from('catalogue_video_references')
+          .update(patch)
+          .eq('source_type', 'youtube')
+          .eq('external_id', result.videoId);
+        setYouTubeVideos((previous) =>
+          previous.map((video) =>
+            video.videoId === result.videoId
+              ? {
+                  ...video,
+                  title: result.title,
+                  channelName: result.authorName,
+                  channelHandle: result.authorHandle,
+                  thumbnailUrl: result.thumbnailUrl,
+                  metadataFetchedAt: fetchedAt,
+                }
+              : video,
+          ),
+        );
+      }
+    } catch {
+      /* metadata fetch is non-critical — leave the row pending */
+    }
+  }
+
+  // On mount: any YouTube rows that loaded without metadata get queued
+  // for backfill. Mirrors the X-post backfill that runs on the loaded
+  // xPosts state.
+  useEffect(() => {
+    const stale = youtubeVideos.filter((video) => !video.metadataFetchedAt && video.videoId);
+    if (stale.length === 0) return;
+    void backfillYouTubeMetadata(stale.map((video) => video.videoId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [youtubeVideos.length]);
+
   return (
     <>
       <section className="catalogue-videos" aria-label="Videos as Medium">
@@ -908,6 +1143,16 @@ export function CatalogueVideosSection({
           >
             X (Twitter)
             <span className="catalogue-videos__tab-count">{xPosts.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'youtube'}
+            className={`catalogue-videos__tab${activeTab === 'youtube' ? ' is-active' : ''}`}
+            onClick={() => setActiveTab('youtube')}
+          >
+            YouTube
+            <span className="catalogue-videos__tab-count">{youtubeVideos.length}</span>
           </button>
           <button
             type="button"
@@ -1153,6 +1398,98 @@ export function CatalogueVideosSection({
           </>
         )}
 
+        {activeTab === 'youtube' && (
+          <>
+            <div className="catalogue-videos__add-row">
+              <input
+                type="text"
+                value={youtubeInput}
+                onChange={(event) => {
+                  setYouTubeInput(event.target.value);
+                  if (youtubeError) setYouTubeError(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void addYouTubeVideo();
+                  }
+                }}
+                placeholder="Paste YouTube URL (watch, youtu.be, shorts, live, embed)"
+                disabled={savingYouTube || !canEdit}
+              />
+              <button
+                type="button"
+                onClick={() => { void addYouTubeVideo(); }}
+                disabled={!youtubeInput.trim() || savingYouTube || !canEdit}
+              >
+                {savingYouTube && <DotLoader size="sm" ariaLabel="Saving" />}
+                Add YouTube
+              </button>
+            </div>
+            {youtubeError && <p className="catalogue-videos__error">{youtubeError}</p>}
+
+            {loadingData ? (
+              <p className="catalogue-videos__loading">Loading saved videos…</p>
+            ) : youtubeVideos.length === 0 ? (
+              <p className="catalogue-videos__loading">
+                No YouTube videos yet — paste a URL above to save your first one.
+              </p>
+            ) : (
+              <div className="catalogue-videos__grid">
+                {youtubeVideos.map((video) => {
+                  // Fall back to YouTube's predictable thumbnail pattern when
+                  // oEmbed hasn't backfilled yet, so cards don't render as
+                  // empty boxes between save and metadata fetch.
+                  const thumb = video.thumbnailUrl
+                    ?? `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
+                  const title = video.title ?? 'Loading…';
+                  const channel = video.channelName
+                    ?? (video.channelHandle ? `@${video.channelHandle}` : 'YouTube');
+                  return (
+                    <article
+                      key={video.id}
+                      className="catalogue-videos__yt-card"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setOpenYouTubeId(video.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setOpenYouTubeId(video.id);
+                        }
+                      }}
+                    >
+                      <div
+                        className="catalogue-videos__yt-thumb"
+                        style={{ backgroundImage: `url("${thumb}")` }}
+                      >
+                        <span className="catalogue-videos__yt-source-pill">YouTube</span>
+                        <span className="catalogue-videos__yt-play" aria-hidden="true">▶</span>
+                        <button
+                          type="button"
+                          className="catalogue-videos__yt-menu"
+                          title="Remove from saved videos"
+                          aria-label="Remove from saved videos"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPendingDeleteYouTubeId(video.id);
+                          }}
+                        >
+                          <Minus size={14} aria-hidden="true" />
+                        </button>
+                      </div>
+                      <div className="catalogue-videos__yt-body">
+                        <p className="catalogue-videos__yt-title">{title}</p>
+                        <span className="catalogue-videos__yt-channel">{channel}</span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
         {activeTab === 'family' && (
             <div className="catalogue-videos__grid">
               {REFERENCE_VIDEOS.map((video) => (
@@ -1386,6 +1723,41 @@ export function CatalogueVideosSection({
               if (id) void removeXPost(id);
             }}
             onCancel={() => setPendingDeleteXPostId(null)}
+          />
+        );
+      })()}
+
+      {pendingDeleteYouTubeId && (() => {
+        const video = youtubeVideos.find((v) => v.id === pendingDeleteYouTubeId);
+        const label = video?.title || video?.channelName || 'this YouTube video';
+        return (
+          <ConfirmModal
+            title="Remove from saved videos?"
+            message={`"${label}" will be removed from the Videos section. This can't be undone.`}
+            confirmLabel="Remove"
+            cancelLabel="Cancel"
+            danger
+            onConfirm={() => {
+              const id = pendingDeleteYouTubeId;
+              setPendingDeleteYouTubeId(null);
+              if (id) void removeYouTubeVideo(id);
+            }}
+            onCancel={() => setPendingDeleteYouTubeId(null)}
+          />
+        );
+      })()}
+
+      {openYouTubeId && (() => {
+        const video = youtubeVideos.find((v) => v.id === openYouTubeId);
+        if (!video) return null;
+        return (
+          <YouTubeLightbox
+            videoId={video.videoId}
+            title={video.title}
+            channelName={video.channelName}
+            channelHandle={video.channelHandle}
+            url={video.url}
+            onClose={() => setOpenYouTubeId(null)}
           />
         );
       })()}

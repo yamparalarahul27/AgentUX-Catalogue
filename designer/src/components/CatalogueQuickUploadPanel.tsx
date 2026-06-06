@@ -183,56 +183,105 @@ export function CatalogueQuickUploadPanel({
   return (
     <div className="catalogue-quick-upload-layout">
       <div className="catalogue-quick-upload-left">
-        <label className="catalogue-upload-label">
-          Flow <span className="catalogue-upload-required" aria-hidden="true">*</span>
-        </label>
-        <div className="catalogue-flow-combobox" ref={flowComboboxRef}>
-          <input
-            className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
-            type="text"
-            placeholder="Flow name (e.g. Deposit)"
-            value={flowLabel}
-            onChange={(event) => {
-              onQuickUploadFlowLabelChange(event.target.value);
-              setFlowMenuOpen(true);
-            }}
-            onFocus={() => setFlowMenuOpen(true)}
-            autoComplete="off"
-          />
-          {flowMenuOpen && filteredFlowOptions.matches.length > 0 && (
-            <div className="catalogue-flow-combobox__menu" role="listbox">
-              {filteredFlowOptions.matches.map((flow) => (
-                <button
-                  key={flow}
-                  type="button"
-                  role="option"
-                  aria-selected={flow === flowLabel}
-                  className={`catalogue-flow-combobox__item ${flow === flowLabel ? 'is-active' : ''}`}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => {
-                    onQuickUploadFlowLabelChange(flow);
-                    setFlowMenuOpen(false);
-                  }}
-                >
-                  {flow}
-                </button>
-              ))}
-              {flowLabel.trim() && !filteredFlowOptions.exactMatch && (
-                <div className="catalogue-flow-combobox__hint">
-                  Press Enter or click outside to use new flow “{flowLabel.trim()}”
+        <div className="catalogue-quick-upload-fields-row">
+          <div className="catalogue-quick-upload-field">
+            <label className="catalogue-upload-label">
+              Flow <span className="catalogue-upload-required" aria-hidden="true">*</span>
+            </label>
+            <div className="catalogue-flow-combobox" ref={flowComboboxRef}>
+              <input
+                className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
+                type="text"
+                placeholder="Flow name (e.g. Deposit)"
+                value={flowLabel}
+                onChange={(event) => {
+                  onQuickUploadFlowLabelChange(event.target.value);
+                  setFlowMenuOpen(true);
+                }}
+                onFocus={() => setFlowMenuOpen(true)}
+                autoComplete="off"
+              />
+              {flowMenuOpen && filteredFlowOptions.matches.length > 0 && (
+                <div className="catalogue-flow-combobox__menu" role="listbox">
+                  {filteredFlowOptions.matches.map((flow) => (
+                    <button
+                      key={flow}
+                      type="button"
+                      role="option"
+                      aria-selected={flow === flowLabel}
+                      className={`catalogue-flow-combobox__item ${flow === flowLabel ? 'is-active' : ''}`}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        onQuickUploadFlowLabelChange(flow);
+                        setFlowMenuOpen(false);
+                      }}
+                    >
+                      {flow}
+                    </button>
+                  ))}
+                  {flowLabel.trim() && !filteredFlowOptions.exactMatch && (
+                    <div className="catalogue-flow-combobox__hint">
+                      Press Enter or click outside to use new flow “{flowLabel.trim()}”
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          </div>
+
+          <div className="catalogue-quick-upload-field">
+            <label className="catalogue-upload-label">Group</label>
+            {isMarketingRole ? (
+              <div className="catalogue-upload-group-locked" title="Marketing role uploads land in the Marketing Bucket. Admin promotes via the lightbox.">
+                <Lock size={14} aria-hidden="true" />
+                <span>{MARKETING_BUCKET_GROUP}</span>
+              </div>
+            ) : (
+              <div className="catalogue-flow-combobox" ref={groupComboboxRef}>
+                <input
+                  className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
+                  type="text"
+                  placeholder="Search or add group (blank = use filename)"
+                  value={quickUploadGroup}
+                  onChange={(event) => {
+                    onQuickUploadGroupChange(event.target.value);
+                    setGroupMenuOpen(true);
+                  }}
+                  onFocus={() => setGroupMenuOpen(true)}
+                  autoComplete="off"
+                />
+                {groupMenuOpen && (filteredGroupOptions.matches.length > 0 || quickUploadGroup.trim()) && (
+                  <div className="catalogue-flow-combobox__menu" role="listbox">
+                    {filteredGroupOptions.matches.map((group) => (
+                      <button
+                        key={group}
+                        type="button"
+                        role="option"
+                        aria-selected={group === quickUploadGroup}
+                        className={`catalogue-flow-combobox__item ${group === quickUploadGroup ? 'is-active' : ''}`}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          onQuickUploadGroupChange(group);
+                          setGroupMenuOpen(false);
+                        }}
+                      >
+                        {group}
+                      </button>
+                    ))}
+                    {quickUploadGroup.trim() && !filteredGroupOptions.exactMatch && (
+                      <div className="catalogue-flow-combobox__hint">
+                        Press Enter or click outside to use new group “{quickUploadGroup.trim()}”
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        <label className="catalogue-upload-label catalogue-upload-label--group-assignment">Group</label>
-        {isMarketingRole ? (
+        {isMarketingRole && (
           <>
-            <div className="catalogue-upload-group-locked" title="Marketing role uploads land in the Marketing Bucket. Admin promotes via the lightbox.">
-              <Lock size={14} aria-hidden="true" />
-              <span>{MARKETING_BUCKET_GROUP}</span>
-            </div>
             <label className="catalogue-upload-label catalogue-upload-label--group-assignment">
               Suggested catalogue group (optional)
             </label>
@@ -245,46 +294,6 @@ export function CatalogueQuickUploadPanel({
               autoComplete="off"
             />
           </>
-        ) : (
-          <div className="catalogue-flow-combobox" ref={groupComboboxRef}>
-            <input
-              className="catalogue-filter catalogue-upload-project-select catalogue-quick-upload-flow-input"
-              type="text"
-              placeholder="Search or add group (blank = use filename)"
-              value={quickUploadGroup}
-              onChange={(event) => {
-                onQuickUploadGroupChange(event.target.value);
-                setGroupMenuOpen(true);
-              }}
-              onFocus={() => setGroupMenuOpen(true)}
-              autoComplete="off"
-            />
-            {groupMenuOpen && (filteredGroupOptions.matches.length > 0 || quickUploadGroup.trim()) && (
-              <div className="catalogue-flow-combobox__menu" role="listbox">
-                {filteredGroupOptions.matches.map((group) => (
-                  <button
-                    key={group}
-                    type="button"
-                    role="option"
-                    aria-selected={group === quickUploadGroup}
-                    className={`catalogue-flow-combobox__item ${group === quickUploadGroup ? 'is-active' : ''}`}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => {
-                      onQuickUploadGroupChange(group);
-                      setGroupMenuOpen(false);
-                    }}
-                  >
-                    {group}
-                  </button>
-                ))}
-                {quickUploadGroup.trim() && !filteredGroupOptions.exactMatch && (
-                  <div className="catalogue-flow-combobox__hint">
-                    Press Enter or click outside to use new group “{quickUploadGroup.trim()}”
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         )}
 
         <div className="catalogue-upload-row">
@@ -376,9 +385,6 @@ export function CatalogueQuickUploadPanel({
           </>
         )}
 
-        <p className="catalogue-upload-hint" style={{ textAlign: 'left', padding: '8px 0' }}>
-          Naming format: <code>01-deposit-select-coin.png</code>
-        </p>
         <div className="catalogue-quick-upload-drop-row">
           <UploadZone onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />
           <PasteFromClipboardButton onFilesSelected={onQuickUploadFilesSelected} disabled={uploading} />
