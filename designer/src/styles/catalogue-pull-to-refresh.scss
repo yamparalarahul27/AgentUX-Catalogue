@@ -1,0 +1,61 @@
+// Swipe-down-to-refresh indicator (see components/PullToRefresh.tsx).
+
+// Disable the browser's native pull-to-refresh / scroll-chaining in mobile
+// tabs so our custom gesture is the only one that fires. No-op effect on
+// the installed standalone app, which has no native pull-to-refresh anyway.
+html,
+body {
+  overscroll-behavior-y: contain;
+}
+
+.catalogue-ptr {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  // Above the sticky toolbar (z 120), below modals / lightbox (1300+).
+  z-index: 200;
+  margin-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  transform: translateX(-50%);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.catalogue-ptr__spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: #c7d2fe;
+  background: rgba(15, 15, 16, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+
+  svg {
+    transition: transform 0.1s linear;
+  }
+
+  // Crossed the threshold — release will refresh.
+  &.is-ready {
+    color: #a5b4fc;
+    border-color: rgba(99, 102, 241, 0.55);
+  }
+
+  &.is-refreshing svg {
+    animation: catalogue-ptr-spin 0.7s linear infinite;
+  }
+}
+
+@keyframes catalogue-ptr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-ptr__spinner.is-refreshing svg {
+    animation-duration: 1.4s;
+  }
+}
