@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-06-06-videos-search",
+    "date": "June 6, 2026",
+    "title": "Videos: search across saved X posts",
+    "bullets": [
+      { "kind": "new", "text": "New search input above the tag chips on the Videos page. Filters saved X posts by author name, handle, tweet text, tag, or URL — case-insensitive substring, all client-side so results update on every keystroke" },
+      { "kind": "new", "text": "Matching substrings get a soft indigo highlight in author names, handles, tweet excerpts, and tag chips so it's clear why a card was kept" },
+      { "kind": "new", "text": "⌘K (Ctrl+K) focuses the search input from anywhere on the Videos page" },
+      { "kind": "improved", "text": "Section title shows the active count (e.g. 'Saved X Posts · 2 of 23') whenever a search query or tag chip is active. Empty result state offers a one-click 'Clear filters'" }
+    ]
+  },
+  {
     "id": "2026-06-03-icon-refresh",
     "date": "June 3, 2026",
     "title": "Refreshed favicon + home-screen icons",
