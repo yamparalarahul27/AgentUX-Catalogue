@@ -1,5 +1,5 @@
 import { Agentation } from 'agentation';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import { useAuth } from './lib/useAuth';
@@ -27,10 +27,12 @@ const SharePage = lazy(() => import('./components/SharePage').then((m) => ({ def
 // never loads for everyone else.
 const WelcomeModal = lazy(() => import('./components/WelcomeModal').then((m) => ({ default: m.WelcomeModal })));
 
-// Neutral dark backdrop shown while a lazy route chunk resolves — matches the
-// pre-mount boot backdrop so navigation doesn't flash white.
+// Neutral dark backdrop shown while a lazy route chunk resolves — colour
+// aligned to the pre-React boot-screen background in catalogue.html so the
+// hand-off between the two is invisible. (Earlier this rendered #0a0a0c,
+// which was a single-frame off from the splash.)
 const routeFallback = (
-  <div aria-hidden="true" style={{ position: 'fixed', inset: 0, background: '#0a0a0c', zIndex: 0 }} />
+  <div aria-hidden="true" style={{ position: 'fixed', inset: 0, background: '#0f0f10', zIndex: 0 }} />
 );
 
 export function CatalogueApp() {
@@ -83,10 +85,14 @@ export function CatalogueApp() {
   }
 
   // Only mount (and therefore download) the WelcomeModal chunk on the very
-  // first login — peek at the flag here without consuming it; the modal's
-  // own effect reads + clears it.
-  const showWelcome =
-    typeof window !== 'undefined' && window.sessionStorage.getItem(WELCOME_FLAG) === '1';
+  // first login. We FREEZE the flag's value at this component's first render
+  // via useState's lazy initializer — WelcomeModal's own effect clears the
+  // sessionStorage flag once it mounts, so re-evaluating on every render
+  // would flip showWelcome to false on the next parent re-render and unmount
+  // the modal mid-sequence. The modal handles its own dismissal lifecycle.
+  const [showWelcome] = useState(
+    () => typeof window !== 'undefined' && window.sessionStorage.getItem(WELCOME_FLAG) === '1',
+  );
 
   return (
     <SaveTrashAnimationProvider>
