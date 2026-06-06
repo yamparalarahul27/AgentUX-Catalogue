@@ -57,6 +57,20 @@ export function CatalogueApp() {
   // instead of waiting for auth + mount.
   useGlobalClickSound();
 
+  // Only mount (and therefore download) the WelcomeModal chunk on the very
+  // first login. We FREEZE the flag's value at this component's first render
+  // via useState's lazy initializer — WelcomeModal's own effect clears the
+  // sessionStorage flag once it mounts, so re-evaluating on every render
+  // would flip showWelcome to false on the next parent re-render and unmount
+  // the modal mid-sequence. The modal handles its own dismissal lifecycle.
+  //
+  // MUST be called before any conditional early return below so the hook
+  // count stays stable across the loading / unauthenticated / authenticated
+  // render branches (Rules of Hooks).
+  const [showWelcome] = useState(
+    () => typeof window !== 'undefined' && window.sessionStorage.getItem(WELCOME_FLAG) === '1',
+  );
+
   // Render a neutral dark backdrop while `getSession()` resolves so a
   // slow first response doesn't briefly paint the login screen for
   // users who actually have a persisted session. Sits as a stable
@@ -83,16 +97,6 @@ export function CatalogueApp() {
       </>
     );
   }
-
-  // Only mount (and therefore download) the WelcomeModal chunk on the very
-  // first login. We FREEZE the flag's value at this component's first render
-  // via useState's lazy initializer — WelcomeModal's own effect clears the
-  // sessionStorage flag once it mounts, so re-evaluating on every render
-  // would flip showWelcome to false on the next parent re-render and unmount
-  // the modal mid-sequence. The modal handles its own dismissal lifecycle.
-  const [showWelcome] = useState(
-    () => typeof window !== 'undefined' && window.sessionStorage.getItem(WELCOME_FLAG) === '1',
-  );
 
   return (
     <SaveTrashAnimationProvider>
