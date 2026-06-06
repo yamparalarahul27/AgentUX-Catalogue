@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-06-07-youtube-tab",
+    "date": "June 7, 2026",
+    "title": "Videos: YouTube tab + Quick Upload tightening",
+    "bullets": [
+      { "kind": "new", "text": "New YouTube tab in the Videos section. Paste any YouTube URL (watch, youtu.be, shorts, live, or embed) and the card hydrates with title, channel, and thumbnail automatically" },
+      { "kind": "new", "text": "Dedicated YouTube lightbox: click any card to open the autoplay embed in a blurred-backdrop modal. ESC, backdrop click, or the close button dismisses. Iframe unloads on close so playback stops and memory is released" },
+      { "kind": "improved", "text": "Quick Upload modal — Flow and Group now sit side-by-side instead of stacked, and the drop zone is shorter so the entire modal fits more comfortably on smaller viewports" },
+      { "kind": "improved", "text": "Quick Upload copy tightening: dropped the 'Naming format' hint, drop-zone reads 'Drop or click to upload', paste button reads 'Paste' with a concise '⌘V or long-press' hint" }
+    ]
+  },
+  {
     "id": "2026-06-06-click-and-boot-sounds",
     "date": "June 6, 2026",
     "title": "New sounds: click feedback + welcome chime",

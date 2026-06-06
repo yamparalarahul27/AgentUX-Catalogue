@@ -745,6 +745,29 @@
   min-width: 0;
 }
 
+// Flow + Group side-by-side. Each field occupies half the left panel
+// width via a 1fr grid so the comboboxes line up even when their menus
+// overlap. Collapses to a stacked column on narrow viewports where
+// half-width inputs become awkward.
+.catalogue-quick-upload-fields-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.catalogue-quick-upload-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .catalogue-quick-upload-fields-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 // Stacked row containing the drop zone (top) + paste-from-clipboard
 // link (below). Vertical layout — paste is now a secondary affordance,
 // not a co-equal sibling. Drop zone shrinks naturally to its content;
@@ -766,12 +789,13 @@
 // keeps its 40px padding. Quick Upload's compact context wants the
 // drop zone to take less vertical space.
 .catalogue-quick-upload-drop-row .upload-zone {
-  padding: 22px 20px;
+  padding: 14px 20px;
+  gap: 4px;
 
   // Smaller icon + tighter type at this height.
-  > svg { width: 26px; height: 26px; }
+  > svg { width: 22px; height: 22px; }
 
-  p { font-size: 13.5px; }
+  p { font-size: 13px; }
   .upload-zone-hint { font-size: 11.5px; }
 }
 

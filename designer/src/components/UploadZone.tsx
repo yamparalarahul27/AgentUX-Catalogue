@@ -296,7 +296,7 @@ export function UploadZone({ onFilesSelected, disabled }: UploadZoneProps) {
         style={{ display: 'none' }}
       />
       <Upload size={32} strokeWidth={1.5} />
-      <p>Drop screenshots or folders here, or click to upload</p>
+      <p>Drop or click to upload</p>
       <span className="upload-zone-hint">PNG, JPG, WebP · Paste with Ctrl+V / Cmd+V</span>
     </div>
   );
