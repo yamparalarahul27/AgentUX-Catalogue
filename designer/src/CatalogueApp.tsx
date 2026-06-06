@@ -10,6 +10,7 @@ import { ChangelogPage } from './components/ChangelogPage';
 import { ElementDetailPage } from './components/ElementDetailPage';
 import { ElementsBrowsePage } from './components/ElementsBrowsePage';
 import { PasscodeLogin } from './components/PasscodeLogin';
+import { PullToRefresh } from './components/PullToRefresh';
 import { SaveTrashAnimationProvider } from './components/SaveTrashAnimation';
 import { SharePage } from './components/SharePage';
 import { WelcomeModal } from './components/WelcomeModal';
@@ -66,6 +67,7 @@ export function CatalogueApp() {
 
   return (
     <SaveTrashAnimationProvider>
+      <PullToRefresh />
       <Routes>
         <Route
           path="/"

@@ -49,6 +49,7 @@ import './styles/catalogue-splash-fall-in.scss';
 import './styles/catalogue-not-found.scss';
 import './styles/welcome-modal.scss';
 import './styles/save-trash-animation.scss';
+import './styles/catalogue-pull-to-refresh.scss';
 
 // Fire the boot chime as early as possible — at module entry, while the
 // pre-React boot-screen in catalogue.html is still painted. Anything
