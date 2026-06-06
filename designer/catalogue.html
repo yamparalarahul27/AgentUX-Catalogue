@@ -16,6 +16,13 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/designer/icon-192-v2.png" />
     <link rel="manifest" href="/designer/manifest.webmanifest" />
 
+    <!-- Preload the boot chime so the fetch runs in parallel with the JS
+         bundle download. By the time catalogue-main.tsx calls
+         playBootSoundAtEntry(), the audio is usually already cached and
+         decode can start without a network round-trip — keeping the
+         chime synchronized with the pre-React boot-screen splash. -->
+    <link rel="preload" as="audio" type="audio/mpeg" href="/designer/sounds/startup-boot-05.mp3" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />

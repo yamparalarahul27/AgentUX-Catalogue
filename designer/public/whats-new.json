@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-06-06-click-and-boot-sounds",
+    "date": "June 6, 2026",
+    "title": "New sounds: click feedback + welcome chime",
+    "bullets": [
+      { "kind": "new", "text": "Soft click sound on tabs, buttons, links, and other interactive controls across the catalogue. Subtle volume so it doesn't feel relentless during a browse session" },
+      { "kind": "new", "text": "Welcome chime plays once when you open the app, in sync with the splash screen (preloaded so it doesn't lag behind the visual)" },
+      { "kind": "new", "text": "Two new toggles in Account → Settings: 'Click sound' and 'Boot sound', both gated by the master 'Sound effects' switch. Defaults to ON when sound is on, off otherwise" },
+      { "kind": "improved", "text": "Sound system now supports both inline base64 clips and URL-based files served from designer/public/sounds/, so adding new sounds doesn't bloat the JS bundle" }
+    ]
+  },
+  {
     "id": "2026-06-06-videos-search",
     "date": "June 6, 2026",
     "title": "Videos: search across saved X posts",
