@@ -32,6 +32,13 @@ const bufferCache = new Map<SoundKey, AudioBuffer>();
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   if (!audioContext) {
+    // Reuse the context the boot-chime script (in catalogue.html) already
+    // created and warmed, so the app doesn't spin up a second one.
+    const preWarmed = (window as unknown as { __agentuxAudioCtx?: AudioContext }).__agentuxAudioCtx;
+    if (preWarmed) {
+      audioContext = preWarmed;
+      return audioContext;
+    }
     const Ctor =
       window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return null;

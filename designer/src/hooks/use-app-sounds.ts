@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 
 import {
-  getBootSoundEnabled,
   getClickSoundEnabled,
   getSoundEnabled,
 } from '../lib/feedback-prefs';
@@ -50,19 +49,4 @@ export function useGlobalClickSound() {
     document.addEventListener('click', onClick, { capture: true });
     return () => document.removeEventListener('click', onClick, { capture: true });
   }, []);
-}
-
-// Plays the boot chime once at app entry — called directly from
-// catalogue-main.tsx so the sound starts the moment the JS bundle
-// executes, while the pre-React boot-screen (in catalogue.html) is
-// still visible. Firing this from a React useEffect would add the
-// auth-resolution + CatalogueApp-mount delay, which the user can
-// audibly perceive as a lag between the splash and the chime.
-//
-// Browser autoplay policies still apply: cold first visit with no
-// gesture history will silently fail. Subsequent visits where the
-// browser remembers prior user interaction play normally.
-export function playBootSoundAtEntry() {
-  if (!getSoundEnabled() || !getBootSoundEnabled()) return;
-  void playSound('boot', 0.4);
 }
