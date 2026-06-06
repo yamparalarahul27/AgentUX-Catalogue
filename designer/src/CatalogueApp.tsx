@@ -36,11 +36,38 @@ const routeFallback = (
 );
 
 export function CatalogueApp() {
+  // Decide once which surface to render. window.location.pathname is
+  // stable within a single component instance (BrowserRouter updates
+  // routes via the React tree, not by re-rendering CatalogueApp under
+  // a new path), so this constant is safe to derive at the top.
+  const isShare = typeof window !== 'undefined' && isSharePath(window.location.pathname);
+
+  // All hooks called unconditionally — placed BEFORE any early return
+  // so the hook count is stable across share / loading / unauthenticated /
+  // authenticated render branches (Rules of Hooks; the cause of #223).
+  //
+  //   - useAuth subscribes to Supabase auth events. On the share path
+  //     the returned user/loading aren't read; the subscription is one
+  //     extra idle listener that unmounts cleanly with the component.
+  //   - useGlobalClickSound attaches a document click listener — fine
+  //     on the share surface too; playback is still gated by prefs.
+  //   - useState(showWelcome) reads sessionStorage once via the lazy
+  //     initializer so the value is frozen at first render. Share-page
+  //     anonymous users never have WELCOME_FLAG set, so showWelcome is
+  //     false there. WelcomeModal's own effect clears the flag on mount,
+  //     so re-reading sessionStorage on every render would unmount the
+  //     modal mid-sequence on the next parent re-render.
+  const { user, loading, logout, logoutEverywhere } = useAuth();
+  useGlobalClickSound();
+  const [showWelcome] = useState(
+    () => typeof window !== 'undefined' && window.sessionStorage.getItem(WELCOME_FLAG) === '1',
+  );
+
   // Public share view — bypasses the catalogue and auth gate entirely.
   // No session needed; only reads. Agentation feedback toolbar still
   // mounts in DEV so we can collect UI feedback on the share view too.
   // See lib/share-url.ts.
-  if (typeof window !== 'undefined' && isSharePath(window.location.pathname)) {
+  if (isShare) {
     return (
       <Suspense fallback={routeFallback}>
         <SharePage />
@@ -48,28 +75,6 @@ export function CatalogueApp() {
       </Suspense>
     );
   }
-
-  const { user, loading, logout, logoutEverywhere } = useAuth();
-
-  // Audio feedback: global click sound on interactive elements. Boot
-  // chime is fired earlier from an inline script in catalogue.html — see
-  // that script — so it syncs with the pre-React boot-screen splash
-  // instead of waiting for auth + mount.
-  useGlobalClickSound();
-
-  // Only mount (and therefore download) the WelcomeModal chunk on the very
-  // first login. We FREEZE the flag's value at this component's first render
-  // via useState's lazy initializer — WelcomeModal's own effect clears the
-  // sessionStorage flag once it mounts, so re-evaluating on every render
-  // would flip showWelcome to false on the next parent re-render and unmount
-  // the modal mid-sequence. The modal handles its own dismissal lifecycle.
-  //
-  // MUST be called before any conditional early return below so the hook
-  // count stays stable across the loading / unauthenticated / authenticated
-  // render branches (Rules of Hooks).
-  const [showWelcome] = useState(
-    () => typeof window !== 'undefined' && window.sessionStorage.getItem(WELCOME_FLAG) === '1',
-  );
 
   // Render a neutral dark backdrop while `getSession()` resolves so a
   // slow first response doesn't briefly paint the login screen for
