@@ -412,6 +412,107 @@
   align-items: center;
 }
 
+// ── Search row (above the tag chips and grid) ─────────────────
+// Case-insensitive substring filter across author, handle, excerpt,
+// URL, and tags. ⌘K / Ctrl+K focuses the input from anywhere in the
+// Videos surface (window-level keydown listener in the component).
+.catalogue-videos__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s ease;
+
+  &:focus-within { border-color: #6366f1; }
+
+  svg { color: #71717a; flex-shrink: 0; }
+
+  input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e4e4e7;
+    font-family: inherit;
+    font-size: 14px;
+    min-width: 0;
+
+    &::placeholder { color: #71717a; }
+  }
+}
+
+.catalogue-videos__search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover { background: rgba(255, 255, 255, 0.12); color: #e4e4e7; }
+}
+
+.catalogue-videos__search-kbd {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #71717a;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+// Highlight applied around case-insensitive substring matches in card
+// text (author name, handle, excerpt, tag labels). Inline so it doesn't
+// disturb the surrounding line metrics.
+.catalogue-videos__match {
+  background: rgba(99, 102, 241, 0.25);
+  color: #e4e4e7;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+// Empty state when search/tag filter excludes every X post. Mirrors
+// the muted tone of the surrounding strip so it reads as "still here,
+// nothing to show" rather than an error.
+.catalogue-videos__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #71717a;
+  font-size: 13px;
+
+  p { margin: 0; }
+}
+
+.catalogue-videos__empty-clear {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e4e4e7;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.2); }
+}
+
 // ── Filter strip (above the saved X posts grid) ────────────────
 // Multi-select tag chips with OR semantics. Clicking a chip toggles
 // it; the strip persists "Clear" once any chip is active so users

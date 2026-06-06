@@ -1,9 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Minus, X } from 'lucide-react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ChevronLeft, ChevronRight, Minus, Search, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
 import { DotLoader } from './DotLoader';
+
+// Wrap each case-insensitive occurrence of `query` inside `text` with a
+// <mark> span so the catalogue-videos search highlight CSS can paint it.
+// Returns the original string when query is empty or no match exists.
+function highlightMatch(text: string, query: string): ReactNode {
+  if (!query) return text;
+  const lower = text.toLowerCase();
+  const needle = query.toLowerCase();
+  const segments: ReactNode[] = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    const idx = lower.indexOf(needle, cursor);
+    if (idx === -1) {
+      segments.push(text.slice(cursor));
+      break;
+    }
+    if (idx > cursor) segments.push(text.slice(cursor, idx));
+    segments.push(
+      <mark key={`m-${idx}`} className="catalogue-videos__match">
+        {text.slice(idx, idx + query.length)}
+      </mark>,
+    );
+    cursor = idx + query.length;
+  }
+  // Keys for the non-mark segments are inherent to position; wrap in
+  // fragments so React's key warning doesn't fire for the array.
+  return segments.map((seg, i) => <Fragment key={i}>{seg}</Fragment>);
+}
 
 interface ReferenceVideo {
   id: string;
@@ -364,6 +392,21 @@ export function CatalogueVideosSection({
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // ⌘K / Ctrl+K focuses the search input. Mirrors the global search-input
+  // shortcut convention (Linear, Notion, GitHub). Only fires when this
+  // component is mounted, so other catalogue pages keep their own shortcuts.
+  useEffect(() => {
+    function handleKey(event: KeyboardEvent) {
+      if (!(event.metaKey || event.ctrlKey)) return;
+      if (event.key.toLowerCase() !== 'k') return;
+      event.preventDefault();
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
   const [commentDraft, setCommentDraft] = useState('');
   const [commentsByVideo, setCommentsByVideo] = useState<Record<string, VideoComment[]>>({});
   const [xPostInput, setXPostInput] = useState('');
@@ -377,6 +420,8 @@ export function CatalogueVideosSection({
   // Multi-select: a video matches if it has at least one of the
   // selected tags (OR semantics).
   const [selectedTagFilters, setSelectedTagFilters] = useState<Set<string>>(() => new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   // Lightbox tag editor — only one lightbox is ever open so a single
   // pair of state slots covers both add and edit. `editingTag` tracks
   // which existing tag (if any) is being renamed; `tagDraft` is the
@@ -453,14 +498,28 @@ export function CatalogueVideosSection({
       .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
   }, [xPosts]);
 
-  // OR semantics: if any filter is selected, a video must have at
-  // least one tag in the filter set to pass. No selection = all pass.
-  // Sort applies after filtering.
+  // OR semantics for tags: any tag in the filter set qualifies the row.
+  // Search is AND with tags: row must pass both. Case-insensitive substring
+  // match across the visible text fields + tags + URL. Sort applies after
+  // filtering.
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const sortedXPosts = useMemo(() => {
-    const filtered = selectedTagFilters.size === 0
+    const tagFiltered = selectedTagFilters.size === 0
       ? xPosts
       : xPosts.filter((post) => post.tags.some((tag) => selectedTagFilters.has(tag)));
-    const sorted = [...filtered];
+    const searchFiltered = normalizedSearchQuery === ''
+      ? tagFiltered
+      : tagFiltered.filter((post) => {
+          const haystack = [
+            post.authorName ?? '',
+            post.authorHandle ?? '',
+            post.textExcerpt ?? '',
+            post.url,
+            ...post.tags,
+          ].join(' ').toLowerCase();
+          return haystack.includes(normalizedSearchQuery);
+        });
+    const sorted = [...searchFiltered];
     switch (sortMode) {
       case 'newest':
         sorted.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
@@ -476,7 +535,9 @@ export function CatalogueVideosSection({
         break;
     }
     return sorted;
-  }, [xPosts, selectedTagFilters, sortMode]);
+  }, [xPosts, selectedTagFilters, sortMode, normalizedSearchQuery]);
+
+  const isFilterActive = normalizedSearchQuery !== '' || selectedTagFilters.size > 0;
 
   // Persist a new tags array to the row. Optimistic — flip local
   // state, revert on error. All three mutations (add, rename, remove)
@@ -895,6 +956,30 @@ export function CatalogueVideosSection({
           <p className="catalogue-videos__loading">Loading saved references...</p>
         ) : (
           <>
+            {xPosts.length > 0 && (
+              <div className="catalogue-videos__search" role="search">
+                <Search size={14} aria-hidden="true" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search by author, text, tag, or URL"
+                  aria-label="Search saved X posts"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="catalogue-videos__search-clear"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Clear search"
+                  >
+                    <X size={12} aria-hidden="true" />
+                  </button>
+                )}
+                <kbd className="catalogue-videos__search-kbd" aria-hidden="true">⌘K</kbd>
+              </div>
+            )}
             {tagsWithCounts.length > 0 && (
               <div
                 className="catalogue-videos__tag-filters"
@@ -929,10 +1014,30 @@ export function CatalogueVideosSection({
               </div>
             )}
 
+            {xPosts.length > 0 && sortedXPosts.length === 0 && isFilterActive && (
+              <div className="catalogue-videos__empty" role="status">
+                <p>No saved X posts match the current filter.</p>
+                <button
+                  type="button"
+                  className="catalogue-videos__empty-clear"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedTagFilters(new Set());
+                  }}
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+
             {sortedXPosts.length > 0 && (
               <>
                 <div className="catalogue-videos__section-header">
-                  <h3 className="catalogue-videos__section-title">Saved X Posts</h3>
+                  <h3 className="catalogue-videos__section-title">
+                    {isFilterActive
+                      ? `Saved X Posts · ${sortedXPosts.length} of ${xPosts.length}`
+                      : 'Saved X Posts'}
+                  </h3>
                   <label className="catalogue-videos__sort">
                     <span className="catalogue-videos__sort-label">Sort</span>
                     <select
@@ -976,7 +1081,9 @@ export function CatalogueVideosSection({
                             : { background: gradientForTweet(post.tweetId) }}
                         >
                           {!hasPoster && excerpt && (
-                            <p className="catalogue-videos__x-thumb-text">{excerpt}</p>
+                            <p className="catalogue-videos__x-thumb-text">
+                              {highlightMatch(excerpt, normalizedSearchQuery)}
+                            </p>
                           )}
                           <span className="catalogue-videos__x-source-pill">𝕏 Post</span>
                           <button
@@ -997,14 +1104,18 @@ export function CatalogueVideosSection({
                           <div className="catalogue-videos__x-author">
                             <span className="catalogue-videos__x-avatar" aria-hidden="true" />
                             <span className="catalogue-videos__x-name">
-                              {displayName}
+                              {highlightMatch(displayName, normalizedSearchQuery)}
                               {handle && post.authorName && (
-                                <span className="catalogue-videos__x-handle">{handle}</span>
+                                <span className="catalogue-videos__x-handle">
+                                  {highlightMatch(handle, normalizedSearchQuery)}
+                                </span>
                               )}
                             </span>
                           </div>
                           {hasPoster && excerpt && (
-                            <p className="catalogue-videos__x-text">{excerpt}</p>
+                            <p className="catalogue-videos__x-text">
+                              {highlightMatch(excerpt, normalizedSearchQuery)}
+                            </p>
                           )}
                           <div className="catalogue-videos__x-footer">
                             <span className="catalogue-videos__x-footer-left">
@@ -1021,7 +1132,7 @@ export function CatalogueVideosSection({
                                         toggleTagFilter(tag);
                                       }}
                                     >
-                                      {tag}
+                                      {highlightMatch(tag, normalizedSearchQuery)}
                                     </button>
                                   ))}
                                 </span>
