@@ -1,17 +1,25 @@
 import { useEffect, useState } from 'react';
 
 import type { ScreenshotNode } from '../types';
+import {
+  clearCachedScreenshots,
+  readCachedScreenshots,
+  writeCachedScreenshots,
+} from '../lib/catalogue-cache';
 import { fetchAnnotationLabels } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 
 const SCREENSHOT_PAGE_SIZE = 1000;
 const COMMENT_SCREENSHOT_CHUNK_SIZE = 200;
 
-// Module-level cache so navigating between routes (catalogue ↔ group
-// detail page) reuses the already-loaded screenshots instead of running
-// a fresh paginated fetch on every mount. The fetch is expensive — many
-// pages, several seconds — and the data doesn't change between
-// navigations within a session.
+// Two-layer cache:
+//   1. Module-level `cachedScreenshots` — survives route navs within a
+//      session so a catalogue ↔ group-detail jump reuses already-loaded
+//      data instead of refetching.
+//   2. IndexedDB (catalogue-cache.ts) — survives reloads + cold starts,
+//      seeded back into the module cache on first mount so warm visits
+//      paint the grid instantly while the network revalidates in the
+//      background.
 //
 // `cachedScreenshots` is the latest successful result; `inFlightLoad` is
 // the live promise when a fetch is in progress (so concurrent mounts
@@ -36,12 +44,23 @@ export function invalidateCatalogueFullScopeCache() {
       cachedScreenshots = data;
       inFlightLoad = null;
       notifyCacheSubscribers(data);
+      void writeCachedScreenshots(data);
       return data;
     })
     .catch((err) => {
       inFlightLoad = null;
       throw err;
     });
+}
+
+// Hard wipe — clears the module cache AND the IndexedDB cache. Called
+// from useAuth.logout / logoutEverywhere so a user logging out + the
+// next user logging in on the same device doesn't see the previous
+// account's screenshots.
+export async function clearCatalogueFullScopeCache(): Promise<void> {
+  cachedScreenshots = null;
+  inFlightLoad = null;
+  await clearCachedScreenshots();
 }
 
 interface ScopeScreenshotRow {
@@ -159,12 +178,35 @@ export function useCatalogueFullScope({
         setLoading(false);
       } else {
         setLoading(true);
+
+        // Race: IndexedDB read (fast, ~5–30 ms) against the live
+        // Supabase fetch (slower, hundreds of ms to seconds). Whichever
+        // wins, that's what we paint. Once the fetch completes it
+        // ALWAYS overwrites whatever the IDB seeded — so the user
+        // always lands on fresh data after the first revalidation tick,
+        // regardless of cache age.
+        void readCachedScreenshots().then((cachedRows) => {
+          if (!mounted) return;
+          // Skip the seed if the network already won (cachedScreenshots
+          // populated by the fetch path below), otherwise we'd briefly
+          // flash stale data over fresh.
+          if (!cachedRows || cachedScreenshots) return;
+          cachedScreenshots = cachedRows;
+          setScreenshots(cachedRows);
+          setLoading(false);
+          notifyCacheSubscribers(cachedRows);
+        });
+
         if (!inFlightLoad) {
           inFlightLoad = fetchAllScreenshots()
             .then((data) => {
               cachedScreenshots = data;
               inFlightLoad = null;
               notifyCacheSubscribers(data);
+              // Persist for the next cold start. Fire-and-forget; the
+              // writer swallows its own errors so a quota / private-mode
+              // failure can't bubble into the fetch path.
+              void writeCachedScreenshots(data);
               return data;
             })
             .catch((err) => {

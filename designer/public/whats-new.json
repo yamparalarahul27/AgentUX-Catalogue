@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-08-indexeddb-cache",
+    "date": "June 8, 2026",
+    "title": "Open the app, see your catalogue instantly",
+    "bullets": [
+      { "kind": "improved", "text": "Warm-load catalogue paints in ~30 ms instead of waiting for a full Supabase fetch — IndexedDB now caches your screenshots list on the device and seeds the grid from cache the moment the app mounts" },
+      { "kind": "improved", "text": "Live data still fetches in the background on every load, so anything new (uploads from another device, deletions) lands the moment it arrives. Cache and network always converge to the truth" },
+      { "kind": "fix", "text": "Logging out clears the cache so the next person logging in on the same device never sees the previous account's catalogue" }
+    ]
+  },
+  {
     "id": "2026-06-07-youtube-tab",
     "date": "June 7, 2026",
     "title": "Videos: YouTube tab + Quick Upload tightening",
