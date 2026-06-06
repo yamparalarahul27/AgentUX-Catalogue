@@ -16,12 +16,43 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/designer/icon-192-v2.png" />
     <link rel="manifest" href="/designer/manifest.webmanifest" />
 
-    <!-- Preload the boot chime so the fetch runs in parallel with the JS
-         bundle download. By the time catalogue-main.tsx calls
-         playBootSoundAtEntry(), the audio is usually already cached and
-         decode can start without a network round-trip — keeping the
-         chime synchronized with the pre-React boot-screen splash. -->
-    <link rel="preload" as="audio" type="audio/mpeg" href="/designer/sounds/startup-boot-05.mp3" />
+    <!-- Boot chime — fired here in <head> so it starts in parallel with
+         the app bundle download instead of waiting for the (large) JS
+         chunk to download + execute, which audibly lagged the chime
+         behind the boot-screen splash. Mirrors the prefs gating in
+         lib/feedback-prefs.ts (sound master + boot sub-toggle). The
+         AudioContext is stashed on window so lib/feedback-sounds.ts
+         reuses this one warmed context instead of creating a second.
+         All failures are swallowed; autoplay policy may still defer
+         actual playback to the first user gesture. -->
+    <script>
+      (function () {
+        try {
+          var soundOn = localStorage.getItem('agentux:sound-enabled') === 'true';
+          var bootRaw = localStorage.getItem('agentux:boot-sound-enabled');
+          var bootOn = bootRaw === null ? true : bootRaw !== 'false';
+          if (!soundOn || !bootOn) return;
+          var Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          var ctx = new Ctx();
+          window.__agentuxAudioCtx = ctx;
+          fetch('/designer/sounds/startup-boot-05.mp3')
+            .then(function (r) { return r.arrayBuffer(); })
+            .then(function (buf) { return ctx.decodeAudioData(buf); })
+            .then(function (audio) {
+              if (ctx.state === 'suspended') ctx.resume().catch(function () {});
+              var src = ctx.createBufferSource();
+              var gain = ctx.createGain();
+              src.buffer = audio;
+              gain.gain.value = 0.4;
+              src.connect(gain);
+              gain.connect(ctx.destination);
+              src.start(0);
+            })
+            .catch(function () {});
+        } catch (e) { /* audio is non-critical */ }
+      })();
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
