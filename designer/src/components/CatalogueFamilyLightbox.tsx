@@ -1268,6 +1268,14 @@ export function CatalogueFamilyLightbox({
             );
           })()}
           <img
+            // Force a fresh DOM mount whenever image_url changes. The
+            // CropOverlay loads the same blob URL moments before this
+            // img mounts; without the key, React reuses the element
+            // and the browser fires `load` synchronously during the
+            // src swap — which misses React's onLoad handler. A keyed
+            // mount creates a brand-new element with onLoad attached
+            // before the src is set, so the event is caught reliably.
+            key={screenshot.image_url}
             ref={mainImgRef}
             src={screenshot.image_url}
             alt={`${family.name} ${activeVariant.label}`}
