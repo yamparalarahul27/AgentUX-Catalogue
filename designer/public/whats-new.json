@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-11-offline-crop",
+    "date": "June 11, 2026",
+    "title": "Crop works offline now",
+    "bullets": [
+      { "kind": "new", "text": "Crop a screenshot while offline and it applies immediately — the cropped image syncs the moment you reconnect. Up to 10 MB per crop, 100 MB total across queued crops" },
+      { "kind": "improved", "text": "The status pill's 'Syncing N changes' counter now includes crops alongside renames and comments — a single number for everything pending" },
+      { "kind": "improved", "text": "If you crop the same screenshot twice while offline, only the most recent crop syncs — the older one is discarded to avoid a wasted upload" }
+    ]
+  },
+  {
     "id": "2026-06-10-offline-mutation-queue",
     "date": "June 10, 2026",
     "title": "Edit offline — your changes sync when you reconnect",

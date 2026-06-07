@@ -300,6 +300,7 @@ export function CatalogueFamilyLightbox({
   // fade it in over the thumb-hash placeholder. Reset on each
   // screenshot change in the same effect that resets imageSize.
   const [imageLoaded, setImageLoaded] = useState(false);
+  const mainImgRef = useRef<HTMLImageElement>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
@@ -520,6 +521,27 @@ export function CatalogueFamilyLightbox({
   // stayed at opacity 0 → black media area until the user navigated
   // to a different screenshot.
   useEffect(() => {
+    // Blob URLs (offline crop's optimistic preview via
+    // URL.createObjectURL) are typically already decoded by the time
+    // this img mounts — the CropOverlay loaded the same blob URL
+    // moments earlier. In that "image already in cache" case, the
+    // browser fires the load event SYNCHRONOUSLY when the src is
+    // set, which is before React attaches its synthetic onLoad
+    // handler — so onLoad never runs and imageLoaded stays false,
+    // pinning the thumbhash placeholder over the cropped image.
+    //
+    // Check img.complete imperatively after mount: if the bitmap is
+    // already available, manually drive the same state transitions
+    // onLoad would have. The natural-dimensions branch is the cache
+    // case (decoded, ready); the fallback resets imageLoaded for
+    // the normal network-load path so the placeholder shows during
+    // the fetch and fades out via onLoad.
+    const img = mainImgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      setImageSize({ width: img.naturalWidth, height: img.naturalHeight });
+      setImageLoaded(true);
+      return;
+    }
     setImageLoaded(false);
   }, [screenshot?.image_url]);
   useEffect(() => {
@@ -1246,6 +1268,15 @@ export function CatalogueFamilyLightbox({
             );
           })()}
           <img
+            // Force a fresh DOM mount whenever image_url changes. The
+            // CropOverlay loads the same blob URL moments before this
+            // img mounts; without the key, React reuses the element
+            // and the browser fires `load` synchronously during the
+            // src swap — which misses React's onLoad handler. A keyed
+            // mount creates a brand-new element with onLoad attached
+            // before the src is set, so the event is caught reliably.
+            key={screenshot.image_url}
+            ref={mainImgRef}
             src={screenshot.image_url}
             alt={`${family.name} ${activeVariant.label}`}
             className="catalogue-lightbox-img"
