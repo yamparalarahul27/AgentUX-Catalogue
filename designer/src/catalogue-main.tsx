@@ -49,6 +49,7 @@ import './styles/catalogue-not-found.scss';
 import './styles/welcome-modal.scss';
 import './styles/save-trash-animation.scss';
 import './styles/catalogue-pull-to-refresh.scss';
+import './styles/offline-status.scss';
 
 // The boot chime is fired from an inline <script> in catalogue.html's
 // <head> so it starts in parallel with this bundle's download instead of

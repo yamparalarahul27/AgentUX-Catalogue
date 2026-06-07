@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-09-offline-status-indicator",
+    "date": "June 9, 2026",
+    "title": "Offline indicator + auto-refresh on reconnect",
+    "bullets": [
+      { "kind": "new", "text": "A floating status pill at the bottom-center of the screen tells you when you're offline, when the connection feels unstable, and confirms 'You're online' the moment you're back" },
+      { "kind": "new", "text": "Catalogue auto-refreshes the moment your connection comes back — no manual reload needed to see the latest" },
+      { "kind": "improved", "text": "Upload and 'Clean orphaned storage' buttons disable themselves while offline with a tooltip explaining why — preventing half-finished uploads when the network drops mid-action" }
+    ]
+  },
+  {
     "id": "2026-06-08-indexeddb-cache",
     "date": "June 8, 2026",
     "title": "Open the app, see your catalogue instantly",
