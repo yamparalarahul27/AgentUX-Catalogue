@@ -1,6 +1,9 @@
 import { useCallback } from 'react';
 
 import { compressImage } from '../lib/catalogue-image';
+import { buildCropBlobKey, canQueueCropBlob, putCropBlob } from '../lib/crop-blob-store';
+import { enqueueMutation } from '../lib/mutation-queue';
+import { getNetworkStatus } from '../lib/network-status';
 import {
   deleteAnnotation,
   fetchAnnotationsForScreenshot,
@@ -124,6 +127,58 @@ export function useCatalogueImageActions({
 
       const safeName = `cropped-${Date.now()}-${(screenshot.file_name || 'screenshot').replace(/\s+/g, '-')}`;
       const newStoragePath = `${userId}/all-projects/${safeName}`;
+      const oldStoragePath = screenshot.storage_path;
+
+      // Offline branch: skip the storage upload + row update + annotation
+      // adjust path; instead persist the blob to IndexedDB and enqueue a
+      // 'crop' mutation. The optimistic UI uses `URL.createObjectURL` so
+      // the user sees the crop immediately; the queue replays the
+      // storage upload + row update on reconnect.
+      //
+      // NB: annotation adjustments are intentionally NOT queued for v1.
+      // A crop on a screenshot WITH annotations will leave them at their
+      // pre-crop coordinates until the user adjusts manually. Documented
+      // limitation; revisit in v1.1 if it bites.
+      if (getNetworkStatus() !== 'online') {
+        const quotaCheck = await canQueueCropBlob(cropResult.file.size);
+        if (!quotaCheck.ok) {
+          const mbLimit = Math.round(quotaCheck.perBlobLimit / (1024 * 1024));
+          const message = quotaCheck.reason === 'too-large'
+            ? `Image too large to crop offline (limit ${mbLimit} MB) — try again when connected.`
+            : "Offline crop queue is full — reconnect to sync pending crops first.";
+          setToast({ message, type: 'error' });
+          return { ok: false };
+        }
+        // Generate a deterministic per-mutation key (screenshotId:mutationId).
+        // The mutation gets its uuid inside enqueueMutation; we build the
+        // blob key from a fresh uuid here so they line up.
+        const mutationId = crypto.randomUUID();
+        const blobKey = buildCropBlobKey(screenshotId, mutationId);
+        await putCropBlob(blobKey, cropResult.file);
+
+        // Optimistic local update — object URL keeps the cropped bytes
+        // visible in the lightbox immediately. Revoked when the queue
+        // replays + the storage URL replaces it via the catalogue refresh.
+        const objectUrl = URL.createObjectURL(cropResult.file);
+        applyToBothScopes(
+          (item) => ({ ...item, storage_path: newStoragePath, thumb_hash: thumbHash, image_url: objectUrl }),
+          (item) => item.id === screenshotId,
+        );
+
+        await enqueueMutation({
+          op: 'crop',
+          screenshotId,
+          blobKey,
+          blobSize: cropResult.file.size,
+          newStoragePath,
+          thumbHash,
+          oldStoragePath,
+        });
+
+        setToast({ message: 'Image cropped — will sync when online', type: 'success' });
+        return { ok: true };
+      }
+
       const { error: uploadError } = await supabase.storage
         .from('screenshots')
         .upload(newStoragePath, cropResult.file);
@@ -133,7 +188,6 @@ export function useCatalogueImageActions({
         return { ok: false };
       }
 
-      const oldStoragePath = screenshot.storage_path;
       let dbError = (await supabase
         .from('screenshots')
         .update({ storage_path: newStoragePath, thumb_hash: thumbHash })

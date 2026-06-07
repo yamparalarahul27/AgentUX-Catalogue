@@ -1,5 +1,6 @@
 import { get, set } from 'idb-keyval';
 
+import { deleteCropBlob, getCropBlob } from './crop-blob-store';
 import { getNetworkStatus, subscribeNetworkStatus } from './network-status';
 import { supabase } from './supabase';
 import { invalidateCatalogueFullScopeCache } from '../hooks/use-catalogue-full-scope';
@@ -92,6 +93,24 @@ export type QueuedMutation =
         // optimistic update must already have applied this merge.
         metadataMerge?: Record<string, unknown>;
       }>;
+    }
+  // Image crop. The cropped Blob is stored in a separate IDB store
+  // (lib/crop-blob-store.ts) keyed by `blobKey`; this record holds
+  // the metadata needed to replay the storage upload + row update.
+  // Annotation adjustments are intentionally NOT queued for v1 —
+  // crops on screenshots with annotations may leave them slightly off-
+  // position offline; documented limitation.
+  | {
+      id: string;
+      op: 'crop';
+      ts: number;
+      enqueuedOffline: boolean;
+      screenshotId: string;
+      blobKey: string;
+      blobSize: number;
+      newStoragePath: string;
+      thumbHash: string | null;
+      oldStoragePath: string | null;
     };
 
 // In-memory mirror of the queue. The async IDB read on module load
@@ -201,6 +220,15 @@ export type EnqueueMutationInput =
         columnPatch?: Record<string, unknown>;
         metadataMerge?: Record<string, unknown>;
       }>;
+    }
+  | {
+      op: 'crop';
+      screenshotId: string;
+      blobKey: string;
+      blobSize: number;
+      newStoragePath: string;
+      thumbHash: string | null;
+      oldStoragePath: string | null;
     };
 
 // Append a mutation. Callers must have already applied the optimistic
@@ -219,6 +247,23 @@ export async function enqueueMutation(mutation: EnqueueMutationInput): Promise<v
     enqueuedOffline,
     ...mutation,
   } as QueuedMutation;
+  // Newest-crop-wins policy: a fresh crop on the same screenshot
+  // supersedes any still-pending crop. Drop the older queued entry +
+  // delete its blob to keep IDB tidy and avoid a wasteful intermediate
+  // upload during replay.
+  if (enriched.op === 'crop') {
+    const stale = queue.filter(
+      (m) => m.op === 'crop' && m.screenshotId === enriched.screenshotId,
+    );
+    if (stale.length > 0) {
+      for (const m of stale) {
+        if (m.op === 'crop') await deleteCropBlob(m.blobKey);
+      }
+      queue = queue.filter(
+        (m) => !(m.op === 'crop' && m.screenshotId === enriched.screenshotId),
+      );
+    }
+  }
   queue = [...queue, enriched];
   await persist();
   notifySize();
@@ -432,6 +477,69 @@ async function applyMutation(mutation: QueuedMutation): Promise<MutationOutcome>
           }
         }
         return anySuccess ? 'ok' : 'drop';
+      }
+      case 'crop': {
+        // Two-stage: storage upload of the blob THEN row update with
+        // the new storage_path. If the row update fails, roll back
+        // the storage object to avoid orphans.
+        const blob = await getCropBlob(mutation.blobKey);
+        if (!blob) {
+          // Lost the blob (manual IDB clear, browser eviction, etc.).
+          // Can't recover — drop the mutation.
+          console.warn('[mutation-queue] crop blob missing for', mutation.id);
+          return 'drop';
+        }
+        let uploadError: { code?: string; message?: string } | null = null;
+        try {
+          const result = await supabase.storage
+            .from('screenshots')
+            .upload(mutation.newStoragePath, blob);
+          uploadError = result.error as { code?: string; message?: string } | null;
+        } catch (err) {
+          console.warn('[mutation-queue] crop upload threw:', err);
+          return 'retry';
+        }
+        if (uploadError) {
+          if (isNetworkError(uploadError)) return 'retry';
+          console.warn('[mutation-queue] crop upload error:', uploadError);
+          return 'drop';
+        }
+        // Row update. Mirror the existing online path's thumb_hash
+        // fallback (handles PostgREST schema-cache race).
+        const patch: Record<string, unknown> = { storage_path: mutation.newStoragePath };
+        if (mutation.thumbHash) patch.thumb_hash = mutation.thumbHash;
+        let dbError: { code?: string; message?: string } | null = null;
+        try {
+          const result = await supabase
+            .from('screenshots')
+            .update(patch)
+            .eq('id', mutation.screenshotId);
+          dbError = result.error;
+          if (dbError && /thumb_hash/i.test(dbError.message || '')) {
+            const retry = await supabase
+              .from('screenshots')
+              .update({ storage_path: mutation.newStoragePath })
+              .eq('id', mutation.screenshotId);
+            dbError = retry.error;
+          }
+        } catch (err) {
+          console.warn('[mutation-queue] crop row update threw:', err);
+          return 'retry';
+        }
+        if (dbError) {
+          if (isNetworkError(dbError)) return 'retry';
+          // Row update failed — roll back the just-uploaded object so
+          // we don't leak orphans in storage.
+          void supabase.storage.from('screenshots').remove([mutation.newStoragePath]);
+          console.warn('[mutation-queue] crop row update error:', dbError);
+          return 'drop';
+        }
+        // Success — clean up the IDB blob + the previous storage object.
+        await deleteCropBlob(mutation.blobKey);
+        if (mutation.oldStoragePath) {
+          void supabase.storage.from('screenshots').remove([mutation.oldStoragePath]);
+        }
+        return 'ok';
       }
       case 'add-comment': {
         // Insert with the client-supplied id so the row matches the
