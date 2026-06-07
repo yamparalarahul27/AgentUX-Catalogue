@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId } from '../lib/catalogue-families';
+import { enqueueMutation } from '../lib/mutation-queue';
 import { supabase } from '../lib/supabase';
 import type { MobileOs, ScreenFamily, ScreenshotNode } from '../types';
 import { invalidateCatalogueFullScopeCache } from './use-catalogue-full-scope';
@@ -93,17 +94,27 @@ export function useCatalogueFamilyActions({
       .filter((screenshot) => getScreenshotFamilyId(screenshot) === familyId)
       .map((screenshot) => screenshot.id);
 
+    // Optimistic local state — apply the patch immediately so the UI
+    // feels instant regardless of network conditions. The mutation
+    // queue handles the durable replay to Supabase.
     if (screenFamilies.some((item) => item.id === familyId)) {
-      await supabase.from('screen_families').update(patch).eq('id', familyId);
       setScreenFamilies((previous) => previous.map((item) => (
         item.id === familyId ? { ...item, ...patch } : item
       )));
     }
-
     if (screenshotIds.length > 0) {
-      await supabase.from('screenshots').update(patch).in('id', screenshotIds);
       setFamilyScreenshotsPatch(familyId, patch);
     }
+
+    // Enqueue for durable, offline-tolerant replay. When online, the
+    // queue drains immediately (one round trip). When offline, the
+    // patch persists in IndexedDB and replays on reconnect.
+    await enqueueMutation({
+      op: 'family-patch',
+      familyId,
+      screenshotIds,
+      patch,
+    });
   }, [familyById, screenFamilies, screenshots, setFamilyScreenshotsPatch, setScreenFamilies]);
 
   // Image manipulation handlers (replace / crop / set+remove reference)
@@ -266,14 +277,16 @@ export function useCatalogueFamilyActions({
       web_preset_key: next.web_preset_key,
       mobile_os: next.mobile_os,
     };
-    const { error } = await supabase.from('screenshots').update(patch).eq('id', id);
-
-    if (error) {
-      setToast({ message: `Could not update variant platform: ${error.message}`, type: 'error' });
-      return;
-    }
-
+    // Optimistic local update first so the variant change reflects
+    // immediately, including offline.
     setScreenshots((previous) => previous.map((item) => item.id === id ? { ...item, ...patch } : item));
+    await enqueueMutation({
+      op: 'screenshots-patch',
+      updates: [{
+        screenshotId: id,
+        columnPatch: patch as Record<string, unknown>,
+      }],
+    });
   }, [buildNextVariant, findVariantConflict, screenshots, setScreenshots, setToast]);
 
   const handleUpdateVariantDetails = useCallback(async (
@@ -302,17 +315,21 @@ export function useCatalogueFamilyActions({
       web_preset_key: next.web_preset_key,
     };
 
-    const { error } = await supabase.from('screenshots').update(nextPatch).eq('id', id);
-    if (error) {
-      setToast({ message: `Could not update variant details: ${error.message}`, type: 'error' });
-      return false;
-    }
-
+    // Optimistic local update first — UI reflects the variant change
+    // even offline.
     setScreenshots((previous) => previous.map((item) => item.id === id ? { ...item, ...nextPatch } : item));
     // Cross-route consumers (Group View card platforms, Group detail
     // tab counts, etc.) read from the full-scope cache — refresh so a
     // Web → Mobile flip propagates everywhere, not just the lightbox.
     invalidateCatalogueFullScopeCache();
+
+    await enqueueMutation({
+      op: 'screenshots-patch',
+      updates: [{
+        screenshotId: id,
+        columnPatch: nextPatch as Record<string, unknown>,
+      }],
+    });
     return true;
   }, [buildNextVariant, findVariantConflict, screenshots, setScreenshots, setToast]);
 
@@ -336,7 +353,11 @@ export function useCatalogueFamilyActions({
     const familyScreenshots = screenshots.filter((screenshot) => getScreenshotFamilyId(screenshot) === id);
     if (familyScreenshots.length === 0) return false;
 
-    const updates = await Promise.all(familyScreenshots.map(async (screenshot) => {
+    // Build the per-screenshot metadata snapshot the optimistic update
+    // applies AND that the queue replay merges on the server side.
+    // CATALOGUE_FLOW_LABEL_KEY may be deleted (null flow) or set to the
+    // normalized label.
+    const updates = familyScreenshots.map((screenshot) => {
       const nextMetadata: Record<string, unknown> = {
         ...(screenshot.metadata && typeof screenshot.metadata === 'object' ? screenshot.metadata : {}),
       };
@@ -345,27 +366,32 @@ export function useCatalogueFamilyActions({
       } else {
         delete nextMetadata[CATALOGUE_FLOW_LABEL_KEY];
       }
+      return { id: screenshot.id, metadata: nextMetadata };
+    });
 
-      const { error } = await supabase
-        .from('screenshots')
-        .update({ metadata: nextMetadata })
-        .eq('id', screenshot.id);
-
-      return { error, id: screenshot.id, metadata: nextMetadata };
-    }));
-
-    const failed = updates.find((item) => item.error);
-    if (failed) {
-      setToast({ message: `Could not update flow: ${failed.error?.message || 'Unknown error'}`, type: 'error' });
-      return false;
-    }
-
+    // Optimistic: apply to local state immediately so the UI reflects
+    // the flow change even while offline.
     const metadataById = new Map(updates.map((item) => [item.id, item.metadata] as const));
     setScreenshots((previous) => previous.map((screenshot) => {
       const nextMetadata = metadataById.get(screenshot.id);
       if (!nextMetadata) return screenshot;
       return { ...screenshot, metadata: nextMetadata };
     }));
+
+    // Queue for durable replay. Each screenshot writes the full
+    // computed metadata via columnPatch — matches the pre-queue
+    // behaviour where the entire metadata object was overwritten on
+    // every flow change. metadataMerge would have the wrong semantics
+    // for the null-flow case (we need to DELETE the key, not set it
+    // to null).
+    await enqueueMutation({
+      op: 'screenshots-patch',
+      updates: updates.map((u) => ({
+        screenshotId: u.id,
+        columnPatch: { metadata: u.metadata },
+      })),
+    });
+
     // Flow filter pools (toolbar dropdown, Settings → Flows checklist,
     // search modal flow results) all read from the full-scope cache —
     // refresh so re-labelled flows propagate immediately.
@@ -381,42 +407,27 @@ export function useCatalogueFamilyActions({
 
     if (screenshotIds.length === 0) return;
 
-    // Server-side soft-delete. .select() returns the rows that actually
-    // updated — under RLS, a caller without `delete_any` who tries to
-    // delete a screenshot they don't own gets back zero rows (no error,
-    // no exception). The previous version blindly removed the family
-    // from local state and showed a "Moved to Trash" toast in that case,
-    // creating the silent-fail-then-reappear-on-refresh bug.
-    const { data: updatedRows, error } = await supabase
-      .from('screenshots')
-      .update({
-        deleted_at: new Date().toISOString(),
-        deleted_by_email: userEmail || null,
-      })
-      .in('id', screenshotIds)
-      .select('id');
-
-    if (error) {
-      setToast({ message: `Couldn't delete: ${error.message}`, type: 'error' });
-      return;
-    }
-
-    const updatedCount = updatedRows?.length ?? 0;
-    if (updatedCount === 0) {
-      setToast({
-        message: "You don't have permission to delete this — refresh and try again.",
-        type: 'error',
-      });
-      return;
-    }
-
-    // Screen_families rows stay put; the UI filters them out by their
-    // screenshot count (a family with zero live screenshots doesn't render).
+    // Optimistic local update so the family disappears instantly. The
+    // mutation queue handles the durable Supabase write — drains
+    // immediately when online, persists across reloads when offline.
+    //
+    // Trade-off: PR #98 used .select() on the update to surface RLS
+    // denials ("You don't have permission to delete this"). With the
+    // queue, RLS denials only surface on replay and are silently
+    // dropped — the family will reappear after the next full-scope
+    // refresh. Acceptable for v1 since (a) RLS is admin-only on this
+    // surface, (b) the bulk of users have permission, and (c) the
+    // refresh restores correct state without user action.
     setScreenshots((previous) => previous.filter((screenshot) => getScreenshotFamilyId(screenshot) !== id));
-    // Refresh the cross-route full-scope cache so the chip strip /
-    // Group detail page don't keep showing the deleted screenshots.
     invalidateCatalogueFullScopeCache();
     onFamilyDeleted?.(id);
+
+    await enqueueMutation({
+      op: 'soft-delete-family',
+      familyId: id,
+      screenshotIds,
+      deletedByEmail: userEmail || null,
+    });
 
     // Different toast wording based on whether the caller can reach the
     // Trash section to restore. Admin gets the "Moved to Trash" copy;

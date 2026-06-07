@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-06-10-offline-mutation-queue",
+    "date": "June 10, 2026",
+    "title": "Edit offline — your changes sync when you reconnect",
+    "bullets": [
+      { "kind": "new", "text": "Rename, group, flow, theme/platform, soft-delete, and comments all work offline now. Changes apply instantly to the UI and persist in a durable queue until the connection comes back" },
+      { "kind": "new", "text": "The bottom-center status pill now shows '⟳ Syncing N changes' on reconnect and '✓ Synced all' when the queue drains. Quick online edits stay silent — the indicator only surfaces for genuine offline-queued work" },
+      { "kind": "improved", "text": "Comments stay visible in the lightbox even if the comment-fetch fails (e.g. while offline) — the optimistic entry no longer gets wiped on network error" },
+      { "kind": "fix", "text": "Crop still requires being online — it's coming in the next release" }
+    ]
+  },
+  {
     "id": "2026-06-09-offline-status-indicator",
     "date": "June 9, 2026",
     "title": "Offline indicator + auto-refresh on reconnect",
