@@ -300,6 +300,7 @@ export function CatalogueFamilyLightbox({
   // fade it in over the thumb-hash placeholder. Reset on each
   // screenshot change in the same effect that resets imageSize.
   const [imageLoaded, setImageLoaded] = useState(false);
+  const mainImgRef = useRef<HTMLImageElement>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
@@ -521,13 +522,26 @@ export function CatalogueFamilyLightbox({
   // to a different screenshot.
   useEffect(() => {
     // Blob URLs (offline crop's optimistic preview via
-    // URL.createObjectURL) load essentially synchronously and race
-    // with this reset — the effect would win, pinning opacity to 0
-    // and leaving only the thumbhash placeholder visible until the
-    // user navigates away and back. Skip the reset for blob URLs:
-    // the cropped bitmap was just produced from the on-screen image,
-    // so we know it'll render correctly without the fade-in dance.
-    if (screenshot?.image_url?.startsWith('blob:')) return;
+    // URL.createObjectURL) are typically already decoded by the time
+    // this img mounts — the CropOverlay loaded the same blob URL
+    // moments earlier. In that "image already in cache" case, the
+    // browser fires the load event SYNCHRONOUSLY when the src is
+    // set, which is before React attaches its synthetic onLoad
+    // handler — so onLoad never runs and imageLoaded stays false,
+    // pinning the thumbhash placeholder over the cropped image.
+    //
+    // Check img.complete imperatively after mount: if the bitmap is
+    // already available, manually drive the same state transitions
+    // onLoad would have. The natural-dimensions branch is the cache
+    // case (decoded, ready); the fallback resets imageLoaded for
+    // the normal network-load path so the placeholder shows during
+    // the fetch and fades out via onLoad.
+    const img = mainImgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      setImageSize({ width: img.naturalWidth, height: img.naturalHeight });
+      setImageLoaded(true);
+      return;
+    }
     setImageLoaded(false);
   }, [screenshot?.image_url]);
   useEffect(() => {
@@ -1254,6 +1268,7 @@ export function CatalogueFamilyLightbox({
             );
           })()}
           <img
+            ref={mainImgRef}
             src={screenshot.image_url}
             alt={`${family.name} ${activeVariant.label}`}
             className="catalogue-lightbox-img"
