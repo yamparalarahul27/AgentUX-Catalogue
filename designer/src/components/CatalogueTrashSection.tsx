@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
 
+import { useOnlineStatus } from '../hooks/use-online-status';
 import { formatRelativeTime } from '../lib/relative-time';
 import { supabase } from '../lib/supabase';
 import type { ScreenshotNode } from '../types';
@@ -45,6 +46,11 @@ export function CatalogueTrashSection({ onRestored }: CatalogueTrashSectionProps
   const [message, setMessage] = useState<string | null>(null);
   const [showCleanConfirm, setShowCleanConfirm] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
+  // Permanent-delete (storage purge) can't be queued — it's irreversible
+  // and round-trips through an Edge Function that needs a live connection.
+  // Disable while offline / unstable.
+  const onlineStatus = useOnlineStatus();
+  const networkBlocked = onlineStatus !== 'online';
 
   useEffect(() => {
     let cancelled = false;
@@ -167,8 +173,12 @@ export function CatalogueTrashSection({ onRestored }: CatalogueTrashSectionProps
         type="button"
         className="btn-secondary catalogue-team__trash-clean"
         onClick={() => setShowCleanConfirm(true)}
-        disabled={isCleaning}
-        title="Delete storage files that no DB row references"
+        disabled={isCleaning || networkBlocked}
+        title={
+          networkBlocked
+            ? "You're offline — permanent deletes need a live connection"
+            : 'Delete storage files that no DB row references'
+        }
       >
         <Trash2 size={14} aria-hidden="true" />
         {isCleaning ? 'Cleaning…' : 'Clean orphaned storage'}

@@ -3,6 +3,7 @@ import { Eye, Lock, Monitor, Moon, Smartphone, Sun, X } from 'lucide-react';
 
 import androidLogo from '../assets/android-logo.svg';
 import appleLogo from '../assets/apple-logo.svg';
+import { useOnlineStatus } from '../hooks/use-online-status';
 import { MARKETING_BUCKET_GROUP } from '../lib/marketing-bucket';
 import { buildConventionName } from '../lib/naming';
 import { UploadZone, type FolderDropContext } from './UploadZone';
@@ -139,8 +140,14 @@ export function CatalogueQuickUploadPanel({
   }, [groupMenuOpen]);
 
   const flowReady = Boolean(flowLabel.trim());
+  // Uploads need a live connection — disable the trigger while offline /
+  // unstable so the user doesn't kick off a multi-file upload that will
+  // half-fail. PR 3 of the offline program will queue uploads properly;
+  // until then this is the safe gate.
+  const onlineStatus = useOnlineStatus();
+  const networkBlocked = onlineStatus !== 'online';
   const canUploadAllQuick = Boolean(
-    quickUploadQueue.length > 0 && flowReady && !uploading,
+    quickUploadQueue.length > 0 && flowReady && !uploading && !networkBlocked,
   );
 
   // Enter to submit when the Upload All button is enabled. Skipped while a
@@ -493,6 +500,7 @@ export function CatalogueQuickUploadPanel({
             className="btn-primary catalogue-quick-upload-all"
             disabled={!canUploadAllQuick}
             onClick={onQuickUploadUploadAll}
+            title={networkBlocked ? "You're offline — uploads need a live connection" : undefined}
           >
             Upload All ({quickUploadQueue.length})
           </button>

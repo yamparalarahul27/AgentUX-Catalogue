@@ -4,7 +4,9 @@ import { Route, Routes } from 'react-router-dom';
 
 import { useAuth } from './lib/useAuth';
 import { useGlobalClickSound } from './hooks/use-app-sounds';
+import { useReloadOnReconnect } from './hooks/use-reload-on-reconnect';
 import { Catalogue } from './components/Catalogue';
+import { OfflineStatusIndicator } from './components/OfflineStatusIndicator';
 import { PasscodeLogin } from './components/PasscodeLogin';
 import { PullToRefresh } from './components/PullToRefresh';
 import { SaveTrashAnimationProvider } from './components/SaveTrashAnimation';
@@ -59,6 +61,10 @@ export function CatalogueApp() {
   //     modal mid-sequence on the next parent re-render.
   const { user, loading, logout, logoutEverywhere } = useAuth();
   useGlobalClickSound();
+  // When the network transitions back to 'online' after being offline /
+  // unstable, force-refresh the catalogue full-scope so the user lands
+  // on the latest data without manually reloading the tab.
+  useReloadOnReconnect();
   const [showWelcome] = useState(
     () => typeof window !== 'undefined' && window.sessionStorage.getItem(WELCOME_FLAG) === '1',
   );
@@ -71,6 +77,7 @@ export function CatalogueApp() {
     return (
       <Suspense fallback={routeFallback}>
         <SharePage />
+        <OfflineStatusIndicator />
         {import.meta.env.DEV && <Agentation />}
       </Suspense>
     );
@@ -82,15 +89,18 @@ export function CatalogueApp() {
   // shell on top of the body background until useAuth flips.
   if (loading) {
     return (
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: '#0a0a0c',
-          zIndex: 0,
-        }}
-      />
+      <>
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: '#0a0a0c',
+            zIndex: 0,
+          }}
+        />
+        <OfflineStatusIndicator />
+      </>
     );
   }
 
@@ -98,6 +108,7 @@ export function CatalogueApp() {
     return (
       <>
         <PasscodeLogin />
+        <OfflineStatusIndicator />
         {import.meta.env.DEV && <Agentation />}
       </>
     );
@@ -166,6 +177,7 @@ export function CatalogueApp() {
           <WelcomeModal />
         </Suspense>
       )}
+      <OfflineStatusIndicator />
       {import.meta.env.DEV && <Agentation />}
     </SaveTrashAnimationProvider>
   );
