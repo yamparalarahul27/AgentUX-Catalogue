@@ -70,7 +70,17 @@ export function subscribeNetworkStatus(
   };
 }
 
+// When the browser tells us we're back online, trust that signal as the
+// authoritative recovery — clear the rolling failure window so prior
+// network errors (most of which happened DURING the offline interval)
+// don't pin status at 'unstable' and starve the queue's replay
+// subscriber, which only fires on the 'online' status transition.
+function handleBrowserOnline() {
+  recentFailureTimestamps = [];
+  emitIfChanged();
+}
+
 if (typeof window !== 'undefined') {
-  window.addEventListener('online', emitIfChanged);
+  window.addEventListener('online', handleBrowserOnline);
   window.addEventListener('offline', emitIfChanged);
 }

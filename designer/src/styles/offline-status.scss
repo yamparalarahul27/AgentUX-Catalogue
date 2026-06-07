@@ -77,6 +77,33 @@
   animation: offline-status-slide-in 220ms ease-out, offline-status-fade-out 360ms ease-in 1640ms forwards;
 }
 
+// Sync states share the same blue palette so they read as "doing work"
+// rather than "good or bad". The spinning icon carries the active feel
+// without needing a coloured dot.
+.offline-status--syncing {
+  color: #c7d2fe;
+}
+
+.offline-status__spinner {
+  color: #818cf8;
+  animation: offline-status-spin 1.2s linear infinite;
+}
+
+.offline-status--synced {
+  color: #bbf7d0;
+  // Transient — same 2s window + blur-fade as "You're online".
+  animation: offline-status-slide-in 220ms ease-out, offline-status-fade-out 360ms ease-in 2040ms forwards;
+}
+
+.offline-status__check {
+  color: #22c55e;
+}
+
+@keyframes offline-status-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 // Slide + fade keyframes keep the `-50%` X offset so the horizontally-
 // centred pill doesn't drift left during entry/exit (the static
 // transform on .offline-status would otherwise be overridden by the

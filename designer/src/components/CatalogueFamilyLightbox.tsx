@@ -13,6 +13,7 @@ import {
   updateAnnotationGeometry,
   type ScreenshotAnnotation,
 } from '../lib/screenshot-annotations';
+import { enqueueMutation } from '../lib/mutation-queue';
 import { supabase } from '../lib/supabase';
 import { thumbHashToPixelatedUrl } from '../lib/thumbhash';
 import type { MobileOs, WebPreset } from '../types';
@@ -495,7 +496,10 @@ export function CatalogueFamilyLightbox({
         setLoadingComments(false);
         if (error || !data) {
           setCommentsError('Unable to load comments right now.');
-          setComments([]);
+          // Don't wipe local state — if the user added an optimistic
+          // comment while offline, the previous list (containing that
+          // optimistic entry) should remain visible. setting to []
+          // here would silently erase the user's work.
           return;
         }
         setComments(data as ScreenshotComment[]);
@@ -711,19 +715,31 @@ export function CatalogueFamilyLightbox({
     if (!screenshot) return;
     const trimmed = newComment.trim();
     if (!trimmed) return;
-    const { data, error } = await supabase
-      .from('screenshot_comments')
-      .insert({ screenshot_id: screenshot.id, user_email: userEmail, text: trimmed })
-      .select()
-      .single();
-    if (error || !data) {
-      setCommentsError('Unable to add this comment.');
-      return;
-    }
-    setComments((previous) => [...previous, data as ScreenshotComment]);
+    // Client-generated UUID — used as the row's primary key so the
+    // optimistic local entry matches the eventually-persisted server row.
+    // Subsequent deletes / edits target this id without needing a
+    // post-insert reconciliation.
+    const clientId = crypto.randomUUID();
+    const optimisticComment: ScreenshotComment = {
+      id: clientId,
+      user_email: userEmail,
+      text: trimmed,
+      created_at: new Date().toISOString(),
+    };
+    // Optimistic: push immediately, clear input, bump counter.
+    setComments((previous) => [...previous, optimisticComment]);
     setNewComment('');
     setCommentsError('');
     onCommentCountChange?.(screenshot.id, 1);
+    // Durable replay via the mutation queue — drains immediately when
+    // online, persists across reloads when offline.
+    await enqueueMutation({
+      op: 'add-comment',
+      screenshotId: screenshot.id,
+      text: trimmed,
+      userEmail,
+      clientId,
+    });
   }, [canEdit, newComment, onCommentCountChange, onRequireAuth, screenshot, userEmail]);
   const deleteComment = useCallback(async (commentId: string) => {
     if (!ensureCanEdit()) return;
