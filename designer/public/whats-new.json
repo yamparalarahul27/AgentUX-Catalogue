@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-06-12-offline-indicator-polish",
+    "date": "June 12, 2026",
+    "title": "Offline indicator polish",
+    "bullets": [
+      { "kind": "improved", "text": "The offline status pill now sits above the group dock instead of overlapping with it" },
+      { "kind": "new", "text": "When you scroll to the bottom of the catalogue while offline, the pill briefly breathes to nudge your eyes — quick visual cue that you've seen everything available offline" }
+    ]
+  },
+  {
     "id": "2026-06-11-offline-crop",
     "date": "June 11, 2026",
     "title": "Crop works offline now",

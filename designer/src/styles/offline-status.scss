@@ -31,9 +31,37 @@
   animation: offline-status-slide-in 220ms ease-out;
   pointer-events: none;   // status-only surface; no interactions in PR 1
 
-  // iOS safe area — sit above the home-indicator on PWAs.
-  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  // iOS safe area — sit above the home-indicator on PWAs. The base
+  // offset clears the magnified dock (24px bottom + ~52px pill =
+  // 76px) with a small visual gap, so the pill doesn't overlap
+  // dock icons on catalogue views. Other views without a dock just
+  // see the pill floating slightly higher than the viewport edge —
+  // intentional, reads as a status surface not a footer.
+  padding-bottom: 8px;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
+// One-shot attention pulse — fires when the user scrolls to the end
+// of the catalogue while offline. Scale + border-opacity breathing
+// over two cycles, then settles. The animation property is set
+// imperatively via `is-pulsing` so it can be re-triggered on each
+// scroll-to-end without remounting the pill (which would restart
+// the slide-in entry).
+.offline-status.is-pulsing {
+  animation:
+    offline-status-slide-in 220ms ease-out,
+    offline-status-attention-pulse 600ms cubic-bezier(0.4, 0, 0.2, 1) 0s 2;
+}
+
+@keyframes offline-status-attention-pulse {
+  0%, 100% {
+    transform: translate(-50%, 0) scale(1);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  50% {
+    transform: translate(-50%, 0) scale(1.04);
+    border-color: rgba(255, 255, 255, 0.24);
+  }
 }
 
 .offline-status__dot {

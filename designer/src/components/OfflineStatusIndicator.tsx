@@ -33,6 +33,51 @@ export function OfflineStatusIndicator() {
   const { offlineQueueSize, justDrained } = useMutationQueueStatus();
   const [onlineToast, setOnlineToast] = useState(false);
   const previousStatusRef = useRef(status);
+  const pillRef = useRef<HTMLDivElement>(null);
+
+  // Attention pulse — when the user scrolls to the very end of the
+  // catalogue list while offline, briefly breathe the pill so they
+  // notice "this is everything available offline; reconnect for more".
+  // Imperative class toggle (rather than React state) keeps the
+  // pulse cheap: no re-render per scroll event, and forcing reflow
+  // between remove + add lets us re-fire the same keyframes on each
+  // new scroll-to-bottom without remounting the pill.
+  useEffect(() => {
+    if (status !== 'offline') return;
+    let atBottomActive = false;
+    let pulseTimer: number | null = null;
+    function onScroll() {
+      const el = document.scrollingElement;
+      if (!el) return;
+      const remaining = el.scrollHeight - (el.scrollTop + el.clientHeight);
+      const atBottom = remaining <= 24;
+      if (atBottom && !atBottomActive) {
+        atBottomActive = true;
+        const pill = pillRef.current;
+        if (!pill) return;
+        pill.classList.remove('is-pulsing');
+        // Force reflow so the next class add restarts the animation.
+        void pill.offsetWidth;
+        pill.classList.add('is-pulsing');
+        if (pulseTimer) window.clearTimeout(pulseTimer);
+        // 2 cycles × 600ms + small buffer before clearing the class.
+        pulseTimer = window.setTimeout(() => {
+          pillRef.current?.classList.remove('is-pulsing');
+          pulseTimer = null;
+        }, 1300);
+      } else if (!atBottom) {
+        atBottomActive = false;
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Check on mount too — if the user was already at the bottom when
+    // they went offline, fire the pulse once so the cue isn't missed.
+    onScroll();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (pulseTimer) window.clearTimeout(pulseTimer);
+    };
+  }, [status]);
 
   // When network flips from offline/unstable → online, surface the
   // transient "You're online" message for ONLINE_TOAST_MS, then hide.
@@ -75,6 +120,7 @@ export function OfflineStatusIndicator() {
 
   return (
     <div
+      ref={pillRef}
       className={`offline-status offline-status--${visible.variant}`}
       role="status"
       aria-live="polite"
