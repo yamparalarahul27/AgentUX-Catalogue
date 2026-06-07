@@ -520,6 +520,14 @@ export function CatalogueFamilyLightbox({
   // stayed at opacity 0 → black media area until the user navigated
   // to a different screenshot.
   useEffect(() => {
+    // Blob URLs (offline crop's optimistic preview via
+    // URL.createObjectURL) load essentially synchronously and race
+    // with this reset — the effect would win, pinning opacity to 0
+    // and leaving only the thumbhash placeholder visible until the
+    // user navigates away and back. Skip the reset for blob URLs:
+    // the cropped bitmap was just produced from the on-screen image,
+    // so we know it'll render correctly without the fade-in dance.
+    if (screenshot?.image_url?.startsWith('blob:')) return;
     setImageLoaded(false);
   }, [screenshot?.image_url]);
   useEffect(() => {
