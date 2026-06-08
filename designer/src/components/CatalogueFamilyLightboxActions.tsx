@@ -106,10 +106,17 @@ export function CatalogueFamilyLightboxActions({
   canDelete,
 }: CatalogueFamilyLightboxActionsProps) {
   const { justCopied: justShared, confirm: confirmShareCopy } = useCopyConfirmation();
+  // Labeling studio (hideCatalogueActions=true) suppresses every icon
+  // here. With Edit also gated on !hideCatalogueActions and the inline
+  // editor never opening in that mode, the whole summary wrapper has
+  // nothing to render — skip it to avoid a stray empty bar above the
+  // tabs. Reupload is feature-flagged false today; if it ever flips
+  // true and gets added to labeling studio, revisit this guard.
+  if (hideCatalogueActions && !isInlineEditing && !REUPLOAD_ENABLED) return null;
   return (
     <div className="catalogue-family-lightbox__summary">
       <div className="catalogue-lightbox-icon-bar">
-        {canEdit && (
+        {canEdit && !hideCatalogueActions && (
           <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} title={isInlineEditing ? 'Close edit' : 'Edit'}>
             <Pencil size={15} />
           </Squircle>
