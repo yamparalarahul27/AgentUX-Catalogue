@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-13-remove-edit-in-labeling-studio",
+    "date": "June 13, 2026",
+    "title": "Labeling Studio: cleaner lightbox",
+    "bullets": [
+      { "kind": "improved", "text": "The Edit (pencil) icon is hidden in Labeling Studio — it opened the catalogue-metadata editor, which duplicated fields you can already set elsewhere. Keeps focus on labeling" }
+    ]
+  },
+  {
     "id": "2026-06-12-offline-indicator-polish",
     "date": "June 12, 2026",
     "title": "Offline indicator polish",

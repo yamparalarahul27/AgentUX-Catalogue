@@ -717,6 +717,9 @@ export function CatalogueFamilyLightbox({
       if (annotationMode || annotationDraft) return;
       if (key === 'e') {
         if (!canEdit) return;
+        // Labeling studio hides the Edit icon — keep the shortcut
+        // in step so the inline editor can't be opened there either.
+        if (showLabelTab) return;
         event.preventDefault();
         setIsInlineEditing(true);
       } else if (key === 'd') {
@@ -727,7 +730,7 @@ export function CatalogueFamilyLightbox({
     }
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
-  }, [isOpen, canEdit, canDelete, isInlineEditing, annotationMode, annotationDraft, confirmDeleteOpen, cropMode, onToggleBookmark, screenshot, imageSize]);
+  }, [isOpen, canEdit, canDelete, isInlineEditing, annotationMode, annotationDraft, confirmDeleteOpen, cropMode, onToggleBookmark, screenshot, imageSize, showLabelTab]);
   const notifyAnnotationActivity = useCallback((nextAnnotations: LightboxAnnotation[]) => {
     if (!screenshot) return;
     onAnnotationStateChange(screenshot.id, summarizeAnnotationActivity(nextAnnotations));
