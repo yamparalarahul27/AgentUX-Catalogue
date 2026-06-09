@@ -444,6 +444,31 @@ export function CatalogueVideosSection({
     };
   }, [previewItemKey]);
 
+  // Track the visual viewport while the preview is open so the lightbox
+  // shrinks to the keyboard-aware height on mobile. `100dvh` is the
+  // pre-keyboard viewport, so without this the comment composer (pinned
+  // at the bottom of the comments column) ends up hidden behind the iOS
+  // keyboard. The CSS vars are consumed only by the mobile media query.
+  useEffect(() => {
+    if (!previewItemKey) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    const update = () => {
+      root.style.setProperty('--vv-height', `${vv.height}px`);
+      root.style.setProperty('--vv-offset-top', `${vv.offsetTop}px`);
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      root.style.removeProperty('--vv-height');
+      root.style.removeProperty('--vv-offset-top');
+    };
+  }, [previewItemKey]);
+
   // Two-tab split for the Videos section: X (Twitter) is the default
   // because it's the growing collection (you keep adding posts), and
   // Family Values is a fixed reference set. URL-synced via `?tab=`

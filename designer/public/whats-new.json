@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-09-mobile-fixes",
+    "date": "June 9, 2026",
+    "title": "Mobile polish",
+    "bullets": [
+      { "kind": "fix", "text": "Comment box in the X-post lightbox no longer hides behind the keyboard on mobile" },
+      { "kind": "improved", "text": "Tag filters in Videos now scroll sideways in one row on mobile instead of stacking into a tall block" },
+      { "kind": "fix", "text": "Added breathing room between the header and the Links tab strip on mobile" }
+    ]
+  },
+  {
     "id": "2026-06-15-prototype-card-polish",
     "date": "June 15, 2026",
     "title": "Prototype cards: live preview + share",
