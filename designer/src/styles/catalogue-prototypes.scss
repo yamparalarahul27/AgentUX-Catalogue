@@ -262,6 +262,13 @@
 }
 
 // Sub-tab nav inside the Links section ────────────────────────
+.catalogue-links-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
 .catalogue-links-tabs {
   display: inline-flex;
   align-items: center;

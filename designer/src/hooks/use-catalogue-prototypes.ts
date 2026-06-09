@@ -105,12 +105,20 @@ export function useCataloguePrototypes({ userEmail }: UseCataloguePrototypesArgs
     const safeName = sanitizeFilenameSegment(file.name);
     const storagePath = `${userId}/${id}-${safeName}`;
 
+    // Re-wrap as a Blob with explicit `text/html` type. Browsers
+    // sometimes assign File.type = '' (no detection) or
+    // 'application/octet-stream' (Windows file picker), which the
+    // Supabase JS client can prefer over the `contentType` option —
+    // and the file then serves as plain text in the browser instead
+    // of rendering as HTML.
+    const htmlBlob = new Blob([file], { type: 'text/html' });
+
     // Two-stage: storage upload first, then row insert. If the row
     // insert fails (RLS / network), remove the just-uploaded blob so
     // we don't leak orphans in storage.
     const { error: uploadErr } = await supabase.storage
       .from('prototypes')
-      .upload(storagePath, file, { contentType: 'text/html', upsert: false });
+      .upload(storagePath, htmlBlob, { contentType: 'text/html', upsert: false });
     if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
 
     const insertTitle = deriveTitleFromFilename(file.name);
@@ -178,9 +186,12 @@ export function useCataloguePrototypes({ userEmail }: UseCataloguePrototypesArgs
     const safeName = sanitizeFilenameSegment(file.name);
     const newStoragePath = `${userId}/${crypto.randomUUID()}-${safeName}`;
 
+    // Same `text/html` Blob re-wrap as the initial upload path —
+    // see comment there for why this matters.
+    const htmlBlob = new Blob([file], { type: 'text/html' });
     const { error: uploadErr } = await supabase.storage
       .from('prototypes')
-      .upload(newStoragePath, file, { contentType: 'text/html', upsert: false });
+      .upload(newStoragePath, htmlBlob, { contentType: 'text/html', upsert: false });
     if (uploadErr) throw new Error(`Reupload failed: ${uploadErr.message}`);
 
     const { error: updateErr } = await supabase
