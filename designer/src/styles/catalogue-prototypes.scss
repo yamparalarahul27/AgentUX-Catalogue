@@ -1,0 +1,305 @@
+// Prototypes tab — companion to .catalogue-links. Borrows the panel
+// chrome (rounded gradient card) so it sits next to Saved Links
+// without visual drift.
+
+.catalogue-prototypes {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  border: 1px solid #27272a;
+  border-radius: 20px;
+  padding: 22px;
+  background: linear-gradient(180deg, rgba(24, 24, 27, 0.96) 0%, rgba(17, 17, 19, 0.96) 100%);
+}
+
+.catalogue-prototypes__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.catalogue-prototypes__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #fafafa;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #a1a1aa;
+  }
+}
+
+.catalogue-prototypes__error {
+  margin: 0;
+  font-size: 13px;
+  color: #f87171;
+}
+
+.catalogue-prototypes__loading,
+.catalogue-prototypes__empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0;
+  color: #71717a;
+  font-size: 13px;
+}
+
+// Drop zone ───────────────────────────────────────────────────
+.catalogue-prototypes__dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 18px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(24, 24, 27, 0.4);
+  color: #d4d4d8;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(129, 140, 248, 0.6);
+    background: rgba(99, 102, 241, 0.08);
+  }
+
+  &.is-drag-over {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.14);
+    transform: scale(1.005);
+  }
+
+  &.is-uploading {
+    cursor: progress;
+    pointer-events: none;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+
+    strong {
+      color: #fafafa;
+      font-weight: 600;
+    }
+  }
+}
+
+.catalogue-prototypes__dropzone-hint {
+  font-size: 12px;
+  color: #71717a;
+}
+
+// Grid ────────────────────────────────────────────────────────
+.catalogue-prototypes__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.catalogue-prototypes__card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(15, 15, 18, 0.7);
+  transition: border-color 140ms ease, background 140ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(20, 20, 24, 0.8);
+  }
+}
+
+.catalogue-prototypes__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.catalogue-prototypes__card-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #fafafa;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  // Truncate long titles to two lines.
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:hover:not(:disabled) {
+    color: #ffffff;
+  }
+}
+
+.catalogue-prototypes__card-title-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(129, 140, 248, 0.5);
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: #fafafa;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+}
+
+.catalogue-prototypes__visibility {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.catalogue-prototypes__visibility--public {
+  background: rgba(34, 197, 94, 0.14);
+  color: #4ade80;
+}
+
+.catalogue-prototypes__visibility--private {
+  background: rgba(113, 113, 122, 0.18);
+  color: #a1a1aa;
+}
+
+.catalogue-prototypes__card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #71717a;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.catalogue-prototypes__card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.catalogue-prototypes__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #e4e4e7;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+  }
+}
+
+.catalogue-prototypes__action--primary {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(129, 140, 248, 0.35);
+  color: #c7d2fe;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.24);
+    border-color: rgba(129, 140, 248, 0.55);
+    color: #e0e7ff;
+  }
+}
+
+.catalogue-prototypes__action--danger {
+  &:hover {
+    border-color: rgba(248, 113, 113, 0.4);
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
+  }
+}
+
+// Sub-tab nav inside the Links section ────────────────────────
+.catalogue-links-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.catalogue-links-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+
+  &:hover {
+    color: #e4e4e7;
+  }
+
+  &.is-active {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fafafa;
+  }
+}
+
+.catalogue-links-tabs__count {
+  font-size: 11px;
+  color: inherit;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}

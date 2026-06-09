@@ -1,5 +1,16 @@
 [
   {
+    "id": "2026-06-14-prototypes-tab",
+    "date": "June 14, 2026",
+    "title": "Share HTML prototypes",
+    "bullets": [
+      { "kind": "new", "text": "New Prototypes tab inside Links — drop in .html mockups and they're hosted on mockups.hirahul.xyz, openable in a new tab from a card grid" },
+      { "kind": "new", "text": "Each prototype is yours by default (private). Flip the eye icon on the card to make it public for the team" },
+      { "kind": "new", "text": "Rename inline, replace the file with a new version, or delete — all from the card actions" },
+      { "kind": "improved", "text": "Prototype files serve from a separate subdomain so uploaded HTML/JS can't reach the app's auth cookies or localStorage" }
+    ]
+  },
+  {
     "id": "2026-06-13-remove-edit-in-labeling-studio",
     "date": "June 13, 2026",
     "title": "Labeling Studio: cleaner lightbox",

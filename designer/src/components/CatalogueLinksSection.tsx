@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Plus, Search, X } from 'lucide-react';
+import { ChevronRight, FileCode2, Link as LinkIcon, Plus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatRelative } from '../lib/catalogue-relative-time';
 import { useLinkMetadata, type LinkMetadata } from '../hooks/use-link-metadata';
+import { CataloguePrototypes } from './CataloguePrototypes';
 import { DotLoader } from './DotLoader';
+
+type LinksSubTab = 'saved-links' | 'prototypes';
 
 interface LinkReference {
   id: string;
@@ -111,6 +114,7 @@ export function CatalogueLinksSection({
   onRequireAuth,
   userEmail,
 }: CatalogueLinksSectionProps) {
+  const [activeTab, setActiveTab] = useState<LinksSubTab>('saved-links');
   const [links, setLinks] = useState<LinkReference[]>([]);
   const [linkInput, setLinkInput] = useState('');
   const [linkError, setLinkError] = useState<string | null>(null);
@@ -267,6 +271,38 @@ export function CatalogueLinksSection({
   const hasLinks = totalLinks > 0;
 
   return (
+    <div className="catalogue-links-shell">
+      <nav className="catalogue-links-tabs" role="tablist" aria-label="Links sections">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'saved-links'}
+          className={`catalogue-links-tabs__tab ${activeTab === 'saved-links' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('saved-links')}
+        >
+          <LinkIcon size={13} aria-hidden="true" />
+          Saved Links
+          <span className="catalogue-links-tabs__count">{totalLinks}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'prototypes'}
+          className={`catalogue-links-tabs__tab ${activeTab === 'prototypes' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('prototypes')}
+        >
+          <FileCode2 size={13} aria-hidden="true" />
+          Prototypes
+        </button>
+      </nav>
+
+      {activeTab === 'prototypes' ? (
+        <CataloguePrototypes
+          canEdit={canEdit}
+          onRequireAuth={onRequireAuth}
+          userEmail={userEmail}
+        />
+      ) : (
     <section className="catalogue-links" aria-label="Saved links">
       <header className="catalogue-links__head">
         <div className="catalogue-links__copy">
@@ -446,5 +482,7 @@ export function CatalogueLinksSection({
         </ul>
       )}
     </section>
+      )}
+    </div>
   );
 }
