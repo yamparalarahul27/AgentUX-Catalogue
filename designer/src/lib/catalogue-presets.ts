@@ -1,4 +1,9 @@
-import type { CatalogueSettingsRecord, WebPreset } from '../types';
+import type {
+  CatalogueSettingsRecord,
+  ToolbarHideableKey,
+  ToolbarPinnableKey,
+  WebPreset,
+} from '../types';
 
 export const DEFAULT_WEB_PRESETS: WebPreset[] = [
   { key: 'default-1512', label: 'Default', width: 1512 },
@@ -6,6 +11,40 @@ export const DEFAULT_WEB_PRESETS: WebPreset[] = [
   { key: 'viewport-720', label: '720', width: 720 },
   { key: 'viewport-320', label: '320', width: 320 },
 ];
+
+// Allow-list for toolbar preference keys. Anything outside these sets
+// is dropped at normalize time so stale rows from removed features
+// can't sneak through and cause runtime surprises.
+const HIDEABLE_KEYS: readonly ToolbarHideableKey[] = [
+  'sort',
+  'density_stack',
+  'density_gallery',
+  'share',
+  'save',
+];
+
+const PINNABLE_KEYS: readonly ToolbarPinnableKey[] = ['platform', 'theme'];
+
+function normalizeStringArray<T extends string>(
+  value: unknown,
+  allowList: readonly T[],
+): T[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<T>();
+  for (const item of value) {
+    if (typeof item !== 'string') continue;
+    if (allowList.includes(item as T)) seen.add(item as T);
+  }
+  return [...seen];
+}
+
+export function normalizeToolbarHiddenKeys(value: unknown): ToolbarHideableKey[] {
+  return normalizeStringArray(value, HIDEABLE_KEYS);
+}
+
+export function normalizeToolbarPinnedKeys(value: unknown): ToolbarPinnableKey[] {
+  return normalizeStringArray(value, PINNABLE_KEYS);
+}
 
 function isWebPreset(value: unknown): value is WebPreset {
   if (!value || typeof value !== 'object') return false;
@@ -21,6 +60,8 @@ export function getDefaultCatalogueSettings(userId: string): CatalogueSettingsRe
   return {
     user_id: userId,
     web_presets: DEFAULT_WEB_PRESETS,
+    toolbar_hidden_keys: [],
+    toolbar_pinned_keys: [],
   };
 }
 
@@ -41,6 +82,8 @@ export function normalizeCatalogueSettingsRecord(
   return {
     user_id: value?.user_id || userId,
     web_presets: normalizeWebPresets(value?.web_presets),
+    toolbar_hidden_keys: normalizeToolbarHiddenKeys(value?.toolbar_hidden_keys),
+    toolbar_pinned_keys: normalizeToolbarPinnedKeys(value?.toolbar_pinned_keys),
     created_at: value?.created_at,
     updated_at: value?.updated_at,
   };

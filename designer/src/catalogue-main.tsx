@@ -22,6 +22,7 @@ import './styles/catalogue-members.scss';
 import './styles/catalogue-videos.scss';
 import './styles/catalogue-links.scss';
 import './styles/catalogue-prototypes.scss';
+import './styles/catalogue-toolbar-customization.scss';
 import './styles/catalogue-header-menu.scss';
 import './styles/catalogue-filter-sheet.scss';
 import './styles/catalogue-chip-strip.scss';

@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-16-toolbar-customization",
+    "date": "June 16, 2026",
+    "title": "Customize your toolbar",
+    "bullets": [
+      { "kind": "new", "text": "Settings → Toolbar lets you hide individual controls (Sort, Density: Stack / Gallery, Share, Saved) so the toolbar shows only what you actually use" },
+      { "kind": "new", "text": "Pin Platform (Mobile / Web) or Theme (Light / Dark) to surface them as inline tab switches in the toolbar — one click to flip, no dropdown" },
+      { "kind": "improved", "text": "Choices save automatically and only affect your view — other users see their own toolbar layout" }
+    ]
+  },
+  {
     "id": "2026-06-09-mobile-fixes",
     "date": "June 9, 2026",
     "title": "Mobile polish",

@@ -25,9 +25,24 @@ export interface WebPreset {
 
 export type FigmaRequestStatus = 'queued' | 'parsing' | 'building' | 'review' | 'ready' | 'failed';
 
+// Stable keys for user-customizable toolbar controls. Kept in sync with
+// the migration at supabase/migrations/20260616_catalogue_settings_toolbar_prefs.sql
+// and the toolbar render code. Adding a new key here without wiring it
+// in the toolbar is harmless (stored but ignored).
+export type ToolbarHideableKey =
+  | 'sort'
+  | 'density_stack'
+  | 'density_gallery'
+  | 'share'
+  | 'save';
+
+export type ToolbarPinnableKey = 'platform' | 'theme';
+
 export interface CatalogueSettingsRecord {
   user_id: string;
   web_presets: WebPreset[];
+  toolbar_hidden_keys: ToolbarHideableKey[];
+  toolbar_pinned_keys: ToolbarPinnableKey[];
   created_at?: string;
   updated_at?: string;
 }
