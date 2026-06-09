@@ -1203,6 +1203,9 @@ export function Catalogue({
                 setFilterFlow([]);
                 setActiveSection('catalogue');
               }}
+              webPresets={webPresets}
+              presetUsage={presetUsage}
+              onSaveWebPresets={handleSavePresets}
             />
           </div>
         </main>
@@ -1541,12 +1544,9 @@ export function Catalogue({
       />
       <CatalogueSettingsModal
         isOpen={showSettings}
-        presetUsage={presetUsage}
-        webPresets={webPresets}
         toolbarHiddenKeys={toolbarHiddenKeys}
         toolbarPinnedKeys={toolbarPinnedKeys}
         onClose={() => setShowSettings(false)}
-        onSave={handleSavePresets}
         onSaveToolbarPrefs={saveToolbarPrefs}
       />
       {previewFamily && (

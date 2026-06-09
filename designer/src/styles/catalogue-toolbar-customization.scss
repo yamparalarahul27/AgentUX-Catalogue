@@ -130,6 +130,27 @@
   }
 }
 
+// Web Presets in Team — embedded "save" row at the bottom ─────
+// (presets aren't auto-saved; an explicit button matches the
+// granularity of editing widths/labels per row.)
+.catalogue-settings-embedded {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.catalogue-settings-embedded__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.catalogue-settings-embedded__saved {
+  font-size: 12px;
+  color: #4ade80;
+}
+
 // Toolbar pinned tab switches ────────────────────────────────
 // The inline [All | Mobile | Web] / [All | Light | Dark] switch
 // that surfaces in the toolbar when the user pins a filter.
