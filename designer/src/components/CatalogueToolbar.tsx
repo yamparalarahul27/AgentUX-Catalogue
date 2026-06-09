@@ -6,6 +6,7 @@ import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { GridDensity } from '../lib/catalogue-helpers';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
+import type { ToolbarHideableKey, ToolbarPinnableKey } from '../types';
 import {
   resolveCatalogueGroupAppearance,
   type CatalogueGroupAppearanceMap,
@@ -91,6 +92,11 @@ interface CatalogueToolbarProps {
   // menu — Catalogue mirrors the Flow bit so it knows whether to
   // render the chip strip. Toolbar still owns the persistence.
   onVisibleFiltersChange?: (filters: ToolbarFilterKey[]) => void;
+  // Per-user toolbar customization sourced from catalogue_settings.
+  // Empty defaults match the pre-customization behaviour: nothing
+  // hidden, nothing pinned.
+  toolbarHiddenKeys?: ToolbarHideableKey[];
+  toolbarPinnedKeys?: ToolbarPinnableKey[];
 }
 
 export type { ToolbarFilterKey };
@@ -223,7 +229,11 @@ export function CatalogueToolbar({
   flowPresentation,
   onFlowPresentationChange,
   onVisibleFiltersChange,
+  toolbarHiddenKeys = [],
+  toolbarPinnedKeys = [],
 }: CatalogueToolbarProps) {
+  const isHidden = (key: ToolbarHideableKey) => toolbarHiddenKeys.includes(key);
+  const isPinned = (key: ToolbarPinnableKey) => toolbarPinnedKeys.includes(key);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
@@ -565,19 +575,26 @@ export function CatalogueToolbar({
             </button>
 
             {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
-            <Dropdown
-              value={sortBy}
-              placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
-              options={[
-                { value: 'date-desc-global', label: 'Latest', icon: <Clock size={13} /> },
-                { value: 'name-asc', label: 'Group View', icon: <LayoutGrid size={13} /> },
-              ]}
-              onChange={(value) => onSortByChange((value || 'date-desc-global') as CatalogueSortOption)}
-              disabled={isSortLocked}
-              className="catalogue-sort-dropdown"
-            />
+            {!isHidden('sort') && (
+              <Dropdown
+                value={sortBy}
+                placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
+                options={[
+                  { value: 'date-desc-global', label: 'Latest', icon: <Clock size={13} /> },
+                  { value: 'name-asc', label: 'Group View', icon: <LayoutGrid size={13} /> },
+                ]}
+                onChange={(value) => onSortByChange((value || 'date-desc-global') as CatalogueSortOption)}
+                disabled={isSortLocked}
+                className="catalogue-sort-dropdown"
+              />
+            )}
 
-            <CatalogueViewToggle value={viewMode} onChange={onViewModeChange} />
+            <CatalogueViewToggle
+              value={viewMode}
+              onChange={onViewModeChange}
+              hideStack={isHidden('density_stack')}
+              hideGallery={isHidden('density_gallery')}
+            />
 
             {viewMode === 'grid' && (
               <CatalogueGridDensity value={gridDensity} onChange={onGridDensityChange} />
@@ -598,7 +615,7 @@ export function CatalogueToolbar({
               <Search size={16} />
             </button>
           )}
-          {onOpenShare && (
+          {onOpenShare && !isHidden('share') && (
             <button
               type="button"
               className="catalogue-toolbar-bookmark catalogue-toolbar--desktop-only"
@@ -609,7 +626,7 @@ export function CatalogueToolbar({
               <Share2 size={16} />
             </button>
           )}
-          {onBookmarkFilterToggle && (
+          {onBookmarkFilterToggle && !isHidden('save') && (
             <button
               type="button"
               ref={savedFilterButtonRef}
@@ -626,6 +643,59 @@ export function CatalogueToolbar({
               <Save size={16} />
             </button>
           )}
+
+          {/* Pinned filters — when the user pins Platform / Theme via
+              Settings → Toolbar, the filter moves out of the Filters
+              dropdown and surfaces as an inline tab switch right here.
+              The Filters dropdown hides the matching row so the same
+              filter isn't reachable from two places. */}
+          {isPinned('platform') && (
+            <div
+              className="catalogue-toolbar-pinned-switch catalogue-toolbar--desktop-only"
+              role="group"
+              aria-label="Platform filter"
+            >
+              {[
+                { value: null, label: 'All' },
+                { value: 'mobile', label: 'Mobile' },
+                { value: 'web', label: 'Web' },
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  className={`catalogue-toolbar-pinned-switch__btn ${filterPlatform === opt.value ? 'is-active' : ''}`}
+                  onClick={() => onFilterPlatformChange(opt.value)}
+                  aria-pressed={filterPlatform === opt.value}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {isPinned('theme') && (
+            <div
+              className="catalogue-toolbar-pinned-switch catalogue-toolbar--desktop-only"
+              role="group"
+              aria-label="Theme filter"
+            >
+              {[
+                { value: null, label: 'All' },
+                { value: 'light', label: 'Light' },
+                { value: 'dark', label: 'Dark' },
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  className={`catalogue-toolbar-pinned-switch__btn ${filterTheme === opt.value ? 'is-active' : ''}`}
+                  onClick={() => onFilterThemeChange(opt.value)}
+                  aria-pressed={filterTheme === opt.value}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Desktop button — flips between "Quick Upload" → "Upload All (N)"
               → "Uploading…" as the Quick Upload flow progresses. The labels
               cross-fade in place over an invisible sizer that holds the
@@ -700,7 +770,16 @@ export function CatalogueToolbar({
         <div ref={menuRef} id="catalogue-filter-menu" className="catalogue-filter-menu" style={menuStyle}>
           <div className="catalogue-filter-menu__title">Visible filters</div>
           <div className="catalogue-filter-menu__list">
-            {FILTER_OPTIONS.map((option) => {
+            {FILTER_OPTIONS
+              .filter((option) => {
+                // Pinned filters live inline as tab switches in the
+                // toolbar — hide them from the Filters dropdown so the
+                // same filter isn't reachable from two places.
+                if (option.key === 'platform' && isPinned('platform')) return false;
+                if (option.key === 'theme' && isPinned('theme')) return false;
+                return true;
+              })
+              .map((option) => {
               const selected = visibleFilters.has(option.key);
               // Flow gets an extra inline toggle when it's enabled —
               // switches between toolbar dropdown and below-toolbar

@@ -158,7 +158,14 @@ export function Catalogue({
     searchQuery: searchQueryDebounced,
   });
 
-  const { saveWebPresets, presetByKey, webPresets } = useCatalogueSettings(user.id);
+  const {
+    saveWebPresets,
+    saveToolbarPrefs,
+    presetByKey,
+    toolbarHiddenKeys,
+    toolbarPinnedKeys,
+    webPresets,
+  } = useCatalogueSettings(user.id);
   // Data is pre-filtered by useCatalogueData
   const scopedScreenshots = screenshots;
   const scopedScreenFamilies = screenFamilies;
@@ -1196,6 +1203,9 @@ export function Catalogue({
                 setFilterFlow([]);
                 setActiveSection('catalogue');
               }}
+              webPresets={webPresets}
+              presetUsage={presetUsage}
+              onSaveWebPresets={handleSavePresets}
             />
           </div>
         </main>
@@ -1355,6 +1365,8 @@ export function Catalogue({
                 flowPresentation={flowPresentation}
                 onFlowPresentationChange={setFlowPresentation}
                 onVisibleFiltersChange={(filters) => setFlowFilterEnabled(filters.includes('flow'))}
+                toolbarHiddenKeys={toolbarHiddenKeys}
+                toolbarPinnedKeys={toolbarPinnedKeys}
               />
 
               {flowFilterEnabled && flowPresentation === 'strip' && (
@@ -1532,10 +1544,10 @@ export function Catalogue({
       />
       <CatalogueSettingsModal
         isOpen={showSettings}
-        presetUsage={presetUsage}
-        webPresets={webPresets}
+        toolbarHiddenKeys={toolbarHiddenKeys}
+        toolbarPinnedKeys={toolbarPinnedKeys}
         onClose={() => setShowSettings(false)}
-        onSave={handleSavePresets}
+        onSaveToolbarPrefs={saveToolbarPrefs}
       />
       {previewFamily && (
         <CatalogueFamilyLightbox

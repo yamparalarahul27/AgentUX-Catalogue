@@ -5,6 +5,7 @@ import {
   Flag,
   Images,
   LayoutGrid,
+  Monitor,
   Pencil,
   Search,
   Shield,
@@ -27,7 +28,8 @@ import type {
 import { useGroupAppearanceEditor } from '../hooks/use-group-appearance-editor';
 import { buildTeamUploadAnalyticsRows, formatTeamAnalyticsDate } from '../lib/catalogue-team-analytics';
 import { TEAM_UPLOAD_ANALYTICS_ENABLED } from '../lib/feature-flags';
-import type { ScreenshotNode } from '../types';
+import type { ScreenshotNode, WebPreset } from '../types';
+import { CatalogueWebPresetsSection } from './CatalogueWebPresetsSection';
 import { AdminUnlockScreen } from './AdminUnlockScreen';
 import { CatalogueFlagsSection } from './CatalogueFlagsSection';
 import { CatalogueRolesSection } from './CatalogueRolesSection';
@@ -39,7 +41,15 @@ import { ConfirmModal } from './ConfirmModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
 import { Toast } from './Toast';
 
-type TeamSubTab = 'analytics' | 'flows' | 'groups' | 'trash' | 'flags' | 'members' | 'roles';
+type TeamSubTab =
+  | 'analytics'
+  | 'flows'
+  | 'groups'
+  | 'web-presets'
+  | 'trash'
+  | 'flags'
+  | 'members'
+  | 'roles';
 
 interface CatalogueTeamSectionProps {
   screenshots: ScreenshotNode[];
@@ -61,6 +71,13 @@ interface CatalogueTeamSectionProps {
   // lands on a focused result set.
   onSelectFlow?: (flow: string) => void;
   onSelectGroup?: (group: string) => void;
+  // Web presets used to live in the gear-icon modal; now an admin-only
+  // sub-tab here. Saving still persists per-user via
+  // useCatalogueSettings.saveWebPresets — admins manage their own
+  // presets, but the UI access is gated to the Team section.
+  webPresets?: WebPreset[];
+  presetUsage?: Record<string, number>;
+  onSaveWebPresets?: (webPresets: WebPreset[]) => Promise<void> | void;
 }
 
 interface FlowChecklistItem {
@@ -132,6 +149,9 @@ export function CatalogueTeamSection({
   onTrashRestored,
   onSelectFlow,
   onSelectGroup,
+  webPresets,
+  presetUsage,
+  onSaveWebPresets,
 }: CatalogueTeamSectionProps) {
   // Groups is the default sub-tab when entering Team — matches the
   // user's expectation that the Settings icon "opens" group config.
@@ -245,6 +265,15 @@ export function CatalogueTeamSection({
       count: flowChecklist.length,
       description: `All flows from uploaded screenshots. ${flowChecklist.length} flow${flowChecklist.length !== 1 ? 's' : ''} tracked. Click a flow to filter the catalogue.`,
     },
+    ...(webPresets && onSaveWebPresets
+      ? [{
+          id: 'web-presets' as TeamSubTab,
+          label: 'Web Presets',
+          icon: Monitor,
+          count: webPresets.length,
+          description: 'Variant presets used when uploading or editing screenshots. Reorder, rename, or add new viewport widths.',
+        }]
+      : []),
     {
       id: 'trash',
       label: 'Trash',
@@ -508,6 +537,14 @@ export function CatalogueTeamSection({
             </div>
           )}
         </>
+      )}
+
+      {subTab === 'web-presets' && webPresets && onSaveWebPresets && (
+        <CatalogueWebPresetsSection
+          webPresets={webPresets}
+          presetUsage={presetUsage ?? {}}
+          onSave={onSaveWebPresets}
+        />
       )}
 
       {subTab === 'trash' && (
