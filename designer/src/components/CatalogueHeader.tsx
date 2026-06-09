@@ -7,7 +7,7 @@ import {
   Link as LinkIcon,
   LogIn,
   LogOut,
-  MonitorCog,
+  SlidersHorizontal,
   MoreHorizontal,
   MousePointerClick,
   Power,
@@ -417,8 +417,8 @@ export function CatalogueHeader({
             role="menuitem"
             onClick={openSettings}
           >
-            <MonitorCog size={14} aria-hidden="true" />
-            <span>Web Breakpoints Settings</span>
+            <SlidersHorizontal size={14} aria-hidden="true" />
+            <span>Toolbar settings</span>
           </button>
 
           <div className="catalogue-header-menu__divider" role="presentation" />
