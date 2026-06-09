@@ -115,7 +115,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 14px;
+  padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   background: rgba(15, 15, 18, 0.7);
@@ -125,6 +125,43 @@
     border-color: rgba(255, 255, 255, 0.16);
     background: rgba(20, 20, 24, 0.8);
   }
+}
+
+// Thumbnail iframe ───────────────────────────────────────────
+// Live preview rendered at native viewport size, then scaled down
+// via transform. The container clips the scaled iframe to its box,
+// so wide HTML pages preview as a tidy snapshot.
+.catalogue-prototypes__thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  // Pointer-events off so accidentally clicking the thumbnail
+  // doesn't hijack focus from the card actions; opening the
+  // prototype is the explicit Open button's job.
+  pointer-events: none;
+  user-select: none;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 0;
+    transform-origin: top left;
+    // The scale value is set inline via React (ResizeObserver-driven)
+    // so the rendered preview always fills the container's width.
+    background: #18181b;
+  }
+}
+
+.catalogue-prototypes__card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 4px 2px;
 }
 
 .catalogue-prototypes__card-head {

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Check,
   ExternalLink,
   Eye,
   EyeOff,
+  Link2,
   RefreshCw,
   Trash2,
   Upload,
@@ -14,10 +16,63 @@ import { formatRelative } from '../lib/catalogue-relative-time';
 import { supabase } from '../lib/supabase';
 import { DotLoader } from './DotLoader';
 
+// Reference viewport size the thumbnail iframe renders at before
+// scaling. ~Typical desktop. The on-screen size = card width; we
+// compute the scale via ResizeObserver so the rendered iframe always
+// fills the thumbnail box without empty bands on wider cards.
+const THUMBNAIL_IFRAME_WIDTH = 1440;
+const THUMBNAIL_IFRAME_HEIGHT = 900;
+
 interface CataloguePrototypesProps {
   canEdit?: boolean;
   onRequireAuth?: () => void;
   userEmail: string;
+}
+
+function PrototypeThumbnail({ url, title }: { url: string; title: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.2);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    function update() {
+      if (!el) return;
+      const width = el.getBoundingClientRect().width;
+      if (width <= 0) return;
+      setScale(width / THUMBNAIL_IFRAME_WIDTH);
+    }
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="catalogue-prototypes__thumb" ref={containerRef}>
+      {/*
+        Iframe runs on the mockups.hirahul.xyz origin (different from
+        the app) so its JS can't reach hirahul.xyz cookies / storage.
+        `sandbox="allow-scripts"` is defense in depth — the cross-
+        origin barrier is the real isolation. `loading="lazy"` keeps
+        offscreen cards from spamming requests on initial render.
+      */}
+      <iframe
+        src={url}
+        title={`Preview of ${title}`}
+        aria-hidden="true"
+        tabIndex={-1}
+        sandbox="allow-scripts"
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        style={{
+          width: THUMBNAIL_IFRAME_WIDTH,
+          height: THUMBNAIL_IFRAME_HEIGHT,
+          transform: `scale(${scale})`,
+        }}
+      />
+    </div>
+  );
 }
 
 function shortAuthor(email: string | null): string | null {
@@ -60,6 +115,9 @@ export function CataloguePrototypes({
   const [reuploadingId, setReuploadingId] = useState<string | null>(null);
   // Inline-rename UI: { id, draft } when active, null when not.
   const [renameState, setRenameState] = useState<{ id: string; draft: string } | null>(null);
+  // Share button "Copied!" feedback — set to the card id briefly
+  // after the URL lands in the clipboard, then cleared.
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reuploadInputRef = useRef<HTMLInputElement>(null);
@@ -174,6 +232,18 @@ export function CataloguePrototypes({
     }
   }
 
+  async function handleShare(record: PrototypeRecord, url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(record.id);
+      window.setTimeout(() => {
+        setCopiedId((current) => (current === record.id ? null : current));
+      }, 1500);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Could not copy link.');
+    }
+  }
+
   const totalPrototypes = prototypes.length;
 
   return (
@@ -258,6 +328,7 @@ export function CataloguePrototypes({
             const isRenaming = renameState?.id === proto.id;
             return (
               <article key={proto.id} className="catalogue-prototypes__card">
+                <PrototypeThumbnail url={url} title={proto.title} />
                 <header className="catalogue-prototypes__card-head">
                   {isRenaming ? (
                     <input
@@ -315,6 +386,18 @@ export function CataloguePrototypes({
                     <ExternalLink size={13} aria-hidden="true" />
                     Open
                   </a>
+                  <button
+                    type="button"
+                    className="catalogue-prototypes__action"
+                    onClick={() => void handleShare(proto, url)}
+                    title={copiedId === proto.id ? 'Copied!' : 'Copy share link'}
+                  >
+                    {copiedId === proto.id ? (
+                      <Check size={13} aria-hidden="true" />
+                    ) : (
+                      <Link2 size={13} aria-hidden="true" />
+                    )}
+                  </button>
                   {isMine && (
                     <>
                       <button
