@@ -5,7 +5,7 @@
     {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "mockups.hirahul.xyz" }],
-      "destination": "https://lpigdsgeqkhycvxsfpxe.supabase.co/storage/v1/object/public/prototypes/$1"
+      "destination": "/api/prototype-proxy?path=$1"
     },
     { "source": "/designer/share", "destination": "/api/share-meta" },
     { "source": "/designer", "destination": "/designer/catalogue.html" },
