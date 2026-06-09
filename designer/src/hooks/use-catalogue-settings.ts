@@ -68,7 +68,12 @@ export function useCatalogueSettings(userId: string) {
   }, [loadSettings]);
 
   const saveWebPresets = useCallback(async (webPresets: WebPreset[]) => {
+    // Spread the current settings first so the upsert keeps the other
+    // columns intact (toolbar_hidden_keys / toolbar_pinned_keys). Without
+    // this the normalizer fills those with empty arrays and the upsert
+    // wipes the user's toolbar customization every time they save presets.
     const nextSettings = normalizeCatalogueSettingsRecord(userId, {
+      ...settings,
       user_id: userId,
       web_presets: webPresets,
     });
@@ -89,7 +94,7 @@ export function useCatalogueSettings(userId: string) {
     setSettings(normalized);
     writeLocalSettings(userId, normalized);
     return { ok: true as const, settings: normalized };
-  }, [userId]);
+  }, [settings, userId]);
 
   // Persist toolbar customization. The two arrays move together so the
   // shape stays simple — if you only want to change one, pass the
