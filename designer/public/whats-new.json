@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-06-15-prototype-card-polish",
+    "date": "June 15, 2026",
+    "title": "Prototype cards: live preview + share",
+    "bullets": [
+      { "kind": "new", "text": "Each prototype card now shows a live thumbnail of the actual HTML, scaled down — so you can scan a wall of mockups at a glance" },
+      { "kind": "new", "text": "Share button on every card copies the prototype URL to your clipboard — paste anywhere to share" }
+    ]
+  },
+  {
     "id": "2026-06-14-prototypes-tab",
     "date": "June 14, 2026",
     "title": "Share HTML prototypes",
