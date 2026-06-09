@@ -400,11 +400,6 @@ export function useCatalogueData({
     void loadInitial();
   }, [loadInitial]);
 
-  const flowMap = useMemo(() => {
-    const entries = flows.map((flow) => [flow.id, flow.name] as const);
-    return Object.fromEntries(entries);
-  }, [flows]);
-
   const screenFamilyMap = useMemo(() => {
     const entries = screenFamilies.map((family) => [family.id, family] as const);
     return Object.fromEntries(entries);
@@ -412,7 +407,6 @@ export function useCatalogueData({
 
   return {
     flows,
-    flowMap,
     hasMore,
     loadData: loadInitial,
     loadMore,
