@@ -1373,12 +1373,38 @@
     }
   }
 
+  // Tags filter strip: collapse the wrapping multi-row block into a
+  // single horizontally-scrollable row so it stops eating vertical space.
+  .catalogue-videos__tag-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .catalogue-videos__tag-filters-label,
+  .catalogue-videos__tag-chip,
+  .catalogue-videos__tag-clear {
+    flex-shrink: 0;
+  }
+
+  // Anchor the lightbox to the keyboard-aware visual viewport so the
+  // comment composer stays visible above the iOS keyboard. Falls back to
+  // 100dvh when --vv-height isn't set (no visualViewport support).
   .catalogue-videos-preview {
     padding: 10px;
+    top: var(--vv-offset-top, 0);
+    bottom: auto;
+    height: var(--vv-height, 100dvh);
+    align-items: flex-start;
   }
 
   .catalogue-videos-preview__modal {
-    max-height: calc(100dvh - 20px);
+    max-height: calc(var(--vv-height, 100dvh) - 20px);
     grid-template-columns: 1fr;
     grid-template-rows: minmax(220px, 42dvh) minmax(0, 1fr);
   }

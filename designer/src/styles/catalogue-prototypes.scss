@@ -304,6 +304,11 @@
   flex-direction: column;
   gap: 14px;
   min-height: 0;
+
+  // Mobile: the tab pill sits flush under the app header otherwise.
+  @media (max-width: 768px) {
+    margin-top: 8px;
+  }
 }
 
 .catalogue-links-tabs {
