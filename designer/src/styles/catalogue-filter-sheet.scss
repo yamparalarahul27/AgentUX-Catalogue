@@ -215,7 +215,6 @@
   padding: 9px 10px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   font-size: 13px;
   cursor: pointer;
@@ -232,6 +231,24 @@
     background: rgba(99, 102, 241, 0.14);
     color: #ffffff;
   }
+}
+
+.catalogue-filter-menu__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa;
+  flex-shrink: 0;
+}
+
+.catalogue-filter-menu__label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.catalogue-filter-menu__item.is-selected .catalogue-filter-menu__icon {
+  color: #c7d2fe;
 }
 
 // Inline 2-button radio toggle next to the Flow row — picks the
