@@ -87,6 +87,25 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
   const [appearanceMap, setAppearanceMap] = useState(readCatalogueGroupAppearanceMap);
   const [showShareModal, setShowShareModal] = useState(false);
 
+  // Sticky-strip-on-scroll: a sentinel `<div>` is rendered immediately
+  // after the hero header. When it scrolls out of view, the header
+  // gains `is-compact` and CSS transitions to a thin sticky strip so
+  // the group identity + actions stay reachable while browsing.
+  const stickyHeaderSentinelRef = useRef<HTMLDivElement>(null);
+  const [headerCompact, setHeaderCompact] = useState(false);
+
+  useEffect(() => {
+    const sentinel = stickyHeaderSentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeaderCompact(!entry.isIntersecting),
+      // Fire the moment any pixel of the sentinel crosses the top edge.
+      { threshold: 0, rootMargin: '-1px 0px 0px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   // Lookup map keyed by preset id → width. Used by `bucketForScreenshot`
   // to classify each thumb into one of four buckets (mobile, web-narrow,
   // web-medium, web-wide). Recomputed only when the preset list changes.
@@ -318,7 +337,7 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
           <ArrowLeft size={18} aria-hidden="true" />
         </button>
 
-        <header className="catalogue-group-detail__header">
+        <header className={`catalogue-group-detail__header ${headerCompact ? 'is-compact' : ''}`}>
           <div className="catalogue-group-detail__icon">
             {appearance.iconUrl ? (
               <img src={appearance.iconUrl} alt="" aria-hidden="true" />
@@ -373,6 +392,15 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
             <CatalogueGroupCoverage coverage={coverage} variant="hero" />
           </div>
         </header>
+
+        {/* Sentinel: IntersectionObserver watches this to toggle the
+            sticky strip. Placed immediately after the hero header so
+            crossing the top edge = "user scrolled past the header". */}
+        <div
+          ref={stickyHeaderSentinelRef}
+          className="catalogue-group-detail__sentinel"
+          aria-hidden="true"
+        />
 
         <div className="catalogue-group-detail__divider" />
 
