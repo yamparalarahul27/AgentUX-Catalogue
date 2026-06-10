@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import { Boxes, Check, ChevronDown, Clock, Eye, LayoutGrid, Palette, Plus, Rows3, Save, Search, Share2, SlidersHorizontal, Smartphone, Tag, Workflow, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
@@ -441,6 +442,7 @@ export function CatalogueToolbar({
   }
 
   return (
+    <Tooltip.Provider delayDuration={300} skipDelayDuration={120}>
     <>
       <div
         ref={stickySentinelRef}
@@ -566,15 +568,17 @@ export function CatalogueToolbar({
 
           <>
             {/* Mobile: filter icon pill — hidden on desktop */}
-            <button
-              type="button"
-              className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
-              onClick={() => setFilterSheetOpen(true)}
-              title="Filter"
-            >
-              <SlidersHorizontal size={16} />
-              {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
-            </button>
+            <ToolbarTooltip label="Filter">
+              <button
+                type="button"
+                className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
+                onClick={() => setFilterSheetOpen(true)}
+                aria-label="Filter"
+              >
+                <SlidersHorizontal size={16} />
+                {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
+              </button>
+            </ToolbarTooltip>
 
             {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
             {!isHidden('sort') && (
@@ -607,43 +611,46 @@ export function CatalogueToolbar({
 
         <div className="catalogue-toolbar-right">
           {onOpenSearch && (
-            <button
-              type="button"
-              className="catalogue-toolbar-search catalogue-toolbar--desktop-only"
-              onClick={onOpenSearch}
-              title="Search catalogue (press / )"
-              aria-label="Search catalogue"
-            >
-              <Search size={16} />
-            </button>
+            <ToolbarTooltip label="Search catalogue (press / )">
+              <button
+                type="button"
+                className="catalogue-toolbar-search catalogue-toolbar--desktop-only"
+                onClick={onOpenSearch}
+                aria-label="Search catalogue"
+              >
+                <Search size={16} />
+              </button>
+            </ToolbarTooltip>
           )}
           {onOpenShare && !isHidden('share') && (
-            <button
-              type="button"
-              className="catalogue-toolbar-bookmark catalogue-toolbar--desktop-only"
-              onClick={onOpenShare}
-              title="Share this view"
-              aria-label="Share this view"
-            >
-              <Share2 size={16} />
-            </button>
+            <ToolbarTooltip label="Share this view">
+              <button
+                type="button"
+                className="catalogue-toolbar-bookmark catalogue-toolbar--desktop-only"
+                onClick={onOpenShare}
+                aria-label="Share this view"
+              >
+                <Share2 size={16} />
+              </button>
+            </ToolbarTooltip>
           )}
           {onBookmarkFilterToggle && !isHidden('save') && (
-            <button
-              type="button"
-              ref={savedFilterButtonRef}
-              className={`catalogue-toolbar-bookmark catalogue-toolbar--desktop-only ${bookmarkFilterOn ? 'is-active' : ''}`}
-              onClick={onBookmarkFilterToggle}
-              title={
-                bookmarkFilterOn
-                  ? 'Show all screenshots'
-                  : `Show only Saved${bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}`
-              }
-              aria-label={bookmarkFilterOn ? 'Show all screenshots' : 'Show only Saved'}
-              aria-pressed={bookmarkFilterOn}
+            <ToolbarTooltip
+              label={bookmarkFilterOn
+                ? 'Show all screenshots'
+                : `Show only Saved${bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}`}
             >
-              <Save size={16} />
-            </button>
+              <button
+                type="button"
+                ref={savedFilterButtonRef}
+                className={`catalogue-toolbar-bookmark catalogue-toolbar--desktop-only ${bookmarkFilterOn ? 'is-active' : ''}`}
+                onClick={onBookmarkFilterToggle}
+                aria-label={bookmarkFilterOn ? 'Show all screenshots' : 'Show only Saved'}
+                aria-pressed={bookmarkFilterOn}
+              >
+                <Save size={16} />
+              </button>
+            </ToolbarTooltip>
           )}
 
           {/* Pinned filters — when the user pins Platform / Theme via
@@ -755,14 +762,16 @@ export function CatalogueToolbar({
             {searchQuery && <span className="catalogue-toolbar-pill__dot" />}
           </button>
           {onQuickUploadClick && (
-            <button
-              type="button"
-              className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only"
-              onClick={onQuickUploadClick}
-              title="Quick upload"
-            >
-              <Plus size={18} strokeWidth={2.5} />
-            </button>
+            <ToolbarTooltip label="Quick upload">
+              <button
+                type="button"
+                className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only"
+                onClick={onQuickUploadClick}
+                aria-label="Quick upload"
+              >
+                <Plus size={18} strokeWidth={2.5} />
+              </button>
+            </ToolbarTooltip>
           )}
         </div>
       </div>
@@ -880,5 +889,28 @@ export function CatalogueToolbar({
 
     </div>
     </>
+    </Tooltip.Provider>
+  );
+}
+
+// Wraps any clickable with a Radix tooltip styled to match the header
+// chrome (.catalogue-header-tooltip class lives in catalogue-header-menu.scss).
+// asChild merges Radix's ref/props onto the existing trigger element.
+function ToolbarTooltip({ label, children }: { label: string; children: React.ReactElement }) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          className="catalogue-header-tooltip"
+          sideOffset={8}
+          collisionPadding={8}
+          side="bottom"
+        >
+          {label}
+          <Tooltip.Arrow className="catalogue-header-tooltip__arrow" width={10} height={5} />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   );
 }
