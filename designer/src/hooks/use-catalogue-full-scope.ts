@@ -98,7 +98,6 @@ function toScopeScreenshot(row: ScopeScreenshotRow): ScreenshotNode {
   return {
     id: row.id,
     flow_id: null,
-    screen_family_id: null,
     name: row.name ?? '',
     file_name: row.file_name ?? '',
     storage_path: storagePath,

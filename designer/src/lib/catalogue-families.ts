@@ -64,13 +64,9 @@ export function getActiveFamilyVariant(
   return family.variants.find((variant) => variant.key === activeVariantKey) ?? getDefaultFamilyVariant(family);
 }
 
-// Synthesise a family record entirely from the screenshot. Post-Phase 3
-// (screen_families no longer read) this is the ONLY way families are
-// built. The id mirrors `getScreenshotFamilyId` exactly: prefer the
-// screen_family_id column when set (legacy multi-variant rows still
-// group together) and fall back to a `legacy-family-<screenshot.id>`
-// synthetic otherwise (modern uploads, which always have screen_family_id
-// NULL, get a 1:1 family per screenshot).
+// Synthesise a family record entirely from the screenshot. Post-Phase 4
+// (screen_family_id FK column dropped) every screenshot is a 1:1
+// family keyed by its own id with the `legacy-family-` prefix.
 export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
   return {
     id: getScreenshotFamilyId(screenshot),
@@ -83,7 +79,7 @@ export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
 }
 
 export function getScreenshotFamilyId(screenshot: ScreenshotNode): string {
-  return screenshot.screen_family_id || `${LEGACY_FAMILY_PREFIX}${screenshot.id}`;
+  return `${LEGACY_FAMILY_PREFIX}${screenshot.id}`;
 }
 
 export function getVariantKey(screenshot: ScreenshotNode): string {
@@ -157,12 +153,9 @@ export function buildSyntheticFamilyFromScreenshot(
   };
 }
 
-// Group screenshots into families. Post-Phase 3 of the screen_families
-// removal, this no longer takes a screenFamilies array — every family
-// is synthesised from the screenshots themselves via buildLegacyFamily.
-// Multi-variant grouping is preserved when screenshots share a
-// screen_family_id (legacy data); modern uploads with screen_family_id
-// NULL become 1-variant families keyed by the legacy synthetic.
+// Group screenshots into families. Post-Phase 4 of the screen_families
+// removal, every screenshot is its own family — the FK column is
+// gone and there's no shared key to merge variants on.
 export function buildCatalogueFamilies(
   screenshots: ScreenshotNode[],
   presetMap: Record<string, WebPreset>,

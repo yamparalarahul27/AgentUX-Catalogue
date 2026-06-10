@@ -50,7 +50,6 @@ export interface CatalogueSettingsRecord {
 export interface ScreenshotNode {
   id: string;
   flow_id: string | null;
-  screen_family_id: string | null;
   name: string;
   file_name: string;
   storage_path: string;
