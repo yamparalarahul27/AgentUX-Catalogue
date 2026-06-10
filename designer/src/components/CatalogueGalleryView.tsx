@@ -588,7 +588,11 @@ export function CatalogueGalleryView({
               onSave={(next) => onRenameFamily(family.id, next)}
             />
             <p className="catalogue-gallery-subtitle">
-              <CatalogueGroupLabel group={family.group} projectId={null} />
+              <CatalogueGroupLabel
+                group={family.group}
+                projectId={null}
+                linkTo={family.group ? `/g/${encodeURIComponent(family.group.trim().toLowerCase())}` : undefined}
+              />
             </p>
           </div>
           <span className="catalogue-gallery-flow">
