@@ -1,5 +1,9 @@
-import type { ScreenFamily, ScreenshotNode, WebPreset } from '../types';
+import type { ScreenshotNode, WebPreset } from '../types';
 export const CATALOGUE_FLOW_LABEL_KEY = 'catalogue_flow_label';
+// All family ids carry this prefix post-Phase 5 (every screenshot is
+// its own synthetic family — see docs/screen-families-audit.md).
+// Kept as a constant since the mutation queue and a couple of legacy
+// checks still match on the prefix string.
 const LEGACY_FAMILY_PREFIX = 'legacy-family-';
 
 export interface CatalogueVariantView {
@@ -62,20 +66,6 @@ export function getActiveFamilyVariant(
     if (exact) return exact;
   }
   return family.variants.find((variant) => variant.key === activeVariantKey) ?? getDefaultFamilyVariant(family);
-}
-
-// Synthesise a family record entirely from the screenshot. Post-Phase 4
-// (screen_family_id FK column dropped) every screenshot is a 1:1
-// family keyed by its own id with the `legacy-family-` prefix.
-export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
-  return {
-    id: getScreenshotFamilyId(screenshot),
-    name: screenshot.name,
-    group: screenshot.group,
-    flow_id: screenshot.flow_id,
-    created_at: screenshot.created_at,
-    updated_at: screenshot.created_at,
-  };
 }
 
 export function getScreenshotFamilyId(screenshot: ScreenshotNode): string {
@@ -183,15 +173,16 @@ export function buildCatalogueFamilies(
       continue;
     }
 
-    const family = buildLegacyFamily(screenshot);
+    // Every family is now synthesised directly from the screenshot —
+    // post-Phase 5 there's no shared family row to merge against.
     grouped.set(familyId, {
-      id: family.id,
-      name: family.name || screenshot.name,
-      group: family.group ?? screenshot.group,
-      flow_id: family.flow_id ?? screenshot.flow_id,
+      id: familyId,
+      name: screenshot.name,
+      group: screenshot.group,
+      flow_id: screenshot.flow_id,
       flow_label: flowLabel,
-      created_at: family.created_at || screenshot.created_at,
-      isLegacy: family.id.startsWith(LEGACY_FAMILY_PREFIX),
+      created_at: screenshot.created_at,
+      isLegacy: true,
       variants: [variant],
     });
   }
