@@ -64,9 +64,16 @@ export function getActiveFamilyVariant(
   return family.variants.find((variant) => variant.key === activeVariantKey) ?? getDefaultFamilyVariant(family);
 }
 
+// Synthesise a family record entirely from the screenshot. Post-Phase 3
+// (screen_families no longer read) this is the ONLY way families are
+// built. The id mirrors `getScreenshotFamilyId` exactly: prefer the
+// screen_family_id column when set (legacy multi-variant rows still
+// group together) and fall back to a `legacy-family-<screenshot.id>`
+// synthetic otherwise (modern uploads, which always have screen_family_id
+// NULL, get a 1:1 family per screenshot).
 export function buildLegacyFamily(screenshot: ScreenshotNode): ScreenFamily {
   return {
-    id: `${LEGACY_FAMILY_PREFIX}${screenshot.id}`,
+    id: getScreenshotFamilyId(screenshot),
     name: screenshot.name,
     group: screenshot.group,
     flow_id: screenshot.flow_id,
@@ -150,19 +157,21 @@ export function buildSyntheticFamilyFromScreenshot(
   };
 }
 
+// Group screenshots into families. Post-Phase 3 of the screen_families
+// removal, this no longer takes a screenFamilies array — every family
+// is synthesised from the screenshots themselves via buildLegacyFamily.
+// Multi-variant grouping is preserved when screenshots share a
+// screen_family_id (legacy data); modern uploads with screen_family_id
+// NULL become 1-variant families keyed by the legacy synthetic.
 export function buildCatalogueFamilies(
   screenshots: ScreenshotNode[],
-  screenFamilies: ScreenFamily[],
   presetMap: Record<string, WebPreset>,
 ): CatalogueFamilyView[] {
-  const familyMap = new Map(screenFamilies.map((family) => [family.id, family]));
   const grouped = new Map<string, CatalogueFamilyView>();
 
   for (const screenshot of screenshots) {
     const familyId = getScreenshotFamilyId(screenshot);
     const flowLabel = getScreenshotFlowLabel(screenshot);
-    const family = familyMap.get(familyId) || buildLegacyFamily(screenshot);
-    const existing = grouped.get(familyId);
     const variant: CatalogueVariantView = {
       id: screenshot.id,
       key: getVariantKey(screenshot),
@@ -170,6 +179,7 @@ export function buildCatalogueFamilies(
       screenshot,
     };
 
+    const existing = grouped.get(familyId);
     if (existing) {
       if (!existing.variants.some((item) => item.key === variant.key && item.id === variant.id)) {
         existing.variants.push(variant);
@@ -180,6 +190,7 @@ export function buildCatalogueFamilies(
       continue;
     }
 
+    const family = buildLegacyFamily(screenshot);
     grouped.set(familyId, {
       id: family.id,
       name: family.name || screenshot.name,

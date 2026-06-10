@@ -3,12 +3,11 @@ import { useMemo } from 'react';
 import { sortByAnnotationActivity, sortByCommentActivity, type CatalogueViewBy } from '../lib/catalogue-activity';
 import { buildCatalogueFamilies, getScreenshotFamilyId, getScreenshotFlowLabel, type CatalogueFamilyView } from '../lib/catalogue-families';
 import { sortCatalogueScreenshots, type CatalogueSortOption } from '../lib/catalogue-sort';
-import type { ScreenFamily, ScreenshotNode, WebPreset } from '../types';
+import type { ScreenshotNode, WebPreset } from '../types';
 
 interface UseCatalogueFiltersArgs {
   screenshots: ScreenshotNode[];
   facetScreenshots: ScreenshotNode[];
-  screenFamilies: ScreenFamily[];
   webPresets: WebPreset[];
   sortBy: CatalogueSortOption;
   viewBy: CatalogueViewBy;
@@ -35,7 +34,6 @@ interface UseCatalogueFiltersArgs {
 export function useCatalogueFilters({
   screenshots,
   facetScreenshots,
-  screenFamilies,
   webPresets,
   sortBy,
   viewBy,
@@ -100,8 +98,8 @@ export function useCatalogueFilters({
   }, [screenshots, viewBy]);
 
   const baseFamilies = useMemo(
-    () => buildCatalogueFamilies(viewByScreenshots, screenFamilies, presetMap),
-    [presetMap, screenFamilies, viewByScreenshots],
+    () => buildCatalogueFamilies(viewByScreenshots, presetMap),
+    [presetMap, viewByScreenshots],
   );
 
   const filteredScreenshots = useMemo(

@@ -4,7 +4,7 @@ import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { CATALOGUE_FLOW_LABEL_KEY, getScreenshotFamilyId } from '../lib/catalogue-families';
 import { enqueueMutation } from '../lib/mutation-queue';
 import { supabase } from '../lib/supabase';
-import type { MobileOs, ScreenFamily, ScreenshotNode } from '../types';
+import type { MobileOs, ScreenshotNode } from '../types';
 import { invalidateCatalogueFullScopeCache } from './use-catalogue-full-scope';
 import { useCatalogueImageActions } from './use-catalogue-image-actions';
 import { useFeedback } from './use-feedback';
@@ -17,10 +17,8 @@ interface ToastState {
 interface UseCatalogueFamilyActionsArgs {
   familyById: Record<string, CatalogueFamilyView>;
   onFamilyDeleted?: (familyId: string) => void;
-  screenFamilies: ScreenFamily[];
   screenshots: ScreenshotNode[];
   setFullScopeScreenshots?: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
-  setScreenFamilies: React.Dispatch<React.SetStateAction<ScreenFamily[]>>;
   setScreenshots: React.Dispatch<React.SetStateAction<ScreenshotNode[]>>;
   setToast: React.Dispatch<React.SetStateAction<ToastState | null>>;
   userEmail?: string | null;
@@ -55,10 +53,8 @@ function sameVariantIdentity(left: ScreenshotNode, right: ScreenshotNode): boole
 export function useCatalogueFamilyActions({
   familyById,
   onFamilyDeleted,
-  screenFamilies,
   screenshots,
   setFullScopeScreenshots,
-  setScreenFamilies,
   setScreenshots,
   setToast,
   userEmail,
@@ -95,11 +91,6 @@ export function useCatalogueFamilyActions({
     // Optimistic local state — apply the patch immediately so the UI
     // feels instant regardless of network conditions. The mutation
     // queue handles the durable replay to Supabase.
-    if (screenFamilies.some((item) => item.id === familyId)) {
-      setScreenFamilies((previous) => previous.map((item) => (
-        item.id === familyId ? { ...item, ...patch } : item
-      )));
-    }
     if (screenshotIds.length > 0) {
       setFamilyScreenshotsPatch(familyId, patch);
     }
@@ -113,7 +104,7 @@ export function useCatalogueFamilyActions({
       screenshotIds,
       patch,
     });
-  }, [familyById, screenFamilies, screenshots, setFamilyScreenshotsPatch, setScreenFamilies]);
+  }, [familyById, screenshots, setFamilyScreenshotsPatch]);
 
   // Image manipulation handlers (replace / crop / set+remove reference)
   // live in a dedicated sub-hook to keep this file focused on family,

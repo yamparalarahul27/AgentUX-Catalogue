@@ -147,9 +147,7 @@ export function Catalogue({
     loading,
     loadingMore,
     loadMore,
-    screenFamilies,
     screenshots,
-    setScreenFamilies,
     setScreenshots,
   } = useCatalogueData({
     filters,
@@ -167,7 +165,6 @@ export function Catalogue({
   } = useCatalogueSettings(user.id);
   // Data is pre-filtered by useCatalogueData
   const scopedScreenshots = screenshots;
-  const scopedScreenFamilies = screenFamilies;
   const {
     annotatedScreenshotIds,
     annotationLabels,
@@ -328,7 +325,6 @@ export function Catalogue({
   } = useCatalogueFilters({
     screenshots: scopedScreenshots,
     facetScreenshots,
-    screenFamilies: scopedScreenFamilies,
     webPresets,
     sortBy,
     viewBy,
@@ -529,8 +525,8 @@ export function Catalogue({
     return () => window.clearTimeout(handle);
   }, [splashFallActive]);
   const allFamilies = useMemo(
-    () => buildCatalogueFamilies(scopedScreenshots, scopedScreenFamilies, presetByKey),
-    [presetByKey, scopedScreenFamilies, scopedScreenshots],
+    () => buildCatalogueFamilies(scopedScreenshots, presetByKey),
+    [presetByKey, scopedScreenshots],
   );
 
   // Splash fall-in — second phase. Chrome (header / chips / sidebar)
@@ -568,10 +564,10 @@ export function Catalogue({
   // whichever variant happens to be `variants[0]`.
   const fullScopeFamilyById = useMemo(
     () => Object.fromEntries(
-      buildCatalogueFamilies(fullScopeScreenshots, scopedScreenFamilies, presetByKey)
+      buildCatalogueFamilies(fullScopeScreenshots, presetByKey)
         .map((family) => [family.id, family]),
     ),
-    [fullScopeScreenshots, scopedScreenFamilies, presetByKey],
+    [fullScopeScreenshots, presetByKey],
   );
   // Reverse map for the Studio's "click a card to open the lightbox"
   // path. Sourced from `fullScopeFamilyById` (full unfiltered set, built
@@ -674,10 +670,8 @@ export function Catalogue({
         return next;
       });
     },
-    screenFamilies: scopedScreenFamilies,
     screenshots: scopedScreenshots,
     setFullScopeScreenshots,
-    setScreenFamilies,
     setScreenshots,
     setToast,
     userEmail: user.email,
