@@ -136,7 +136,13 @@
   width: 100%;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  border-radius: 8px;
+  // Concentric radii rule: inner = outer − padding. The parent card
+  // (.catalogue-prototypes__card) has border-radius 14 + padding 10,
+  // so the thumb's top corners must be 14 − 10 = 4 to stay tangent to
+  // the parent's curve. Bottom corners aren't visually constrained
+  // (more card content sits below the thumb) but matching keeps the
+  // thumb symmetric.
+  border-radius: 4px;
   background: rgba(0, 0, 0, 0.35);
   // Pointer-events off so accidentally clicking the thumbnail
   // doesn't hijack focus from the card actions; opening the
