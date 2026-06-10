@@ -12,24 +12,35 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
-// Sliding background that tracks the active tab. Position + width are
-// set inline via JS measurement (see CatalogueHeader → useLayoutEffect),
-// the actual motion is pure CSS transitions on transform + width.
-// `pointer-events: none` keeps clicks landing on the underlying tab.
+// Sliding background that tracks the active tab. Position + size are
+// driven entirely by `transform: translateX() scaleX()` so the
+// transition stays on the compositor — width was previously a CSS
+// property animation which triggers paint per frame and stuttered
+// noticeably when sliding between tabs of different widths
+// (e.g. Catalogue → Elements). Now only `transform` animates.
+//
+// Box geometry: 1px wide × strip height. transform-origin pins the
+// left edge so `translateX(left)` aligns precisely with the active
+// tab's left edge. `scaleX(targetWidth)` produces the visual width.
+// `border-radius: 999px` clamps to half the unscaled height on the Y
+// axis, then scales linearly with X — so the pill stays fully rounded
+// on both ends for any scale value above ~28 (which all our tabs are).
+//
+// pointer-events: none keeps clicks landing on the underlying tab.
 .catalogue-header__tab-indicator {
   position: absolute;
   top: 4px;
   bottom: 4px;
   left: 0;
+  width: 1px;
   background: rgba(99, 102, 241, 0.28);
   border-radius: 999px;
-  transform: translateX(0);
+  transform-origin: 0 50%;
+  transform: translateX(0) scaleX(0);
   pointer-events: none;
   z-index: 0;
-  transition:
-    transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
-    width 280ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, width;
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .catalogue-header__tab {
