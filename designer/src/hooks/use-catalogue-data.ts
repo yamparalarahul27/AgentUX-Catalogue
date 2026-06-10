@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { Flow, ScreenFamily, ScreenshotNode } from '../types';
+import type { Flow, ScreenshotNode } from '../types';
 import { fetchAnnotationActivity, fetchScreenshotIdsWithAnnotationLabels } from '../lib/screenshot-annotations';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import { supabase } from '../lib/supabase';
@@ -92,7 +92,6 @@ export function useCatalogueData({
   searchQuery,
 }: UseCatalogueDataArgs) {
   const [flows, setFlows] = useState<Flow[]>([]);
-  const [screenFamilies, setScreenFamilies] = useState<ScreenFamily[]>([]);
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -316,16 +315,17 @@ export function useCatalogueData({
     cursorRef.current = null;
 
     try {
-      const [flowRes, familyRes] = await Promise.all([
-        supabase.from('flows').select('*').order('created_at'),
-        supabase.from('screen_families').select('*').order('created_at'),
-      ]);
+      // screen_families is no longer read — Phase 3 of the screen_families
+      // removal program. Every family is synthesised from screenshots
+      // alone via buildCatalogueFamilies / buildLegacyFamily.
+      const { data: flowRows } = await supabase
+        .from('flows')
+        .select('*')
+        .order('created_at');
 
       if (loadVersionRef.current !== loadVersion) return;
 
-      const loadedFamilies = familyRes.data ?? [];
-      setFlows(flowRes.data ?? []);
-      setScreenFamilies(loadedFamilies);
+      setFlows(flowRows ?? []);
 
       const firstPage = await fetchScreenshotsPage(null);
 
@@ -400,11 +400,6 @@ export function useCatalogueData({
     void loadInitial();
   }, [loadInitial]);
 
-  const screenFamilyMap = useMemo(() => {
-    const entries = screenFamilies.map((family) => [family.id, family] as const);
-    return Object.fromEntries(entries);
-  }, [screenFamilies]);
-
   return {
     flows,
     hasMore,
@@ -412,11 +407,8 @@ export function useCatalogueData({
     loadMore,
     loading,
     loadingMore,
-    screenFamilies,
-    screenFamilyMap,
     screenshots,
     setFlows,
-    setScreenFamilies,
     setScreenshots,
   };
 }
