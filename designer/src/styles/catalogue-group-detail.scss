@@ -38,6 +38,11 @@
 // The transition animates padding + gap on the wrapper, plus per-
 // element sizes on the icon and headline. Meta + coverage hide in
 // compact mode so the strip stays a single line tall.
+//
+// Backdrop blur draws via a ::before pseudo-element that extends
+// past the parent's max-width constraint to the viewport edges, so
+// the strip's tinted blur reads as a true app-wide bar rather than
+// floating inside the content column.
 .catalogue-group-detail__header {
   position: sticky;
   top: 0;
@@ -48,23 +53,43 @@
   align-items: start;
   margin-bottom: 36px;
   padding: 12px 0;
-  background: linear-gradient(180deg, rgba(10, 10, 12, 0.98) 0%, rgba(10, 10, 12, 0.92) 100%);
   transition:
     padding 240ms cubic-bezier(0.4, 0, 0.2, 1),
-    gap 240ms cubic-bezier(0.4, 0, 0.2, 1),
-    border-bottom-color 240ms ease,
-    backdrop-filter 240ms ease;
-  border-bottom: 1px solid transparent;
+    gap 240ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Edge-to-edge backdrop. Parent is max-width: 1280px centered;
+  // `left: calc(50% - 50vw)` pushes the pseudo's left edge out to
+  // the viewport's left edge (symmetric on right). Sits at
+  // z-index: -1 so the header's children render on top of it.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - 50vw);
+    right: calc(50% - 50vw);
+    z-index: -1;
+    background: rgba(20, 20, 22, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid transparent;
+    opacity: 0;
+    transition:
+      opacity 200ms ease,
+      border-bottom-color 240ms ease;
+    pointer-events: none;
+  }
 
   &.is-compact {
     gap: 14px;
     padding: 10px 0;
     align-items: center;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(20, 20, 22, 0.88);
-    border-bottom-color: rgba(255, 255, 255, 0.08);
     margin-bottom: 18px;
+
+    &::before {
+      opacity: 1;
+      border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
   }
 }
 
