@@ -114,11 +114,16 @@ export function CatalogueHeader({
         setTabIndicator(null);
         return;
       }
-      const containerRect = container.getBoundingClientRect();
-      const btnRect = activeBtn.getBoundingClientRect();
+      // Use offsetLeft / offsetWidth (not getBoundingClientRect) so the
+      // measurement is in the same coordinate space as the indicator's
+      // `left: 0` rule. Absolute-positioned children resolve `left: 0`
+      // relative to the parent's PADDING box (inside the 1px border),
+      // while getBoundingClientRect reports the BORDER box — that 1px
+      // mismatch made the indicator sit one pixel to the right of the
+      // active tab, visible as a slight asymmetry around "Catalogue".
       setTabIndicator({
-        left: btnRect.left - containerRect.left,
-        width: btnRect.width,
+        left: activeBtn.offsetLeft,
+        width: activeBtn.offsetWidth,
       });
     }
     measure();
