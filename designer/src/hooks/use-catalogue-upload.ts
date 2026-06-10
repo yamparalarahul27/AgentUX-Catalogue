@@ -347,7 +347,6 @@ export function useCatalogueUpload({
           supabase,
           payload: {
             flow_id: null,
-            screen_family_id: null,
             name: screenshotName,
             file_name: file.name,
             storage_path: storagePath,
@@ -439,7 +438,6 @@ export function useCatalogueUpload({
       supabase,
       payload: {
         flow_id: null,
-        screen_family_id: null,
         name: buildConventionName(parsed.sequence, flowLabel || parsed.group, parsed.name),
         file_name: file.name,
         storage_path: storagePath,

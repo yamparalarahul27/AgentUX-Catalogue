@@ -81,15 +81,13 @@ export function CatalogueTrashSection({ onRestored }: CatalogueTrashSectionProps
     return () => { cancelled = true; };
   }, []);
 
-  // Group screenshots into "families" — by screen_family_id when set, else by
-  // screenshot id (legacy family of one). Each row in the Trash list = one family.
+  // Post-Phase 4 of the screen_families removal: every screenshot is
+  // its own Trash row. The old multi-variant grouping by screen_family_id
+  // is gone with the column.
   const families = useMemo<TrashFamily[]>(() => {
     const groups = new Map<string, ScreenshotNode[]>();
     for (const screenshot of screenshots) {
-      const key = screenshot.screen_family_id || screenshot.id;
-      const list = groups.get(key);
-      if (list) list.push(screenshot);
-      else groups.set(key, [screenshot]);
+      groups.set(screenshot.id, [screenshot]);
     }
     return Array.from(groups.entries()).map(([key, variants]) => {
       const first = variants[0];

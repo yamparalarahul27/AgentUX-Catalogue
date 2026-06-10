@@ -231,7 +231,6 @@ async function handlePhoto(
       storage_path: storagePath,
       group: UPLOAD_GROUP,
       flow_id: null,
-      screen_family_id: null,
       sequence: null,
       platform: null,
       theme: null,

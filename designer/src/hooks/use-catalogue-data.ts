@@ -113,7 +113,6 @@ export function useCatalogueData({
     return {
       ...(row as unknown as ScreenshotNode),
       metadata,
-      screen_family_id: (row.screen_family_id as string | null) || null,
       web_preset_key: (row.web_preset_key as string | null) || null,
       mobile_os: (row.mobile_os as ScreenshotNode['mobile_os']) || null,
       image_url: storagePath
