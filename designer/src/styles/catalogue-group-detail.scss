@@ -30,12 +30,50 @@
 }
 
 // ── header ─────────────────────────────────────────────────────────
+// Sticky-on-scroll: the hero header pins itself to the top of the
+// scroll container and collapses into a thin strip once the user
+// has scrolled past it (IntersectionObserver on `__sentinel` toggles
+// the `is-compact` class — see CatalogueGroupDetail.tsx).
+//
+// The transition animates padding + gap on the wrapper, plus per-
+// element sizes on the icon and headline. Meta + coverage hide in
+// compact mode so the strip stays a single line tall.
 .catalogue-group-detail__header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 28px;
   align-items: start;
   margin-bottom: 36px;
+  padding: 12px 0;
+  background: linear-gradient(180deg, rgba(10, 10, 12, 0.98) 0%, rgba(10, 10, 12, 0.92) 100%);
+  transition:
+    padding 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    gap 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-bottom-color 240ms ease,
+    backdrop-filter 240ms ease;
+  border-bottom: 1px solid transparent;
+
+  &.is-compact {
+    gap: 14px;
+    padding: 10px 0;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(20, 20, 22, 0.88);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    margin-bottom: 18px;
+  }
+}
+
+// 1px tall, invisible. Sits right after the hero header so the
+// IntersectionObserver fires the moment the user scrolls past.
+.catalogue-group-detail__sentinel {
+  height: 1px;
+  width: 100%;
+  pointer-events: none;
 }
 
 .catalogue-group-detail__icon {
@@ -50,12 +88,23 @@
   align-items: center;
   justify-content: center;
   color: #71717a;
+  transition:
+    width 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    height 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 240ms cubic-bezier(0.4, 0, 0.2, 1);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  // Compact-mode size — driven by `.is-compact` on the parent header.
+  .catalogue-group-detail__header.is-compact & {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
   }
 }
 
@@ -65,6 +114,12 @@
   gap: 18px;
   padding-top: 6px;
   min-width: 0;
+  transition: gap 240ms cubic-bezier(0.4, 0, 0.2, 1), padding-top 240ms ease;
+
+  .catalogue-group-detail__header.is-compact & {
+    gap: 0;
+    padding-top: 0;
+  }
 }
 
 .catalogue-group-detail__title-row {
@@ -86,12 +141,32 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: font-size 240ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  .catalogue-group-detail__header.is-compact & {
+    font-size: 18px;
+  }
 }
 
 .catalogue-group-detail__meta {
   display: flex;
   gap: 56px;
   flex-wrap: wrap;
+  overflow: hidden;
+  max-height: 80px;
+  opacity: 1;
+  transition:
+    max-height 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 180ms ease,
+    margin 240ms ease;
+
+  // Hide meta + coverage in compact mode so the strip stays one-line tall.
+  .catalogue-group-detail__header.is-compact & {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    pointer-events: none;
+  }
 }
 
 .catalogue-group-detail__meta-col {
@@ -119,6 +194,32 @@
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+}
+
+// Coverage bar lives inside the header; hide it in compact mode so
+// the strip stays a single line tall.
+.catalogue-group-detail__header.is-compact .catalogue-group-coverage--hero {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition:
+    max-height 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 180ms ease,
+    margin 240ms ease;
+}
+
+// Compact-mode action buttons — keep the icon, hide the label. Saves
+// horizontal room on narrower viewports where the strip needs to fit
+// alongside the icon + label + meta.
+.catalogue-group-detail__header.is-compact .catalogue-group-detail__action-btn {
+  height: 30px;
+  padding: 0 10px;
+
+  span {
+    display: none;
+  }
 }
 
 // Action pill — matches the Share/Edit styling we want on the detail
