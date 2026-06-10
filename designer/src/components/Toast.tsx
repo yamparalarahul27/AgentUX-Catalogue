@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { X } from 'lucide-react';
 
 interface ToastProps {
   message: string;
@@ -16,7 +17,9 @@ export function Toast({ message, type = 'error', onClose, duration = 4000 }: Toa
   return (
     <div className={`toast toast-${type}`}>
       <span>{message}</span>
-      <button className="toast-close" onClick={onClose}>×</button>
+      <button className="toast-close" onClick={onClose} aria-label="Dismiss">
+        <X size={14} aria-hidden="true" />
+      </button>
     </div>
   );
 }

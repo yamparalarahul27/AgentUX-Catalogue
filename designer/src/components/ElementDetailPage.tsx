@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
 
 import notFoundIllustration from '../assets/not-found.svg';
 
@@ -165,7 +165,8 @@ export function ElementDetailPage({ user, onLogout, onLogoutEverywhere }: Elemen
           className="catalogue-element-detail__back"
           onClick={() => navigate('/elements')}
         >
-          ← Back to Elements
+          <ArrowLeft size={14} aria-hidden="true" />
+          <span>Back to Elements</span>
         </button>
 
         {entry && (
