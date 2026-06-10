@@ -48,6 +48,29 @@ export default defineConfig({
   },
   plugins: [spaFallback(), writeBuildIdJson(), react()],
   base: '/designer/',
+  // Local dev proxy for the prototype HTML files. Production routes
+  // mockups.hirahul.xyz/<path> through a Vercel edge function that
+  // strips Supabase Storage's `text/plain` Content-Type + `nosniff`
+  // header + CSP-sandbox header (see api/prototype-proxy.ts). Locally
+  // there's no edge function, so the iframe rendering inside the
+  // Prototypes tab would otherwise show as plain text. This proxy
+  // mirrors the edge function so local previews render as HTML too.
+  server: {
+    proxy: {
+      '/local-prototypes-proxy': {
+        target: 'https://lpigdsgeqkhycvxsfpxe.supabase.co',
+        changeOrigin: true,
+        rewrite: (proxyPath) => proxyPath.replace(/^\/local-prototypes-proxy/, '/storage/v1/object/public/prototypes'),
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            delete proxyRes.headers['content-security-policy'];
+            delete proxyRes.headers['x-content-type-options'];
+            proxyRes.headers['content-type'] = 'text/html; charset=utf-8';
+          });
+        },
+      },
+    },
+  },
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
