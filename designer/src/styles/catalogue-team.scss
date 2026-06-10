@@ -12,35 +12,30 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
-// Sliding background that tracks the active tab. Position + size are
-// driven entirely by `transform: translateX() scaleX()` so the
-// transition stays on the compositor — width was previously a CSS
-// property animation which triggers paint per frame and stuttered
-// noticeably when sliding between tabs of different widths
-// (e.g. Catalogue → Elements). Now only `transform` animates.
+// Sliding background that tracks the active tab. Position + width
+// driven by JS measurement (see CatalogueHeader → useLayoutEffect).
+// Animates both `transform` (compositor-friendly) and `width` (does
+// trigger paint, but the indicator is small and isolated — the
+// observable cost is minimal). The earlier attempt to use
+// `transform: scaleX()` instead of width broke the pill's left
+// border-radius (the unscaled 1px-wide box's radius rendered as a
+// square corner regardless of the X-scale value).
 //
-// Box geometry: 1px wide × strip height. transform-origin pins the
-// left edge so `translateX(left)` aligns precisely with the active
-// tab's left edge. `scaleX(targetWidth)` produces the visual width.
-// `border-radius: 999px` clamps to half the unscaled height on the Y
-// axis, then scales linearly with X — so the pill stays fully rounded
-// on both ends for any scale value above ~28 (which all our tabs are).
-//
-// pointer-events: none keeps clicks landing on the underlying tab.
+// `pointer-events: none` keeps clicks landing on the underlying tab.
 .catalogue-header__tab-indicator {
   position: absolute;
   top: 4px;
   bottom: 4px;
   left: 0;
-  width: 1px;
   background: rgba(99, 102, 241, 0.28);
   border-radius: 999px;
-  transform-origin: 0 50%;
-  transform: translateX(0) scaleX(0);
+  transform: translateX(0);
   pointer-events: none;
   z-index: 0;
-  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
+  transition:
+    transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, width;
 }
 
 .catalogue-header__tab {

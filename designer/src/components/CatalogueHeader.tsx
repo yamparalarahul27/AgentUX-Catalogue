@@ -216,7 +216,8 @@ export function CatalogueHeader({
             className="catalogue-header__tab-indicator"
             aria-hidden="true"
             style={{
-              transform: `translateX(${tabIndicator.left}px) scaleX(${tabIndicator.width})`,
+              transform: `translateX(${tabIndicator.left}px)`,
+              width: `${tabIndicator.width}px`,
             }}
           />
         )}
