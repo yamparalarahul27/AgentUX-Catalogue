@@ -1,21 +1,4 @@
-export interface Flow {
-  id: string;
-  name: string;
-  platform: 'mobile' | 'web' | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export type MobileOs = 'ios' | 'android';
-
-export interface ScreenFamily {
-  id: string;
-  name: string;
-  group: string | null;
-  flow_id: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
 
 export interface WebPreset {
   key: string;

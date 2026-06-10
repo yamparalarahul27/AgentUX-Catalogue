@@ -25,15 +25,14 @@ import { invalidateCatalogueFullScopeCache } from '../hooks/use-catalogue-full-s
 const STORAGE_KEY = 'agentux:mutation-queue';
 
 // Mutations are modelled at the user-action level, not the SQL level —
-// "rename a family" writes to both `screen_families` AND `screenshots`
-// (every variant in the family). The replay handler keeps that
-// dual-write contract intact.
+// "rename a family" writes to every variant in the family. Post-Phase 5
+// of the screen_families removal, every family corresponds to exactly
+// one row in `screenshots`, so the previous dual-write to a
+// `screen_families` table is gone.
 //
-// `flow_id` is intentionally not part of FamilyPatch: the catalogue
-// has moved flow assignment to `metadata.catalogue_flow_label` per
-// screenshot (see handleSetFlowLabel + the screenshots-patch op).
-// The legacy screen_families.flow_id column is unread by any UI and
-// scheduled for removal — see docs/screen-families-audit.md.
+// `flow_id` is intentionally not part of FamilyPatch: flow assignment
+// lives in `metadata.catalogue_flow_label` per screenshot (see
+// handleSetFlowLabel + the screenshots-patch op).
 export type FamilyPatch = {
   name?: string;
   group?: string | null;
@@ -349,57 +348,25 @@ async function applyMutation(mutation: QueuedMutation): Promise<MutationOutcome>
   try {
     switch (mutation.op) {
       case 'family-patch': {
-        // Two independent updates — screen_families (if a real UUID
-        // family row exists) and screenshots. Either can succeed or
-        // fail independently; we attempt both and only 'drop' if NEITHER
-        // succeeded. Most legacy uploads in this app are family-less
-        // (synthetic id prefix `legacy:`), and previously a failed
-        // screen_families UPDATE on an invalid-UUID id would short-
-        // circuit before the screenshots update ran — leaving renames
-        // unpersisted. This loop fixes that.
-        let anySuccess = false;
-        // Legacy synthetic family ids (e.g. `legacy-family-<uuid>`) are
-        // never valid screen_families.id values — skip that branch
-        // for them. Matches LEGACY_FAMILY_PREFIX in catalogue-families.ts.
-        const isLegacyId = mutation.familyId.startsWith('legacy-family-');
-        if (!isLegacyId) {
-          const familyResult = await supabase
-            .from('screen_families')
-            .update(mutation.patch)
-            .eq('id', mutation.familyId);
-          if (!familyResult.error) {
-            anySuccess = true;
-          } else if (isNetworkError(familyResult.error)) {
-            // Network died mid-replay — bail out, the rest of the queue
-            // (and this mutation) stays for the next 'online' event.
-            return 'retry';
-          } else if (familyResult.error.code !== 'PGRST116') {
-            console.warn('[mutation-queue] family-patch (families) error:', familyResult.error);
-          }
+        // Post-Phase 5 of the screen_families removal: every familyId
+        // is a synthetic `legacy-family-<uuid>` prefix, and the only
+        // backing storage is the `screenshots` table. The old branch
+        // that also updated `screen_families` is gone with the table.
+        if (mutation.screenshotIds.length === 0) return 'ok';
+        const screenshotPatch: Record<string, unknown> = {};
+        if (mutation.patch.name !== undefined) screenshotPatch.name = mutation.patch.name;
+        if (mutation.patch.group !== undefined) screenshotPatch.group = mutation.patch.group;
+        if (Object.keys(screenshotPatch).length === 0) return 'ok';
+        const { error } = await supabase
+          .from('screenshots')
+          .update(screenshotPatch)
+          .in('id', mutation.screenshotIds);
+        if (error) {
+          if (isNetworkError(error)) return 'retry';
+          console.warn('[mutation-queue] family-patch (screenshots) error:', error);
+          return 'drop';
         }
-        if (mutation.screenshotIds.length > 0) {
-          // Apply name/group directly to every screenshot in the
-          // family. Both columns exist on `screenshots`, and the
-          // FamilyPatch type only allows those two fields — see the
-          // type definition for why flow_id isn't part of this op.
-          const screenshotPatch: Record<string, unknown> = {};
-          if (mutation.patch.name !== undefined) screenshotPatch.name = mutation.patch.name;
-          if (mutation.patch.group !== undefined) screenshotPatch.group = mutation.patch.group;
-          if (Object.keys(screenshotPatch).length > 0) {
-            const { error } = await supabase
-              .from('screenshots')
-              .update(screenshotPatch)
-              .in('id', mutation.screenshotIds);
-            if (!error) {
-              anySuccess = true;
-            } else if (isNetworkError(error)) {
-              return 'retry';
-            } else {
-              console.warn('[mutation-queue] family-patch (screenshots) error:', error);
-            }
-          }
-        }
-        return anySuccess ? 'ok' : 'drop';
+        return 'ok';
       }
       case 'soft-delete-family': {
         if (mutation.screenshotIds.length === 0) return 'ok';

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { Flow, ScreenshotNode } from '../types';
+import type { ScreenshotNode } from '../types';
 import { fetchAnnotationActivity, fetchScreenshotIdsWithAnnotationLabels } from '../lib/screenshot-annotations';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import { supabase } from '../lib/supabase';
@@ -91,7 +91,6 @@ export function useCatalogueData({
   sortBy,
   searchQuery,
 }: UseCatalogueDataArgs) {
-  const [flows, setFlows] = useState<Flow[]>([]);
   const [screenshots, setScreenshots] = useState<ScreenshotNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -314,18 +313,11 @@ export function useCatalogueData({
     cursorRef.current = null;
 
     try {
-      // screen_families is no longer read — Phase 3 of the screen_families
-      // removal program. Every family is synthesised from screenshots
-      // alone via buildCatalogueFamilies / buildLegacyFamily.
-      const { data: flowRows } = await supabase
-        .from('flows')
-        .select('*')
-        .order('created_at');
-
-      if (loadVersionRef.current !== loadVersion) return;
-
-      setFlows(flowRows ?? []);
-
+      // The catalogue cold load is just `screenshots` now. screen_families
+      // is gone (Phase 5 of the screen_families removal program), and the
+      // separate `flows` table fetch was dead code — no consumer reads
+      // the resulting array. Flow assignment lives in
+      // `metadata.catalogue_flow_label` per screenshot.
       const firstPage = await fetchScreenshotsPage(null);
 
       if (loadVersionRef.current !== loadVersion) return;
@@ -400,14 +392,12 @@ export function useCatalogueData({
   }, [loadInitial]);
 
   return {
-    flows,
     hasMore,
     loadData: loadInitial,
     loadMore,
     loading,
     loadingMore,
     screenshots,
-    setFlows,
     setScreenshots,
   };
 }
