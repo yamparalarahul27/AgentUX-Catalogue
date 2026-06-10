@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Boxes, Check, ChevronDown, Clock, LayoutGrid, Plus, Rows3, Save, Search, Share2, SlidersHorizontal, Tag, Workflow, X } from 'lucide-react';
+import { Boxes, Check, ChevronDown, Clock, Eye, LayoutGrid, Palette, Plus, Rows3, Save, Search, Share2, SlidersHorizontal, Smartphone, Tag, Workflow, X } from 'lucide-react';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -131,14 +131,14 @@ export function parseFlowPresentation(value: string | null): FlowPresentation {
   return value === 'strip' || value === 'dropdown' ? value : DEFAULT_FLOW_PRESENTATION;
 }
 
-const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string }> = [
-  { key: 'flow', label: 'Flows' },
-  { key: 'group', label: 'Groups' },
-  { key: 'annotation', label: 'Annotations' },
-  { key: 'uiElement', label: 'UI Elements' },
-  { key: 'platform', label: 'Platforms' },
-  { key: 'theme', label: 'Themes' },
-  { key: 'view', label: 'View' },
+const FILTER_OPTIONS: Array<{ key: ToolbarFilterKey; label: string; icon: React.ReactNode }> = [
+  { key: 'flow', label: 'Flows', icon: <Workflow size={13} /> },
+  { key: 'group', label: 'Groups', icon: <LayoutGrid size={13} /> },
+  { key: 'annotation', label: 'Annotations', icon: <Tag size={13} /> },
+  { key: 'uiElement', label: 'UI Elements', icon: <Boxes size={13} /> },
+  { key: 'platform', label: 'Platforms', icon: <Smartphone size={13} /> },
+  { key: 'theme', label: 'Themes', icon: <Palette size={13} /> },
+  { key: 'view', label: 'View', icon: <Eye size={13} /> },
 ];
 
 function parseVisibleFilters(value: string | null): Set<ToolbarFilterKey> {
@@ -545,6 +545,7 @@ export function CatalogueToolbar({
               <Dropdown
                 value={filterTheme}
                 placeholder="Theme"
+                leadingIcon={<Palette size={13} />}
                 options={[
                   { value: 'light', label: 'Light' },
                   { value: 'dark', label: 'Dark' },
@@ -556,6 +557,7 @@ export function CatalogueToolbar({
               <Dropdown
                 value={viewBy}
                 placeholder="View by"
+                leadingIcon={<Eye size={13} />}
                 options={VIEW_BY_VISIBLE_OPTIONS.map((option) => ({ value: option, label: VIEW_BY_LABELS[option] }))}
                 onChange={(value) => onViewByChange((value || 'all') as CatalogueViewBy)}
               />
@@ -793,7 +795,8 @@ export function CatalogueToolbar({
                     className={`catalogue-filter-menu__item ${selected ? 'is-selected' : ''}`}
                     onClick={() => toggleVisibleFilter(option.key)}
                   >
-                    <span>{option.label}</span>
+                    <span className="catalogue-filter-menu__icon" aria-hidden="true">{option.icon}</span>
+                    <span className="catalogue-filter-menu__label">{option.label}</span>
                     <span className="catalogue-filter-menu__check">{selected ? <Check size={12} /> : null}</span>
                   </button>
                   {isFlowRow && selected && (
