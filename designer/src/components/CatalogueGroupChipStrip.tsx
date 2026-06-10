@@ -146,7 +146,12 @@ export function CatalogueGroupChipStrip({
                     appearance={resolveCatalogueGroupAppearance(appearanceMap, item.displayKey, projectId)}
                     active={item.groupKey === activeGroupKey}
                     recencyHours={recencyHours}
-                    onSelect={() => onSelectGroup(item.groupKey)}
+                    // Click-to-toggle: re-tapping the active chip clears
+                    // the filter, so the strip can be the sole affordance
+                    // for group filter state. (Pairs with hiding the
+                    // duplicate `Group: X` pill from the active-filters
+                    // row when the strip is visible.)
+                    onSelect={() => onSelectGroup(item.groupKey === activeGroupKey ? null : item.groupKey)}
                   />
                 ))}
               </div>

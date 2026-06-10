@@ -98,6 +98,10 @@ interface CatalogueToolbarProps {
   // hidden, nothing pinned.
   toolbarHiddenKeys?: ToolbarHideableKey[];
   toolbarPinnedKeys?: ToolbarPinnableKey[];
+  // True when the mobile chip-strip is rendering above the toolbar.
+  // When true, omit `Group: X` pills from the active-filters row to
+  // avoid duplicating the strip's highlighted-chip affordance.
+  chipStripActive?: boolean;
 }
 
 export type { ToolbarFilterKey };
@@ -232,6 +236,7 @@ export function CatalogueToolbar({
   onVisibleFiltersChange,
   toolbarHiddenKeys = [],
   toolbarPinnedKeys = [],
+  chipStripActive = false,
 }: CatalogueToolbarProps) {
   const isHidden = (key: ToolbarHideableKey) => toolbarHiddenKeys.includes(key);
   const isPinned = (key: ToolbarPinnableKey) => toolbarPinnedKeys.includes(key);
@@ -345,11 +350,16 @@ export function CatalogueToolbar({
       onRemove: () => onSearchQueryChange(''),
     });
   }
-  filterGroup.forEach((group) => activePills.push({
-    key: `group:${group}`,
-    label: `Group: ${group}`,
-    onRemove: () => onFilterGroupChange(filterGroup.filter((g) => g !== group)),
-  }));
+  // When the mobile chip-strip is rendering, its highlighted chip
+  // already shows the active group filter — skip the duplicate pill
+  // here. (Re-tapping the highlighted chip clears the filter.)
+  if (!chipStripActive) {
+    filterGroup.forEach((group) => activePills.push({
+      key: `group:${group}`,
+      label: `Group: ${group}`,
+      onRemove: () => onFilterGroupChange(filterGroup.filter((g) => g !== group)),
+    }));
+  }
   filterFlow.forEach((flow) => activePills.push({
     key: `flow:${flow}`,
     label: `Flow: ${flow}`,

@@ -1359,6 +1359,7 @@ export function Catalogue({
                 onVisibleFiltersChange={(filters) => setFlowFilterEnabled(filters.includes('flow'))}
                 toolbarHiddenKeys={toolbarHiddenKeys}
                 toolbarPinnedKeys={toolbarPinnedKeys}
+                chipStripActive={CATALOGUE_CHIP_STRIP_ENABLED && isMobileViewport}
               />
 
               {flowFilterEnabled && flowPresentation === 'strip' && (
