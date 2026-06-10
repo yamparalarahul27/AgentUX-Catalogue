@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
   Frame,
@@ -95,6 +95,42 @@ export function CatalogueHeader({
   // sub-tabs + drilldown filters all assume desktop widths. Hide the
   // entry on mobile so users can't land somewhere broken.
   const showElementsEntry = viewportWidth >= 768;
+
+  // Sliding tab indicator. Each tab button registers its ref into
+  // `tabRefs`; on activeSection change (or container resize), we
+  // measure the active tab's bounding box relative to the strip and
+  // update `tabIndicator`, which CSS transitions render as a smooth
+  // slide. The static background on `.is-active` is gone — the
+  // indicator span owns it now.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Map<string, HTMLButtonElement | null>>(new Map());
+  const [tabIndicator, setTabIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    function measure() {
+      const container = tabsRef.current;
+      const activeBtn = tabRefs.current.get(activeSection);
+      if (!container || !activeBtn) {
+        setTabIndicator(null);
+        return;
+      }
+      const containerRect = container.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      setTabIndicator({
+        left: btnRect.left - containerRect.left,
+        width: btnRect.width,
+      });
+    }
+    measure();
+    // Recompute when the strip resizes (window resize, conditional
+    // tabs becoming visible/hidden, font swap, etc.).
+    const container = tabsRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [activeSection, showStudioEntry, showElementsEntry]);
+
   // Mobile header: shorten the identity pill to the first letter of the
   // username so the absolute-centered tabs pill has room on the right and
   // doesn't overlap. Threshold matches the tab-collapse rule (900px).
@@ -174,10 +210,21 @@ export function CatalogueHeader({
         />
       </div>
 
-      <div className="catalogue-header__tabs" role="tablist" aria-label="Catalogue sections">
+      <div className="catalogue-header__tabs" role="tablist" aria-label="Catalogue sections" ref={tabsRef}>
+        {tabIndicator && (
+          <span
+            className="catalogue-header__tab-indicator"
+            aria-hidden="true"
+            style={{
+              transform: `translateX(${tabIndicator.left}px)`,
+              width: `${tabIndicator.width}px`,
+            }}
+          />
+        )}
         <button
           type="button"
           role="tab"
+          ref={(el) => { tabRefs.current.set('catalogue', el); }}
           className={`catalogue-header__tab ${activeSection === 'catalogue' ? 'is-active' : ''}`}
           aria-selected={activeSection === 'catalogue'}
           onClick={() => onSectionChange('catalogue')}
@@ -189,6 +236,7 @@ export function CatalogueHeader({
           <button
             type="button"
             role="tab"
+            ref={(el) => { tabRefs.current.set('elements', el); }}
             className={`catalogue-header__tab ${activeSection === 'elements' ? 'is-active' : ''}`}
             aria-selected={activeSection === 'elements'}
             onClick={() => onSectionChange('elements')}
@@ -200,6 +248,7 @@ export function CatalogueHeader({
         <button
           type="button"
           role="tab"
+          ref={(el) => { tabRefs.current.set('videos', el); }}
           className={`catalogue-header__tab ${activeSection === 'videos' ? 'is-active' : ''}`}
           aria-selected={activeSection === 'videos'}
           onClick={() => onSectionChange('videos')}
@@ -210,6 +259,7 @@ export function CatalogueHeader({
         <button
           type="button"
           role="tab"
+          ref={(el) => { tabRefs.current.set('links', el); }}
           className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'links' ? 'is-active' : ''}`}
           aria-selected={activeSection === 'links'}
           aria-label="Links"
@@ -222,6 +272,7 @@ export function CatalogueHeader({
           <button
             type="button"
             role="tab"
+            ref={(el) => { tabRefs.current.set('studio', el); }}
             className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'studio' ? 'is-active' : ''}`}
             aria-selected={activeSection === 'studio'}
             aria-label="Labelling Studio (for AI)"

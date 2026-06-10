@@ -1,5 +1,6 @@
 .catalogue-header__tabs {
-  position: static;
+  // Anchor for the sliding indicator (absolutely positioned child).
+  position: relative;
   margin-left: 12px;
   display: inline-flex;
   align-items: center;
@@ -11,7 +12,30 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
+// Sliding background that tracks the active tab. Position + width are
+// set inline via JS measurement (see CatalogueHeader → useLayoutEffect),
+// the actual motion is pure CSS transitions on transform + width.
+// `pointer-events: none` keeps clicks landing on the underlying tab.
+.catalogue-header__tab-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  background: rgba(99, 102, 241, 0.28);
+  border-radius: 999px;
+  transform: translateX(0);
+  pointer-events: none;
+  z-index: 0;
+  transition:
+    transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, width;
+}
+
 .catalogue-header__tab {
+  // Stack above the indicator so the text + icons stay on top.
+  position: relative;
+  z-index: 1;
   border: none;
   border-radius: 999px;
   background: transparent;
@@ -20,7 +44,7 @@
   font-size: 12px;
   font-weight: 600;
   padding: 8px 12px;
-  transition: color 0.18s ease, background 0.18s ease;
+  transition: color 0.18s ease;
 
   &:hover {
     color: #fff;
@@ -28,7 +52,7 @@
 
   &.is-active {
     color: #fff;
-    background: rgba(99, 102, 241, 0.28);
+    // Background is now provided by .catalogue-header__tab-indicator.
   }
 }
 
