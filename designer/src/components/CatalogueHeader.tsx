@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   ChevronDown,
   Frame,
@@ -205,6 +206,7 @@ export function CatalogueHeader({
   }, [menuOpen]);
 
   return (
+    <Tooltip.Provider delayDuration={300} skipDelayDuration={120}>
     <header className="catalogue-header catalogue-header--centered">
       <div className="catalogue-header__title">
         <img
@@ -261,31 +263,33 @@ export function CatalogueHeader({
         >
           Videos
         </button>
-        <button
-          type="button"
-          role="tab"
-          ref={(el) => { tabRefs.current.set('links', el); }}
-          className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'links' ? 'is-active' : ''}`}
-          aria-selected={activeSection === 'links'}
-          aria-label="Links"
-          title="Links"
-          onClick={() => onSectionChange('links')}
-        >
-          <LinkIcon size={15} aria-hidden="true" />
-        </button>
-        {showStudioEntry && (
+        <HeaderTooltip label="Links">
           <button
             type="button"
             role="tab"
-            ref={(el) => { tabRefs.current.set('studio', el); }}
-            className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'studio' ? 'is-active' : ''}`}
-            aria-selected={activeSection === 'studio'}
-            aria-label="Labelling Studio (for AI)"
-            title="Labelling Studio · for AI"
-            onClick={() => onSectionChange('studio')}
+            ref={(el) => { tabRefs.current.set('links', el); }}
+            className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'links' ? 'is-active' : ''}`}
+            aria-selected={activeSection === 'links'}
+            aria-label="Links"
+            onClick={() => onSectionChange('links')}
           >
-            <Sparkles size={15} aria-hidden="true" />
+            <LinkIcon size={15} aria-hidden="true" />
           </button>
+        </HeaderTooltip>
+        {showStudioEntry && (
+          <HeaderTooltip label="Labelling Studio · for AI">
+            <button
+              type="button"
+              role="tab"
+              ref={(el) => { tabRefs.current.set('studio', el); }}
+              className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'studio' ? 'is-active' : ''}`}
+              aria-selected={activeSection === 'studio'}
+              aria-label="Labelling Studio (for AI)"
+              onClick={() => onSectionChange('studio')}
+            >
+              <Sparkles size={15} aria-hidden="true" />
+            </button>
+          </HeaderTooltip>
         )}
       </div>
 
@@ -315,30 +319,32 @@ export function CatalogueHeader({
         )}
 
         {userEmail && (
-          <button
-            type="button"
-            className="catalogue-header__icon-btn catalogue-header__sparkles-btn"
-            aria-label={whatsNewUnseenCount > 0 ? `Changelog (${whatsNewUnseenCount} new)` : 'Changelog'}
-            title={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}
-            onClick={onOpenWhatsNew}
-          >
-            <History size={15} aria-hidden="true" />
-            {whatsNewUnseenCount > 0 && (
-              <span className="catalogue-header__sparkles-dot" aria-hidden="true" />
-            )}
-          </button>
+          <HeaderTooltip label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}>
+            <button
+              type="button"
+              className="catalogue-header__icon-btn catalogue-header__sparkles-btn"
+              aria-label={whatsNewUnseenCount > 0 ? `Changelog (${whatsNewUnseenCount} new)` : 'Changelog'}
+              onClick={onOpenWhatsNew}
+            >
+              <History size={15} aria-hidden="true" />
+              {whatsNewUnseenCount > 0 && (
+                <span className="catalogue-header__sparkles-dot" aria-hidden="true" />
+              )}
+            </button>
+          </HeaderTooltip>
         )}
 
         {userEmail && canAdmin && !isNarrowHeader && (
-          <button
-            type="button"
-            className={`catalogue-header__icon-btn ${activeSection === 'team' ? 'is-active' : ''}`}
-            aria-label="Settings"
-            title="Settings"
-            onClick={() => onSectionChange('team')}
-          >
-            <Settings size={15} aria-hidden="true" />
-          </button>
+          <HeaderTooltip label="Settings">
+            <button
+              type="button"
+              className={`catalogue-header__icon-btn ${activeSection === 'team' ? 'is-active' : ''}`}
+              aria-label="Settings"
+              onClick={() => onSectionChange('team')}
+            >
+              <Settings size={15} aria-hidden="true" />
+            </button>
+          </HeaderTooltip>
         )}
       </div>
 
@@ -515,5 +521,29 @@ export function CatalogueHeader({
         </div>
       )}
     </header>
+    </Tooltip.Provider>
+  );
+}
+
+// Lightweight wrapper — wraps any clickable in a Radix tooltip styled
+// to match the header chrome. `asChild` merges Radix's ref/props onto
+// the existing child, so refs and other props on the trigger keep
+// working (used by the sliding tab indicator's ref measurement).
+function HeaderTooltip({ label, children }: { label: string; children: React.ReactElement }) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          className="catalogue-header-tooltip"
+          sideOffset={8}
+          collisionPadding={8}
+          side="bottom"
+        >
+          {label}
+          <Tooltip.Arrow className="catalogue-header-tooltip__arrow" width={10} height={5} />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   );
 }

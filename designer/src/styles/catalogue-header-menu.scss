@@ -1,3 +1,49 @@
+// Radix Tooltip styling for the header icon buttons (Links / Studio
+// tabs, Changelog, Settings). Lifted from the dock-tooltip recipe but
+// scoped to the header chrome so existing dock styles aren't affected.
+.catalogue-header-tooltip {
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 15, 16, 0.96);
+  border: 1px solid rgba(63, 63, 70, 0.7);
+  color: #fafafa;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  user-select: none;
+  animation-duration: 160ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+
+  &[data-state='delayed-open'][data-side='bottom'],
+  &[data-state='instant-open'][data-side='bottom'] {
+    animation-name: catalogueHeaderTooltipFadeDown;
+  }
+
+  &[data-state='closed'] {
+    animation-name: catalogueHeaderTooltipFadeOut;
+  }
+}
+
+.catalogue-header-tooltip__arrow {
+  fill: rgba(15, 15, 16, 0.96);
+}
+
+@keyframes catalogueHeaderTooltipFadeDown {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes catalogueHeaderTooltipFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 // Identity pill in the header — replaces the legacy hamburger trigger.
 // Shows the signed-in user's username (before @) on desktop with a
 // chevron, or "Sign in" with a login icon when no user is set.
