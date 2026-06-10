@@ -28,10 +28,15 @@ const STORAGE_KEY = 'agentux:mutation-queue';
 // "rename a family" writes to both `screen_families` AND `screenshots`
 // (every variant in the family). The replay handler keeps that
 // dual-write contract intact.
+//
+// `flow_id` is intentionally not part of FamilyPatch: the catalogue
+// has moved flow assignment to `metadata.catalogue_flow_label` per
+// screenshot (see handleSetFlowLabel + the screenshots-patch op).
+// The legacy screen_families.flow_id column is unread by any UI and
+// scheduled for removal — see docs/screen-families-audit.md.
 export type FamilyPatch = {
   name?: string;
   group?: string | null;
-  flow_id?: string | null;
 };
 
 export type QueuedMutation =
@@ -50,10 +55,6 @@ export type QueuedMutation =
       // action touches them (acceptable for v1; rare in practice).
       screenshotIds: string[];
       patch: FamilyPatch;
-      // Set when patch.flow_id changes — the existing code patches
-      // metadata['catalogue_flow_label'] per-screenshot, so we also
-      // need to apply that metadata field on replay.
-      flowLabel?: string | null;
     }
   | {
       id: string;
@@ -198,7 +199,6 @@ export type EnqueueMutationInput =
       familyId: string;
       screenshotIds: string[];
       patch: FamilyPatch;
-      flowLabel?: string | null;
     }
   | {
       op: 'soft-delete-family';
@@ -378,9 +378,10 @@ async function applyMutation(mutation: QueuedMutation): Promise<MutationOutcome>
           }
         }
         if (mutation.screenshotIds.length > 0) {
-          // For screenshots we apply name/group directly. flow_id is
-          // a screen_families column (no screenshots equivalent), so
-          // only name/group land here.
+          // Apply name/group directly to every screenshot in the
+          // family. Both columns exist on `screenshots`, and the
+          // FamilyPatch type only allows those two fields — see the
+          // type definition for why flow_id isn't part of this op.
           const screenshotPatch: Record<string, unknown> = {};
           if (mutation.patch.name !== undefined) screenshotPatch.name = mutation.patch.name;
           if (mutation.patch.group !== undefined) screenshotPatch.group = mutation.patch.group;
@@ -396,11 +397,6 @@ async function applyMutation(mutation: QueuedMutation): Promise<MutationOutcome>
             } else {
               console.warn('[mutation-queue] family-patch (screenshots) error:', error);
             }
-          } else {
-            // Nothing screenshot-level to update (e.g. only flow_id
-            // changed on a real family) — consider this leg trivially
-            // successful so we don't 'drop' a valid mutation.
-            if (!isLegacyId) anySuccess = true;
           }
         }
         return anySuccess ? 'ok' : 'drop';

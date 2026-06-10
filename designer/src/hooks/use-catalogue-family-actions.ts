@@ -16,7 +16,6 @@ interface ToastState {
 
 interface UseCatalogueFamilyActionsArgs {
   familyById: Record<string, CatalogueFamilyView>;
-  flowMap: Record<string, string>;
   onFamilyDeleted?: (familyId: string) => void;
   screenFamilies: ScreenFamily[];
   screenshots: ScreenshotNode[];
@@ -55,7 +54,6 @@ function sameVariantIdentity(left: ScreenshotNode, right: ScreenshotNode): boole
 
 export function useCatalogueFamilyActions({
   familyById,
-  flowMap,
   onFamilyDeleted,
   screenFamilies,
   screenshots,
@@ -85,7 +83,7 @@ export function useCatalogueFamilyActions({
 
   const syncFamilyPatch = useCallback(async (
     familyId: string,
-    patch: { flow_id?: string | null; group?: string | null; name?: string },
+    patch: { group?: string | null; name?: string },
   ) => {
     const family = familyById[familyId];
     if (!family) return;
@@ -458,20 +456,8 @@ export function useCatalogueFamilyActions({
     return { ok: true as const };
   }, [fire, setToast]);
 
-  const handleAssignFlow = useCallback(async (familyId: string, flowId: string | null) => {
-    const family = familyById[familyId];
-    if (!family) return;
-
-    await syncFamilyPatch(familyId, { flow_id: flowId });
-    setToast({
-      message: flowId ? `Assigned to ${flowMap[flowId] || 'flow'}` : 'Unassigned from flow',
-      type: 'success',
-    });
-  }, [familyById, flowMap, setToast, syncFamilyPatch]);
-
   return {
     handleAnnotationStateChange,
-    handleAssignFlow,
     handleChangeFamilyGroup,
     handleCommentCountChange,
     handleDeleteFamily,

@@ -142,7 +142,6 @@ export function Catalogue({
 
   // Paginated, server-filtered data
   const {
-    flowMap,
     hasMore,
     loadData,
     loading,
@@ -660,7 +659,6 @@ export function Catalogue({
     handleUpdateVariantDetails,
   } = useCatalogueFamilyActions({
     familyById,
-    flowMap,
     onFamilyDeleted: (familyId) => {
       setPreviewFamilyId((previous) => {
         if (previous !== familyId) return previous;
