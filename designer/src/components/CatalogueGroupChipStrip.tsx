@@ -12,6 +12,7 @@ import {
   type CatalogueGroupStats,
 } from '../lib/catalogue-group-stats';
 import { CatalogueGroupChip } from './CatalogueGroupChip';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 interface CatalogueGroupChipStripProps {
   stats: CatalogueGroupStats[];
@@ -159,17 +160,21 @@ export function CatalogueGroupChipStrip({
           </div>
         </div>
 
-        <button
-          type="button"
-          ref={sortTriggerRef}
-          className="catalogue-chip-strip__sort"
-          aria-expanded={sortOpen}
-          onClick={toggleSort}
-          title="Sort groups"
-        >
-          <span style={{ marginRight: 4 }}>{SORT_LABEL[sortMode]}</span>
-          <ChevronDown size={12} aria-hidden="true" />
-        </button>
+        <IconTooltipProvider>
+          <IconTooltip label="Sort groups">
+            <button
+              type="button"
+              ref={sortTriggerRef}
+              className="catalogue-chip-strip__sort"
+              aria-expanded={sortOpen}
+              aria-label="Sort groups"
+              onClick={toggleSort}
+            >
+              <span style={{ marginRight: 4 }}>{SORT_LABEL[sortMode]}</span>
+              <ChevronDown size={12} aria-hidden="true" />
+            </button>
+          </IconTooltip>
+        </IconTooltipProvider>
       </div>
 
       {sortOpen && createPortal(

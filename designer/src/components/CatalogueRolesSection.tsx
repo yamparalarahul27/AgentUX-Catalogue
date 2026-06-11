@@ -4,6 +4,7 @@ import { Lock, Pencil, Plus, Trash2 } from 'lucide-react';
 import { callAdmin, type AdminAction, type RoleAdminRow } from '../lib/auth-passcode';
 import { CAPABILITIES } from '../lib/role-capabilities';
 import { ConfirmModal } from './ConfirmModal';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 // Roles admin panel — PR A1.
 //
@@ -134,6 +135,7 @@ export function CatalogueRolesSection({ adminPasscode, onUnauthorized }: Catalog
   }
 
   return (
+    <IconTooltipProvider>
     <div className="catalogue-members">
       <div className="catalogue-members__toolbar">
         <button type="button" className="btn-primary" onClick={openCreate}>
@@ -168,24 +170,26 @@ export function CatalogueRolesSection({ adminPasscode, onUnauthorized }: Catalog
                   <span className="catalogue-roles__system-hint">cannot edit</span>
                 ) : (
                   <>
-                    <button
-                      type="button"
-                      className="catalogue-members__icon-btn"
-                      onClick={() => openEdit(role)}
-                      title="Edit role"
-                      aria-label="Edit role"
-                    >
-                      <Pencil size={16} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className="catalogue-members__icon-btn catalogue-members__icon-btn--danger"
-                      onClick={() => setDeleteConfirm(role)}
-                      title="Delete role"
-                      aria-label="Delete role"
-                    >
-                      <Trash2 size={16} aria-hidden="true" />
-                    </button>
+                    <IconTooltip label="Edit role">
+                      <button
+                        type="button"
+                        className="catalogue-members__icon-btn"
+                        onClick={() => openEdit(role)}
+                        aria-label="Edit role"
+                      >
+                        <Pencil size={16} aria-hidden="true" />
+                      </button>
+                    </IconTooltip>
+                    <IconTooltip label="Delete role">
+                      <button
+                        type="button"
+                        className="catalogue-members__icon-btn catalogue-members__icon-btn--danger"
+                        onClick={() => setDeleteConfirm(role)}
+                        aria-label="Delete role"
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
+                    </IconTooltip>
                   </>
                 )}
               </div>
@@ -233,6 +237,7 @@ export function CatalogueRolesSection({ adminPasscode, onUnauthorized }: Catalog
         />
       )}
     </div>
+    </IconTooltipProvider>
   );
 }
 

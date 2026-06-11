@@ -1,5 +1,6 @@
 import { Image, LayoutGrid, Rows3 } from 'lucide-react';
 
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 
 interface CatalogueViewToggleProps {
@@ -22,37 +23,45 @@ export function CatalogueViewToggle({
   // still honors the value. Showing the Grid button always means
   // there's a way back to a visible state with one click.
   return (
-    <div className="catalogue-view-toggle" role="group" aria-label="Catalogue view mode">
-      <button
-        type="button"
-        className={`catalogue-view-toggle__btn ${value === 'grid' ? 'is-active' : ''}`}
-        onClick={() => onChange('grid')}
-        title="Grid view"
-      >
-        <LayoutGrid size={16} />
-      </button>
+    <IconTooltipProvider>
+      <div className="catalogue-view-toggle" role="group" aria-label="Catalogue view mode">
+        <IconTooltip label="Grid view">
+          <button
+            type="button"
+            className={`catalogue-view-toggle__btn ${value === 'grid' ? 'is-active' : ''}`}
+            onClick={() => onChange('grid')}
+            aria-label="Grid view"
+          >
+            <LayoutGrid size={16} />
+          </button>
+        </IconTooltip>
 
-      {!hideStack && (
-        <button
-          type="button"
-          className={`catalogue-view-toggle__btn ${value === 'stack' ? 'is-active' : ''}`}
-          onClick={() => onChange('stack')}
-          title="Stack view — inline comments & annotations"
-        >
-          <Rows3 size={16} />
-        </button>
-      )}
+        {!hideStack && (
+          <IconTooltip label="Stack view — inline comments & annotations">
+            <button
+              type="button"
+              className={`catalogue-view-toggle__btn ${value === 'stack' ? 'is-active' : ''}`}
+              onClick={() => onChange('stack')}
+              aria-label="Stack view — inline comments & annotations"
+            >
+              <Rows3 size={16} />
+            </button>
+          </IconTooltip>
+        )}
 
-      {!hideGallery && (
-        <button
-          type="button"
-          className={`catalogue-view-toggle__btn ${value === 'gallery' ? 'is-active' : ''}`}
-          onClick={() => onChange('gallery')}
-          title="Gallery view"
-        >
-          <Image size={16} />
-        </button>
-      )}
-    </div>
+        {!hideGallery && (
+          <IconTooltip label="Gallery view">
+            <button
+              type="button"
+              className={`catalogue-view-toggle__btn ${value === 'gallery' ? 'is-active' : ''}`}
+              onClick={() => onChange('gallery')}
+              aria-label="Gallery view"
+            >
+              <Image size={16} />
+            </button>
+          </IconTooltip>
+        )}
+      </div>
+    </IconTooltipProvider>
   );
 }

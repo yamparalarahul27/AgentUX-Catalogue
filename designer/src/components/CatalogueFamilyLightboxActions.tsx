@@ -1,10 +1,10 @@
 import { Check, Copy, Crop, MapPin, MessageCircle, Pencil, RefreshCw, Save, Trash2 } from 'lucide-react';
-import * as Tooltip from '@radix-ui/react-tooltip';
 
 import { REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
 import { CopyMorphIcon, useCopyConfirmation } from './CopyMorphIcon';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { Squircle } from './Squircle';
 
 // Matches the existing border-radius: 10px on .catalogue-lightbox-icon-btn —
@@ -115,32 +115,32 @@ export function CatalogueFamilyLightboxActions({
   // true and gets added to labeling studio, revisit this guard.
   if (hideCatalogueActions && !isInlineEditing && !REUPLOAD_ENABLED) return null;
   return (
-    <Tooltip.Provider delayDuration={300} skipDelayDuration={120}>
+    <IconTooltipProvider>
     <div className="catalogue-family-lightbox__summary">
       <div className="catalogue-lightbox-icon-bar">
         {canEdit && !hideCatalogueActions && (
-          <LightboxActionTooltip label={isInlineEditing ? 'Close edit' : 'Edit'}>
+          <IconTooltip label={isInlineEditing ? 'Close edit' : 'Edit'}>
             <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} aria-label={isInlineEditing ? 'Close edit' : 'Edit'}>
               <Pencil size={15} />
             </Squircle>
-          </LightboxActionTooltip>
+          </IconTooltip>
         )}
         {REUPLOAD_ENABLED && (
-          <LightboxActionTooltip label="Reupload">
+          <IconTooltip label="Reupload">
             <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} aria-label="Reupload">
               <RefreshCw size={15} />
             </Squircle>
-          </LightboxActionTooltip>
+          </IconTooltip>
         )}
         {!hideCatalogueActions && (
-          <LightboxActionTooltip label="Crop">
+          <IconTooltip label="Crop">
             <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenCrop} disabled={!canCrop} aria-label="Crop">
               <Crop size={15} />
             </Squircle>
-          </LightboxActionTooltip>
+          </IconTooltip>
         )}
         {!hideCatalogueActions && onToggleBookmark && (
-          <LightboxActionTooltip label={isBookmarked ? 'Unsave' : 'Save'}>
+          <IconTooltip label={isBookmarked ? 'Unsave' : 'Save'}>
             <Squircle
               as="button"
               cornerRadius={ICON_BTN_RADIUS}
@@ -152,10 +152,10 @@ export function CatalogueFamilyLightboxActions({
             >
               <Save size={15} />
             </Squircle>
-          </LightboxActionTooltip>
+          </IconTooltip>
         )}
         {!hideCatalogueActions && onShareLink && (
-          <LightboxActionTooltip label={justShared ? 'Copied!' : 'Copy share link'}>
+          <IconTooltip label={justShared ? 'Copied!' : 'Copy share link'}>
             <Squircle
               as="button"
               cornerRadius={ICON_BTN_RADIUS}
@@ -171,29 +171,29 @@ export function CatalogueFamilyLightboxActions({
                 size={15}
               />
             </Squircle>
-          </LightboxActionTooltip>
+          </IconTooltip>
         )}
         <span className="catalogue-lightbox-icon-bar__spacer" />
         {!hideCatalogueActions && (
           <>
-            <LightboxActionTooltip label={`Comments (${commentsCount})`}>
+            <IconTooltip label={`Comments (${commentsCount})`}>
               <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenComments} aria-label={`Comments (${commentsCount})`}>
                 <MessageCircle size={15} />
                 {commentsCount > 0 && <span className="catalogue-lightbox-icon-badge">{commentsCount}</span>}
               </Squircle>
-            </LightboxActionTooltip>
-            <LightboxActionTooltip label={`Annotations (${annotationsCount})`}>
+            </IconTooltip>
+            <IconTooltip label={`Annotations (${annotationsCount})`}>
               <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenAnnotations} aria-label={`Annotations (${annotationsCount})`}>
                 <MapPin size={15} />
                 {annotationsCount > 0 && <span className="catalogue-lightbox-icon-badge">{annotationsCount}</span>}
               </Squircle>
-            </LightboxActionTooltip>
+            </IconTooltip>
             {canDelete && (
-              <LightboxActionTooltip label="Delete">
+              <IconTooltip label="Delete">
                 <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn is-danger" onClick={onDelete} aria-label="Delete">
                   <Trash2 size={15} />
                 </Squircle>
-              </LightboxActionTooltip>
+              </IconTooltip>
             )}
           </>
         )}
@@ -229,29 +229,6 @@ export function CatalogueFamilyLightboxActions({
         />
       )}
     </div>
-    </Tooltip.Provider>
-  );
-}
-
-// Wraps any lightbox icon-button trigger in a Radix tooltip styled
-// to match the existing header/toolbar tooltip recipe
-// (.catalogue-header-tooltip in catalogue-header-menu.scss). asChild
-// merges Radix's ref/props onto the existing Squircle button.
-function LightboxActionTooltip({ label, children }: { label: string; children: React.ReactElement }) {
-  return (
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content
-          className="catalogue-header-tooltip"
-          sideOffset={6}
-          collisionPadding={8}
-          side="bottom"
-        >
-          {label}
-          <Tooltip.Arrow className="catalogue-header-tooltip__arrow" width={10} height={5} />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
+    </IconTooltipProvider>
   );
 }

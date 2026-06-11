@@ -6,6 +6,7 @@ import appleLogo from '../assets/apple-logo.svg';
 import { useOnlineStatus } from '../hooks/use-online-status';
 import { MARKETING_BUCKET_GROUP } from '../lib/marketing-bucket';
 import { buildConventionName } from '../lib/naming';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { UploadZone, type FolderDropContext } from './UploadZone';
 import { PasteFromClipboardButton } from './PasteFromClipboardButton';
 
@@ -188,6 +189,7 @@ export function CatalogueQuickUploadPanel({
   );
 
   return (
+    <IconTooltipProvider>
     <div className="catalogue-quick-upload-layout">
       <div className="catalogue-quick-upload-left">
         <div className="catalogue-quick-upload-fields-row">
@@ -422,28 +424,30 @@ export function CatalogueQuickUploadPanel({
                       {buildConventionName(item.parsedSequence, flowLabel || item.parsedGroup, item.parsedName)} · Group: {getQueueGroupLabel(item)}
                     </span>
                   </span>
-                  <button
-                    type="button"
-                    className="catalogue-quick-queue-remove"
-                    title="Quick view"
-                    aria-label={`Quick view ${item.fileName}`}
-                    onClick={() => setSelectedPreviewId(item.id)}
-                    style={{
-                      borderColor: selectedPreviewId === item.id ? 'rgba(99,102,241,0.55)' : undefined,
-                      color: selectedPreviewId === item.id ? '#c7d2fe' : undefined,
-                      background: selectedPreviewId === item.id ? 'rgba(99,102,241,0.12)' : undefined,
-                    }}
-                  >
-                    <Eye size={12} />
-                  </button>
-                  <button
-                    type="button"
-                    className="catalogue-quick-queue-remove"
-                    title="Remove from queue"
-                    onClick={() => onQuickUploadRemoveQueuedFile(item.id)}
-                  >
-                    <X size={12} />
-                  </button>
+                  <IconTooltip label="Quick view">
+                    <button
+                      type="button"
+                      className="catalogue-quick-queue-remove"
+                      aria-label={`Quick view ${item.fileName}`}
+                      onClick={() => setSelectedPreviewId(item.id)}
+                      style={{
+                        borderColor: selectedPreviewId === item.id ? 'rgba(99,102,241,0.55)' : undefined,
+                        color: selectedPreviewId === item.id ? '#c7d2fe' : undefined,
+                        background: selectedPreviewId === item.id ? 'rgba(99,102,241,0.12)' : undefined,
+                      }}
+                    >
+                      <Eye size={12} />
+                    </button>
+                  </IconTooltip>
+                  <IconTooltip label="Remove from queue">
+                    <button
+                      type="button"
+                      className="catalogue-quick-queue-remove"
+                      onClick={() => onQuickUploadRemoveQueuedFile(item.id)}
+                    >
+                      <X size={12} />
+                    </button>
+                  </IconTooltip>
                 </li>
               ))}
             </ul>
@@ -507,5 +511,6 @@ export function CatalogueQuickUploadPanel({
         </div>
       </div>
     </div>
+    </IconTooltipProvider>
   );
 }

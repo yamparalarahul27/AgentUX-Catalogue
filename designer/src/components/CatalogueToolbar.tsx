@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import * as Tooltip from '@radix-ui/react-tooltip';
 import { Boxes, Check, ChevronDown, Clock, Eye, LayoutGrid, Palette, Plus, Rows3, Save, Search, Share2, SlidersHorizontal, Smartphone, Tag, Workflow, X } from 'lucide-react';
+
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -452,7 +453,7 @@ export function CatalogueToolbar({
   }
 
   return (
-    <Tooltip.Provider delayDuration={300} skipDelayDuration={120}>
+    <IconTooltipProvider>
     <>
       <div
         ref={stickySentinelRef}
@@ -578,7 +579,7 @@ export function CatalogueToolbar({
 
           <>
             {/* Mobile: filter icon pill — hidden on desktop */}
-            <ToolbarTooltip label="Filter">
+            <IconTooltip label="Filter">
               <button
                 type="button"
                 className="catalogue-toolbar-pill catalogue-toolbar--mobile-only"
@@ -588,7 +589,7 @@ export function CatalogueToolbar({
                 <SlidersHorizontal size={16} />
                 {activeFilterCount > 0 && <span className="catalogue-toolbar-pill__badge">{activeFilterCount}</span>}
               </button>
-            </ToolbarTooltip>
+            </IconTooltip>
 
             {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
             {!isHidden('sort') && (
@@ -621,7 +622,7 @@ export function CatalogueToolbar({
 
         <div className="catalogue-toolbar-right">
           {onOpenSearch && (
-            <ToolbarTooltip label="Search catalogue (press / )">
+            <IconTooltip label="Search catalogue (press / )">
               <button
                 type="button"
                 className="catalogue-toolbar-search catalogue-toolbar--desktop-only"
@@ -630,10 +631,10 @@ export function CatalogueToolbar({
               >
                 <Search size={16} />
               </button>
-            </ToolbarTooltip>
+            </IconTooltip>
           )}
           {onOpenShare && !isHidden('share') && (
-            <ToolbarTooltip label="Share this view">
+            <IconTooltip label="Share this view">
               <button
                 type="button"
                 className="catalogue-toolbar-bookmark catalogue-toolbar--desktop-only"
@@ -642,10 +643,10 @@ export function CatalogueToolbar({
               >
                 <Share2 size={16} />
               </button>
-            </ToolbarTooltip>
+            </IconTooltip>
           )}
           {onBookmarkFilterToggle && !isHidden('save') && (
-            <ToolbarTooltip
+            <IconTooltip
               label={bookmarkFilterOn
                 ? 'Show all screenshots'
                 : `Show only Saved${bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}`}
@@ -660,7 +661,7 @@ export function CatalogueToolbar({
               >
                 <Save size={16} />
               </button>
-            </ToolbarTooltip>
+            </IconTooltip>
           )}
 
           {/* Pinned filters — when the user pins Platform / Theme via
@@ -772,7 +773,7 @@ export function CatalogueToolbar({
             {searchQuery && <span className="catalogue-toolbar-pill__dot" />}
           </button>
           {onQuickUploadClick && (
-            <ToolbarTooltip label="Quick upload">
+            <IconTooltip label="Quick upload">
               <button
                 type="button"
                 className="catalogue-toolbar-pill catalogue-toolbar-pill--accent catalogue-toolbar--mobile-only"
@@ -781,7 +782,7 @@ export function CatalogueToolbar({
               >
                 <Plus size={18} strokeWidth={2.5} />
               </button>
-            </ToolbarTooltip>
+            </IconTooltip>
           )}
         </div>
       </div>
@@ -820,26 +821,30 @@ export function CatalogueToolbar({
                   </button>
                   {isFlowRow && selected && (
                     <div className="catalogue-filter-menu__presentation" role="radiogroup" aria-label="Flow presentation">
+                      <IconTooltip label="Dropdown in toolbar">
                       <button
                         type="button"
                         role="radio"
                         aria-checked={flowPresentation === 'dropdown'}
-                        title="Dropdown in toolbar"
+                        aria-label="Dropdown in toolbar"
                         className={`catalogue-filter-menu__presentation-btn ${flowPresentation === 'dropdown' ? 'is-active' : ''}`}
                         onClick={() => onFlowPresentationChange('dropdown')}
                       >
                         <ChevronDown size={13} />
                       </button>
+                      </IconTooltip>
+                      <IconTooltip label="Chip strip below toolbar">
                       <button
                         type="button"
                         role="radio"
                         aria-checked={flowPresentation === 'strip'}
-                        title="Chip strip below toolbar"
+                        aria-label="Chip strip below toolbar"
                         className={`catalogue-filter-menu__presentation-btn ${flowPresentation === 'strip' ? 'is-active' : ''}`}
                         onClick={() => onFlowPresentationChange('strip')}
                       >
                         <Rows3 size={13} />
                       </button>
+                      </IconTooltip>
                     </div>
                   )}
                 </div>
@@ -899,28 +904,6 @@ export function CatalogueToolbar({
 
     </div>
     </>
-    </Tooltip.Provider>
-  );
-}
-
-// Wraps any clickable with a Radix tooltip styled to match the header
-// chrome (.catalogue-header-tooltip class lives in catalogue-header-menu.scss).
-// asChild merges Radix's ref/props onto the existing trigger element.
-function ToolbarTooltip({ label, children }: { label: string; children: React.ReactElement }) {
-  return (
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content
-          className="catalogue-header-tooltip"
-          sideOffset={8}
-          collisionPadding={8}
-          side="bottom"
-        >
-          {label}
-          <Tooltip.Arrow className="catalogue-header-tooltip__arrow" width={10} height={5} />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
+    </IconTooltipProvider>
   );
 }

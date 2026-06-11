@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   ChevronDown,
   Frame,
@@ -29,6 +28,7 @@ import {
   useHapticsEnabled,
   useSoundEnabled,
 } from '../lib/feedback-prefs';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { useTypingKeycapEnabled } from './TypingKeycap';
 
 type CatalogueSection =
@@ -206,7 +206,7 @@ export function CatalogueHeader({
   }, [menuOpen]);
 
   return (
-    <Tooltip.Provider delayDuration={300} skipDelayDuration={120}>
+    <IconTooltipProvider>
     <header className="catalogue-header catalogue-header--centered">
       <div className="catalogue-header__title">
         <img
@@ -263,7 +263,7 @@ export function CatalogueHeader({
         >
           Videos
         </button>
-        <HeaderTooltip label="Links">
+        <IconTooltip label="Links">
           <button
             type="button"
             role="tab"
@@ -275,9 +275,9 @@ export function CatalogueHeader({
           >
             <LinkIcon size={15} aria-hidden="true" />
           </button>
-        </HeaderTooltip>
+        </IconTooltip>
         {showStudioEntry && (
-          <HeaderTooltip label="Labelling Studio · for AI">
+          <IconTooltip label="Labelling Studio · for AI">
             <button
               type="button"
               role="tab"
@@ -289,7 +289,7 @@ export function CatalogueHeader({
             >
               <Sparkles size={15} aria-hidden="true" />
             </button>
-          </HeaderTooltip>
+          </IconTooltip>
         )}
       </div>
 
@@ -319,7 +319,7 @@ export function CatalogueHeader({
         )}
 
         {userEmail && (
-          <HeaderTooltip label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}>
+          <IconTooltip label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}>
             <button
               type="button"
               className="catalogue-header__icon-btn catalogue-header__sparkles-btn"
@@ -331,11 +331,11 @@ export function CatalogueHeader({
                 <span className="catalogue-header__sparkles-dot" aria-hidden="true" />
               )}
             </button>
-          </HeaderTooltip>
+          </IconTooltip>
         )}
 
         {userEmail && canAdmin && !isNarrowHeader && (
-          <HeaderTooltip label="Settings">
+          <IconTooltip label="Settings">
             <button
               type="button"
               className={`catalogue-header__icon-btn ${activeSection === 'team' ? 'is-active' : ''}`}
@@ -344,7 +344,7 @@ export function CatalogueHeader({
             >
               <Settings size={15} aria-hidden="true" />
             </button>
-          </HeaderTooltip>
+          </IconTooltip>
         )}
       </div>
 
@@ -521,29 +521,6 @@ export function CatalogueHeader({
         </div>
       )}
     </header>
-    </Tooltip.Provider>
-  );
-}
-
-// Lightweight wrapper — wraps any clickable in a Radix tooltip styled
-// to match the header chrome. `asChild` merges Radix's ref/props onto
-// the existing child, so refs and other props on the trigger keep
-// working (used by the sliding tab indicator's ref measurement).
-function HeaderTooltip({ label, children }: { label: string; children: React.ReactElement }) {
-  return (
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content
-          className="catalogue-header-tooltip"
-          sideOffset={8}
-          collisionPadding={8}
-          side="bottom"
-        >
-          {label}
-          <Tooltip.Arrow className="catalogue-header-tooltip__arrow" width={10} height={5} />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
+    </IconTooltipProvider>
   );
 }

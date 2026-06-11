@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-11-tooltip-pass-complete",
+    "date": "June 11, 2026",
+    "title": "Polished tooltips across the whole app",
+    "bullets": [
+      { "kind": "improved", "text": "Every icon-only button (toolbar, lightbox actions, video tiles, members panel, prototypes, gallery, dock, view toggles, and more) now shows a styled tooltip on hover/focus instead of the browser's plain box — same delay timing everywhere so the experience feels calm and consistent" }
+    ]
+  },
+  {
     "id": "2026-06-11-card-action-tooltips",
     "date": "June 11, 2026",
     "title": "Smoother tooltips on catalogue cards",

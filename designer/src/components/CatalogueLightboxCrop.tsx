@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { DotLoader } from './DotLoader';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 interface CatalogueLightboxCropProps {
   imageUrl: string;
@@ -433,15 +434,18 @@ export function CatalogueLightboxCrop({
           </button>
         </div>
         <div className="catalogue-lightbox-crop__actions">
-          <button
-            type="button"
-            className="btn-secondary catalogue-lightbox-crop__btn catalogue-lightbox-crop__btn--cancel"
-            onClick={onCancel}
-            disabled={isApplying}
-            title="Cancel (Esc)"
-          >
-            Cancel
-          </button>
+          <IconTooltipProvider>
+            <IconTooltip label="Cancel (Esc)">
+              <button
+                type="button"
+                className="btn-secondary catalogue-lightbox-crop__btn catalogue-lightbox-crop__btn--cancel"
+                onClick={onCancel}
+                disabled={isApplying}
+              >
+                Cancel
+              </button>
+            </IconTooltip>
+          </IconTooltipProvider>
           <button
             type="button"
             className="btn-secondary catalogue-lightbox-crop__btn catalogue-lightbox-crop__btn--preview"

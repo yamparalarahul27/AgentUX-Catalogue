@@ -1,5 +1,7 @@
 import { Eye, EyeOff, X } from 'lucide-react';
 
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+
 interface LightboxScreenshotComment {
   id: string;
   user_email: string;
@@ -44,15 +46,18 @@ export function CatalogueFamilyLightboxCommentItem({
             >
               {isPublic ? <Eye size={12} /> : <EyeOff size={12} />}
             </button>
-            <button
-              type="button"
-              className="catalogue-lightbox-comment-delete"
-              title="Delete comment"
-              aria-label="Delete comment"
-              onClick={() => onDelete(comment.id)}
-            >
-              <X size={12} />
-            </button>
+            <IconTooltipProvider>
+              <IconTooltip label="Delete comment">
+                <button
+                  type="button"
+                  className="catalogue-lightbox-comment-delete"
+                  aria-label="Delete comment"
+                  onClick={() => onDelete(comment.id)}
+                >
+                  <X size={12} />
+                </button>
+              </IconTooltip>
+            </IconTooltipProvider>
           </div>
         )}
       </div>
