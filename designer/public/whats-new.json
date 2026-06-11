@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-11-theme-aware-favicon",
+    "date": "June 11, 2026",
+    "title": "Favicon follows your browser theme",
+    "bullets": [
+      { "kind": "improved", "text": "The browser-tab icon now switches between a light and a dark variant based on your system or browser theme, so the AgentUX mark stays legible either way" }
+    ]
+  },
+  {
     "id": "2026-06-16-toolbar-customization",
     "date": "June 16, 2026",
     "title": "Customize your toolbar",
