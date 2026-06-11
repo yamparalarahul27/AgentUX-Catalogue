@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-11-card-action-tooltips",
+    "date": "June 11, 2026",
+    "title": "Smoother tooltips on catalogue cards",
+    "bullets": [
+      { "kind": "improved", "text": "Hovering the Save / Share / Delete / Reupload / Select icons on a card now shows a styled tooltip instead of the browser's plain box, with a short delay so the cards stay quiet when you're just glancing at the grid" }
+    ]
+  },
+  {
     "id": "2026-06-11-theme-aware-favicon",
     "date": "June 11, 2026",
     "title": "Favicon follows your browser theme",
