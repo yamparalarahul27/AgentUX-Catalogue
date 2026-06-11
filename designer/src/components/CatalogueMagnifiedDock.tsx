@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useNavigate } from 'react-router-dom';
 
+import { IconTooltip } from './IconTooltip';
+
 import { useDockMagnification } from '../hooks/use-dock-magnification';
 import { useDockPagination } from '../hooks/use-dock-pagination';
 import {
@@ -256,16 +258,17 @@ export function CatalogueMagnifiedDock({
           } as CSSProperties}
         >
           {pageCount > 1 && (
+            <IconTooltip label="Previous page (←)">
             <button
               type="button"
               className="catalogue-dock-control"
               onClick={() => goToPage(currentPage - 1, 'prev')}
               disabled={currentPage === 0 || isPaging}
               aria-label="Previous group page"
-              title="Previous page (←)"
             >
               <ChevronLeft size={16} aria-hidden="true" />
             </button>
+            </IconTooltip>
           )}
           <div
             className="catalogue-dock-page"
@@ -302,16 +305,17 @@ export function CatalogueMagnifiedDock({
             })}
           </div>
           {pageCount > 1 && (
+            <IconTooltip label="Next page (→)">
             <button
               type="button"
               className="catalogue-dock-control"
               onClick={() => goToPage(currentPage + 1, 'next')}
               disabled={currentPage >= pageCount - 1 || isPaging}
               aria-label="Next group page"
-              title="Next page (→)"
             >
               <ChevronRight size={16} aria-hidden="true" />
             </button>
+            </IconTooltip>
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState } fr
 import { ArrowLeft } from 'lucide-react';
 
 import { getActiveFamilyVariant, type CatalogueFamilyView } from '../lib/catalogue-families';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 // Canvas Gallery view — demand-driven tile placement.
 //
@@ -479,16 +480,19 @@ export function CatalogueCanvasGalleryView({
           })}
         </div>
 
-        <button
-          type="button"
-          className="canvas-gallery-exit"
-          aria-label="Exit Canvas view"
-          title="Exit Canvas view"
-          onClick={handleExitClick}
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-          <span>Exit</span>
-        </button>
+        <IconTooltipProvider>
+          <IconTooltip label="Exit Canvas view">
+            <button
+              type="button"
+              className="canvas-gallery-exit"
+              aria-label="Exit Canvas view"
+              onClick={handleExitClick}
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+              <span>Exit</span>
+            </button>
+          </IconTooltip>
+        </IconTooltipProvider>
 
         <div className="canvas-gallery-bottom-row">
           <div className="canvas-gallery-density" role="radiogroup" aria-label="Cell zoom">

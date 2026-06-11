@@ -24,6 +24,7 @@ import { parseShareUrl, type ShareParams } from '../lib/share-url';
 import { supabase } from '../lib/supabase';
 import type { ScreenshotComment, ScreenshotNode } from '../types';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { SharePageCarousel, type SharePageCarouselItem } from './SharePageCarousel';
 import { ThumbHashImage } from './ThumbHashImage';
 
@@ -270,7 +271,8 @@ export function SharePage() {
   const lastUpdatedAbsolute = lastUpdated ? formatAbsoluteDateTime(lastUpdated) : null;
 
   return (
-    <div className="share-page">
+    <IconTooltipProvider>
+      <div className="share-page">
       <header className={`share-page__top${lastUpdatedRelative ? '' : ' share-page__top--centered'}`}>
         <a href="/" className="share-page__brand" aria-label="AgentUX home" title="AgentUX">
           <img src={agentuxMark} alt="AgentUX" />
@@ -303,28 +305,30 @@ export function SharePage() {
             </h1>
             {showToggle && (
               <div className="share-page__view-toggle" role="radiogroup" aria-label="View mode">
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={view === 'list'}
-                  aria-label="List view"
-                  title="List view"
-                  className={`share-page__view-toggle-option${view === 'list' ? ' is-active' : ''}`}
-                  onClick={() => handleSetView('list')}
-                >
-                  <ListIcon size={16} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={view === 'carousel'}
-                  aria-label="Carousel view"
-                  title="Carousel view"
-                  className={`share-page__view-toggle-option${view === 'carousel' ? ' is-active' : ''}`}
-                  onClick={() => handleSetView('carousel')}
-                >
-                  <GalleryHorizontal size={16} aria-hidden="true" />
-                </button>
+                <IconTooltip label="List view">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={view === 'list'}
+                    aria-label="List view"
+                    className={`share-page__view-toggle-option${view === 'list' ? ' is-active' : ''}`}
+                    onClick={() => handleSetView('list')}
+                  >
+                    <ListIcon size={16} aria-hidden="true" />
+                  </button>
+                </IconTooltip>
+                <IconTooltip label="Carousel view">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={view === 'carousel'}
+                    aria-label="Carousel view"
+                    className={`share-page__view-toggle-option${view === 'carousel' ? ' is-active' : ''}`}
+                    onClick={() => handleSetView('carousel')}
+                  >
+                    <GalleryHorizontal size={16} aria-hidden="true" />
+                  </button>
+                </IconTooltip>
               </div>
             )}
             {isSingleMode && comments.length > 0 && (
@@ -512,6 +516,7 @@ export function SharePage() {
           <a href={PORTFOLIO_URL} target="_blank" rel="noopener noreferrer">Yamparala Rahul</a>
         </span>
       </footer>
-    </div>
+      </div>
+    </IconTooltipProvider>
   );
 }

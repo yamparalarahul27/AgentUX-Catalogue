@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, LayoutGrid, Upload, X } from 'lucide-react';
 
 import { DotLoader } from './DotLoader';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 import type {
   CatalogueGroupCategory,
@@ -254,16 +255,19 @@ function GroupPreview({ label, iconUrl, hasUploadedIcon, removeDisabled, onRemov
           <div className="group-edit-preview__card-icon">
             {iconUrl ? <img src={iconUrl} alt="" aria-hidden="true" /> : fallbackMedium}
             {hasUploadedIcon && (
-              <button
-                type="button"
-                className="group-edit-preview__remove"
-                onClick={onRemoveUploadedIcon}
-                disabled={removeDisabled}
-                title="Remove uploaded icon"
-                aria-label="Remove uploaded icon"
-              >
-                <X size={12} />
-              </button>
+              <IconTooltipProvider>
+                <IconTooltip label="Remove uploaded icon">
+                  <button
+                    type="button"
+                    className="group-edit-preview__remove"
+                    onClick={onRemoveUploadedIcon}
+                    disabled={removeDisabled}
+                    aria-label="Remove uploaded icon"
+                  >
+                    <X size={12} />
+                  </button>
+                </IconTooltip>
+              </IconTooltipProvider>
             )}
           </div>
           <span className="group-edit-preview__card-text">{label}</span>

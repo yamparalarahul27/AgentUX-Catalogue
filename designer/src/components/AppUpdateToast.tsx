@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 
 import agentuxMark from '../assets/agentux-mark.svg';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 // Build-time identifier baked into the bundle by vite.config.ts.
 // We compare against the live /designer/build-id.json on a polling
@@ -117,41 +118,45 @@ export function AppUpdateToast({ onRefresh }: AppUpdateToastProps) {
   if (!stale) return null;
 
   return (
-    <div className="app-update-toast" role="status" aria-live="polite">
-      <span className="app-update-toast__icon" aria-hidden="true">
-        <img src={agentuxMark} alt="" width={32} height={32} />
-      </span>
-      <div className="app-update-toast__body">
-        <p className="app-update-toast__title">A new version is available</p>
-        <p className="app-update-toast__text">Refresh to get the latest fixes and features.</p>
-        <div className="app-update-toast__actions">
-          <button
-            type="button"
-            className="app-update-toast__primary"
-            onClick={handleRefresh}
-          >
-            Refresh
-          </button>
-          <button
-            type="button"
-            className="app-update-toast__secondary"
-            onClick={handleLater}
-            title="Re-prompt in 10 minutes"
-          >
-            Remind me in 10 mins
-          </button>
+    <IconTooltipProvider>
+      <div className="app-update-toast" role="status" aria-live="polite">
+        <span className="app-update-toast__icon" aria-hidden="true">
+          <img src={agentuxMark} alt="" width={32} height={32} />
+        </span>
+        <div className="app-update-toast__body">
+          <p className="app-update-toast__title">A new version is available</p>
+          <p className="app-update-toast__text">Refresh to get the latest fixes and features.</p>
+          <div className="app-update-toast__actions">
+            <button
+              type="button"
+              className="app-update-toast__primary"
+              onClick={handleRefresh}
+            >
+              Refresh
+            </button>
+            <IconTooltip label="Re-prompt in 10 minutes">
+              <button
+                type="button"
+                className="app-update-toast__secondary"
+                onClick={handleLater}
+              >
+                Remind me in 10 mins
+              </button>
+            </IconTooltip>
+          </div>
         </div>
+        <IconTooltip label="Dismiss for this build">
+          <button
+            type="button"
+            className="app-update-toast__close"
+            onClick={handleDismiss}
+            aria-label="Dismiss"
+          >
+            <X size={20} />
+          </button>
+        </IconTooltip>
       </div>
-      <button
-        type="button"
-        className="app-update-toast__close"
-        onClick={handleDismiss}
-        title="Dismiss for this build"
-        aria-label="Dismiss"
-      >
-        <X size={20} />
-      </button>
-    </div>
+    </IconTooltipProvider>
   );
 }
 

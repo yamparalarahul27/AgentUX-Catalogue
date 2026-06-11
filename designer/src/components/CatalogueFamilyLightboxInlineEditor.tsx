@@ -14,6 +14,7 @@ import { REFERENCE_IMAGES_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, ScreenshotNode, WebPreset } from '../types';
 import { DotLoader } from './DotLoader';
 import { Dropdown } from './Dropdown';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 interface CatalogueFamilyLightboxInlineEditorProps {
   existingFlows: string[];
@@ -193,6 +194,7 @@ export function CatalogueFamilyLightboxInlineEditor({
   );
 
   return (
+    <IconTooltipProvider>
     <div className="catalogue-lightbox-inline-editor">
       <div className="catalogue-list-inline-editor__head">
         <strong>Edit Screenshot</strong>
@@ -334,18 +336,21 @@ export function CatalogueFamilyLightboxInlineEditor({
         )}
       </div>
       <div className="catalogue-lightbox-inline-editor__actions">
-        <button type="button" className="catalogue-family-lightbox__action" onClick={onSave} disabled={isSaving} title="Save (Enter)">
-          {isSaving && <DotLoader size="sm" ariaLabel="Saving" />}
-          Save
-          {!isSaving && (
-            <CornerDownLeft size={14} aria-hidden style={{ marginLeft: 6, opacity: 0.7 }} />
-          )}
-        </button>
+        <IconTooltip label="Save (Enter)">
+          <button type="button" className="catalogue-family-lightbox__action" onClick={onSave} disabled={isSaving}>
+            {isSaving && <DotLoader size="sm" ariaLabel="Saving" />}
+            Save
+            {!isSaving && (
+              <CornerDownLeft size={14} aria-hidden style={{ marginLeft: 6, opacity: 0.7 }} />
+            )}
+          </button>
+        </IconTooltip>
         <button type="button" className="catalogue-family-lightbox__action" onClick={onCancel} disabled={isSaving}>
           Cancel
         </button>
       </div>
     </div>
+    </IconTooltipProvider>
   );
 }
 
@@ -402,16 +407,17 @@ function SegmentedControl<T extends string>({ value, onChange, options }: Segmen
           {option.iconNode ?? option.label}
         </button>
       ))}
-      <button
-        type="button"
-        className="catalogue-segmented-control__clear"
-        onClick={() => onChange(null)}
-        disabled={value === null}
-        aria-label="Clear selection"
-        title="Clear selection"
-      >
-        ×
-      </button>
+      <IconTooltip label="Clear selection">
+        <button
+          type="button"
+          className="catalogue-segmented-control__clear"
+          onClick={() => onChange(null)}
+          disabled={value === null}
+          aria-label="Clear selection"
+        >
+          ×
+        </button>
+      </IconTooltip>
     </div>
   );
 }

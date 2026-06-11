@@ -8,6 +8,7 @@ import { fetchAnnotationsForScreenshot } from '../lib/screenshot-annotations';
 import { supabase } from '../lib/supabase';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { EditableTitle } from './EditableTitle';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 type ScreenshotComment = {
   id: string;
@@ -128,27 +129,31 @@ export function CatalogueStackCard({
         >
           {isSelected ? <CheckSquare size={14} /> : <Square size={14} />}
         </button>
-        <button
-          type="button"
-          className="catalogue-stack__image"
-          onClick={() => onOpenPreview(family.id)}
-          title="Open preview"
-        >
-          {screenshot.image_url ? (
-            <img src={screenshot.image_url} alt={family.name} />
-          ) : (
-            <span className="catalogue-stack__image-placeholder">No image</span>
-          )}
-          {annotations.map((annotation, index) => (
-            <span
-              key={annotation.id}
-              className="catalogue-stack__pin"
-              style={{ left: `${annotation.x * 100}%`, top: `${annotation.y * 100}%` }}
+        <IconTooltipProvider>
+          <IconTooltip label="Open preview">
+            <button
+              type="button"
+              className="catalogue-stack__image"
+              onClick={() => onOpenPreview(family.id)}
+              aria-label="Open preview"
             >
-              {index + 1}
-            </span>
-          ))}
-        </button>
+              {screenshot.image_url ? (
+                <img src={screenshot.image_url} alt={family.name} />
+              ) : (
+                <span className="catalogue-stack__image-placeholder">No image</span>
+              )}
+              {annotations.map((annotation, index) => (
+                <span
+                  key={annotation.id}
+                  className="catalogue-stack__pin"
+                  style={{ left: `${annotation.x * 100}%`, top: `${annotation.y * 100}%` }}
+                >
+                  {index + 1}
+                </span>
+              ))}
+            </button>
+          </IconTooltip>
+        </IconTooltipProvider>
       </div>
 
       <div className="catalogue-stack__panel">

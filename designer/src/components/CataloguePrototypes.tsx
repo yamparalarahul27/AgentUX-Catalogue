@@ -15,6 +15,7 @@ import { getPrototypeUrl } from '../lib/prototype-urls';
 import { formatRelative } from '../lib/catalogue-relative-time';
 import { supabase } from '../lib/supabase';
 import { DotLoader } from './DotLoader';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 // Reference viewport size the thumbnail iframe renders at before
 // scaling. ~Typical desktop. The on-screen size = card width; we
@@ -247,6 +248,7 @@ export function CataloguePrototypes({
   const totalPrototypes = prototypes.length;
 
   return (
+    <IconTooltipProvider>
     <section className="catalogue-prototypes" aria-label="HTML prototypes">
       <header className="catalogue-prototypes__head">
         <div className="catalogue-prototypes__copy">
@@ -408,22 +410,26 @@ export function CataloguePrototypes({
                       >
                         {proto.visibility === 'public' ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
                       </button>
-                      <button
-                        type="button"
-                        className="catalogue-prototypes__action"
-                        onClick={() => triggerReupload(proto.id)}
-                        title="Replace with a new file"
-                      >
-                        <RefreshCw size={13} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="catalogue-prototypes__action catalogue-prototypes__action--danger"
-                        onClick={() => void handleDelete(proto.id)}
-                        title="Delete prototype"
-                      >
-                        <Trash2 size={13} aria-hidden="true" />
-                      </button>
+                      <IconTooltip label="Replace with a new file">
+                        <button
+                          type="button"
+                          className="catalogue-prototypes__action"
+                          onClick={() => triggerReupload(proto.id)}
+                          aria-label="Replace with a new file"
+                        >
+                          <RefreshCw size={13} aria-hidden="true" />
+                        </button>
+                      </IconTooltip>
+                      <IconTooltip label="Delete prototype">
+                        <button
+                          type="button"
+                          className="catalogue-prototypes__action catalogue-prototypes__action--danger"
+                          onClick={() => void handleDelete(proto.id)}
+                          aria-label="Delete prototype"
+                        >
+                          <Trash2 size={13} aria-hidden="true" />
+                        </button>
+                      </IconTooltip>
                     </>
                   )}
                 </footer>
@@ -433,5 +439,6 @@ export function CataloguePrototypes({
         </div>
       )}
     </section>
+    </IconTooltipProvider>
   );
 }

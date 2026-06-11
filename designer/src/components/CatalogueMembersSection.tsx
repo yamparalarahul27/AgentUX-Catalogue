@@ -4,6 +4,7 @@ import { Check, Copy, Lock, MoreHorizontal, Power, RotateCw, Trash2 } from 'luci
 import { callAdmin, type AdminAction, type MemberRow } from '../lib/auth-passcode';
 import { KNOWN_ROLES, roleNameFor, type RoleId } from '../lib/role-capabilities';
 import { ConfirmModal } from './ConfirmModal';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 // Members admin panel.
 //
@@ -161,6 +162,7 @@ export function CatalogueMembersSection({ currentUserEmail, adminPasscode, onUna
   }
 
   return (
+    <IconTooltipProvider>
     <div className="catalogue-members">
       <div className="catalogue-members__toolbar">
         <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
@@ -203,15 +205,16 @@ export function CatalogueMembersSection({ currentUserEmail, adminPasscode, onUna
                     {formatLastSeen(member.last_login_at)}
                   </td>
                   <td className="catalogue-members__actions">
-                    <button
-                      type="button"
-                      className="catalogue-members__icon-btn"
-                      onClick={() => setRotateConfirm(member)}
-                      title="Rotate passcode"
-                      aria-label="Rotate passcode"
-                    >
-                      <RotateCw size={16} aria-hidden="true" />
-                    </button>
+                    <IconTooltip label="Rotate passcode">
+                      <button
+                        type="button"
+                        className="catalogue-members__icon-btn"
+                        onClick={() => setRotateConfirm(member)}
+                        aria-label="Rotate passcode"
+                      >
+                        <RotateCw size={16} aria-hidden="true" />
+                      </button>
+                    </IconTooltip>
                     {!isSelf && (
                       <button
                         type="button"
@@ -224,28 +227,30 @@ export function CatalogueMembersSection({ currentUserEmail, adminPasscode, onUna
                       </button>
                     )}
                     {!isSelf && (
-                      <button
-                        type="button"
-                        className="catalogue-members__icon-btn catalogue-members__icon-btn--danger"
-                        onClick={() => setDeleteConfirm(member)}
-                        title="Remove member"
-                        aria-label="Remove member"
-                      >
-                        <Trash2 size={16} aria-hidden="true" />
-                      </button>
+                      <IconTooltip label="Remove member">
+                        <button
+                          type="button"
+                          className="catalogue-members__icon-btn catalogue-members__icon-btn--danger"
+                          onClick={() => setDeleteConfirm(member)}
+                          aria-label="Remove member"
+                        >
+                          <Trash2 size={16} aria-hidden="true" />
+                        </button>
+                      </IconTooltip>
                     )}
                     <div className="catalogue-members__kebab" ref={openKebab === member.email ? kebabRef : null}>
-                      <button
-                        type="button"
-                        className="catalogue-members__icon-btn"
-                        onClick={() => setOpenKebab((current) => current === member.email ? null : member.email)}
-                        title="More actions"
-                        aria-label="More actions"
-                        aria-haspopup="menu"
-                        aria-expanded={openKebab === member.email}
-                      >
-                        <MoreHorizontal size={16} aria-hidden="true" />
-                      </button>
+                      <IconTooltip label="More actions">
+                        <button
+                          type="button"
+                          className="catalogue-members__icon-btn"
+                          onClick={() => setOpenKebab((current) => current === member.email ? null : member.email)}
+                          aria-label="More actions"
+                          aria-haspopup="menu"
+                          aria-expanded={openKebab === member.email}
+                        >
+                          <MoreHorizontal size={16} aria-hidden="true" />
+                        </button>
+                      </IconTooltip>
                       {openKebab === member.email && (
                         <div className="catalogue-members__kebab-menu" role="menu">
                           <button type="button" role="menuitem" onClick={() => handleForceLogout(member)}>
@@ -336,6 +341,7 @@ export function CatalogueMembersSection({ currentUserEmail, adminPasscode, onUna
         />
       )}
     </div>
+    </IconTooltipProvider>
   );
 }
 

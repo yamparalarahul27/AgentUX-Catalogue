@@ -22,6 +22,7 @@ import { Check, ChevronUp, Copy, Crop, Save, Send, Trash2, X } from 'lucide-reac
 import { AnnotationResizeHandles } from './AnnotationResizeHandles';
 import { buildLightboxDraftVariant } from './CatalogueFamilyLightboxInlineEditor';
 import { CatalogueFamilyLightboxActions } from './CatalogueFamilyLightboxActions';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
 import { Squircle } from './Squircle';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
@@ -1190,7 +1191,7 @@ export function CatalogueFamilyLightbox({
     return null;
   }
   return createPortal(
-    <>
+    <IconTooltipProvider>
     <div className="catalogue-lightbox" onClick={onClose} onKeyDownCapture={handleTypingFeedback}>
       <TypingKeycap ref={keycapRef} />
       <div className="catalogue-lightbox-header" onClick={(event) => event.stopPropagation()}>
@@ -1481,33 +1482,35 @@ export function CatalogueFamilyLightbox({
           <div className="catalogue-lightbox-mini-actions" aria-hidden={!sheetMinimized}>
             {/* Destructive / edit cluster on the left. */}
             {canDelete && (
-              <Squircle
-                as="button"
-                cornerRadius={16}
-                type="button"
-                className="catalogue-lightbox-mini-actions__btn catalogue-lightbox-mini-actions__btn--danger"
-                onClick={() => void requestDeleteFamily()}
-                title="Delete"
-                aria-label="Delete"
-              >
-                <Trash2 size={20} aria-hidden="true" />
-              </Squircle>
+              <IconTooltip label="Delete">
+                <Squircle
+                  as="button"
+                  cornerRadius={16}
+                  type="button"
+                  className="catalogue-lightbox-mini-actions__btn catalogue-lightbox-mini-actions__btn--danger"
+                  onClick={() => void requestDeleteFamily()}
+                  aria-label="Delete"
+                >
+                  <Trash2 size={20} aria-hidden="true" />
+                </Squircle>
+              </IconTooltip>
             )}
             {canEdit && imageSize && (
-              <Squircle
-                as="button"
-                cornerRadius={16}
-                type="button"
-                className="catalogue-lightbox-mini-actions__btn"
-                onClick={() => {
-                  openCropMode();
-                  onToast?.('Crop mode', 'info');
-                }}
-                title="Crop"
-                aria-label="Crop"
-              >
-                <Crop size={20} aria-hidden="true" />
-              </Squircle>
+              <IconTooltip label="Crop">
+                <Squircle
+                  as="button"
+                  cornerRadius={16}
+                  type="button"
+                  className="catalogue-lightbox-mini-actions__btn"
+                  onClick={() => {
+                    openCropMode();
+                    onToast?.('Crop mode', 'info');
+                  }}
+                  aria-label="Crop"
+                >
+                  <Crop size={20} aria-hidden="true" />
+                </Squircle>
+              </IconTooltip>
             )}
             {/* Spacer separates destructive cluster from save/share. */}
             <span className="catalogue-lightbox-mini-actions__spacer" />
@@ -1535,17 +1538,18 @@ export function CatalogueFamilyLightbox({
               </Squircle>
             )}
             {onShareLink && screenshot && (
-              <Squircle
-                as="button"
-                cornerRadius={16}
-                type="button"
-                className="catalogue-lightbox-mini-actions__btn"
-                onClick={() => onShareLink(screenshot.id)}
-                title="Copy share link"
-                aria-label="Copy share link"
-              >
-                <Copy size={20} aria-hidden="true" />
-              </Squircle>
+              <IconTooltip label="Copy share link">
+                <Squircle
+                  as="button"
+                  cornerRadius={16}
+                  type="button"
+                  className="catalogue-lightbox-mini-actions__btn"
+                  onClick={() => onShareLink(screenshot.id)}
+                  aria-label="Copy share link"
+                >
+                  <Copy size={20} aria-hidden="true" />
+                </Squircle>
+              </IconTooltip>
             )}
           </div>
           <div className="catalogue-family-lightbox">
@@ -1703,15 +1707,17 @@ export function CatalogueFamilyLightbox({
                     >
                       Label
                     </button>
-                    <button
-                      type="button"
-                      className={`catalogue-lightbox-copy-prompt ${promptCopied ? 'is-copied' : ''}`}
-                      onClick={handleCopyPrompt}
-                      title="Copy the AI labelling prompt to clipboard"
-                    >
-                      {promptCopied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
-                      {promptCopied ? 'Copied' : 'Copy Prompt'}
-                    </button>
+                    <IconTooltip label="Copy the AI labelling prompt to clipboard">
+                      <button
+                        type="button"
+                        className={`catalogue-lightbox-copy-prompt ${promptCopied ? 'is-copied' : ''}`}
+                        onClick={handleCopyPrompt}
+                        aria-label="Copy the AI labelling prompt to clipboard"
+                      >
+                        {promptCopied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+                        {promptCopied ? 'Copied' : 'Copy Prompt'}
+                      </button>
+                    </IconTooltip>
                   </>
                 ) : (
                   <>
@@ -1823,18 +1829,19 @@ export function CatalogueFamilyLightbox({
                           <span className="catalogue-lightbox-ui-element-row__index">{index + 1}</span>
                           <span className="catalogue-lightbox-ui-element-row__name">{annotation.text}</span>
                           {(isAdmin || annotation.user_email === userEmail) && (
-                            <button
-                              type="button"
-                              className="catalogue-lightbox-ui-element-row__delete"
-                              title="Delete UI Element"
-                              aria-label="Delete UI Element"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                void deleteAnnotation(annotation.id);
-                              }}
-                            >
-                              <Trash2 size={12} aria-hidden="true" />
-                            </button>
+                            <IconTooltip label="Delete UI Element">
+                              <button
+                                type="button"
+                                className="catalogue-lightbox-ui-element-row__delete"
+                                aria-label="Delete UI Element"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void deleteAnnotation(annotation.id);
+                                }}
+                              >
+                                <Trash2 size={12} aria-hidden="true" />
+                              </button>
+                            </IconTooltip>
                           )}
                         </div>
                       ))}
@@ -1944,24 +1951,26 @@ export function CatalogueFamilyLightbox({
                               </span>
                             </div>
                             <div className="catalogue-lightbox-ai-anchor__actions">
-                              <button
-                                type="button"
-                                className="catalogue-lightbox-ai-anchor__btn catalogue-lightbox-ai-anchor__btn--accept"
-                                onClick={() => acceptAnchor(anchor)}
-                                title="Refine & accept this AI suggestion"
-                                aria-label={`Accept ${anchor.name}`}
-                              >
-                                <Check size={14} aria-hidden="true" />
-                              </button>
-                              <button
-                                type="button"
-                                className="catalogue-lightbox-ai-anchor__btn catalogue-lightbox-ai-anchor__btn--reject"
-                                onClick={() => { void dismissAnchor(anchor); }}
-                                title="Dismiss this AI suggestion"
-                                aria-label={`Dismiss ${anchor.name}`}
-                              >
-                                <X size={14} aria-hidden="true" />
-                              </button>
+                              <IconTooltip label="Refine & accept this AI suggestion">
+                                <button
+                                  type="button"
+                                  className="catalogue-lightbox-ai-anchor__btn catalogue-lightbox-ai-anchor__btn--accept"
+                                  onClick={() => acceptAnchor(anchor)}
+                                  aria-label={`Accept ${anchor.name}`}
+                                >
+                                  <Check size={14} aria-hidden="true" />
+                                </button>
+                              </IconTooltip>
+                              <IconTooltip label="Dismiss this AI suggestion">
+                                <button
+                                  type="button"
+                                  className="catalogue-lightbox-ai-anchor__btn catalogue-lightbox-ai-anchor__btn--reject"
+                                  onClick={() => { void dismissAnchor(anchor); }}
+                                  aria-label={`Dismiss ${anchor.name}`}
+                                >
+                                  <X size={14} aria-hidden="true" />
+                                </button>
+                              </IconTooltip>
                             </div>
                           </div>
                         ))}
@@ -2001,18 +2010,19 @@ export function CatalogueFamilyLightbox({
                               </span>
                             )}
                             {(isAdmin || annotation.user_email === userEmail) && (
-                              <button
-                                type="button"
-                                className="catalogue-lightbox-annotation-delete"
-                                title="Delete annotation"
-                                aria-label="Delete annotation"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  void deleteAnnotation(annotation.id);
-                                }}
-                              >
-                                <X size={12} />
-                              </button>
+                              <IconTooltip label="Delete annotation">
+                                <button
+                                  type="button"
+                                  className="catalogue-lightbox-annotation-delete"
+                                  aria-label="Delete annotation"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    void deleteAnnotation(annotation.id);
+                                  }}
+                                >
+                                  <X size={12} />
+                                </button>
+                              </IconTooltip>
                             )}
                           </div>
                           <p className="catalogue-lightbox-annotation-text">{annotation.text}</p>
@@ -2039,7 +2049,7 @@ export function CatalogueFamilyLightbox({
         onCancel={() => setConfirmDeleteOpen(false)}
       />
     )}
-    </>,
+    </IconTooltipProvider>,
     document.body,
   );
 }

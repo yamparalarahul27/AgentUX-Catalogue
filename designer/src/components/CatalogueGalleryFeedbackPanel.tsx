@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { formatDateTime } from '../lib/catalogue-lightbox';
 import type { CatalogueGalleryFeedbackState } from '../hooks/use-catalogue-gallery-feedback';
 import { DotLoader } from './DotLoader';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 interface CatalogueGalleryFeedbackPanelProps {
   canEdit: boolean;
@@ -16,7 +17,7 @@ export function CatalogueGalleryFeedbackPanel({
   userEmail,
 }: CatalogueGalleryFeedbackPanelProps) {
   return (
-    <>
+    <IconTooltipProvider>
       <div className="catalogue-gallery-meta-head">
         <div className="catalogue-gallery-tabs" role="tablist" aria-label="Gallery details">
           <button
@@ -61,14 +62,16 @@ export function CatalogueGalleryFeedbackPanel({
                     <span className="catalogue-gallery-comment-email">{comment.user_email}</span>
                     <span className="catalogue-gallery-comment-time">{formatDateTime(comment.created_at)}</span>
                     {canEdit && comment.user_email === userEmail && (
-                      <button
-                        type="button"
-                        className="catalogue-gallery-comment-delete"
-                        title="Delete comment"
-                        onClick={() => void feedback.deleteComment(comment.id)}
-                      >
-                        ×
-                      </button>
+                      <IconTooltip label="Delete comment">
+                        <button
+                          type="button"
+                          className="catalogue-gallery-comment-delete"
+                          aria-label="Delete comment"
+                          onClick={() => void feedback.deleteComment(comment.id)}
+                        >
+                          ×
+                        </button>
+                      </IconTooltip>
                     )}
                   </div>
                   <p className="catalogue-gallery-comment-text">{comment.text}</p>
@@ -171,17 +174,19 @@ export function CatalogueGalleryFeedbackPanel({
                     <span className="catalogue-lightbox-annotation-badge">{index + 1}</span>
                     <span className="catalogue-lightbox-annotation-time">{formatDateTime(annotation.created_at)}</span>
                     {canEdit && annotation.user_email === userEmail && (
-                      <button
-                        type="button"
-                        className="catalogue-lightbox-annotation-delete"
-                        title="Delete annotation"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void feedback.deleteAnnotation(annotation.id);
-                        }}
-                      >
-                        <X size={12} />
-                      </button>
+                      <IconTooltip label="Delete annotation">
+                        <button
+                          type="button"
+                          className="catalogue-lightbox-annotation-delete"
+                          aria-label="Delete annotation"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void feedback.deleteAnnotation(annotation.id);
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </IconTooltip>
                     )}
                   </div>
                   <p className="catalogue-lightbox-annotation-text">{annotation.text}</p>
@@ -191,6 +196,6 @@ export function CatalogueGalleryFeedbackPanel({
           </div>
         </div>
       )}
-    </>
+    </IconTooltipProvider>
   );
 }

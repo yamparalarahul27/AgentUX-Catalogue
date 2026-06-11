@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Minus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
 import { DotLoader } from './DotLoader';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { YouTubeLightbox } from './YouTubeLightbox';
 
 // Wrap each case-insensitive occurrence of `query` inside `text` with a
@@ -1148,7 +1149,7 @@ export function CatalogueVideosSection({
   }, [youtubeVideos.length]);
 
   return (
-    <>
+    <IconTooltipProvider>
       <section className="catalogue-videos" aria-label="Videos as Medium">
         <header className="catalogue-videos__head">
           <div className="catalogue-videos__copy">
@@ -1356,18 +1357,19 @@ export function CatalogueVideosSection({
                             </p>
                           )}
                           <span className="catalogue-videos__x-source-pill">𝕏 Post</span>
-                          <button
-                            type="button"
-                            className="catalogue-videos__x-menu"
-                            title="Remove from saved references"
-                            aria-label="Remove from saved references"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setPendingDeleteXPostId(post.id);
-                            }}
-                          >
-                            <Minus size={14} aria-hidden="true" />
-                          </button>
+                          <IconTooltip label="Remove from saved references">
+                            <button
+                              type="button"
+                              className="catalogue-videos__x-menu"
+                              aria-label="Remove from saved references"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setPendingDeleteXPostId(post.id);
+                              }}
+                            >
+                              <Minus size={14} aria-hidden="true" />
+                            </button>
+                          </IconTooltip>
                           <div className="catalogue-videos__x-play" aria-hidden="true">▶</div>
                         </div>
                         <div className="catalogue-videos__x-body">
@@ -1490,18 +1492,19 @@ export function CatalogueVideosSection({
                       >
                         <span className="catalogue-videos__yt-source-pill">YouTube</span>
                         <span className="catalogue-videos__yt-play" aria-hidden="true">▶</span>
-                        <button
-                          type="button"
-                          className="catalogue-videos__yt-menu"
-                          title="Remove from saved videos"
-                          aria-label="Remove from saved videos"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setPendingDeleteYouTubeId(video.id);
-                          }}
-                        >
-                          <Minus size={14} aria-hidden="true" />
-                        </button>
+                        <IconTooltip label="Remove from saved videos">
+                          <button
+                            type="button"
+                            className="catalogue-videos__yt-menu"
+                            aria-label="Remove from saved videos"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setPendingDeleteYouTubeId(video.id);
+                            }}
+                          >
+                            <Minus size={14} aria-hidden="true" />
+                          </button>
+                        </IconTooltip>
                       </div>
                       <div className="catalogue-videos__yt-body">
                         <p className="catalogue-videos__yt-title">{title}</p>
@@ -1641,27 +1644,30 @@ export function CatalogueVideosSection({
                                 }}
                               />
                             ) : (
+                              <IconTooltip label="Click to rename">
+                                <button
+                                  type="button"
+                                  className="catalogue-videos-preview__tag-label"
+                                  aria-label={`Rename tag ${tag}`}
+                                  onClick={() => {
+                                    setEditingTag(tag);
+                                    setTagDraft(tag);
+                                  }}
+                                >
+                                  {tag}
+                                </button>
+                              </IconTooltip>
+                            )}
+                            <IconTooltip label="Remove tag">
                               <button
                                 type="button"
-                                className="catalogue-videos-preview__tag-label"
-                                title="Click to rename"
-                                onClick={() => {
-                                  setEditingTag(tag);
-                                  setTagDraft(tag);
-                                }}
+                                className="catalogue-videos-preview__tag-x"
+                                aria-label={`Remove ${tag}`}
+                                onClick={() => void removeTagFromPost(xPost.id, tag)}
                               >
-                                {tag}
+                                <X size={11} aria-hidden="true" />
                               </button>
-                            )}
-                            <button
-                              type="button"
-                              className="catalogue-videos-preview__tag-x"
-                              title="Remove tag"
-                              aria-label={`Remove ${tag}`}
-                              onClick={() => void removeTagFromPost(xPost.id, tag)}
-                            >
-                              <X size={11} aria-hidden="true" />
-                            </button>
+                            </IconTooltip>
                           </span>
                         );
                       })}
@@ -1786,6 +1792,6 @@ export function CatalogueVideosSection({
           />
         );
       })()}
-    </>
+    </IconTooltipProvider>
   );
 }

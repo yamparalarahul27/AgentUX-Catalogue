@@ -9,6 +9,7 @@ import { CatalogueGalleryInlineEditor, type CatalogueGalleryInlineDraft } from '
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { DotLoader } from './DotLoader';
 import { EditableTitle } from './EditableTitle';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 interface CatalogueGalleryViewProps {
   activeVariantKeys: Record<string, string>;
@@ -536,17 +537,21 @@ export function CatalogueGalleryView({
                       </button>
                     ))}
                     {feedback.annotationDraft && (
-                      <button
-                        type="button"
-                        className="catalogue-lightbox-pin catalogue-lightbox-pin-draft is-active"
-                        style={{
-                          left: `${mediaLayout.left + (feedback.annotationDraft.x / 100) * mediaLayout.width}px`,
-                          top: `${mediaLayout.top + (feedback.annotationDraft.y / 100) * mediaLayout.height}px`,
-                        }}
-                        title="Draft annotation"
-                      >
-                        <span>+</span>
-                      </button>
+                      <IconTooltipProvider>
+                        <IconTooltip label="Draft annotation">
+                          <button
+                            type="button"
+                            className="catalogue-lightbox-pin catalogue-lightbox-pin-draft is-active"
+                            style={{
+                              left: `${mediaLayout.left + (feedback.annotationDraft.x / 100) * mediaLayout.width}px`,
+                              top: `${mediaLayout.top + (feedback.annotationDraft.y / 100) * mediaLayout.height}px`,
+                            }}
+                            aria-label="Draft annotation"
+                          >
+                            <span>+</span>
+                          </button>
+                        </IconTooltip>
+                      </IconTooltipProvider>
                     )}
                   </div>
                 );

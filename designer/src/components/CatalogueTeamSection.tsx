@@ -39,6 +39,7 @@ import { CatalogueMembersSection } from './CatalogueMembersSection';
 import { CatalogueTrashSection } from './CatalogueTrashSection';
 import { ConfirmModal } from './ConfirmModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
+import { IconTooltip } from './IconTooltip';
 import { Toast } from './Toast';
 
 type TeamSubTab =
@@ -499,18 +500,19 @@ export function CatalogueTeamSection({
                         projectId={null}
                         iconSize={36}
                       />
-                      <button
-                        type="button"
-                        className="catalogue-team__group-edit-btn"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          editor.beginEdit(item.group);
-                        }}
-                        title="Edit group"
-                        aria-label="Edit group"
-                      >
-                        <Pencil size={14} />
-                      </button>
+                      <IconTooltip label="Edit group">
+                        <button
+                          type="button"
+                          className="catalogue-team__group-edit-btn"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            editor.beginEdit(item.group);
+                          }}
+                          aria-label="Edit group"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </IconTooltip>
                     </div>
                     <span className="catalogue-team__checklist-count" aria-label={`${item.count} screenshot${item.count !== 1 ? 's' : ''}`}>
                       <Images size={13} aria-hidden="true" />

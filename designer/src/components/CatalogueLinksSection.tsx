@@ -5,6 +5,7 @@ import { formatRelative } from '../lib/catalogue-relative-time';
 import { useLinkMetadata, type LinkMetadata } from '../hooks/use-link-metadata';
 import { CataloguePrototypes } from './CataloguePrototypes';
 import { DotLoader } from './DotLoader';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
 type LinksSubTab = 'saved-links' | 'prototypes';
 
@@ -462,15 +463,18 @@ export function CatalogueLinksSection({
                               {relative && <span className="catalogue-links__time">{relative}</span>}
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            className="catalogue-links__remove"
-                            onClick={() => void removeLink(link.id)}
-                            title="Remove link"
-                            aria-label={`Remove ${label}`}
-                          >
-                            <X size={14} aria-hidden="true" />
-                          </button>
+                          <IconTooltipProvider>
+                            <IconTooltip label="Remove link">
+                              <button
+                                type="button"
+                                className="catalogue-links__remove"
+                                onClick={() => void removeLink(link.id)}
+                                aria-label={`Remove ${label}`}
+                              >
+                                <X size={14} aria-hidden="true" />
+                              </button>
+                            </IconTooltip>
+                          </IconTooltipProvider>
                         </li>
                       );
                     })}

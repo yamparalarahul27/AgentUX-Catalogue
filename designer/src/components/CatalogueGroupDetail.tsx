@@ -21,6 +21,7 @@ import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueNotFound } from './CatalogueNotFound';
 import { CatalogueShareModal } from './CatalogueShareModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { ThumbHashImage } from './ThumbHashImage';
 import { Toast } from './Toast';
 
@@ -327,15 +328,18 @@ export function CatalogueGroupDetail({ user, onLogout, onLogoutEverywhere }: Cat
       />
 
       <main className="catalogue-main catalogue-group-detail">
-        <button
-          type="button"
-          className="catalogue-group-detail__back"
-          onClick={handleBack}
-          aria-label="Back to catalogue"
-          title="Back to catalogue"
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-        </button>
+        <IconTooltipProvider>
+          <IconTooltip label="Back to catalogue">
+            <button
+              type="button"
+              className="catalogue-group-detail__back"
+              onClick={handleBack}
+              aria-label="Back to catalogue"
+            >
+              <ArrowLeft size={18} aria-hidden="true" />
+            </button>
+          </IconTooltip>
+        </IconTooltipProvider>
 
         <header className={`catalogue-group-detail__header ${headerCompact ? 'is-compact' : ''}`}>
           <div className="catalogue-group-detail__icon">

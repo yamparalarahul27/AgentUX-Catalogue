@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Boxes, Check, Copy, MapPin, Monitor, RefreshCw, Save, Smartphone, Trash2 } from 'lucide-react';
-import * as Tooltip from '@radix-ui/react-tooltip';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import { getActiveFamilyVariant } from '../lib/catalogue-families';
@@ -9,6 +8,7 @@ import { REFERENCE_IMAGES_ENABLED, REUPLOAD_ENABLED } from '../lib/feature-flags
 // import { getGroupColor } from '../lib/naming'; // unused while group colour dot is disabled — see catalogue-card-dot note in render
 import { ConfirmModal } from './ConfirmModal';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { ThumbHashImage } from './ThumbHashImage';
 import { useSaveTrashAnimation } from './SaveTrashAnimation';
 import { CopyMorphIcon, useCopyConfirmation } from './CopyMorphIcon';
@@ -134,10 +134,10 @@ export function CatalogueFamilyCard({
   }
 
   return (
-    <Tooltip.Provider delayDuration={300} skipDelayDuration={120}>
+    <IconTooltipProvider>
       <article className={`catalogue-card catalogue-family-card ${isSelected ? 'catalogue-card--selected is-selected' : ''} ${isRemoving ? 'is-removing' : ''} ${isAnimatingDelete ? 'is-animating-delete' : ''}`} data-family-id={family.id}>
         <div className="catalogue-family-card__media">
-          <CardActionTooltip label="Select family">
+          <IconTooltip label="Select family">
             <button
               type="button"
               className={`catalogue-card-select ${isSelected ? 'catalogue-card-select--checked' : ''}`}
@@ -148,7 +148,7 @@ export function CatalogueFamilyCard({
                 <Check size={12} strokeWidth={3} />
               )}
             </button>
-          </CardActionTooltip>
+          </IconTooltip>
 
           {(isPrimary || isVs) && (
             <span className={`catalogue-card-badge ${isPrimary ? 'catalogue-card-badge-primary' : 'catalogue-card-badge-vs'}`}>
@@ -211,7 +211,7 @@ export function CatalogueFamilyCard({
 
           <div className="catalogue-card-actions catalogue-family-card__media-actions">
             {REUPLOAD_ENABLED && (
-              <CardActionTooltip label="Reupload variant">
+              <IconTooltip label="Reupload variant">
                 <button
                   type="button"
                   className="catalogue-card-action"
@@ -221,10 +221,10 @@ export function CatalogueFamilyCard({
                 >
                   <RefreshCw size={14} />
                 </button>
-              </CardActionTooltip>
+              </IconTooltip>
             )}
             {onToggleBookmark && screenshot && (
-              <CardActionTooltip label={bookmarkedIds?.has(screenshot.id) ? 'Unsave' : 'Save this screenshot'}>
+              <IconTooltip label={bookmarkedIds?.has(screenshot.id) ? 'Unsave' : 'Save this screenshot'}>
               <button
                 type="button"
                 className={`catalogue-card-action ${bookmarkedIds?.has(screenshot.id) ? 'is-bookmarked' : ''}`}
@@ -261,10 +261,10 @@ export function CatalogueFamilyCard({
               >
                 <Save size={14} />
               </button>
-              </CardActionTooltip>
+              </IconTooltip>
             )}
             {onShareLink && screenshot && (
-              <CardActionTooltip label={justShared ? 'Copied!' : 'Copy share link to this screenshot'}>
+              <IconTooltip label={justShared ? 'Copied!' : 'Copy share link to this screenshot'}>
               <button
                 type="button"
                 className="catalogue-card-action"
@@ -284,10 +284,10 @@ export function CatalogueFamilyCard({
                   size={14}
                 />
               </button>
-              </CardActionTooltip>
+              </IconTooltip>
             )}
             {canDelete && (
-              <CardActionTooltip label="Delete screenshot">
+              <IconTooltip label="Delete screenshot">
               <button
                 type="button"
                 className="catalogue-card-action catalogue-card-action-danger"
@@ -305,7 +305,7 @@ export function CatalogueFamilyCard({
               >
                 <Trash2 size={14} />
               </button>
-              </CardActionTooltip>
+              </IconTooltip>
             )}
           </div>
 
@@ -411,29 +411,6 @@ export function CatalogueFamilyCard({
         />,
         document.body,
       )}
-    </Tooltip.Provider>
-  );
-}
-
-// Wraps any icon-only card-action trigger in a Radix tooltip styled
-// to match the header/toolbar/lightbox recipe (.catalogue-header-tooltip
-// in catalogue-header-menu.scss). asChild forwards Radix's ref/props
-// onto the existing <button>.
-function CardActionTooltip({ label, children }: { label: string; children: React.ReactElement }) {
-  return (
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content
-          className="catalogue-header-tooltip"
-          sideOffset={6}
-          collisionPadding={8}
-          side="bottom"
-        >
-          {label}
-          <Tooltip.Arrow className="catalogue-header-tooltip__arrow" width={10} height={5} />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
+    </IconTooltipProvider>
   );
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+
 const SCROLL_THRESHOLD_PX = 600;
 
 export function CatalogueScrollToTop() {
@@ -41,14 +43,17 @@ export function CatalogueScrollToTop() {
   if (!visible) return null;
 
   return (
-    <button
-      type="button"
-      className="catalogue-scroll-top"
-      onClick={scrollToTop}
-      aria-label="Scroll to top"
-      title="Scroll to top (T)"
-    >
-      <ArrowUp size={18} strokeWidth={2.2} />
-    </button>
+    <IconTooltipProvider>
+      <IconTooltip label="Scroll to top (T)">
+        <button
+          type="button"
+          className="catalogue-scroll-top"
+          onClick={scrollToTop}
+          aria-label="Scroll to top"
+        >
+          <ArrowUp size={18} strokeWidth={2.2} />
+        </button>
+      </IconTooltip>
+    </IconTooltipProvider>
   );
 }
