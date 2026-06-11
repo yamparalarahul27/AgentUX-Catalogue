@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
 
+import { injectOverlay } from '../api/_prototype-overlay';
+
 // Build-time identifier baked into the bundle + written as a sibling
 // JSON file. The runtime app polls /designer/build-id.json and
 // compares to the constant — when they diverge, a new build is live
@@ -61,11 +63,29 @@ export default defineConfig({
         target: 'https://lpigdsgeqkhycvxsfpxe.supabase.co',
         changeOrigin: true,
         rewrite: (proxyPath) => proxyPath.replace(/^\/local-prototypes-proxy/, '/storage/v1/object/public/prototypes'),
+        // selfHandleResponse lets us buffer the upstream body and
+        // inject the branded loading overlay before forwarding — same
+        // behavior as the production edge function (api/prototype-proxy.ts).
+        selfHandleResponse: true,
         configure: (proxy) => {
-          proxy.on('proxyRes', (proxyRes) => {
-            delete proxyRes.headers['content-security-policy'];
-            delete proxyRes.headers['x-content-type-options'];
-            proxyRes.headers['content-type'] = 'text/html; charset=utf-8';
+          proxy.on('proxyRes', (proxyRes, _req, res) => {
+            const chunks: Buffer[] = [];
+            proxyRes.on('data', (chunk: Buffer) => chunks.push(chunk));
+            proxyRes.on('end', () => {
+              const status = proxyRes.statusCode ?? 502;
+              if (status >= 400) {
+                res.writeHead(status, { 'content-type': 'text/plain' });
+                res.end(Buffer.concat(chunks));
+                return;
+              }
+              const html = Buffer.concat(chunks).toString('utf-8');
+              const modified = injectOverlay(html);
+              res.writeHead(200, {
+                'content-type': 'text/html; charset=utf-8',
+                'cache-control': 'no-store',
+              });
+              res.end(modified);
+            });
           });
         },
       },

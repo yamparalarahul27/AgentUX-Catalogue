@@ -11,11 +11,14 @@
 // the separate mockups.hirahul.xyz subdomain, so additional CSP here
 // just blocks the prototypes from working as intended.
 //
-// This function fetches the object as-is and re-emits the body with
-// clean headers, so mockups render in the browser like any other page.
+// This function fetches the object as-is, injects a branded loading
+// overlay at the top of <body>, and re-emits with clean headers so
+// shared prototype links have a polished first-paint experience.
 //
 // Routed via vercel.json: any request to mockups.hirahul.xyz/<path>
 // rewrites to /api/prototype-proxy?path=<path>.
+
+import { injectOverlay } from './_prototype-overlay';
 
 export const config = { runtime: 'edge' };
 
@@ -55,7 +58,12 @@ export default async function handler(request: Request): Promise<Response> {
   // Origin isolation comes from the subdomain itself — see vercel.json
   // host-conditional rewrite and docs/security-claude-permissions-public-release.md.
 
-  return new Response(upstream.body, {
+  // Buffer the response so we can inject the branded loading overlay
+  // at the top of <body>. Mockups are typically small (10-100 KB), so
+  // buffering vs streaming is a wash; the brand polish is worth it.
+  const html = await upstream.text();
+  const modified = injectOverlay(html);
+  return new Response(modified, {
     status: 200,
     headers,
   });
