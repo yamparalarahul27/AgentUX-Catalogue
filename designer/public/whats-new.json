@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-13-button-press-pop",
+    "date": "June 13, 2026",
+    "title": "Buttons pop when you press them",
+    "bullets": [
+      { "kind": "improved", "text": "Every button now gives a subtle scale-up \"pop\" on click — a small tactile confirmation that your tap landed, consistent app-wide (and fully off if you've turned on reduced motion)" }
+    ]
+  },
+  {
     "id": "2026-06-11-prototype-share-loader",
     "date": "June 11, 2026",
     "title": "Branded loading screen for shared prototypes",

@@ -24,12 +24,16 @@
   }
 
   &:active {
-    transform: translateY(0);
+    transform: scale(1.05);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .catalogue-scroll-top {
     transition: none;
+
+    &:active {
+      transform: none;
+    }
   }
 }

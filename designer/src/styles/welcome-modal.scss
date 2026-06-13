@@ -116,7 +116,7 @@
   transition: background 0.15s, transform 0.1s;
 
   &:hover  { background: #4f46e5; }
-  &:active { transform: scale(0.98); }
+  &:active { transform: scale(1.05); }
   &:focus-visible {
     outline: 2px solid #a5b4fc;
     outline-offset: 2px;
@@ -153,5 +153,9 @@
 
   .welcome-modal__handwriting {
     transition: none;
+  }
+
+  .welcome-modal__cta:active {
+    transform: none;
   }
 }
