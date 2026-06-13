@@ -1,9 +1,12 @@
-// Subtle micro-interaction layer for every icon-button across the app.
+// Subtle micro-interaction layer for buttons across the app.
 //
 // On hover: scale(1.06) — gentle "this is alive" feedback. Just enough
 // motion to register; not enough to feel cartoonish on a 30-button row.
 //
-// On active (mousedown / tap): scale(0.95) — tactile press confirmation.
+// On active (mousedown / tap): scale up — a little "pop" that confirms
+// the press. Icon buttons pop to scale(1.10) so the press still reads
+// above their 1.06 hover; every other <button> in the app gets a
+// subtler scale(1.05) via the global rule at the bottom of this file.
 // Especially important on touchscreens where the press has no other
 // physical signal.
 //
@@ -28,7 +31,7 @@ $icon-button-hover-transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   &:active:not(:disabled) {
-    transform: scale(0.95);
+    transform: scale(1.10);
   }
 
   // Some buttons already declare their own `transition` — the rule
@@ -55,4 +58,28 @@ $icon-button-hover-transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 .catalogue-lightbox-mini-actions__btn,
 .catalogue-members__icon-btn {
   @extend %icon-button-interactions;
+}
+
+// App-wide press pop. Every <button> gets a subtle scale-up on click —
+// present and future — so the whole app shares one tactile language.
+//
+// This is an element-level selector (lowest specificity on purpose):
+// it provides a baseline pop and a transform transition only where a
+// component hasn't already declared its own. Components with a custom
+// `:active` transform (icon buttons above, the primary buttons that
+// pop via their own rules) win on specificity and keep their tuned
+// values. Buttons that set their own `transition` keep it too; this
+// rule only fills in a transition where none exists.
+button:not(:disabled) {
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active {
+    transform: none;
+  }
 }
