@@ -1033,7 +1033,13 @@
 
 .catalogue-videos-preview__modal {
   width: min(1240px, 100%);
-  max-height: calc(100dvh - 48px);
+  // Was `max-height` — children's `height: 100%` collapsed to `auto`
+  // because percentage heights resolve against the parent's HEIGHT
+  // property (not max-height). That made the tweet panel grow to its
+  // iframe's natural size instead of being bounded by the viewport,
+  // which in turn made the inner `overflow-y: auto` never trigger
+  // and the "more below" hint never show. Explicit height fixes both.
+  height: calc(100dvh - 48px);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   border: 1px solid rgba(255, 255, 255, 0.12);
