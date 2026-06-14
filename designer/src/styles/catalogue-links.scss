@@ -11,7 +11,7 @@
 
 .catalogue-links__head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;             // search pill aligns to title baseline-ish
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
@@ -91,37 +91,69 @@
   font-size: 12px;
 }
 
+// ── Search pill (header-right) ─────────────────────────────────
+// Compact pill that sits next to the "Saved Links" title. Mirrors the
+// Videos section's search pill so the muscle memory carries across
+// tabs. `/` focuses the input from anywhere on the Links surface.
 .catalogue-links__search-row {
-  position: relative;
-  display: flex;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 12px;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  width: clamp(240px, 32vw, 360px);
+  transition: border-color 0.15s ease;
+
+  &:focus-within { border-color: #6366f1; }
 }
 
 .catalogue-links__search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
   color: #71717a;
-  pointer-events: none;
+  flex-shrink: 0;
 }
 
 .catalogue-links__search {
   flex: 1;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 10px;
-  background: #101015;
-  color: #f4f4f5;
+  border: none;
+  background: transparent;
+  color: #e4e4e7;
+  font-family: inherit;
   font-size: 13px;
-  padding: 9px 12px 9px 34px;
+  padding: 0;
   outline: none;
+  min-width: 0;
 
-  &::placeholder {
-    color: #71717a;
-  }
+  &::placeholder { color: #71717a; }
+}
 
-  &:focus {
-    border-color: rgba(99, 102, 241, 0.55);
-  }
+.catalogue-links__search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover { background: rgba(255, 255, 255, 0.12); color: #fafafa; }
+}
+
+.catalogue-links__search-kbd {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #71717a;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  padding: 1px 6px;
+  flex-shrink: 0;
 }
 
 .catalogue-links__items {
