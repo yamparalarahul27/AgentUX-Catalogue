@@ -91,12 +91,6 @@ export function CatalogueFamilyLightboxCommentItem({
     <div className={`catalogue-lightbox-comment${isReply ? ' is-reply' : ''}${isDeleted ? ' is-deleted' : ''}`}>
       <div className="catalogue-lightbox-comment-top">
         <span className="catalogue-lightbox-comment-email">{comment.user_email}</span>
-        <span className="catalogue-lightbox-comment-time">
-          {formatDateTime(comment.created_at)}
-          {isEdited && !isDeleted && (
-            <span className="catalogue-lightbox-comment-edited-tag">(edited)</span>
-          )}
-        </span>
         {!isDeleted && (canManage || (onReply && !isReply && !hasReplies)) && (
           <div className="catalogue-lightbox-comment-actions">
             {onReply && !isReply && !hasReplies && (
@@ -197,6 +191,14 @@ export function CatalogueFamilyLightboxCommentItem({
         </div>
       ) : (
         <p className="catalogue-lightbox-comment-text">{comment.text}</p>
+      )}
+      {!isEditing && (
+        <div className="catalogue-lightbox-comment-time">
+          {formatDateTime(comment.created_at)}
+          {isEdited && !isDeleted && (
+            <span className="catalogue-lightbox-comment-edited-tag">(edited)</span>
+          )}
+        </div>
       )}
     </div>
   );

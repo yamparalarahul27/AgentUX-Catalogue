@@ -75,9 +75,12 @@
 }
 
 .catalogue-lightbox-comment-time {
+  // Now sits as a small caption BELOW the comment text (was beside
+  // the email in the top row). Tight top-margin so it groups with
+  // the message it belongs to.
+  margin-top: 6px;
   font-size: 10px;
   color: $text-dim;
-  flex: 1;
 }
 
 .catalogue-lightbox-comment-delete {
@@ -110,6 +113,14 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  // Quiet by default — fade in on hover/focus of the comment row so
+  // the row reads like a chat bubble rather than an action panel.
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.catalogue-lightbox-comment:hover .catalogue-lightbox-comment-actions,
+.catalogue-lightbox-comment:focus-within .catalogue-lightbox-comment-actions {
+  opacity: 1;
 }
 
 // Per-comment "Show on share page" toggle. Off = muted icon; on =
@@ -253,17 +264,18 @@
   &:hover { color: $text; border-color: $text-dim; }
 }
 
-// "Replying to @user" context bar above the comment input.
+// "Replying to @user" context chip — sits as a flex-column child of
+// the comment-dock, so it stacks above the input row like a WhatsApp
+// reply chip. Indigo-tinted to mirror the thread accent.
 .catalogue-lightbox-reply-context {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 4px 10px;
-  margin-bottom: 6px;
-  border-radius: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
   background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.28);
+  border-left: 3px solid rgba(99, 102, 241, 0.55);
   font-size: 11px;
   color: $text-dim;
   strong { color: $text; font-weight: 600; }
@@ -283,12 +295,23 @@
   &:hover { background: rgba(255, 255, 255, 0.08); color: $text; }
 }
 
+// Dock = reply-context (optional) stacked above the comment-input row,
+// like the reply chip in WhatsApp / iMessage. The dock owns the
+// border-top + padding now so the reply chip sits flush above the
+// input within the same band.
+.catalogue-lightbox-comment-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-top: 1px solid $border;
+  flex-shrink: 0;
+}
+
 .catalogue-lightbox-comment-input {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px;
-  border-top: 1px solid $border;
   flex-shrink: 0;
 
   input {

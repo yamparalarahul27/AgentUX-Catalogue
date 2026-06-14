@@ -1155,7 +1155,10 @@
     min-height: 120px;
   }
 
-  .catalogue-lightbox-comment-input {
+  // Sticky-bottom now lives on the dock so the reply chip + input
+  // stick to the bottom of the viewport together when the lightbox
+  // scrolls. Was on the input itself — left the reply chip floating.
+  .catalogue-lightbox-comment-dock {
     position: sticky;
     bottom: 0;
     z-index: 2;

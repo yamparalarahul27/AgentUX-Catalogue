@@ -1887,9 +1887,9 @@ export function CatalogueFamilyLightbox({
                       ))
                     )}
                   </div>
-                  <div className="catalogue-lightbox-comment-input">
-                    {/* Reply-context bar — when set, the input becomes a
-                        reply to the selected parent. Click × to cancel
+                  <div className="catalogue-lightbox-comment-dock">
+                    {/* Reply-context bar — sits above the input like a
+                        WhatsApp / iMessage reply chip. Click × to cancel
                         and revert to a top-level comment. */}
                     {replyToCommentId && (() => {
                       const parent = comments.find((c) => c.id === replyToCommentId);
@@ -1909,21 +1909,23 @@ export function CatalogueFamilyLightbox({
                         </div>
                       );
                     })()}
-                    <Squircle
-                      as="input"
-                      cornerRadius={10}
-                      type="text"
-                      value={newComment}
-                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNewComment(event.target.value)}
-                      onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-                        if (event.key === 'Enter') void addComment();
-                        if (event.key === 'Escape' && replyToCommentId) setReplyToCommentId(null);
-                      }}
-                      placeholder={replyToCommentId ? 'Write a reply…' : 'Add a comment...'}
-                    />
-                    <Squircle as="button" cornerRadius={10} type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
-                      <Send size={16} />
-                    </Squircle>
+                    <div className="catalogue-lightbox-comment-input">
+                      <Squircle
+                        as="input"
+                        cornerRadius={10}
+                        type="text"
+                        value={newComment}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNewComment(event.target.value)}
+                        onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+                          if (event.key === 'Enter') void addComment();
+                          if (event.key === 'Escape' && replyToCommentId) setReplyToCommentId(null);
+                        }}
+                        placeholder={replyToCommentId ? 'Write a reply…' : 'Add a comment...'}
+                      />
+                      <Squircle as="button" cornerRadius={10} type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
+                        <Send size={16} />
+                      </Squircle>
+                    </div>
                   </div>
                 </>
               ) : lightboxPanel === 'ui-elements' ? (
