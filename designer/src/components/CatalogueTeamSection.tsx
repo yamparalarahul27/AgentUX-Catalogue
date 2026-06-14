@@ -39,7 +39,7 @@ import { CatalogueMembersSection } from './CatalogueMembersSection';
 import { CatalogueTrashSection } from './CatalogueTrashSection';
 import { ConfirmModal } from './ConfirmModal';
 import { GroupAppearanceEditModal } from './GroupAppearanceEditModal';
-import { IconTooltip } from './IconTooltip';
+import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { Toast } from './Toast';
 
 type TeamSubTab =
@@ -304,6 +304,7 @@ export function CatalogueTeamSection({
   const activeSection = subSections.find((section) => section.id === subTab) ?? subSections[0];
 
   return (
+    <IconTooltipProvider>
     <section className="catalogue-team">
       <div className="catalogue-team__layout">
         <nav className="catalogue-team__nav" aria-label="Team section">
@@ -633,5 +634,6 @@ export function CatalogueTeamSection({
         />
       )}
     </section>
+    </IconTooltipProvider>
   );
 }
