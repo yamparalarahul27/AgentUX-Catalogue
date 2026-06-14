@@ -982,7 +982,8 @@
   text-overflow: ellipsis;
 }
 
-.catalogue-quick-queue-remove {
+.catalogue-quick-queue-remove,
+.catalogue-quick-queue-preview {
   width: 26px;
   height: 26px;
   border: 1px solid $border;
@@ -995,11 +996,28 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
+}
 
+// Destructive — red on hover.
+.catalogue-quick-queue-remove:hover {
+  border-color: $danger;
+  color: $danger;
+  background: rgba($danger, 0.1);
+}
+
+// Non-destructive (preview / quick-view) — indigo on hover and when
+// the row is the active preview. Previously shared the `__remove`
+// class which made it flash red on hover, reading as "delete".
+.catalogue-quick-queue-preview {
   &:hover {
-    border-color: $danger;
-    color: $danger;
-    background: rgba($danger, 0.1);
+    border-color: rgba(99, 102, 241, 0.55);
+    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.1);
+  }
+  &.is-active {
+    border-color: rgba(99, 102, 241, 0.55);
+    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.12);
   }
 }
 
