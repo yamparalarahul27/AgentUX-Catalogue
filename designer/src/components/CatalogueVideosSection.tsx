@@ -768,6 +768,33 @@ export function CatalogueVideosSection({
 
   const isFilterActive = normalizedSearchQuery !== '' || selectedTagFilters.size > 0;
 
+  // Cross-tab search — the header search box filters X / YouTube /
+  // Family Values together. Tag filter still scopes only the X tab
+  // (it's the only collection with tags). Tab count badges below
+  // reflect the post-search count so users can see at a glance how
+  // many matches each tab holds.
+  const filteredYouTubeVideos = useMemo(() => {
+    if (normalizedSearchQuery === '') return youtubeVideos;
+    return youtubeVideos.filter((video) => {
+      const haystack = [
+        video.title ?? '',
+        video.channelName ?? '',
+        video.channelHandle ?? '',
+        video.url,
+        ...video.tags,
+      ].join(' ').toLowerCase();
+      return haystack.includes(normalizedSearchQuery);
+    });
+  }, [youtubeVideos, normalizedSearchQuery]);
+
+  const filteredReferenceVideos = useMemo(() => {
+    if (normalizedSearchQuery === '') return REFERENCE_VIDEOS;
+    return REFERENCE_VIDEOS.filter((video) => {
+      const haystack = `family values ${video.id}`.toLowerCase();
+      return haystack.includes(normalizedSearchQuery);
+    });
+  }, [normalizedSearchQuery]);
+
   // Persist a new tags array to the row. Optimistic — flip local
   // state, revert on error. All three mutations (add, rename, remove)
   // funnel through here so the round-trip is consistent.
@@ -1264,12 +1291,12 @@ export function CatalogueVideosSection({
           <div className="catalogue-videos__copy">
             <h2>Videos as Medium</h2>
           </div>
-          {/* Search moved here (was below the tag-filter strip) so the
-              filter lives next to the section title where users look
-              first, and so the body scroll area starts with content
-              rather than chrome. Only rendered on the X tab — YouTube
-              + Family don't have search yet. */}
-          {activeTab === 'x' && !loadingData && xPosts.length > 0 && (
+          {/* Unified search across X / YouTube / Family Values — one
+              query filters all three collections. Tab count badges
+              update to reflect per-tab matches so cross-tab hits are
+              visible at a glance. Tag filter (X only) is layered on
+              top of search for the X tab. */}
+          {!loadingData && (
             <div className="catalogue-videos__search" role="search">
               <Search size={14} aria-hidden="true" />
               <input
@@ -1277,8 +1304,8 @@ export function CatalogueVideosSection({
                 type="text"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by author, text, tag, or URL"
-                aria-label="Search saved X posts"
+                placeholder="Search videos (author, title, tag, URL)"
+                aria-label="Search saved videos across all tabs"
               />
               {searchQuery && (
                 <button
@@ -1306,7 +1333,7 @@ export function CatalogueVideosSection({
             onClick={() => setActiveTab('x')}
           >
             X (Twitter)
-            <span className="catalogue-videos__tab-count">{xPosts.length}</span>
+            <span className="catalogue-videos__tab-count">{sortedXPosts.length}</span>
           </button>
           <button
             type="button"
@@ -1316,7 +1343,7 @@ export function CatalogueVideosSection({
             onClick={() => setActiveTab('youtube')}
           >
             YouTube
-            <span className="catalogue-videos__tab-count">{youtubeVideos.length}</span>
+            <span className="catalogue-videos__tab-count">{filteredYouTubeVideos.length}</span>
           </button>
           <button
             type="button"
@@ -1326,7 +1353,7 @@ export function CatalogueVideosSection({
             onClick={() => setActiveTab('family')}
           >
             Family Values
-            <span className="catalogue-videos__tab-count">{REFERENCE_VIDEOS.length}</span>
+            <span className="catalogue-videos__tab-count">{filteredReferenceVideos.length}</span>
           </button>
         </div>
 
@@ -1590,9 +1617,13 @@ export function CatalogueVideosSection({
               <p className="catalogue-videos__loading">
                 No YouTube videos yet — paste a URL above to save your first one.
               </p>
+            ) : filteredYouTubeVideos.length === 0 ? (
+              <p className="catalogue-videos__loading">
+                No YouTube videos match &ldquo;{searchQuery.trim()}&rdquo;.
+              </p>
             ) : (
               <div className="catalogue-videos__grid">
-                {youtubeVideos.map((video) => {
+                {filteredYouTubeVideos.map((video) => {
                   // Fall back to YouTube's predictable thumbnail pattern when
                   // oEmbed hasn't backfilled yet, so cards don't render as
                   // empty boxes between save and metadata fetch.
@@ -1663,8 +1694,13 @@ export function CatalogueVideosSection({
         )}
 
         {activeTab === 'family' && (
+          filteredReferenceVideos.length === 0 ? (
+            <p className="catalogue-videos__loading">
+              No Family Values entries match &ldquo;{searchQuery.trim()}&rdquo;.
+            </p>
+          ) : (
             <div className="catalogue-videos__grid">
-              {REFERENCE_VIDEOS.map((video) => (
+              {filteredReferenceVideos.map((video) => (
                 <article key={video.id} className="catalogue-videos__card">
                   <button
                     type="button"
@@ -1692,6 +1728,7 @@ export function CatalogueVideosSection({
                 </article>
               ))}
             </div>
+          )
         )}
       </section>
 

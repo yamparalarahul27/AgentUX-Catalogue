@@ -173,14 +173,26 @@ export function CatalogueQuickUploadPanel({
     return quickUploadGroup.trim() || item.parsedGroup || 'No group';
   }
 
+  // Auto-select the newest-added file for preview. Tracks the prior
+  // queue length so we can detect a "grew by N" event and jump to the
+  // latest tail item. Falls back to the tail if the current selection
+  // got removed. Manual clicks on a Quick view button still win — we
+  // only touch selection when something changed.
+  const prevQueueLengthRef = useRef(0);
   useEffect(() => {
     if (quickUploadQueue.length === 0) {
       setSelectedPreviewId(null);
+      prevQueueLengthRef.current = 0;
       return;
     }
-    if (!selectedPreviewId || !quickUploadQueue.some((item) => item.id === selectedPreviewId)) {
-      setSelectedPreviewId(quickUploadQueue[0].id);
+    const last = quickUploadQueue[quickUploadQueue.length - 1];
+    const grew = quickUploadQueue.length > prevQueueLengthRef.current;
+    const selectionStale = !selectedPreviewId
+      || !quickUploadQueue.some((item) => item.id === selectedPreviewId);
+    if (grew || selectionStale) {
+      setSelectedPreviewId(last.id);
     }
+    prevQueueLengthRef.current = quickUploadQueue.length;
   }, [quickUploadQueue, selectedPreviewId]);
 
   const selectedPreviewItem = useMemo(
@@ -427,14 +439,10 @@ export function CatalogueQuickUploadPanel({
                   <IconTooltip label="Quick view">
                     <button
                       type="button"
-                      className="catalogue-quick-queue-remove"
+                      className={`catalogue-quick-queue-preview${selectedPreviewId === item.id ? ' is-active' : ''}`}
                       aria-label={`Quick view ${item.fileName}`}
+                      aria-pressed={selectedPreviewId === item.id}
                       onClick={() => setSelectedPreviewId(item.id)}
-                      style={{
-                        borderColor: selectedPreviewId === item.id ? 'rgba(99,102,241,0.55)' : undefined,
-                        color: selectedPreviewId === item.id ? '#c7d2fe' : undefined,
-                        background: selectedPreviewId === item.id ? 'rgba(99,102,241,0.12)' : undefined,
-                      }}
                     >
                       <Eye size={12} />
                     </button>
