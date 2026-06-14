@@ -181,33 +181,32 @@ export function useCataloguePrototypes({ userEmail }: UseCataloguePrototypesArgs
     if (!target) return;
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userData.user) throw new Error('You need to be signed in.');
-    const userId = userData.user.id;
 
-    const safeName = sanitizeFilenameSegment(file.name);
-    const newStoragePath = `${userId}/${crypto.randomUUID()}-${safeName}`;
-
+    // Overwrite the existing object in place (upsert) so storage_path —
+    // and therefore the public share link (mockups.hirahul.xyz/<path>) —
+    // stays stable across re-uploads. Iterating on a prototype must not
+    // break a link that's already been shared. The proxy serves these
+    // with a revalidating cache header so the new content shows up
+    // immediately; see api/prototype-proxy.ts.
+    //
     // Same `text/html` Blob re-wrap as the initial upload path —
     // see comment there for why this matters.
     const htmlBlob = new Blob([file], { type: 'text/html' });
     const { error: uploadErr } = await supabase.storage
       .from('prototypes')
-      .upload(newStoragePath, htmlBlob, { contentType: 'text/html', upsert: false });
+      .upload(target.storagePath, htmlBlob, { contentType: 'text/html', upsert: true });
     if (uploadErr) throw new Error(`Reupload failed: ${uploadErr.message}`);
 
+    // storage_path is unchanged; only the display filename can differ.
     const { error: updateErr } = await supabase
       .from('catalogue_prototypes')
-      .update({ filename: file.name, storage_path: newStoragePath })
+      .update({ filename: file.name })
       .eq('id', id);
-    if (updateErr) {
-      void supabase.storage.from('prototypes').remove([newStoragePath]);
-      throw new Error(updateErr.message);
-    }
+    if (updateErr) throw new Error(updateErr.message);
 
-    const oldPath = target.storagePath;
     setPrototypes((prev) => prev.map((p) => (p.id === id
-      ? { ...p, filename: file.name, storagePath: newStoragePath, updatedAt: new Date().toISOString() }
+      ? { ...p, filename: file.name, updatedAt: new Date().toISOString() }
       : p)));
-    void supabase.storage.from('prototypes').remove([oldPath]);
   }, [prototypes]);
 
   const renamePrototype = useCallback(async (id: string, title: string) => {
