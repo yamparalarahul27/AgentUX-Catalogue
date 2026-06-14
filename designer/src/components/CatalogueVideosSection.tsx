@@ -548,13 +548,19 @@ export function CatalogueVideosSection({
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // ⌘K / Ctrl+K focuses the search input. Mirrors the global search-input
-  // shortcut convention (Linear, Notion, GitHub). Only fires when this
-  // component is mounted, so other catalogue pages keep their own shortcuts.
+  // `/` focuses the search input — matches the GitHub / Mobbin / X
+  // convention. Ignores the keystroke when the user is already typing
+  // in an input / textarea / contenteditable so it doesn't intercept
+  // a literal slash. Skips when modifier keys are held so combos like
+  // `⌘/` (toggle comment in code editors) still pass through.
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
-      if (!(event.metaKey || event.ctrlKey)) return;
-      if (event.key.toLowerCase() !== 'k') return;
+      if (event.key !== '/') return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (target?.isContentEditable) return;
       event.preventDefault();
       searchInputRef.current?.focus();
       searchInputRef.current?.select();
@@ -1284,7 +1290,7 @@ export function CatalogueVideosSection({
                   <X size={12} aria-hidden="true" />
                 </button>
               )}
-              <kbd className="catalogue-videos__search-kbd" aria-hidden="true">⌘K</kbd>
+              <kbd className="catalogue-videos__search-kbd" aria-hidden="true">/</kbd>
             </div>
           )}
         </header>
