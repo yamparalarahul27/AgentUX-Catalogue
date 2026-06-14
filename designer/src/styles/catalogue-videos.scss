@@ -520,16 +520,29 @@
 // ── Filter strip (above the saved X posts grid) ────────────────
 // Multi-select tag chips with OR semantics. Clicking a chip toggles
 // it; the strip persists "Clear" once any chip is active so users
-// can reset in one move.
+// can reset in one move. Single-row horizontal scroll (was wrapping
+// to multiple rows) so the strip stops eating vertical space when
+// the tag set grows.
 .catalogue-videos__tag-filters {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
   padding: 10px 12px;
   background: rgba(17, 17, 19, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  // Hide the scrollbar — drag / trackpad scroll still works, and the
+  // fade-mask on the right edge tells users there's more to see.
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+  // Soft fade on both edges so the chips don't slam against the
+  // container border when scrolled — reads as "more content here".
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 24px), transparent 100%);
 }
 
 .catalogue-videos__tag-filters-label {
@@ -539,9 +552,11 @@
   color: #71717a;
   font-weight: 600;
   margin-right: 4px;
+  flex-shrink: 0;
 }
 
 .catalogue-videos__tag-chip {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -583,6 +598,7 @@
   font-size: 11px;
   font-family: inherit;
   padding: 4px 6px;
+  flex-shrink: 0;
   border-radius: 4px;
   transition: color 0.15s ease, background 0.15s ease;
   margin-left: auto;
@@ -1387,25 +1403,6 @@
       min-width: 0;
       width: 100%;
     }
-  }
-
-  // Tags filter strip: collapse the wrapping multi-row block into a
-  // single horizontally-scrollable row so it stops eating vertical space.
-  .catalogue-videos__tag-filters {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  .catalogue-videos__tag-filters-label,
-  .catalogue-videos__tag-chip,
-  .catalogue-videos__tag-clear {
-    flex-shrink: 0;
   }
 
   // Anchor the lightbox to the keyboard-aware visual viewport so the
