@@ -286,7 +286,7 @@ export function CatalogueLinksSection({
       <header className="catalogue-links__head">
         <div className="catalogue-links__copy">
           <h2>Saved Links</h2>
-          <p>Reference URLs saved from the catalogue or shared via the Telegram bot.</p>
+          <p>Reference URLs saved from the catalogue.</p>
         </div>
       </header>
 
@@ -341,7 +341,7 @@ export function CatalogueLinksSection({
         <p className="catalogue-links__loading">Loading saved links...</p>
       ) : !hasLinks ? (
         <p className="catalogue-links__empty">
-          No links yet. Paste a URL above or send one to the Telegram bot.
+          No links yet. Paste a URL above to save it.
         </p>
       ) : filteredLinks.length === 0 ? (
         <p className="catalogue-links__empty">No links match "{search.trim()}".</p>
