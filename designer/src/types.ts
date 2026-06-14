@@ -91,6 +91,15 @@ export interface ScreenshotComment {
   resolved_at?: string | null;
   resolved_by_email?: string | null;
   is_public?: boolean;
+  // Edit + reply support (added 2026-06-20):
+  // - updated_at: when set, the UI shows an "(edited)" suffix
+  // - deleted_at: when set, the comment renders as "Comment removed"
+  //   placeholder so child replies keep their context (soft-delete)
+  // - parent_id: NULL = top-level. Non-null = reply pointing at the
+  //   parent comment id (v1 caps replies at 1 level deep)
+  updated_at?: string | null;
+  deleted_at?: string | null;
+  parent_id?: string | null;
 }
 
 export interface ParsedScreenshotName {

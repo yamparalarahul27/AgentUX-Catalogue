@@ -152,6 +152,137 @@
   word-break: break-word;
 }
 
+// "(edited)" suffix in the time row — small + muted so it reads as a
+// quiet annotation rather than a competing label.
+.catalogue-lightbox-comment-edited-tag {
+  margin-left: 4px;
+  font-size: 10px;
+  color: $text-dim;
+  font-style: italic;
+}
+
+// Soft-deleted parent — text is gone but the row stays so its replies
+// keep context. Renders as a muted, italic placeholder.
+.catalogue-lightbox-comment.is-deleted {
+  background: rgba(0, 0, 0, 0.2);
+  border-style: dashed;
+}
+.catalogue-lightbox-comment.is-deleted .catalogue-lightbox-comment-text {
+  color: $text-dim;
+  font-style: italic;
+}
+
+// Indent replies so the thread structure reads visually. 28px matches
+// the avatar/icon slot width on the lightbox.
+.catalogue-lightbox-comment.is-reply {
+  margin-left: 28px;
+  border-left: 2px solid rgba(99, 102, 241, 0.32);
+}
+
+// Edit + Reply icon buttons — same baseline as the existing delete /
+// share-toggle buttons in the actions row.
+.catalogue-lightbox-comment-edit,
+.catalogue-lightbox-comment-reply {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  &:hover {
+    color: $accent;
+    background: rgba($accent, 0.12);
+  }
+  &:focus-visible {
+    outline: 2px solid rgba($accent, 0.6);
+    outline-offset: 1px;
+  }
+}
+
+// Inline edit mode — textarea replaces the comment text, two small
+// buttons (Save / Cancel) sit below.
+.catalogue-lightbox-comment-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.catalogue-lightbox-comment-edit-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 13px;
+  color: $text;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 6px;
+  resize: vertical;
+  outline: none;
+  &:focus { border-color: $accent; }
+}
+.catalogue-lightbox-comment-edit-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.catalogue-lightbox-comment-edit-save,
+.catalogue-lightbox-comment-edit-cancel {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.catalogue-lightbox-comment-edit-save {
+  background: $accent;
+  color: #fff;
+  &:disabled { opacity: 0.45; cursor: default; }
+  &:hover:not(:disabled) { filter: brightness(1.08); }
+}
+.catalogue-lightbox-comment-edit-cancel {
+  background: transparent;
+  color: $text-muted;
+  border-color: $border;
+  &:hover { color: $text; border-color: $text-dim; }
+}
+
+// "Replying to @user" context bar above the comment input.
+.catalogue-lightbox-reply-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  font-size: 11px;
+  color: $text-dim;
+  strong { color: $text; font-weight: 600; }
+}
+.catalogue-lightbox-reply-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  &:hover { background: rgba(255, 255, 255, 0.08); color: $text; }
+}
+
 .catalogue-lightbox-comment-input {
   display: flex;
   align-items: center;
