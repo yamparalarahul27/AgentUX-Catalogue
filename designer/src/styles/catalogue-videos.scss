@@ -1045,6 +1045,13 @@
 .catalogue-videos-preview__main {
   position: relative;
   background: #050507;
+  // Without `min-height: 0` (and `min-width: 0`), grid items refuse to
+  // shrink below their content's intrinsic size — that's why the tall
+  // tweet iframe was punching past the modal's max-height. With these
+  // set, the inner `__tweet` container's `overflow-y: auto` kicks in
+  // and the iframe scrolls inside the modal instead.
+  min-height: 0;
+  min-width: 0;
 }
 
 .catalogue-videos-preview__player {
@@ -1055,18 +1062,27 @@
   background: #050507;
 }
 
+// Tweet container — scrollable block (was flex-centered with a 760px
+// min-height that forced the modal to grow past its viewport bounds
+// for tall threads). Now: takes 100% of the modal's main column,
+// scrolls internally when the iframe is taller than the available
+// space. Tweet is horizontally centred via `margin: 0 auto` on the
+// rendered widgets below.
 .catalogue-videos-preview__tweet {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 100%;
   height: 100%;
-  min-height: min(760px, calc(100dvh - 48px));
   border: none;
   background: #050507;
   padding: 16px;
   box-sizing: border-box;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  // Soft fade on the bottom edge so long tweets feel like they keep
+  // going rather than slamming into a hard cut.
+  mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
 }
 
 .catalogue-videos-preview__tweet .twitter-tweet,
@@ -1074,7 +1090,7 @@
 .catalogue-videos-preview__tweet > div {
   width: min(100%, 640px) !important;
   max-width: 640px !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
 }
 
 .catalogue-videos-preview__tweet iframe {
