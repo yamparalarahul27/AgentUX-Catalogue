@@ -129,10 +129,9 @@
   margin: 0;
   padding: 0;
   display: grid;
-  // Flat full-width grid (no host-group wrapper anymore). minmax 170px
-  // produces ~7–8 cards per row on a 1500px viewport and gracefully
-  // drops to fewer columns on narrower screens via auto-fill.
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  // Cap at 5 cards per row on desktop (was: auto-fill). Drops to 4 / 3
+  // / 2 / 1 as the viewport tightens — see media queries below.
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -233,13 +232,9 @@
   margin-top: 2px;
 }
 
-.catalogue-links__author {
-  color: #a1a1aa;
-}
-
-// Host name in the card meta row. Was previously surfaced as the
-// group header above each card cluster — now lives inline as a small
-// muted chip so each card still tells you where the link points.
+// Host name in the card meta row — only thing left in meta after
+// dropping the author + relative-time chips (they were redundant
+// noise on most cards, "telegram-bot · 2w ago").
 .catalogue-links__host {
   color: #d4d4d8;
   font-weight: 600;
@@ -247,15 +242,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 70%;
-}
-
-.catalogue-links__dot {
-  color: #3f3f46;
-}
-
-.catalogue-links__time {
-  color: #71717a;
+  max-width: 100%;
 }
 
 .catalogue-links__remove {
@@ -290,6 +277,18 @@
   }
 }
 
+// Step the card grid down as the viewport tightens. 5 desktop →
+// 4 → 3 → 2 → 1. Mobile breakpoint also bumps misc layout below.
+@media (max-width: 1280px) {
+  .catalogue-links__items { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 1000px) {
+  .catalogue-links__items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .catalogue-links__items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 900px) {
   .catalogue-links {
     padding: 16px;
@@ -306,7 +305,7 @@
   }
 
   .catalogue-links__items {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 }

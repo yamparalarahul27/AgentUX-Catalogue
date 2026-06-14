@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileCode2, Link as LinkIcon, Plus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { formatRelative } from '../lib/catalogue-relative-time';
 import { useLinkMetadata, type LinkMetadata } from '../hooks/use-link-metadata';
 import { CataloguePrototypes } from './CataloguePrototypes';
 import { DotLoader } from './DotLoader';
@@ -96,12 +95,6 @@ function displayLabel(link: LinkReference, meta: LinkMetadata | null | undefined
   } catch {
     return link.url;
   }
-}
-
-function shortAuthor(email: string | null): string | null {
-  if (!email) return null;
-  const at = email.indexOf('@');
-  return at > 0 ? email.slice(0, at) : email;
 }
 
 export function CatalogueLinksSection({
@@ -353,8 +346,6 @@ export function CatalogueLinksSection({
               const label = displayLabel(link, meta);
               const description = meta?.description?.trim() || null;
               const thumb = meta?.image || null;
-              const author = shortAuthor(link.addedByEmail);
-              const relative = formatRelative(link.addedAt);
               return (
                 <li key={link.id} className="catalogue-links__item">
                   <a
@@ -406,14 +397,6 @@ export function CatalogueLinksSection({
                     )}
                     <div className="catalogue-links__meta">
                       <span className="catalogue-links__host">{link.host}</span>
-                      {(author || relative) && (
-                        <span className="catalogue-links__dot" aria-hidden="true">·</span>
-                      )}
-                      {author && <span className="catalogue-links__author">{author}</span>}
-                      {author && relative && (
-                        <span className="catalogue-links__dot" aria-hidden="true">·</span>
-                      )}
-                      {relative && <span className="catalogue-links__time">{relative}</span>}
                     </div>
                   </div>
                   <IconTooltip label="Remove link">
