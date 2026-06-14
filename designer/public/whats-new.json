@@ -6,6 +6,12 @@
     "bullets": [
       { "kind": "new", "text": "Each saved video tile (X post or YouTube) now has a Share icon — click to copy a deep-link to your clipboard" },
       { "kind": "improved", "text": "When a teammate opens that link, the Videos section opens straight to the right tab and pops the shared video into view — no scrolling, no searching" }
+    "id": "2026-06-13-links-card-grid",
+    "date": "June 13, 2026",
+    "title": "Saved Links — new card-grid layout",
+    "bullets": [
+      { "kind": "improved", "text": "Host groups now sit side by side in two columns instead of stacking down the page" },
+      { "kind": "improved", "text": "Links inside each host show as small visual cards (thumbnail on top, title + meta below) and wrap into rows of up to ~6 — way more scannable than the old vertical list" }
     ]
   },
   {
