@@ -124,91 +124,16 @@
   }
 }
 
-.catalogue-links__groups {
+.catalogue-links__items {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  // Flat full-width grid (no host-group wrapper anymore). minmax 170px
+  // produces ~7–8 cards per row on a 1500px viewport and gracefully
+  // drops to fewer columns on narrower screens via auto-fill.
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 14px;
-}
-
-.catalogue-links__group {
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
-  background: rgba(17, 17, 19, 0.6);
-  overflow: hidden;
-  min-width: 0;       // grid item shouldn't expand past column
-}
-
-.catalogue-links__group-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  border: none;
-  background: transparent;
-  color: #f4f4f5;
-  text-align: left;
-  padding: 10px 14px;
-  cursor: pointer;
-  font: inherit;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  &:focus-visible {
-    outline: 2px solid rgba(99, 102, 241, 0.55);
-    outline-offset: -2px;
-  }
-}
-
-.catalogue-links__favicon {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  background: #09090b;
-  object-fit: contain;
-}
-
-.catalogue-links__group-host {
-  font-size: 13px;
-  font-weight: 600;
-  color: #e4e4e7;
-}
-
-.catalogue-links__group-count {
-  font-size: 11px;
-  font-weight: 600;
-  color: #a1a1aa;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-
-.catalogue-links__group-caret {
-  margin-left: auto;
-  color: #71717a;
-  font-size: 10px;
-  transition: transform 120ms ease;
-
-  &.is-open {
-    transform: rotate(90deg);
-  }
-}
-
-.catalogue-links__items {
-  list-style: none;
-  margin: 0;
-  padding: 8px 10px 12px;
-  display: grid;
-  // Auto-fill caps at the host-group container's width; minmax(120px, 1fr)
-  // produces roughly 5–6 cards per row when groups sit in a 2-column layout
-  // (~700px each), and gracefully drops to fewer columns on narrower viewports.
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 10px;
 }
 
 .catalogue-links__item {
@@ -312,6 +237,19 @@
   color: #a1a1aa;
 }
 
+// Host name in the card meta row. Was previously surfaced as the
+// group header above each card cluster — now lives inline as a small
+// muted chip so each card still tells you where the link points.
+.catalogue-links__host {
+  color: #d4d4d8;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 70%;
+}
+
 .catalogue-links__dot {
   color: #3f3f46;
 }
@@ -349,14 +287,6 @@
     opacity: 1;
     outline: 2px solid rgba(99, 102, 241, 0.55);
     outline-offset: 1px;
-  }
-}
-
-// Drop groups to a single column on narrower viewports — cards inside
-// then have room to keep their auto-fill 5–6-per-row density.
-@media (max-width: 1280px) {
-  .catalogue-links__groups {
-    grid-template-columns: 1fr;
   }
 }
 

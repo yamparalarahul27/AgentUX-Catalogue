@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-13-links-flat-grid",
+    "date": "June 13, 2026",
+    "title": "Saved Links — flat card grid",
+    "bullets": [
+      { "kind": "improved", "text": "Saved Links now show as one flat card grid sorted newest-first — no more per-host grouping (it added noise and made link scanning harder). The host name is surfaced inline on each card so context isn't lost" }
+    ]
+  },
+  {
     "id": "2026-06-13-video-share-links",
     "date": "June 13, 2026",
     "title": "Share saved videos with a link",
