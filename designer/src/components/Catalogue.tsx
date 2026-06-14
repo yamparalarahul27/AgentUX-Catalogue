@@ -495,7 +495,17 @@ export function Catalogue({
       (variant) => variant.screenshot.uploader_email?.toLowerCase() === myEmailLower,
     );
   }, [canEditMetadata, canDeleteOwn, myEmailLower]);
-  const [activeSection, setActiveSection] = useState<CatalogueSection>('catalogue');
+  const [activeSection, setActiveSection] = useState<CatalogueSection>(() => {
+    // Deep-link: a `?v=<id>` query param means we're opening a shared
+    // video link. Land directly on the Videos section so the
+    // CatalogueVideosSection deep-link handler can resolve the id and
+    // open the lightbox without an extra tab switch.
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('v')) return 'videos';
+    }
+    return 'catalogue';
+  });
   // Splash → 3D fall-in motion. Plays once per session: after the boot
   // splash hides on cold launch, header / chip strip / sidebar / cards
   // stagger in from above with a blur + tilt. Subsequent route re-mounts

@@ -1,5 +1,11 @@
 [
   {
+    "id": "2026-06-13-video-share-links",
+    "date": "June 13, 2026",
+    "title": "Share saved videos with a link",
+    "bullets": [
+      { "kind": "new", "text": "Each saved video tile (X post or YouTube) now has a Share icon — click to copy a deep-link to your clipboard" },
+      { "kind": "improved", "text": "When a teammate opens that link, the Videos section opens straight to the right tab and pops the shared video into view — no scrolling, no searching" }
     "id": "2026-06-13-links-card-grid",
     "date": "June 13, 2026",
     "title": "Saved Links — new card-grid layout",
