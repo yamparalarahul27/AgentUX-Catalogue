@@ -1062,40 +1062,106 @@
   background: #050507;
 }
 
-// Tweet container — scrollable block (was flex-centered with a 760px
-// min-height that forced the modal to grow past its viewport bounds
-// for tall threads). Now: takes 100% of the modal's main column,
-// scrolls internally when the iframe is taller than the available
-// space. Tweet is horizontally centred via `margin: 0 auto` on the
-// rendered widgets below.
+// Tweet panel — positioning context for the inner scrolling div + a
+// "more below" hint chevron. Was previously the scroll container
+// itself; refactored so the chevron can sit as a sibling outside the
+// area that Twitter's widgets.js rewrites.
 .catalogue-videos-preview__tweet {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #050507;
+}
+
+// The actual scrollable inner panel that holds the Twitter widget.
+.catalogue-videos-preview__tweet-inner {
   display: block;
   width: 100%;
   height: 100%;
   border: none;
-  background: #050507;
+  background: transparent;
   padding: 16px;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  // Soft fade on the bottom edge so long tweets feel like they keep
-  // going rather than slamming into a hard cut.
-  mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
+
+  // Subtle scrollbar so "you can scroll" is discoverable without
+  // shouting. Webkit + Firefox both styled.
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  &::-webkit-scrollbar { width: 8px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    &:hover { background: rgba(129, 140, 248, 0.55); background-clip: padding-box; }
+  }
 }
 
-.catalogue-videos-preview__tweet .twitter-tweet,
-.catalogue-videos-preview__tweet .twitter-tweet-rendered,
-.catalogue-videos-preview__tweet > div {
+.catalogue-videos-preview__tweet-inner .twitter-tweet,
+.catalogue-videos-preview__tweet-inner .twitter-tweet-rendered,
+.catalogue-videos-preview__tweet-inner > div {
   width: min(100%, 640px) !important;
   max-width: 640px !important;
   margin: 0 auto !important;
 }
 
-.catalogue-videos-preview__tweet iframe {
+.catalogue-videos-preview__tweet-inner iframe {
   width: min(100%, 640px) !important;
   max-width: 640px !important;
+}
+
+// "more below" hint — appears when the tweet overflows + user hasn't
+// scrolled yet. Sits OUTSIDE the inner div so Twitter's widget
+// rewriting doesn't wipe it. Fades out via opacity once scrolled past
+// the top of the content.
+.catalogue-videos-preview__tweet-hint {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  background: rgba(17, 17, 19, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+  animation: catalogue-videos-tweet-hint-bob 1.8s ease-in-out infinite;
+
+  svg { animation: catalogue-videos-tweet-hint-arrow 1.8s ease-in-out infinite; }
+
+  &.is-hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+}
+
+@keyframes catalogue-videos-tweet-hint-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(2px); }
+}
+@keyframes catalogue-videos-tweet-hint-arrow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-videos-preview__tweet-hint,
+  .catalogue-videos-preview__tweet-hint svg {
+    animation: none;
+  }
 }
 
 .catalogue-videos-preview__close {

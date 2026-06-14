@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Check, ChevronLeft, ChevronRight, Minus, Search, Share2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Search, Share2, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
@@ -361,6 +361,10 @@ interface XPostEmbedProps {
 
 function XPostEmbed({ className, tweetId }: XPostEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // True when the tweet content is taller than its scroll viewport AND
+  // the user hasn't scrolled past the top — drives a "more below"
+  // chevron hint so tall threads don't look clipped at first glance.
+  const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
     const host = containerRef.current;
@@ -400,7 +404,45 @@ function XPostEmbed({ className, tweetId }: XPostEmbedProps) {
     };
   }, [tweetId]);
 
-  return <div ref={containerRef} className={className} />;
+  // Scroll-hint visibility: recompute on scroll, on resize, and on a
+  // short poll during the first ~4 s so the iframe's settling height
+  // (Twitter renders progressively) gets picked up. Hides once the
+  // user scrolls past ~12px of the top — confirms they've seen it.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    function check() {
+      const target = containerRef.current;
+      if (!target) return;
+      const overflowing = target.scrollHeight > target.clientHeight + 4;
+      const atTop = target.scrollTop < 12;
+      setShowHint(overflowing && atTop);
+    }
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    el.addEventListener('scroll', check, { passive: true });
+    const startedAt = Date.now();
+    const interval = window.setInterval(() => {
+      check();
+      if (Date.now() - startedAt > 4000) window.clearInterval(interval);
+    }, 400);
+    check();
+    return () => {
+      ro.disconnect();
+      el.removeEventListener('scroll', check);
+      window.clearInterval(interval);
+    };
+  }, [tweetId]);
+
+  return (
+    <div className={className}>
+      <div ref={containerRef} className={`${className}-inner`} />
+      <div className={`${className}-hint${showHint ? '' : ' is-hidden'}`} aria-hidden="true">
+        <ChevronDown size={14} />
+        <span>more below</span>
+      </div>
+    </div>
+  );
 }
 
 type PreviewItem =
