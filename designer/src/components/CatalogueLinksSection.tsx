@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, FileCode2, Link as LinkIcon, Plus, Search, X } from 'lucide-react';
+import { FileCode2, Link as LinkIcon, Plus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatRelative } from '../lib/catalogue-relative-time';
 import { useLinkMetadata, type LinkMetadata } from '../hooks/use-link-metadata';
@@ -39,12 +39,6 @@ interface ParsedLink {
   url: string;
   normalizedUrl: string;
   host: string;
-}
-
-interface HostGroup {
-  host: string;
-  items: LinkReference[];
-  latestAddedAt: string;
 }
 
 function normalizeLink(raw: string): ParsedLink | null {
@@ -123,7 +117,6 @@ export function CatalogueLinksSection({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [savingLink, setSavingLink] = useState(false);
   const [search, setSearch] = useState('');
-  const [collapsedHosts, setCollapsedHosts] = useState<Record<string, boolean>>({});
 
   const allUrls = useMemo(() => links.map((link) => link.url), [links]);
   const { metadata } = useLinkMetadata(allUrls);
@@ -131,7 +124,10 @@ export function CatalogueLinksSection({
   const trimmedSearch = search.trim().toLowerCase();
   const isSearching = trimmedSearch.length > 0;
 
-  const groups = useMemo<HostGroup[]>(() => {
+  // Flat sorted list of links (newest first), filtered by the search box.
+  // No per-host grouping — every link renders as a peer card. The host
+  // is surfaced inline on each card so the host context isn't lost.
+  const filteredLinks = useMemo<LinkReference[]>(() => {
     const filtered = !isSearching
       ? links
       : links.filter((link) => {
@@ -148,31 +144,13 @@ export function CatalogueLinksSection({
             .toLowerCase();
           return haystack.includes(trimmedSearch);
         });
-
-    const byHost = new Map<string, LinkReference[]>();
-    for (const link of filtered) {
-      const existing = byHost.get(link.host);
-      if (existing) existing.push(link);
-      else byHost.set(link.host, [link]);
-    }
-
-    const result: HostGroup[] = [];
-    for (const [host, items] of byHost) {
-      items.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
-      result.push({ host, items, latestAddedAt: items[0]?.addedAt ?? '' });
-    }
-    result.sort((a, b) => b.latestAddedAt.localeCompare(a.latestAddedAt));
-    return result;
+    return [...filtered].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
   }, [links, metadata, isSearching, trimmedSearch]);
 
   function ensureCanEdit() {
     if (canEdit) return true;
     onRequireAuth?.();
     return false;
-  }
-
-  function toggleHost(host: string) {
-    setCollapsedHosts((prev) => ({ ...prev, [host]: !prev[host] }));
   }
 
   useEffect(() => {
@@ -365,125 +343,94 @@ export function CatalogueLinksSection({
         <p className="catalogue-links__empty">
           No links yet. Paste a URL above or send one to the Telegram bot.
         </p>
-      ) : groups.length === 0 ? (
+      ) : filteredLinks.length === 0 ? (
         <p className="catalogue-links__empty">No links match "{search.trim()}".</p>
       ) : (
-        <ul className="catalogue-links__groups">
-          {groups.map((group) => {
-            const userCollapsed = collapsedHosts[group.host];
-            const expanded = isSearching ? true : !userCollapsed;
-            return (
-              <li key={group.host} className="catalogue-links__group">
-                <button
-                  type="button"
-                  className="catalogue-links__group-head"
-                  onClick={() => toggleHost(group.host)}
-                  aria-expanded={expanded}
-                >
-                  <img
-                    className="catalogue-links__favicon"
-                    src={faviconUrl(group.host)}
-                    alt=""
-                    width={20}
-                    height={20}
-                    loading="lazy"
-                  />
-                  <span className="catalogue-links__group-host">{group.host}</span>
-                  <span className="catalogue-links__group-count">{group.items.length}</span>
-                  <ChevronRight
-                    className={`catalogue-links__group-caret${expanded ? ' is-open' : ''}`}
-                    size={14}
+        <IconTooltipProvider>
+          <ul className="catalogue-links__items">
+            {filteredLinks.map((link) => {
+              const meta = metadata[link.url];
+              const label = displayLabel(link, meta);
+              const description = meta?.description?.trim() || null;
+              const thumb = meta?.image || null;
+              const author = shortAuthor(link.addedByEmail);
+              const relative = formatRelative(link.addedAt);
+              return (
+                <li key={link.id} className="catalogue-links__item">
+                  <a
+                    className="catalogue-links__thumb"
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
                     aria-hidden="true"
-                  />
-                </button>
-
-                {expanded && (
-                  <ul className="catalogue-links__items">
-                    {group.items.map((link) => {
-                      const meta = metadata[link.url];
-                      const label = displayLabel(link, meta);
-                      const description = meta?.description?.trim() || null;
-                      const thumb = meta?.image || null;
-                      const author = shortAuthor(link.addedByEmail);
-                      const relative = formatRelative(link.addedAt);
-                      return (
-                        <li key={link.id} className="catalogue-links__item">
-                          <a
-                            className="catalogue-links__thumb"
-                            href={link.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-hidden="true"
-                            tabIndex={-1}
-                          >
-                            {thumb ? (
-                              <img
-                                src={thumb}
-                                alt=""
-                                loading="lazy"
-                                onError={(event) => {
-                                  const img = event.currentTarget;
-                                  if (img.src !== faviconUrl(link.host)) {
-                                    img.src = faviconUrl(link.host);
-                                    img.classList.add('is-fallback');
-                                  } else {
-                                    img.style.visibility = 'hidden';
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <img
-                                className="is-fallback"
-                                src={faviconUrl(link.host)}
-                                alt=""
-                                loading="lazy"
-                              />
-                            )}
-                          </a>
-                          <div className="catalogue-links__body">
-                            <a
-                              className="catalogue-links__url"
-                              href={link.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              title={link.url}
-                            >
-                              {label}
-                            </a>
-                            {description && (
-                              <p className="catalogue-links__desc" title={description}>
-                                {description}
-                              </p>
-                            )}
-                            <div className="catalogue-links__meta">
-                              {author && <span className="catalogue-links__author">{author}</span>}
-                              {author && relative && (
-                                <span className="catalogue-links__dot" aria-hidden="true">·</span>
-                              )}
-                              {relative && <span className="catalogue-links__time">{relative}</span>}
-                            </div>
-                          </div>
-                          <IconTooltipProvider>
-                            <IconTooltip label="Remove link">
-                              <button
-                                type="button"
-                                className="catalogue-links__remove"
-                                onClick={() => void removeLink(link.id)}
-                                aria-label={`Remove ${label}`}
-                              >
-                                <X size={14} aria-hidden="true" />
-                              </button>
-                            </IconTooltip>
-                          </IconTooltipProvider>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                    tabIndex={-1}
+                  >
+                    {thumb ? (
+                      <img
+                        src={thumb}
+                        alt=""
+                        loading="lazy"
+                        onError={(event) => {
+                          const img = event.currentTarget;
+                          if (img.src !== faviconUrl(link.host)) {
+                            img.src = faviconUrl(link.host);
+                            img.classList.add('is-fallback');
+                          } else {
+                            img.style.visibility = 'hidden';
+                          }
+                        }}
+                      />
+                    ) : (
+                      <img
+                        className="is-fallback"
+                        src={faviconUrl(link.host)}
+                        alt=""
+                        loading="lazy"
+                      />
+                    )}
+                  </a>
+                  <div className="catalogue-links__body">
+                    <a
+                      className="catalogue-links__url"
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={link.url}
+                    >
+                      {label}
+                    </a>
+                    {description && (
+                      <p className="catalogue-links__desc" title={description}>
+                        {description}
+                      </p>
+                    )}
+                    <div className="catalogue-links__meta">
+                      <span className="catalogue-links__host">{link.host}</span>
+                      {(author || relative) && (
+                        <span className="catalogue-links__dot" aria-hidden="true">·</span>
+                      )}
+                      {author && <span className="catalogue-links__author">{author}</span>}
+                      {author && relative && (
+                        <span className="catalogue-links__dot" aria-hidden="true">·</span>
+                      )}
+                      {relative && <span className="catalogue-links__time">{relative}</span>}
+                    </div>
+                  </div>
+                  <IconTooltip label="Remove link">
+                    <button
+                      type="button"
+                      className="catalogue-links__remove"
+                      onClick={() => void removeLink(link.id)}
+                      aria-label={`Remove ${label}`}
+                    >
+                      <X size={14} aria-hidden="true" />
+                    </button>
+                  </IconTooltip>
+                </li>
+              );
+            })}
+          </ul>
+        </IconTooltipProvider>
       )}
     </section>
       )}
