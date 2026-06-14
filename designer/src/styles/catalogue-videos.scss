@@ -11,7 +11,7 @@
 
 .catalogue-videos__head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;             // search pill aligns to title baseline-ish
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
@@ -416,19 +416,20 @@
   align-items: center;
 }
 
-// ── Search row (above the tag chips and grid) ─────────────────
-// Case-insensitive substring filter across author, handle, excerpt,
-// URL, and tags. ⌘K / Ctrl+K focuses the input from anywhere in the
-// Videos surface (window-level keydown listener in the component).
+// ── Search pill (header-right) ─────────────────────────────────
+// Lives next to the section title. Case-insensitive substring
+// filter across author, handle, excerpt, URL, and tags. ⌘K / Ctrl+K
+// focuses the input from anywhere in the Videos surface (window-level
+// keydown listener in the component).
 .catalogue-videos__search {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 6px 10px 6px 12px;
   background: #18181b;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  margin-bottom: 10px;
+  border-radius: 999px;
+  width: clamp(240px, 32vw, 360px);
   transition: border-color 0.15s ease;
 
   &:focus-within { border-color: #6366f1; }
@@ -442,7 +443,7 @@
     outline: none;
     color: #e4e4e7;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
     min-width: 0;
 
     &::placeholder { color: #71717a; }

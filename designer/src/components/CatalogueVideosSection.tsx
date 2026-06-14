@@ -1258,6 +1258,35 @@ export function CatalogueVideosSection({
           <div className="catalogue-videos__copy">
             <h2>Videos as Medium</h2>
           </div>
+          {/* Search moved here (was below the tag-filter strip) so the
+              filter lives next to the section title where users look
+              first, and so the body scroll area starts with content
+              rather than chrome. Only rendered on the X tab — YouTube
+              + Family don't have search yet. */}
+          {activeTab === 'x' && !loadingData && xPosts.length > 0 && (
+            <div className="catalogue-videos__search" role="search">
+              <Search size={14} aria-hidden="true" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by author, text, tag, or URL"
+                aria-label="Search saved X posts"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="catalogue-videos__search-clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                >
+                  <X size={12} aria-hidden="true" />
+                </button>
+              )}
+              <kbd className="catalogue-videos__search-kbd" aria-hidden="true">⌘K</kbd>
+            </div>
+          )}
         </header>
 
         {/* Tab strip — X first (the growing collection), Family Values
@@ -1330,30 +1359,6 @@ export function CatalogueVideosSection({
           <p className="catalogue-videos__loading">Loading saved references...</p>
         ) : (
           <>
-            {xPosts.length > 0 && (
-              <div className="catalogue-videos__search" role="search">
-                <Search size={14} aria-hidden="true" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search by author, text, tag, or URL"
-                  aria-label="Search saved X posts"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    className="catalogue-videos__search-clear"
-                    onClick={() => setSearchQuery('')}
-                    aria-label="Clear search"
-                  >
-                    <X size={12} aria-hidden="true" />
-                  </button>
-                )}
-                <kbd className="catalogue-videos__search-kbd" aria-hidden="true">⌘K</kbd>
-              </div>
-            )}
             {tagsWithCounts.length > 0 && (
               <div
                 className="catalogue-videos__tag-filters"
