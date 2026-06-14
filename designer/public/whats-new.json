@@ -12,7 +12,7 @@
     "date": "June 11, 2026",
     "title": "Branded loading screen for shared prototypes",
     "bullets": [
-      { "kind": "improved", "text": "Opening a shared prototype link now shows a polished AgentUX loading screen (logo, three-dot pulse, \"Powered and Built by Yamparala Rahul\") for the first few seconds instead of a blank tab while the prototype boots" }
+      { "kind": "improved", "text": "Opening a shared prototype link now shows a polished AgentUX loading screen (logo, three-dot pulse, \"Designed & Engineered by Yamparala Rahul\") for the first few seconds instead of a blank tab while the prototype boots" }
     ]
   },
   {
