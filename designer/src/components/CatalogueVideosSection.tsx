@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, Minus, Search, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Minus, Search, Share2, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
@@ -534,6 +534,13 @@ export function CatalogueVideosSection({
   const [pendingDeleteYouTubeId, setPendingDeleteYouTubeId] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Per-tile copy-confirmation. Tracks the most-recently-shared id so
+  // its Share icon swaps to a checkmark for ~1.5s. One field is enough
+  // since users almost never click two share buttons within the window.
+  const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
+  // Deep-link guard — flipped after the first `?v=<id>` resolution so
+  // closing the lightbox doesn't immediately re-open it.
+  const deepLinkHandledRef = useRef(false);
   const [savingComment, setSavingComment] = useState(false);
   const [savingXPost, setSavingXPost] = useState(false);
   // Currently active tag filters. Empty = no filter (show all videos).
@@ -602,6 +609,60 @@ export function CatalogueVideosSection({
 
     return null;
   }, [previewItemKey, xPosts]);
+
+  // Deep-link handler. When the URL contains `?v=<id>`, look up the
+  // saved item once both data sets have loaded, switch to the right
+  // tab, and open the lightbox. Strips the param after opening so a
+  // refresh doesn't re-trigger it (and so the URL stays clean for
+  // navigation). The deepLinkHandledRef guard above ensures we only
+  // resolve once per mount — closing the lightbox doesn't re-open it.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (loadingData) return;
+    if (deepLinkHandledRef.current) return;
+    const v = new URLSearchParams(window.location.search).get('v');
+    if (!v) return;
+    deepLinkHandledRef.current = true;
+
+    const xPost = xPosts.find((p) => p.id === v);
+    if (xPost) {
+      setActiveTab('x');
+      setPreviewItemKey(xPost.id);
+    } else {
+      const yt = youtubeVideos.find((y) => y.id === v);
+      if (yt) {
+        setActiveTab('youtube');
+        setOpenYouTubeId(yt.id);
+      }
+    }
+
+    // Clean the `?v=` param regardless of whether we found a match —
+    // a stale id shouldn't sit in the URL.
+    const params = new URLSearchParams(window.location.search);
+    params.delete('v');
+    const next = params.toString();
+    const url = next ? `${window.location.pathname}?${next}` : window.location.pathname;
+    window.history.replaceState({}, '', url);
+  }, [loadingData, xPosts, youtubeVideos]);
+
+  // Copy a `?v=<id>` deep link to the clipboard. The recipient opens
+  // it (after auth if not signed in) and lands directly on the
+  // lightbox for the shared item.
+  async function handleShareVideo(id: string) {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.origin + window.location.pathname);
+    url.searchParams.set('v', id);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setCopiedShareId(id);
+      window.setTimeout(() => {
+        setCopiedShareId((current) => (current === id ? null : current));
+      }, 1500);
+    } catch {
+      // Clipboard blocked (permissions / non-https) — silently no-op.
+      // Could fall back to a manual prompt later if this becomes common.
+    }
+  }
 
   // All distinct tags across the loaded xPosts, with usage counts.
   // Used to drive the filter strip above the grid. Sorted: most-used
@@ -1357,6 +1418,21 @@ export function CatalogueVideosSection({
                             </p>
                           )}
                           <span className="catalogue-videos__x-source-pill">𝕏 Post</span>
+                          <IconTooltip label={copiedShareId === post.id ? 'Copied!' : 'Copy share link'}>
+                            <button
+                              type="button"
+                              className="catalogue-videos__x-share"
+                              aria-label="Copy share link to this post"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleShareVideo(post.id);
+                              }}
+                            >
+                              {copiedShareId === post.id
+                                ? <Check size={14} aria-hidden="true" />
+                                : <Share2 size={14} aria-hidden="true" />}
+                            </button>
+                          </IconTooltip>
                           <IconTooltip label="Remove from saved references">
                             <button
                               type="button"
@@ -1492,6 +1568,21 @@ export function CatalogueVideosSection({
                       >
                         <span className="catalogue-videos__yt-source-pill">YouTube</span>
                         <span className="catalogue-videos__yt-play" aria-hidden="true">▶</span>
+                        <IconTooltip label={copiedShareId === video.id ? 'Copied!' : 'Copy share link'}>
+                          <button
+                            type="button"
+                            className="catalogue-videos__yt-share"
+                            aria-label="Copy share link to this video"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleShareVideo(video.id);
+                            }}
+                          >
+                            {copiedShareId === video.id
+                              ? <Check size={14} aria-hidden="true" />
+                              : <Share2 size={14} aria-hidden="true" />}
+                          </button>
+                        </IconTooltip>
                         <IconTooltip label="Remove from saved videos">
                           <button
                             type="button"
