@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FileCode2, Link as LinkIcon, Plus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { formatRelative } from '../lib/catalogue-relative-time';
 import { useLinkMetadata, type LinkMetadata } from '../hooks/use-link-metadata';
 import { CataloguePrototypes } from './CataloguePrototypes';
 import { DotLoader } from './DotLoader';
@@ -98,12 +97,6 @@ function displayLabel(link: LinkReference, meta: LinkMetadata | null | undefined
   }
 }
 
-function shortAuthor(email: string | null): string | null {
-  if (!email) return null;
-  const at = email.indexOf('@');
-  return at > 0 ? email.slice(0, at) : email;
-}
-
 export function CatalogueLinksSection({
   canEdit = true,
   onRequireAuth,
@@ -117,6 +110,27 @@ export function CatalogueLinksSection({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [savingLink, setSavingLink] = useState(false);
   const [search, setSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // `/` focuses the search input — matches the GitHub / Mobbin / X
+  // convention. Skips when the user is already typing in an input /
+  // textarea / contenteditable so a literal slash reaches the field,
+  // and when modifiers are held (so ⌘/ etc. pass through).
+  useEffect(() => {
+    function handleKey(event: KeyboardEvent) {
+      if (event.key !== '/') return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (target?.isContentEditable) return;
+      event.preventDefault();
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   const allUrls = useMemo(() => links.map((link) => link.url), [links]);
   const { metadata } = useLinkMetadata(allUrls);
@@ -286,8 +300,40 @@ export function CatalogueLinksSection({
       <header className="catalogue-links__head">
         <div className="catalogue-links__copy">
           <h2>Saved Links</h2>
-          <p>Reference URLs saved from the catalogue or shared via the Telegram bot.</p>
+          <p>Reference URLs saved from the catalogue.</p>
         </div>
+        {/* Search pill on the right — same placement / shortcut as the
+            Videos section so the muscle memory carries across tabs.
+            Press `/` anywhere on the Links surface to jump here. */}
+        {hasLinks && (
+          <div className="catalogue-links__search-row" role="search">
+            <Search
+              className="catalogue-links__search-icon"
+              size={14}
+              aria-hidden="true"
+            />
+            <input
+              ref={searchInputRef}
+              type="search"
+              className="catalogue-links__search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={`Search ${totalLinks} link${totalLinks === 1 ? '' : 's'}...`}
+              aria-label="Search saved links"
+            />
+            {search && (
+              <button
+                type="button"
+                className="catalogue-links__search-clear"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+              >
+                <X size={12} aria-hidden="true" />
+              </button>
+            )}
+            <kbd className="catalogue-links__search-kbd" aria-hidden="true">/</kbd>
+          </div>
+        )}
       </header>
 
       {loadError && <p className="catalogue-links__error">{loadError}</p>}
@@ -319,29 +365,11 @@ export function CatalogueLinksSection({
       </div>
       {linkError && <p className="catalogue-links__error">{linkError}</p>}
 
-      {hasLinks && (
-        <div className="catalogue-links__search-row">
-          <Search
-            className="catalogue-links__search-icon"
-            size={14}
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            className="catalogue-links__search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={`Search ${totalLinks} link${totalLinks === 1 ? '' : 's'}...`}
-            aria-label="Search saved links"
-          />
-        </div>
-      )}
-
       {loadingData ? (
         <p className="catalogue-links__loading">Loading saved links...</p>
       ) : !hasLinks ? (
         <p className="catalogue-links__empty">
-          No links yet. Paste a URL above or send one to the Telegram bot.
+          No links yet. Paste a URL above to save it.
         </p>
       ) : filteredLinks.length === 0 ? (
         <p className="catalogue-links__empty">No links match "{search.trim()}".</p>
@@ -353,8 +381,6 @@ export function CatalogueLinksSection({
               const label = displayLabel(link, meta);
               const description = meta?.description?.trim() || null;
               const thumb = meta?.image || null;
-              const author = shortAuthor(link.addedByEmail);
-              const relative = formatRelative(link.addedAt);
               return (
                 <li key={link.id} className="catalogue-links__item">
                   <a
@@ -406,14 +432,6 @@ export function CatalogueLinksSection({
                     )}
                     <div className="catalogue-links__meta">
                       <span className="catalogue-links__host">{link.host}</span>
-                      {(author || relative) && (
-                        <span className="catalogue-links__dot" aria-hidden="true">·</span>
-                      )}
-                      {author && <span className="catalogue-links__author">{author}</span>}
-                      {author && relative && (
-                        <span className="catalogue-links__dot" aria-hidden="true">·</span>
-                      )}
-                      {relative && <span className="catalogue-links__time">{relative}</span>}
                     </div>
                   </div>
                   <IconTooltip label="Remove link">

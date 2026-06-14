@@ -11,7 +11,7 @@
 
 .catalogue-links__head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;             // search pill aligns to title baseline-ish
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
@@ -91,37 +91,69 @@
   font-size: 12px;
 }
 
+// ── Search pill (header-right) ─────────────────────────────────
+// Compact pill that sits next to the "Saved Links" title. Mirrors the
+// Videos section's search pill so the muscle memory carries across
+// tabs. `/` focuses the input from anywhere on the Links surface.
 .catalogue-links__search-row {
-  position: relative;
-  display: flex;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 12px;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  width: clamp(240px, 32vw, 360px);
+  transition: border-color 0.15s ease;
+
+  &:focus-within { border-color: #6366f1; }
 }
 
 .catalogue-links__search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
   color: #71717a;
-  pointer-events: none;
+  flex-shrink: 0;
 }
 
 .catalogue-links__search {
   flex: 1;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 10px;
-  background: #101015;
-  color: #f4f4f5;
+  border: none;
+  background: transparent;
+  color: #e4e4e7;
+  font-family: inherit;
   font-size: 13px;
-  padding: 9px 12px 9px 34px;
+  padding: 0;
   outline: none;
+  min-width: 0;
 
-  &::placeholder {
-    color: #71717a;
-  }
+  &::placeholder { color: #71717a; }
+}
 
-  &:focus {
-    border-color: rgba(99, 102, 241, 0.55);
-  }
+.catalogue-links__search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover { background: rgba(255, 255, 255, 0.12); color: #fafafa; }
+}
+
+.catalogue-links__search-kbd {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #71717a;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  padding: 1px 6px;
+  flex-shrink: 0;
 }
 
 .catalogue-links__items {
@@ -129,10 +161,9 @@
   margin: 0;
   padding: 0;
   display: grid;
-  // Flat full-width grid (no host-group wrapper anymore). minmax 170px
-  // produces ~7–8 cards per row on a 1500px viewport and gracefully
-  // drops to fewer columns on narrower screens via auto-fill.
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  // Cap at 5 cards per row on desktop (was: auto-fill). Drops to 4 / 3
+  // / 2 / 1 as the viewport tightens — see media queries below.
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -233,13 +264,9 @@
   margin-top: 2px;
 }
 
-.catalogue-links__author {
-  color: #a1a1aa;
-}
-
-// Host name in the card meta row. Was previously surfaced as the
-// group header above each card cluster — now lives inline as a small
-// muted chip so each card still tells you where the link points.
+// Host name in the card meta row — only thing left in meta after
+// dropping the author + relative-time chips (they were redundant
+// noise on most cards, "telegram-bot · 2w ago").
 .catalogue-links__host {
   color: #d4d4d8;
   font-weight: 600;
@@ -247,15 +274,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 70%;
-}
-
-.catalogue-links__dot {
-  color: #3f3f46;
-}
-
-.catalogue-links__time {
-  color: #71717a;
+  max-width: 100%;
 }
 
 .catalogue-links__remove {
@@ -290,6 +309,18 @@
   }
 }
 
+// Step the card grid down as the viewport tightens. 5 desktop →
+// 4 → 3 → 2 → 1. Mobile breakpoint also bumps misc layout below.
+@media (max-width: 1280px) {
+  .catalogue-links__items { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 1000px) {
+  .catalogue-links__items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .catalogue-links__items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 900px) {
   .catalogue-links {
     padding: 16px;
@@ -306,7 +337,7 @@
   }
 
   .catalogue-links__items {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 }

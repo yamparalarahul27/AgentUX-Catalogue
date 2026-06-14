@@ -11,7 +11,7 @@
 
 .catalogue-videos__head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;             // search pill aligns to title baseline-ish
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
@@ -416,19 +416,20 @@
   align-items: center;
 }
 
-// ── Search row (above the tag chips and grid) ─────────────────
-// Case-insensitive substring filter across author, handle, excerpt,
-// URL, and tags. ⌘K / Ctrl+K focuses the input from anywhere in the
-// Videos surface (window-level keydown listener in the component).
+// ── Search pill (header-right) ─────────────────────────────────
+// Lives next to the section title. Case-insensitive substring
+// filter across author, handle, excerpt, URL, and tags. ⌘K / Ctrl+K
+// focuses the input from anywhere in the Videos surface (window-level
+// keydown listener in the component).
 .catalogue-videos__search {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 6px 10px 6px 12px;
   background: #18181b;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  margin-bottom: 10px;
+  border-radius: 999px;
+  width: clamp(240px, 32vw, 360px);
   transition: border-color 0.15s ease;
 
   &:focus-within { border-color: #6366f1; }
@@ -442,7 +443,7 @@
     outline: none;
     color: #e4e4e7;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
     min-width: 0;
 
     &::placeholder { color: #71717a; }
@@ -520,16 +521,29 @@
 // ── Filter strip (above the saved X posts grid) ────────────────
 // Multi-select tag chips with OR semantics. Clicking a chip toggles
 // it; the strip persists "Clear" once any chip is active so users
-// can reset in one move.
+// can reset in one move. Single-row horizontal scroll (was wrapping
+// to multiple rows) so the strip stops eating vertical space when
+// the tag set grows.
 .catalogue-videos__tag-filters {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
   padding: 10px 12px;
   background: rgba(17, 17, 19, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  // Hide the scrollbar — drag / trackpad scroll still works, and the
+  // fade-mask on the right edge tells users there's more to see.
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+  // Soft fade on both edges so the chips don't slam against the
+  // container border when scrolled — reads as "more content here".
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 24px), transparent 100%);
 }
 
 .catalogue-videos__tag-filters-label {
@@ -539,9 +553,11 @@
   color: #71717a;
   font-weight: 600;
   margin-right: 4px;
+  flex-shrink: 0;
 }
 
 .catalogue-videos__tag-chip {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -583,6 +599,7 @@
   font-size: 11px;
   font-family: inherit;
   padding: 4px 6px;
+  flex-shrink: 0;
   border-radius: 4px;
   transition: color 0.15s ease, background 0.15s ease;
   margin-left: auto;
@@ -1017,7 +1034,13 @@
 
 .catalogue-videos-preview__modal {
   width: min(1240px, 100%);
-  max-height: calc(100dvh - 48px);
+  // Was `max-height` — children's `height: 100%` collapsed to `auto`
+  // because percentage heights resolve against the parent's HEIGHT
+  // property (not max-height). That made the tweet panel grow to its
+  // iframe's natural size instead of being bounded by the viewport,
+  // which in turn made the inner `overflow-y: auto` never trigger
+  // and the "more below" hint never show. Explicit height fixes both.
+  height: calc(100dvh - 48px);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1029,6 +1052,13 @@
 .catalogue-videos-preview__main {
   position: relative;
   background: #050507;
+  // Without `min-height: 0` (and `min-width: 0`), grid items refuse to
+  // shrink below their content's intrinsic size — that's why the tall
+  // tweet iframe was punching past the modal's max-height. With these
+  // set, the inner `__tweet` container's `overflow-y: auto` kicks in
+  // and the iframe scrolls inside the modal instead.
+  min-height: 0;
+  min-width: 0;
 }
 
 .catalogue-videos-preview__player {
@@ -1039,31 +1069,106 @@
   background: #050507;
 }
 
+// Tweet panel — positioning context for the inner scrolling div + a
+// "more below" hint chevron. Was previously the scroll container
+// itself; refactored so the chevron can sit as a sibling outside the
+// area that Twitter's widgets.js rewrites.
 .catalogue-videos-preview__tweet {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
   width: 100%;
   height: 100%;
-  min-height: min(760px, calc(100dvh - 48px));
-  border: none;
   background: #050507;
+}
+
+// The actual scrollable inner panel that holds the Twitter widget.
+.catalogue-videos-preview__tweet-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
   padding: 16px;
   box-sizing: border-box;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  // Subtle scrollbar so "you can scroll" is discoverable without
+  // shouting. Webkit + Firefox both styled.
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  &::-webkit-scrollbar { width: 8px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    &:hover { background: rgba(129, 140, 248, 0.55); background-clip: padding-box; }
+  }
 }
 
-.catalogue-videos-preview__tweet .twitter-tweet,
-.catalogue-videos-preview__tweet .twitter-tweet-rendered,
-.catalogue-videos-preview__tweet > div {
+.catalogue-videos-preview__tweet-inner .twitter-tweet,
+.catalogue-videos-preview__tweet-inner .twitter-tweet-rendered,
+.catalogue-videos-preview__tweet-inner > div {
   width: min(100%, 640px) !important;
   max-width: 640px !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
 }
 
-.catalogue-videos-preview__tweet iframe {
+.catalogue-videos-preview__tweet-inner iframe {
   width: min(100%, 640px) !important;
   max-width: 640px !important;
+}
+
+// "more below" hint — appears when the tweet overflows + user hasn't
+// scrolled yet. Sits OUTSIDE the inner div so Twitter's widget
+// rewriting doesn't wipe it. Fades out via opacity once scrolled past
+// the top of the content.
+.catalogue-videos-preview__tweet-hint {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  background: rgba(17, 17, 19, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+  animation: catalogue-videos-tweet-hint-bob 1.8s ease-in-out infinite;
+
+  svg { animation: catalogue-videos-tweet-hint-arrow 1.8s ease-in-out infinite; }
+
+  &.is-hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+}
+
+@keyframes catalogue-videos-tweet-hint-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(2px); }
+}
+@keyframes catalogue-videos-tweet-hint-arrow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-videos-preview__tweet-hint,
+  .catalogue-videos-preview__tweet-hint svg {
+    animation: none;
+  }
 }
 
 .catalogue-videos-preview__close {
@@ -1387,25 +1492,6 @@
       min-width: 0;
       width: 100%;
     }
-  }
-
-  // Tags filter strip: collapse the wrapping multi-row block into a
-  // single horizontally-scrollable row so it stops eating vertical space.
-  .catalogue-videos__tag-filters {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  .catalogue-videos__tag-filters-label,
-  .catalogue-videos__tag-chip,
-  .catalogue-videos__tag-clear {
-    flex-shrink: 0;
   }
 
   // Anchor the lightbox to the keyboard-aware visual viewport so the

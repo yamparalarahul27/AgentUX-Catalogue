@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Check, ChevronLeft, ChevronRight, Minus, Search, Share2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Search, Share2, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
@@ -361,6 +361,10 @@ interface XPostEmbedProps {
 
 function XPostEmbed({ className, tweetId }: XPostEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // True when the tweet content is taller than its scroll viewport AND
+  // the user hasn't scrolled past the top — drives a "more below"
+  // chevron hint so tall threads don't look clipped at first glance.
+  const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
     const host = containerRef.current;
@@ -400,7 +404,45 @@ function XPostEmbed({ className, tweetId }: XPostEmbedProps) {
     };
   }, [tweetId]);
 
-  return <div ref={containerRef} className={className} />;
+  // Scroll-hint visibility: recompute on scroll, on resize, and on a
+  // short poll during the first ~4 s so the iframe's settling height
+  // (Twitter renders progressively) gets picked up. Hides once the
+  // user scrolls past ~12px of the top — confirms they've seen it.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    function check() {
+      const target = containerRef.current;
+      if (!target) return;
+      const overflowing = target.scrollHeight > target.clientHeight + 4;
+      const atTop = target.scrollTop < 12;
+      setShowHint(overflowing && atTop);
+    }
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    el.addEventListener('scroll', check, { passive: true });
+    const startedAt = Date.now();
+    const interval = window.setInterval(() => {
+      check();
+      if (Date.now() - startedAt > 4000) window.clearInterval(interval);
+    }, 400);
+    check();
+    return () => {
+      ro.disconnect();
+      el.removeEventListener('scroll', check);
+      window.clearInterval(interval);
+    };
+  }, [tweetId]);
+
+  return (
+    <div className={className}>
+      <div ref={containerRef} className={`${className}-inner`} />
+      <div className={`${className}-hint${showHint ? '' : ' is-hidden'}`} aria-hidden="true">
+        <ChevronDown size={14} />
+        <span>more below</span>
+      </div>
+    </div>
+  );
 }
 
 type PreviewItem =
@@ -506,13 +548,19 @@ export function CatalogueVideosSection({
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // ⌘K / Ctrl+K focuses the search input. Mirrors the global search-input
-  // shortcut convention (Linear, Notion, GitHub). Only fires when this
-  // component is mounted, so other catalogue pages keep their own shortcuts.
+  // `/` focuses the search input — matches the GitHub / Mobbin / X
+  // convention. Ignores the keystroke when the user is already typing
+  // in an input / textarea / contenteditable so it doesn't intercept
+  // a literal slash. Skips when modifier keys are held so combos like
+  // `⌘/` (toggle comment in code editors) still pass through.
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
-      if (!(event.metaKey || event.ctrlKey)) return;
-      if (event.key.toLowerCase() !== 'k') return;
+      if (event.key !== '/') return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (target?.isContentEditable) return;
       event.preventDefault();
       searchInputRef.current?.focus();
       searchInputRef.current?.select();
@@ -1216,6 +1264,35 @@ export function CatalogueVideosSection({
           <div className="catalogue-videos__copy">
             <h2>Videos as Medium</h2>
           </div>
+          {/* Search moved here (was below the tag-filter strip) so the
+              filter lives next to the section title where users look
+              first, and so the body scroll area starts with content
+              rather than chrome. Only rendered on the X tab — YouTube
+              + Family don't have search yet. */}
+          {activeTab === 'x' && !loadingData && xPosts.length > 0 && (
+            <div className="catalogue-videos__search" role="search">
+              <Search size={14} aria-hidden="true" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by author, text, tag, or URL"
+                aria-label="Search saved X posts"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="catalogue-videos__search-clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                >
+                  <X size={12} aria-hidden="true" />
+                </button>
+              )}
+              <kbd className="catalogue-videos__search-kbd" aria-hidden="true">/</kbd>
+            </div>
+          )}
         </header>
 
         {/* Tab strip — X first (the growing collection), Family Values
@@ -1288,30 +1365,6 @@ export function CatalogueVideosSection({
           <p className="catalogue-videos__loading">Loading saved references...</p>
         ) : (
           <>
-            {xPosts.length > 0 && (
-              <div className="catalogue-videos__search" role="search">
-                <Search size={14} aria-hidden="true" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search by author, text, tag, or URL"
-                  aria-label="Search saved X posts"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    className="catalogue-videos__search-clear"
-                    onClick={() => setSearchQuery('')}
-                    aria-label="Clear search"
-                  >
-                    <X size={12} aria-hidden="true" />
-                  </button>
-                )}
-                <kbd className="catalogue-videos__search-kbd" aria-hidden="true">⌘K</kbd>
-              </div>
-            )}
             {tagsWithCounts.length > 0 && (
               <div
                 className="catalogue-videos__tag-filters"
