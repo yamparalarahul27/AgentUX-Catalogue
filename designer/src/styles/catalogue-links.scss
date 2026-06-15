@@ -221,13 +221,32 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    // Blur-reveal: thumbnails start blurred + faded, swap to sharp +
+    // full opacity once the network image loads (the onLoad handler
+    // flips `data-loaded`). Same trick the Open Graph thumb services
+    // use to mask streaming-in pixels. Cached images get the
+    // attribute set synchronously by the ref callback below so they
+    // don't briefly flash the blurred state on re-mount.
+    transition: filter 380ms ease, opacity 380ms ease;
+    filter: blur(10px);
+    opacity: 0;
+
+    &[data-loaded='true'] {
+      filter: blur(0);
+      opacity: 1;
+    }
 
     &.is-fallback {
       width: 28px;
       height: 28px;
       object-fit: contain;
       margin: auto;
-      opacity: 0.7;
+      // Fallback favicons keep their dimmer baseline opacity in the
+      // loaded state so they read as "no OG image" instead of full
+      // weight thumbnails.
+      &[data-loaded='true'] {
+        opacity: 0.7;
+      }
     }
   }
 }
