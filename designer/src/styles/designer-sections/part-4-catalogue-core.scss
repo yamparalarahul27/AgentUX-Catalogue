@@ -318,11 +318,11 @@
   position: relative;
   // Overlap the bottom slice of the image so the info strip can sit
   // on a frosted-glass band rather than a flat row beneath it.
-  margin-top: -52px;
-  padding: 60px 12px 12px;
+  margin-top: -32px;
+  padding: 38px 12px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   // Background fades from translucent at the top edge → opaque at the
   // bottom. Combined with the backdrop-blur this reads as progressive
   // blur (heavy at the meeting line with the image, clean by the time
