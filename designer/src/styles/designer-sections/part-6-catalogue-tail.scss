@@ -183,6 +183,52 @@
   font-style: italic;
 }
 
+// "Thanos snap" disintegration — applied to orphan tombstones (a
+// soft-deleted parent whose last reply just left or was already gone
+// on mount). Held visible for 3 s by the parent scheduler, then this
+// class is added.
+//
+// The effect is staged in two phases:
+//   1. Disintegrate (0–60%): pixels scatter via SVG feTurbulence +
+//      feDisplacementMap. We step through 6 filter defs (in
+//      catalogue.html) at increasing displacement scales — CSS can't
+//      animate feDisplacementMap's `scale` attribute directly, so the
+//      keyframes swap the whole `filter:` URL between stages.
+//   2. Vanish (60–100%): once the pixels are sufficiently scrambled,
+//      opacity ramps to 0 and the row drifts slightly so it reads as
+//      ash blowing away rather than abruptly clipping.
+//
+// Total duration 900 ms — slow enough to register, fast enough not to
+// linger. Parent scheduler matches this in `ANIMATION_MS` so the
+// hard-delete fires after the animation lands.
+@keyframes catalogue-lightbox-comment-snap {
+  0%   { opacity: 1;    transform: scale(1) translateX(0);       filter: url(#comment-snap-0); }
+  15%  { opacity: 0.98; transform: scale(0.995) translateX(2px); filter: url(#comment-snap-1); }
+  30%  { opacity: 0.95; transform: scale(0.985) translateX(5px); filter: url(#comment-snap-2); }
+  45%  { opacity: 0.85; transform: scale(0.965) translateX(9px); filter: url(#comment-snap-3); }
+  60%  { opacity: 0.65; transform: scale(0.94) translateX(14px); filter: url(#comment-snap-4); }
+  80%  { opacity: 0.3;  transform: scale(0.9) translateX(22px);  filter: url(#comment-snap-5); }
+  100% { opacity: 0;    transform: scale(0.84) translateX(32px); filter: url(#comment-snap-5); }
+}
+
+.catalogue-lightbox-comment.is-snapping {
+  animation: catalogue-lightbox-comment-snap 900ms cubic-bezier(0.32, 0, 0.67, 0) forwards;
+  pointer-events: none;
+  transform-origin: center left;
+}
+
+// Motion-sensitive users get a plain fade — the SVG filter displacement
+// would be jarring without the eased opacity ramp masking it.
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-lightbox-comment.is-snapping {
+    animation: none;
+    opacity: 0;
+    transition: opacity 200ms ease;
+    transform: none;
+    filter: none;
+  }
+}
+
 // Indent replies so the thread structure reads visually. 28px matches
 // the avatar/icon slot width on the lightbox.
 .catalogue-lightbox-comment.is-reply {

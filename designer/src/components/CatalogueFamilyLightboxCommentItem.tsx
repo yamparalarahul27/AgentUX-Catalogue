@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CornerUpLeft, Eye, EyeOff, Pencil, X } from 'lucide-react';
 
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { CommentText } from './CommentText';
 
 interface LightboxScreenshotComment {
   id: string;
@@ -22,6 +23,10 @@ interface CatalogueFamilyLightboxCommentItemProps {
   isReply?: boolean;     // indent + thread-bar styling
   hasReplies?: boolean;  // hides the Reply button on parents that
                          // already have children — v1 caps at 1 level
+  isSnapping?: boolean;  // orphan-tombstone disintegration — adds the
+                         // `is-snapping` class; the parent scheduler
+                         // hard-deletes the row when the animation
+                         // finishes.
   userEmail: string;
   isAdmin: boolean;
   onDelete: (commentId: string) => void;
@@ -35,6 +40,7 @@ export function CatalogueFamilyLightboxCommentItem({
   comment,
   isReply = false,
   hasReplies = false,
+  isSnapping = false,
   userEmail,
   isAdmin,
   onDelete,
@@ -88,7 +94,7 @@ export function CatalogueFamilyLightboxCommentItem({
   }
 
   return (
-    <div className={`catalogue-lightbox-comment${isReply ? ' is-reply' : ''}${isDeleted ? ' is-deleted' : ''}`}>
+    <div className={`catalogue-lightbox-comment${isReply ? ' is-reply' : ''}${isDeleted ? ' is-deleted' : ''}${isSnapping ? ' is-snapping' : ''}`}>
       <div className="catalogue-lightbox-comment-top">
         <span className="catalogue-lightbox-comment-email">{comment.user_email}</span>
         {!isDeleted && (canManage || (onReply && !isReply && !hasReplies)) && (
@@ -190,7 +196,7 @@ export function CatalogueFamilyLightboxCommentItem({
           </div>
         </div>
       ) : (
-        <p className="catalogue-lightbox-comment-text">{comment.text}</p>
+        <p className="catalogue-lightbox-comment-text"><CommentText text={comment.text} /></p>
       )}
       {!isEditing && (
         <div className="catalogue-lightbox-comment-time">

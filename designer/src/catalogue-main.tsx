@@ -21,6 +21,7 @@ import './styles/catalogue-flags.scss';
 import './styles/catalogue-members.scss';
 import './styles/catalogue-videos.scss';
 import './styles/catalogue-links.scss';
+import './styles/comment-link-chip.scss';
 import './styles/catalogue-prototypes.scss';
 import './styles/catalogue-toolbar-customization.scss';
 import './styles/catalogue-header-menu.scss';

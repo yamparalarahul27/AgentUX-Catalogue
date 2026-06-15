@@ -275,7 +275,6 @@ export function CatalogueLinksSection({
         >
           <LinkIcon size={13} aria-hidden="true" />
           Saved Links
-          <span className="catalogue-links-tabs__count">{totalLinks}</span>
         </button>
         <button
           type="button"
@@ -357,7 +356,7 @@ export function CatalogueLinksSection({
         <button
           type="button"
           onClick={() => void addLink()}
-          disabled={savingLink}
+          disabled={!linkInput.trim() || savingLink || !canEdit}
         >
           {savingLink ? <DotLoader size="sm" ariaLabel="Saving" /> : <Plus size={14} aria-hidden="true" />}
           Add link
