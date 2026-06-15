@@ -86,7 +86,11 @@ export function Dropdown(props: DropdownProps) {
 
   useEffect(() => {
     if (open && searchable) {
-      setTimeout(() => searchRef.current?.focus(), 0);
+      // `preventScroll: true` keeps the browser from snapping the
+      // viewport to the search input when it gains focus — without
+      // it the page jumps a few pixels every time a toolbar dropdown
+      // opens.
+      setTimeout(() => searchRef.current?.focus({ preventScroll: true }), 0);
     }
   }, [open, searchable]);
 
@@ -358,24 +362,27 @@ export function Dropdown(props: DropdownProps) {
               />
             </div>
           )}
-          {isMulti ? (
+          {/* Clear row — only shown when there's actually something to
+              clear. Previously this rendered the placeholder label
+              ("Group", "Flow", …) which duplicated the trigger label
+              and added noise when nothing was selected. */}
+          {isMulti && selectedValues.length > 0 && (
             <button
               type="button"
-              className={`dropdown__item ${selectedValues.length === 0 ? 'dropdown__item--active' : ''}`}
+              className="dropdown__item dropdown__item--clear"
               onClick={clearMulti}
             >
-              {placeholder}
+              Clear
             </button>
-          ) : (
-            placeholder && (
-              <button
-                type="button"
-                className={`dropdown__item ${props.value === null ? 'dropdown__item--active' : ''}`}
-                onClick={() => { props.onChange(null); close(); }}
-              >
-                {placeholder}
-              </button>
-            )
+          )}
+          {!isMulti && props.value !== null && placeholder && (
+            <button
+              type="button"
+              className="dropdown__item dropdown__item--clear"
+              onClick={() => { props.onChange(null); close(); }}
+            >
+              Clear
+            </button>
           )}
           {searchable && visibleOptions.length === 0 && searchQuery.trim() && !(props as DropdownPropsSingle).creatable && (
             <div className="dropdown__empty">No matches</div>
@@ -415,17 +422,17 @@ export function Dropdown(props: DropdownProps) {
                 }}
               >
                 <span className="dropdown__item-main">
-                  {isMulti && (
-                    <span className={`dropdown__check ${isSelected ? 'dropdown__check--on' : ''}`} aria-hidden="true">
-                      {isSelected ? <Check size={12} /> : null}
-                    </span>
-                  )}
                   {o.icon && (
                     <span className="dropdown__item-icon" aria-hidden="true">{o.icon}</span>
                   )}
                   <span>{o.label}</span>
                 </span>
                 {o.badge && <span className="dropdown__badge">{o.badge}</span>}
+                {isMulti && (
+                  <span className={`dropdown__check ${isSelected ? 'dropdown__check--on' : ''}`} aria-hidden="true">
+                    {isSelected ? <Check size={12} /> : null}
+                  </span>
+                )}
               </button>
             );
           })}
