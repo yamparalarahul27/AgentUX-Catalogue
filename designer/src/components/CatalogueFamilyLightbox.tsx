@@ -381,7 +381,11 @@ export function CatalogueFamilyLightbox({
     for (const orphan of orphans) {
       if (snapTimersRef.current.has(orphan.id)) continue;
       const baseDelay = 3000 + (staggerIndex++ * 80);
-      const ANIMATION_MS = 380;
+      // Matches the SCSS @keyframes catalogue-lightbox-comment-snap
+      // duration. The 6-step SVG-filter disintegration takes a bit
+      // longer than the original fade so the user can actually see
+      // the pixels scattering.
+      const ANIMATION_MS = 900;
       const startTimer = window.setTimeout(() => {
         setSnappingCommentIds((prev) => {
           const next = new Set(prev);
