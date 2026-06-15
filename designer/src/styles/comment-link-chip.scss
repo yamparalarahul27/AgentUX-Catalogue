@@ -11,7 +11,10 @@
   // Tighter vertical padding so the chip baselines line up with
   // surrounding comment text instead of bumping line-height.
   padding: 1px 7px 1px 5px;
-  margin: 0 1px;
+  // Breathing room so the chip doesn't abut surrounding text. ~4px
+  // outer gap lines up with the gap between regular words at our
+  // body font-size.
+  margin: 0 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -133,11 +136,27 @@
   overflow: hidden;
 }
 
+// Hint is itself an <a target="_blank"> — clicking it opens the URL
+// in a new tab. No underline (per design), subtle hover colour shift
+// so the affordance still reads as interactive.
 .comment-link-preview__hint {
   margin-top: 2px;
   color: #c7d2fe;
   font-size: 11px;
   font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 120ms ease;
+
+  &:hover {
+    color: #e0e7ff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 .comment-link-preview__arrow {
