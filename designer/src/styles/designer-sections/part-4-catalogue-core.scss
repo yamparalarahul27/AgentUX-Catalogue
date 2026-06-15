@@ -623,6 +623,26 @@
   }
 }
 
+// Icon slot rendered before each group name in the combobox menu —
+// custom appearance icon if the group has one configured, falls
+// back to a LayoutGrid lucide glyph otherwise.
+.catalogue-flow-combobox__item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: $text-dim;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 3px;
+  }
+}
+
 .catalogue-flow-combobox__hint {
   padding: 8px 10px 6px;
   font-size: 11px;

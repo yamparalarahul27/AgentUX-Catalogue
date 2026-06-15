@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 
 import { CatalogueQuickUploadPanel } from './CatalogueQuickUploadPanel';
 import type { FolderDropContext } from './UploadZone';
+import type { CatalogueGroupAppearanceMap } from '../lib/catalogue-group-appearance';
 
 interface QuickUploadQueuePreviewItem {
   id: string;
@@ -37,6 +38,9 @@ interface CatalogueQuickUploadModalProps {
   webPresetKey: string | null;
   webPresets: WebPresetOption[];
   mobileOs: 'ios' | 'android' | null;
+  // Used to render each group's icon next to its name in the group
+  // combobox menu. Mirrors the toolbar Group dropdown's behaviour.
+  groupAppearanceMap: CatalogueGroupAppearanceMap;
   onClose: () => void;
   onPlatformChange: (value: 'web' | 'mobile' | null) => void;
   onThemeChange: (value: 'light' | 'dark' | null) => void;
@@ -81,6 +85,7 @@ function QuickUploadContent({
   webPresetKey,
   webPresets,
   mobileOs,
+  groupAppearanceMap,
   onClose,
   onPlatformChange,
   onThemeChange,
@@ -124,6 +129,7 @@ function QuickUploadContent({
         webPresetKey={webPresetKey}
         webPresets={webPresets}
         mobileOs={mobileOs}
+        groupAppearanceMap={groupAppearanceMap}
         onPlatformChange={onPlatformChange}
         onThemeChange={onThemeChange}
         onWebPresetKeyChange={onWebPresetKeyChange}
