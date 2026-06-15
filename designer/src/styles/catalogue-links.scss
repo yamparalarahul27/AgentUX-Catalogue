@@ -45,11 +45,11 @@
     flex: 1;
     min-width: min(420px, 100%);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
+    border-radius: 999px;            // pill, matches the Videos add-row inputs + Add button
     background: #101015;
     color: #f4f4f5;
     font-size: 13px;
-    padding: 10px 12px;
+    padding: 10px 16px;               // a touch more horizontal padding so the text breathes inside the rounded ends
     outline: none;
 
     &::placeholder {

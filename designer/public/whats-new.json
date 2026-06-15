@@ -1,5 +1,23 @@
 [
   {
+    "id": "2026-06-20-comments-edit-reply",
+    "date": "June 20, 2026",
+    "title": "Comments — edit your own, reply to a thread",
+    "bullets": [
+      { "kind": "new", "text": "You can now edit your own comments on a screenshot — pencil icon → inline edit → Save. Edited comments show a small \"(edited)\" tag next to the timestamp" },
+      { "kind": "new", "text": "Reply to a top-level comment to keep a thread together. Replies indent under their parent and chronologically follow it" },
+      { "kind": "improved", "text": "Deleting a comment that has replies now leaves a \"Comment removed\" placeholder behind so the thread keeps its context (childless comments still delete cleanly)" }
+    ]
+  },
+  {
+    "id": "2026-06-13-tabs-reorder",
+    "date": "June 20, 2026",
+    "title": "Header tabs reordered",
+    "bullets": [
+      { "kind": "improved", "text": "Header order is now Catalogue → Videos → Elements (Videos and Elements swapped) so the most-used tabs sit next to the home tab" }
+    ]
+  },
+  {
     "id": "2026-06-13-videos-tag-filter-scroll",
     "date": "June 13, 2026",
     "title": "Videos tag filter — scrollable strip",

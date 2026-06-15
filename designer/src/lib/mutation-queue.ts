@@ -75,6 +75,10 @@ export type QueuedMutation =
       // Stable id picked client-side so the optimistic UI render can
       // reconcile with the server row when replay completes.
       clientId: string;
+      // Reply support — when present, this comment is a reply to the
+      // referenced top-level comment. Null/undefined for top-level
+      // comments. v1 caps at 1 level (no replies-of-replies).
+      parentId?: string | null;
     }
   // Per-screenshot updates that don't fit the family-level shape — flow
   // (metadata.catalogue_flow_label per screenshot), theme/platform/
@@ -211,6 +215,7 @@ export type EnqueueMutationInput =
       text: string;
       userEmail: string;
       clientId: string;
+      parentId?: string | null;
     }
   | {
       op: 'screenshots-patch';
@@ -516,6 +521,7 @@ async function applyMutation(mutation: QueuedMutation): Promise<MutationOutcome>
             screenshot_id: mutation.screenshotId,
             text: mutation.text,
             user_email: mutation.userEmail,
+            parent_id: mutation.parentId ?? null,
           });
         if (error) {
           if (isNetworkError(error)) return 'retry';

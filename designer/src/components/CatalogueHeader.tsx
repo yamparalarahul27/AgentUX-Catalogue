@@ -239,6 +239,17 @@ export function CatalogueHeader({
         >
           Catalogue
         </button>
+        <button
+          type="button"
+          role="tab"
+          ref={(el) => { tabRefs.current.set('videos', el); }}
+          className={`catalogue-header__tab ${activeSection === 'videos' ? 'is-active' : ''}`}
+          aria-selected={activeSection === 'videos'}
+          onClick={() => onSectionChange('videos')}
+          data-short="V"
+        >
+          Videos
+        </button>
         {showElementsEntry && (
           <button
             type="button"
@@ -252,17 +263,6 @@ export function CatalogueHeader({
             Elements
           </button>
         )}
-        <button
-          type="button"
-          role="tab"
-          ref={(el) => { tabRefs.current.set('videos', el); }}
-          className={`catalogue-header__tab ${activeSection === 'videos' ? 'is-active' : ''}`}
-          aria-selected={activeSection === 'videos'}
-          onClick={() => onSectionChange('videos')}
-          data-short="V"
-        >
-          Videos
-        </button>
         <IconTooltip label="Links">
           <button
             type="button"

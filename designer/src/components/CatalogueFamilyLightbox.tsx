@@ -108,7 +108,19 @@ interface CatalogueFamilyLightboxProps {
   // `setToast` that the rest of the page uses.
   onToast?: (message: string, type?: 'info' | 'success' | 'error') => void;
 }
-type ScreenshotComment = { id: string; user_email: string; text: string; created_at: string; is_public?: boolean };
+type ScreenshotComment = {
+  id: string;
+  user_email: string;
+  text: string;
+  created_at: string;
+  is_public?: boolean;
+  // Edit + reply support — see designer/src/types.ts for the full
+  // shape. Optional / nullable so existing rows pre-migration load
+  // cleanly as "never edited, never deleted, top-level".
+  updated_at?: string | null;
+  deleted_at?: string | null;
+  parent_id?: string | null;
+};
 type LightboxPanel = 'label' | 'comments' | 'annotations' | 'ui-elements';
 type AnnotationDraft = { shape: 'pin' | 'area'; x: number; y: number; width: number; height: number };
 type DrawingState = { startX: number; startY: number; currentX: number; currentY: number };
@@ -305,10 +317,40 @@ export function CatalogueFamilyLightbox({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
-  const sortedComments = useMemo(
-    () => [...comments].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
-    [comments],
-  );
+  // Thread-aware ordering: top-level comments in chronological order,
+  // each followed inline by its replies (also chronological). Replies
+  // get `isReply = true` so the item component can indent them.
+  // Orphan replies (parent_id set but parent not in this batch — can
+  // happen if a parent was hard-deleted by another session) are
+  // promoted to top-level so they don't disappear.
+  const sortedComments = useMemo(() => {
+    const byCreated = (a: ScreenshotComment, b: ScreenshotComment) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    const all = [...comments].sort(byCreated);
+    const ids = new Set(all.map((c) => c.id));
+    const topLevel = all.filter((c) => !c.parent_id || !ids.has(c.parent_id));
+    const repliesByParent = new Map<string, ScreenshotComment[]>();
+    for (const c of all) {
+      if (c.parent_id && ids.has(c.parent_id)) {
+        const arr = repliesByParent.get(c.parent_id) ?? [];
+        arr.push(c);
+        repliesByParent.set(c.parent_id, arr);
+      }
+    }
+    const out: Array<{ comment: ScreenshotComment; isReply: boolean; hasReplies: boolean }> = [];
+    for (const parent of topLevel) {
+      const kids = repliesByParent.get(parent.id) ?? [];
+      out.push({ comment: parent, isReply: false, hasReplies: kids.length > 0 });
+      for (const kid of kids) {
+        out.push({ comment: kid, isReply: true, hasReplies: false });
+      }
+    }
+    return out;
+  }, [comments]);
+
+  // Reply composer state — when set, the new-comment input becomes a
+  // reply to this parent. Reset on screenshot change + after submit.
+  const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null);
   const activeVariant = useMemo(
     () => getActiveFamilyVariant(family, activeVariantKey, preferredScreenshotId),
     [activeVariantKey, family, preferredScreenshotId],
@@ -472,6 +514,7 @@ export function CatalogueFamilyLightbox({
     setSheetState(initialSheetState());
     setComments([]);
     setNewComment('');
+    setReplyToCommentId(null);
     setCommentsError('');
     setLoadingComments(true);
     setAnnotations([]);
@@ -746,15 +789,20 @@ export function CatalogueFamilyLightbox({
     // Subsequent deletes / edits target this id without needing a
     // post-insert reconciliation.
     const clientId = crypto.randomUUID();
+    // Capture parent_id (if replying) before clearing state, so the
+    // optimistic row + the durable mutation carry the same value.
+    const parentId = replyToCommentId;
     const optimisticComment: ScreenshotComment = {
       id: clientId,
       user_email: userEmail,
       text: trimmed,
       created_at: new Date().toISOString(),
+      parent_id: parentId,
     };
     // Optimistic: push immediately, clear input, bump counter.
     setComments((previous) => [...previous, optimisticComment]);
     setNewComment('');
+    setReplyToCommentId(null);
     setCommentsError('');
     onCommentCountChange?.(screenshot.id, 1);
     // Durable replay via the mutation queue — drains immediately when
@@ -765,11 +813,65 @@ export function CatalogueFamilyLightbox({
       text: trimmed,
       userEmail,
       clientId,
+      parentId,
     });
-  }, [canEdit, newComment, onCommentCountChange, onRequireAuth, screenshot, userEmail]);
+  }, [canEdit, newComment, onCommentCountChange, onRequireAuth, replyToCommentId, screenshot, userEmail]);
+  const editComment = useCallback(async (commentId: string, nextText: string) => {
+    if (!ensureCanEdit()) return;
+    const trimmed = nextText.trim();
+    if (!trimmed) return;
+    // Optimistic: update text + stamp updated_at immediately, revert
+    // on error so the user can retry from the same edit affordance.
+    const previousText = comments.find((c) => c.id === commentId)?.text;
+    const nextUpdatedAt = new Date().toISOString();
+    setComments((previous) => previous.map((comment) =>
+      comment.id === commentId
+        ? { ...comment, text: trimmed, updated_at: nextUpdatedAt }
+        : comment
+    ));
+    const { error } = await supabase
+      .from('screenshot_comments')
+      .update({ text: trimmed, updated_at: nextUpdatedAt })
+      .eq('id', commentId);
+    if (error) {
+      setComments((previous) => previous.map((comment) =>
+        comment.id === commentId
+          ? { ...comment, text: previousText ?? comment.text, updated_at: comment.updated_at ?? null }
+          : comment
+      ));
+      setCommentsError('Unable to save the edit. Please try again.');
+    }
+  }, [canEdit, comments, onRequireAuth]);
   const deleteComment = useCallback(async (commentId: string) => {
     if (!ensureCanEdit()) return;
     if (!screenshot) return;
+    // Comments with replies are soft-deleted so the children stay in
+    // context — the UI renders a "Comment removed" placeholder for
+    // the parent row. Childless comments hard-delete as before.
+    const hasReplies = comments.some((c) => c.parent_id === commentId);
+    if (hasReplies) {
+      const deletedAt = new Date().toISOString();
+      const previousRow = comments.find((c) => c.id === commentId);
+      setComments((previous) => previous.map((comment) =>
+        comment.id === commentId ? { ...comment, deleted_at: deletedAt, text: '' } : comment
+      ));
+      const { error } = await supabase
+        .from('screenshot_comments')
+        .update({ deleted_at: deletedAt, text: '' })
+        .eq('id', commentId);
+      if (error) {
+        if (previousRow) {
+          setComments((previous) => previous.map((comment) =>
+            comment.id === commentId ? previousRow : comment
+          ));
+        }
+        setCommentsError('Unable to delete this comment.');
+        return;
+      }
+      // Soft-delete doesn't change the visible-comment count badge —
+      // the row still occupies a slot in the list (just as a tombstone).
+      return;
+    }
     const { error } = await supabase.from('screenshot_comments').delete().eq('id', commentId);
     if (error) {
       setCommentsError('Unable to delete this comment.');
@@ -777,7 +879,7 @@ export function CatalogueFamilyLightbox({
     }
     setComments((previous) => previous.filter((comment) => comment.id !== commentId));
     onCommentCountChange?.(screenshot.id, -1);
-  }, [canEdit, onCommentCountChange, onRequireAuth, screenshot]);
+  }, [canEdit, comments, onCommentCountChange, onRequireAuth, screenshot]);
   const toggleCommentPublic = useCallback(async (commentId: string, nextIsPublic: boolean) => {
     if (!ensureCanEdit()) return;
     // Optimistic flip — UI updates immediately, revert on error.
@@ -1728,7 +1830,7 @@ export function CatalogueFamilyLightbox({
                       className={`catalogue-lightbox-tab ${lightboxPanel === 'comments' ? 'is-active' : ''}`}
                       onClick={() => setLightboxPanel('comments')}
                     >
-                      Com ({comments.length})
+                      Com ({comments.filter((c) => !c.deleted_at).length})
                     </button>
                     <button
                       type="button"
@@ -1768,34 +1870,62 @@ export function CatalogueFamilyLightbox({
                     ) : sortedComments.length === 0 ? (
                       <p className="catalogue-lightbox-comments-empty">No comments yet</p>
                     ) : (
-                      sortedComments.map((comment) => (
+                      sortedComments.map(({ comment, isReply, hasReplies }) => (
                         <CatalogueFamilyLightboxCommentItem
                           key={comment.id}
                           comment={comment}
+                          isReply={isReply}
+                          hasReplies={hasReplies}
                           userEmail={userEmail}
                           isAdmin={isAdmin}
                           onDelete={(commentId) => void deleteComment(commentId)}
+                          onEdit={(commentId, nextText) => void editComment(commentId, nextText)}
+                          onReply={(commentId) => setReplyToCommentId(commentId)}
                           onToggleIsPublic={(commentId, nextIsPublic) => void toggleCommentPublic(commentId, nextIsPublic)}
                           formatDateTime={formatDateTime}
                         />
                       ))
                     )}
                   </div>
-                  <div className="catalogue-lightbox-comment-input">
-                    <Squircle
-                      as="input"
-                      cornerRadius={10}
-                      type="text"
-                      value={newComment}
-                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNewComment(event.target.value)}
-                      onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-                        if (event.key === 'Enter') void addComment();
-                      }}
-                      placeholder="Add a comment..."
-                    />
-                    <Squircle as="button" cornerRadius={10} type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
-                      <Send size={16} />
-                    </Squircle>
+                  <div className="catalogue-lightbox-comment-dock">
+                    {/* Reply-context bar — sits above the input like a
+                        WhatsApp / iMessage reply chip. Click × to cancel
+                        and revert to a top-level comment. */}
+                    {replyToCommentId && (() => {
+                      const parent = comments.find((c) => c.id === replyToCommentId);
+                      if (!parent) return null;
+                      const handle = parent.user_email.split('@')[0] || parent.user_email;
+                      return (
+                        <div className="catalogue-lightbox-reply-context">
+                          <span>Replying to <strong>@{handle}</strong></span>
+                          <button
+                            type="button"
+                            className="catalogue-lightbox-reply-cancel"
+                            aria-label="Cancel reply"
+                            onClick={() => setReplyToCommentId(null)}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      );
+                    })()}
+                    <div className="catalogue-lightbox-comment-input">
+                      <Squircle
+                        as="input"
+                        cornerRadius={10}
+                        type="text"
+                        value={newComment}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNewComment(event.target.value)}
+                        onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+                          if (event.key === 'Enter') void addComment();
+                          if (event.key === 'Escape' && replyToCommentId) setReplyToCommentId(null);
+                        }}
+                        placeholder={replyToCommentId ? 'Write a reply…' : 'Add a comment...'}
+                      />
+                      <Squircle as="button" cornerRadius={10} type="button" onClick={() => void addComment()} disabled={!newComment.trim()}>
+                        <Send size={16} />
+                      </Squircle>
+                    </div>
                   </div>
                 </>
               ) : lightboxPanel === 'ui-elements' ? (
