@@ -157,7 +157,14 @@ export function CatalogueFamilyCard({
           )}
 
           <button type="button" className="catalogue-family-card__preview" onClick={() => onOpenPreview(family.id)}>
-            <div ref={imageWrapRef} className="catalogue-card-image">
+            <div
+              ref={imageWrapRef}
+              className={
+                'catalogue-card-image' +
+                (platform === 'mobile' ? ' catalogue-card-image--mobile' : '') +
+                (platform === 'web' ? ' catalogue-card-image--web' : '')
+              }
+            >
               {imageUrl && !hasImageError ? (
                 <>
                   {isImageLoading && (

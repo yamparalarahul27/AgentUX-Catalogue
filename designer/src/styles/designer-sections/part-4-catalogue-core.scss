@@ -270,6 +270,23 @@
   aspect-ratio: 16 / 9;
   background: darken($surface, 2%);
   overflow: hidden;
+  // border-box so per-platform padding eats into the content area
+  // instead of growing the wrapper out of its 16:9 box.
+  box-sizing: border-box;
+
+  // Mobile screens are portrait — they touch the top/bottom edges of
+  // the 16:9 box (sides are letterboxed). A 2px top inset gives the
+  // screenshot some air against the card's top border.
+  &--mobile {
+    padding-top: 2px;
+  }
+
+  // Web shots are landscape — they touch left/right (top/bottom are
+  // letterboxed). 2px on each horizontal edge sits the screenshot
+  // off the card's vertical edges with matching breathing room.
+  &--web {
+    padding-inline: 2px;
+  }
 
   img {
     width: 100%;
