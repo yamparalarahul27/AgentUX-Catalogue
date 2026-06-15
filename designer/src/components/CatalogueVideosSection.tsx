@@ -1512,7 +1512,7 @@ export function CatalogueVideosSection({
                 aria-label="Filter saved videos by tag"
               >
                 <span className="catalogue-videos__tag-filters-label">Tags</span>
-                {tagsWithCounts.map(({ tag, count }) => {
+                {tagsWithCounts.map(({ tag }) => {
                   const isActive = selectedTagFilters.has(tag);
                   return (
                     <button
@@ -1523,7 +1523,6 @@ export function CatalogueVideosSection({
                       onClick={() => toggleTagFilter(tag)}
                     >
                       <span>{tag}</span>
-                      <span className="catalogue-videos__tag-chip-count">{count}</span>
                     </button>
                   );
                 })}
