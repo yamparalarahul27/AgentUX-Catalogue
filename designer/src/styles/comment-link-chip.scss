@@ -68,3 +68,78 @@
     transform: translate(1px, -1px);
   }
 }
+
+// Rich tooltip body: OG image (when available) + page title + full
+// URL + "click to open in new tab" hint. Rendered via Radix
+// Tooltip.Content portal, so this styling sits at document root and
+// doesn't inherit from comment surfaces.
+.comment-link-preview {
+  max-width: 280px;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  // Light shadow + thin highlight to match the dimensional border
+  // style used elsewhere. Sits above modal overlays via z-index.
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  z-index: 100;
+  animation: comment-link-preview-fade 120ms ease-out;
+}
+
+@keyframes comment-link-preview-fade {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.comment-link-preview__image {
+  display: block;
+  width: 100%;
+  // 1.91:1 is the canonical Open Graph aspect ratio (Facebook spec);
+  // most sites that ship an og:image follow it, so reserving this
+  // shape avoids layout jump while the image streams in.
+  aspect-ratio: 1.91 / 1;
+  object-fit: cover;
+  background: #0b0b0d;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.comment-link-preview__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.comment-link-preview__title {
+  color: #fafafa;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.comment-link-preview__url {
+  color: #a1a1aa;
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-all;
+  // Cap to 2 lines so a very long URL doesn't dwarf the card.
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.comment-link-preview__hint {
+  margin-top: 2px;
+  color: #c7d2fe;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.comment-link-preview__arrow {
+  fill: #18181b;
+}
