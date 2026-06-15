@@ -1609,7 +1609,6 @@ export function CatalogueVideosSection({
                               {highlightMatch(excerpt, normalizedSearchQuery)}
                             </p>
                           )}
-                          <span className="catalogue-videos__x-source-pill">𝕏 Post</span>
                           <IconTooltip label={copiedShareId === post.id ? 'Copied!' : 'Copy share link'}>
                             <button
                               type="button"
@@ -1664,13 +1663,13 @@ export function CatalogueVideosSection({
                             )}
                             <span className="catalogue-videos__x-name">
                               {highlightMatch(displayName, normalizedSearchQuery)}
-                              {handle && post.authorName && (
-                                <span className="catalogue-videos__x-handle">
-                                  <span className="catalogue-videos__x-handle-mark" aria-hidden="true">𝕏</span>
-                                  {highlightMatch(handle, normalizedSearchQuery)}
-                                </span>
-                              )}
                             </span>
+                            {handle && post.authorName && (
+                              <span className="catalogue-videos__x-handle">
+                                <span className="catalogue-videos__x-handle-mark" aria-hidden="true">𝕏</span>
+                                {highlightMatch(handle, normalizedSearchQuery)}
+                              </span>
+                            )}
                           </div>
                           {hasPoster && excerpt && (
                             <p className="catalogue-videos__x-text">
@@ -1762,8 +1761,6 @@ export function CatalogueVideosSection({
                   const thumb = video.thumbnailUrl
                     ?? `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
                   const title = video.title ?? 'Loading…';
-                  const channel = video.channelName
-                    ?? (video.channelHandle ? `@${video.channelHandle}` : 'YouTube');
                   return (
                     <article
                       key={video.id}
@@ -1782,7 +1779,6 @@ export function CatalogueVideosSection({
                         className="catalogue-videos__yt-thumb"
                         style={{ backgroundImage: `url("${thumb}")` }}
                       >
-                        <span className="catalogue-videos__yt-source-pill">YouTube</span>
                         <span className="catalogue-videos__yt-play" aria-hidden="true">▶</span>
                         <IconTooltip label={copiedShareId === video.id ? 'Copied!' : 'Copy share link'}>
                           <button
@@ -1815,7 +1811,6 @@ export function CatalogueVideosSection({
                       </div>
                       <div className="catalogue-videos__yt-body">
                         <p className="catalogue-videos__yt-title">{title}</p>
-                        <span className="catalogue-videos__yt-channel">{channel}</span>
                       </div>
                     </article>
                   );
