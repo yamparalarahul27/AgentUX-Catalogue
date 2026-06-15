@@ -1087,6 +1087,17 @@
   background: #050507;
 }
 
+// YouTube embed inside the preview modal — same sizing footprint as
+// the native video player so the layout doesn't shift between kinds.
+.catalogue-videos-preview__yt {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: calc(100dvh - 48px);
+  border: 0;
+  background: #050507;
+}
+
 // Tweet panel — positioning context for the inner scrolling div + a
 // "more below" hint chevron. Was previously the scroll container
 // itself; refactored so the chevron can sit as a sibling outside the

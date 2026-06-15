@@ -1,5 +1,15 @@
 [
   {
+    "id": "2026-06-23-videos-unified-preview",
+    "date": "June 23, 2026",
+    "title": "YouTube videos open in the same preview as X posts",
+    "bullets": [
+      { "kind": "new", "text": "YouTube videos now open in the same side-by-side preview as X posts — embed on the left, Tags + Comments on the right. Add tags to organise videos, leave notes for yourself or the team" },
+      { "kind": "new", "text": "Edit your own comments on X-post and YouTube previews — pencil icon → inline edit → Save. Edited comments show a small \"(edited)\" tag" },
+      { "kind": "improved", "text": "Scroll hint inside X-post previews now reads \"More Below\" (was lower-cased)" }
+    ]
+  },
+  {
     "id": "2026-06-23-comment-snap-cleanup",
     "date": "June 23, 2026",
     "title": "Empty \"comment removed\" placeholders self-clean",

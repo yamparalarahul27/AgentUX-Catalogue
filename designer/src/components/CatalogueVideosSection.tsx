@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
 import { DotLoader } from './DotLoader';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
-import { YouTubeLightbox } from './YouTubeLightbox';
 
 // Wrap each case-insensitive occurrence of `query` inside `text` with a
 // <mark> span so the catalogue-videos search highlight CSS can paint it.
@@ -461,6 +460,16 @@ type PreviewItem =
       key: string;
       title: string;
       tweetId: string;
+    }
+  | {
+      kind: 'youtube';
+      key: string;            // `youtube-${ytRowId}` — same item_key the comments table uses
+      title: string;
+      videoId: string;        // YouTube's 11-char id, drives the embed src
+      channelName: string | null;
+      channelHandle: string | null;
+      url: string;
+      ytRowId: string;        // DB row id — needed for tag handlers
     };
 
 export function CatalogueVideosSection({
@@ -581,7 +590,6 @@ export function CatalogueVideosSection({
   const [youtubeError, setYouTubeError] = useState<string | null>(null);
   const [youtubeVideos, setYouTubeVideos] = useState<YouTubeReference[]>([]);
   const [savingYouTube, setSavingYouTube] = useState(false);
-  const [openYouTubeId, setOpenYouTubeId] = useState<string | null>(null);
   const [pendingDeleteYouTubeId, setPendingDeleteYouTubeId] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -648,6 +656,25 @@ export function CatalogueVideosSection({
       };
     }
 
+    // YouTube — key is `youtube-${ytRowId}` so it doesn't collide
+    // with X-post UUIDs in the same flat key space.
+    if (previewItemKey.startsWith('youtube-')) {
+      const ytId = previewItemKey.slice('youtube-'.length);
+      const yt = youtubeVideos.find((item) => item.id === ytId);
+      if (yt) {
+        return {
+          kind: 'youtube',
+          key: previewItemKey,
+          title: yt.title || `YouTube Video ${yt.videoId}`,
+          videoId: yt.videoId,
+          channelName: yt.channelName,
+          channelHandle: yt.channelHandle,
+          url: yt.url,
+          ytRowId: yt.id,
+        };
+      }
+    }
+
     const xPost = xPosts.find((item) => item.id === previewItemKey);
     if (xPost) {
       return {
@@ -659,7 +686,7 @@ export function CatalogueVideosSection({
     }
 
     return null;
-  }, [previewItemKey, xPosts]);
+  }, [previewItemKey, xPosts, youtubeVideos]);
 
   // Deep-link handler. When the URL contains `?v=<id>`, look up the
   // saved item once both data sets have loaded, switch to the right
@@ -683,7 +710,7 @@ export function CatalogueVideosSection({
       const yt = youtubeVideos.find((y) => y.id === v);
       if (yt) {
         setActiveTab('youtube');
-        setOpenYouTubeId(yt.id);
+        setPreviewItemKey(`youtube-${yt.id}`);
       }
     }
 
@@ -851,6 +878,53 @@ export function CatalogueVideosSection({
     );
   }
 
+  // YouTube tag mutations — same shape as the X-post handlers above,
+  // routed through `catalogue_video_references` keyed by
+  // `source_type='youtube'` + `external_id=videoId`. Each handler is
+  // optimistic, with a rollback inside `persistTagsForYouTube` if the
+  // network write fails.
+  async function persistTagsForYouTube(ytRowId: string, nextTags: string[]) {
+    const yt = youtubeVideos.find((v) => v.id === ytRowId);
+    if (!yt) return;
+    const previousTags = yt.tags;
+    setYouTubeVideos((prev) => prev.map((v) => v.id === ytRowId ? { ...v, tags: nextTags } : v));
+    const { error } = await supabase
+      .from('catalogue_video_references')
+      .update({ tags: nextTags })
+      .eq('source_type', 'youtube')
+      .eq('external_id', yt.videoId);
+    if (error) {
+      setYouTubeVideos((prev) => prev.map((v) => v.id === ytRowId ? { ...v, tags: previousTags } : v));
+    }
+  }
+  async function addTagToYouTube(ytRowId: string, rawTag: string) {
+    const tag = normalizeTag(rawTag);
+    if (!tag) return;
+    const yt = youtubeVideos.find((v) => v.id === ytRowId);
+    if (!yt) return;
+    if (yt.tags.includes(tag)) return;
+    await persistTagsForYouTube(ytRowId, [...yt.tags, tag]);
+  }
+  async function removeTagFromYouTube(ytRowId: string, tag: string) {
+    const yt = youtubeVideos.find((v) => v.id === ytRowId);
+    if (!yt) return;
+    await persistTagsForYouTube(ytRowId, yt.tags.filter((existing) => existing !== tag));
+  }
+  async function renameTagOnYouTube(ytRowId: string, originalTag: string, rawNext: string) {
+    const next = normalizeTag(rawNext);
+    if (!next || next === originalTag) return;
+    const yt = youtubeVideos.find((v) => v.id === ytRowId);
+    if (!yt) return;
+    if (yt.tags.includes(next)) {
+      await persistTagsForYouTube(ytRowId, yt.tags.filter((t) => t !== originalTag));
+      return;
+    }
+    await persistTagsForYouTube(
+      ytRowId,
+      yt.tags.map((tag) => (tag === originalTag ? next : tag)),
+    );
+  }
+
   function toggleTagFilter(tag: string) {
     setSelectedTagFilters((previous) => {
       const next = new Set(previous);
@@ -861,14 +935,15 @@ export function CatalogueVideosSection({
   }
 
   // Single flat list driving arrow-key navigation in the lightbox.
-  // X posts first (since the section renders them first), then the
-  // Family Values clips. Mirrors visual order so ← / → match what
-  // the user sees.
+  // X posts first → YouTube videos → Family Values clips. Mirrors
+  // the tab order so ← / → match what the user sees as they switch
+  // tabs.
   const allPreviewKeys = useMemo<string[]>(() => {
     const xKeys = sortedXPosts.map((post) => post.id);
+    const ytKeys = filteredYouTubeVideos.map((yt) => `youtube-${yt.id}`);
     const benjiKeys = REFERENCE_VIDEOS.map((video) => `benji-${video.id}`);
-    return [...xKeys, ...benjiKeys];
-  }, [sortedXPosts]);
+    return [...xKeys, ...ytKeys, ...benjiKeys];
+  }, [sortedXPosts, filteredYouTubeVideos]);
 
   const currentPreviewIndex = previewItemKey
     ? allPreviewKeys.indexOf(previewItemKey)
@@ -1259,8 +1334,8 @@ export function CatalogueVideosSection({
     if (error) return;
 
     setYouTubeVideos((previous) => previous.filter((video) => video.id !== videoRowId));
-    if (openYouTubeId === videoRowId) {
-      setOpenYouTubeId(null);
+    if (previewItemKey === `youtube-${videoRowId}`) {
+      setPreviewItemKey(null);
     }
   }
 
@@ -1680,11 +1755,11 @@ export function CatalogueVideosSection({
                       className="catalogue-videos__yt-card"
                       role="button"
                       tabIndex={0}
-                      onClick={() => setOpenYouTubeId(video.id)}
+                      onClick={() => setPreviewItemKey(`youtube-${video.id}`)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
-                          setOpenYouTubeId(video.id);
+                          setPreviewItemKey(`youtube-${video.id}`);
                         }
                       }}
                     >
@@ -1788,6 +1863,16 @@ export function CatalogueVideosSection({
                   poster={previewItem.posterUrl}
                   src={previewItem.sourceUrl}
                 />
+              ) : previewItem.kind === 'youtube' ? (
+                <iframe
+                  className="catalogue-videos-preview__yt"
+                  src={`https://www.youtube-nocookie.com/embed/${previewItem.videoId}?autoplay=1&rel=0`}
+                  title={previewItem.title}
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
               ) : (
                 <XPostEmbed className="catalogue-videos-preview__tweet" tweetId={previewItem.tweetId} />
               )}
@@ -1822,20 +1907,46 @@ export function CatalogueVideosSection({
             </div>
 
             <aside className="catalogue-videos-preview__comments">
-              {previewItem.kind === 'x-post' && (() => {
-                const xPost = xPosts.find((p) => p.id === previewItem.key);
-                if (!xPost) return null;
+              {(() => {
+                // Resolve the tag-bearing row + the right mutation handlers
+                // for the current preview kind. Returns null for plain
+                // reference videos which don't carry user-defined tags.
+                let rowId: string | null = null;
+                let tags: string[] = [];
+                let onAdd: (raw: string) => Promise<void> = async () => {};
+                let onRemove: (tag: string) => Promise<void> = async () => {};
+                let onRename: (originalTag: string, rawNext: string) => Promise<void> = async () => {};
+                if (previewItem.kind === 'x-post') {
+                  const xPost = xPosts.find((p) => p.id === previewItem.key);
+                  if (!xPost) return null;
+                  rowId = xPost.id;
+                  tags = xPost.tags;
+                  onAdd = (raw) => addTagToPost(xPost.id, raw);
+                  onRemove = (tag) => removeTagFromPost(xPost.id, tag);
+                  onRename = (orig, next) => renameTagOnPost(xPost.id, orig, next);
+                } else if (previewItem.kind === 'youtube') {
+                  const yt = youtubeVideos.find((v) => v.id === previewItem.ytRowId);
+                  if (!yt) return null;
+                  rowId = yt.id;
+                  tags = yt.tags;
+                  onAdd = (raw) => addTagToYouTube(yt.id, raw);
+                  onRemove = (tag) => removeTagFromYouTube(yt.id, tag);
+                  onRename = (orig, next) => renameTagOnYouTube(yt.id, orig, next);
+                } else {
+                  return null;
+                }
+
                 return (
                   <section className="catalogue-videos-preview__tags-block" aria-label="Tags">
                     <header className="catalogue-videos-preview__tags-head">
                       <h3>Tags</h3>
-                      {xPost.tags.length > 0 && (
-                        <span className="catalogue-videos-preview__tags-count">{xPost.tags.length}</span>
+                      {tags.length > 0 && (
+                        <span className="catalogue-videos-preview__tags-count">{tags.length}</span>
                       )}
                     </header>
                     <div className="catalogue-videos-preview__tags-row">
-                      {xPost.tags.map((tag) => {
-                        const isEditing = editingTag === tag;
+                      {tags.map((tag) => {
+                        const isEditing = editingTag === `${rowId}::${tag}`;
                         return (
                           <span
                             key={tag}
@@ -1851,7 +1962,7 @@ export function CatalogueVideosSection({
                                 onKeyDown={(event) => {
                                   if (event.key === 'Enter') {
                                     event.preventDefault();
-                                    void renameTagOnPost(xPost.id, tag, tagDraft);
+                                    void onRename(tag, tagDraft);
                                     setEditingTag(null);
                                     setTagDraft('');
                                   } else if (event.key === 'Escape') {
@@ -1861,7 +1972,7 @@ export function CatalogueVideosSection({
                                   }
                                 }}
                                 onBlur={() => {
-                                  if (tagDraft.trim()) void renameTagOnPost(xPost.id, tag, tagDraft);
+                                  if (tagDraft.trim()) void onRename(tag, tagDraft);
                                   setEditingTag(null);
                                   setTagDraft('');
                                 }}
@@ -1873,7 +1984,7 @@ export function CatalogueVideosSection({
                                   className="catalogue-videos-preview__tag-label"
                                   aria-label={`Rename tag ${tag}`}
                                   onClick={() => {
-                                    setEditingTag(tag);
+                                    setEditingTag(`${rowId}::${tag}`);
                                     setTagDraft(tag);
                                   }}
                                 >
@@ -1886,7 +1997,7 @@ export function CatalogueVideosSection({
                                 type="button"
                                 className="catalogue-videos-preview__tag-x"
                                 aria-label={`Remove ${tag}`}
-                                onClick={() => void removeTagFromPost(xPost.id, tag)}
+                                onClick={() => void onRemove(tag)}
                               >
                                 <X size={11} aria-hidden="true" />
                               </button>
@@ -1903,13 +2014,13 @@ export function CatalogueVideosSection({
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' || event.key === ',') {
                             event.preventDefault();
-                            void addTagToPost(xPost.id, tagAddDraft);
+                            void onAdd(tagAddDraft);
                             setTagAddDraft('');
                           }
                         }}
                         onBlur={() => {
                           if (tagAddDraft.trim()) {
-                            void addTagToPost(xPost.id, tagAddDraft);
+                            void onAdd(tagAddDraft);
                             setTagAddDraft('');
                           }
                         }}
@@ -2002,20 +2113,6 @@ export function CatalogueVideosSection({
         );
       })()}
 
-      {openYouTubeId && (() => {
-        const video = youtubeVideos.find((v) => v.id === openYouTubeId);
-        if (!video) return null;
-        return (
-          <YouTubeLightbox
-            videoId={video.videoId}
-            title={video.title}
-            channelName={video.channelName}
-            channelHandle={video.channelHandle}
-            url={video.url}
-            onClose={() => setOpenYouTubeId(null)}
-          />
-        );
-      })()}
     </IconTooltipProvider>
   );
 }
