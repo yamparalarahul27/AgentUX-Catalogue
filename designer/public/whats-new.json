@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-06-23-comment-link-chips",
+    "date": "June 23, 2026",
+    "title": "Links in comments now show a favicon chip",
+    "bullets": [
+      { "kind": "new", "text": "Paste a URL into a comment and it renders as a compact pill with the site's favicon + hostname. Hover to see the full URL and the \"open in new tab\" hint" },
+      { "kind": "improved", "text": "Preview-modal close (✕) moved to the dim backdrop, top-left — so it stops fighting YouTube's native top controls (mute / CC / settings) and gives the player room to breathe" }
+    ]
+  },
+  {
     "id": "2026-06-23-videos-unified-preview",
     "date": "June 23, 2026",
     "title": "YouTube videos open in the same preview as X posts",

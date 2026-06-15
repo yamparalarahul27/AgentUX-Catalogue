@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
 import { DotLoader } from './DotLoader';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { CommentText } from './CommentText';
 
 // Wrap each case-insensitive occurrence of `query` inside `text` with a
 // <mark> span so the catalogue-videos search highlight CSS can paint it.
@@ -1851,6 +1852,17 @@ export function CatalogueVideosSection({
 
       {previewItem && (
         <div className="catalogue-videos-preview" role="dialog" aria-modal="true" onClick={() => setPreviewItemKey(null)}>
+          {/* Close sits in the dim backdrop, top-left, outside the modal
+              box — moved here from inside __main so it stops colliding
+              with YouTube's native top chrome (mute / CC / settings). */}
+          <button
+            type="button"
+            className="catalogue-videos-preview__close"
+            onClick={() => setPreviewItemKey(null)}
+            aria-label="Close video preview"
+          >
+            <X size={18} />
+          </button>
           <div className="catalogue-videos-preview__modal" onClick={(event) => event.stopPropagation()}>
             <div className="catalogue-videos-preview__main">
               {previewItem.kind === 'video' ? (
@@ -1876,14 +1888,6 @@ export function CatalogueVideosSection({
               ) : (
                 <XPostEmbed className="catalogue-videos-preview__tweet" tweetId={previewItem.tweetId} />
               )}
-              <button
-                type="button"
-                className="catalogue-videos-preview__close"
-                onClick={() => setPreviewItemKey(null)}
-                aria-label="Close video preview"
-              >
-                <X size={16} />
-              </button>
               {hasPrev && (
                 <button
                   type="button"
@@ -2224,7 +2228,7 @@ function VideoCommentItem({ comment, itemKey, currentUserEmail, formatTime, onEd
           </div>
         </div>
       ) : (
-        <p>{comment.text}</p>
+        <p><CommentText text={comment.text} /></p>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CornerUpLeft, Eye, EyeOff, Pencil, X } from 'lucide-react';
 
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { CommentText } from './CommentText';
 
 interface LightboxScreenshotComment {
   id: string;
@@ -195,7 +196,7 @@ export function CatalogueFamilyLightboxCommentItem({
           </div>
         </div>
       ) : (
-        <p className="catalogue-lightbox-comment-text">{comment.text}</p>
+        <p className="catalogue-lightbox-comment-text"><CommentText text={comment.text} /></p>
       )}
       {!isEditing && (
         <div className="catalogue-lightbox-comment-time">
