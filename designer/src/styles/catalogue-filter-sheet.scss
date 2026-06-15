@@ -299,12 +299,35 @@
 // Theme / View). Click the pill to remove that filter; the Clear all
 // button at the end clears everything in one go (only shown when 2+
 // pills are active, since a single-pill "clear all" is silly).
+//
+// Wrapper animates the strip's height between 0 and auto using the
+// grid-template-rows 0fr → 1fr trick (a well-supported alternative to
+// `height: auto` that browsers can actually interpolate). The strip
+// is always in the DOM so the exit animation runs when the last
+// filter clears — plain conditional rendering would pop it out.
+.catalogue-filter-pills-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 220ms ease, opacity 180ms ease;
+
+  &.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
 .catalogue-filter-pills {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 0 0 4px;
+  // Required so the inner content can shrink to 0 inside the grid
+  // wrapper — without this the grid row treats min-content as the
+  // floor and the collapse doesn't animate.
+  min-height: 0;
+  overflow: hidden;
 }
 
 .catalogue-filter-pill {

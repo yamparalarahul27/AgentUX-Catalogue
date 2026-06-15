@@ -862,7 +862,16 @@ export function CatalogueToolbar({
         document.body,
       )}
 
-      {activePills.length > 0 && (
+      {/* Wrapper is always mounted so we can animate the strip's
+          height between 0 and its natural height via the
+          grid-template-rows 0fr → 1fr trick. Plain conditional
+          rendering would pop in/out — the grid wrapper gives us a
+          smooth expand on first chip and smooth collapse when the
+          last chip is removed. */}
+      <div
+        className={`catalogue-filter-pills-wrapper${activePills.length > 0 ? ' is-open' : ''}`}
+        aria-hidden={activePills.length === 0}
+      >
         <div className="catalogue-filter-pills">
           {activePills.map((pill) => (
             <button key={pill.key} type="button" className="catalogue-filter-pill" onClick={pill.onRemove}>
@@ -880,7 +889,7 @@ export function CatalogueToolbar({
             </button>
           )}
         </div>
-      )}
+      </div>
 
       <CatalogueFilterSheet
         isOpen={filterSheetOpen}
