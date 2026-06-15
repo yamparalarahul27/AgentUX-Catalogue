@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-15-header-tabs-links-elements",
+    "date": "June 15, 2026",
+    "title": "Section tabs reordered — Links gets a label, Elements gets an icon",
+    "bullets": [
+      { "kind": "improved", "text": "Links is now a labelled tab (was a bare icon), and Elements moved next to AI Studio as a compact icon — so the row reads Catalogue · Videos · Links · ◇ · ✨" }
+    ]
+  },
+  {
     "id": "2026-06-23-comment-link-chips",
     "date": "June 23, 2026",
     "title": "Links in comments now show a favicon chip",

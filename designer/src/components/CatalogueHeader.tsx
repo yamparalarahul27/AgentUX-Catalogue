@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
+  Component,
   Frame,
   History,
   Keyboard,
-  Link as LinkIcon,
   LogIn,
   LogOut,
   SlidersHorizontal,
@@ -250,32 +250,32 @@ export function CatalogueHeader({
         >
           Videos
         </button>
+        <button
+          type="button"
+          role="tab"
+          ref={(el) => { tabRefs.current.set('links', el); }}
+          className={`catalogue-header__tab ${activeSection === 'links' ? 'is-active' : ''}`}
+          aria-selected={activeSection === 'links'}
+          onClick={() => onSectionChange('links')}
+          data-short="L"
+        >
+          Links
+        </button>
         {showElementsEntry && (
-          <button
-            type="button"
-            role="tab"
-            ref={(el) => { tabRefs.current.set('elements', el); }}
-            className={`catalogue-header__tab ${activeSection === 'elements' ? 'is-active' : ''}`}
-            aria-selected={activeSection === 'elements'}
-            onClick={() => onSectionChange('elements')}
-            data-short="E"
-          >
-            Elements
-          </button>
+          <IconTooltip label="Elements">
+            <button
+              type="button"
+              role="tab"
+              ref={(el) => { tabRefs.current.set('elements', el); }}
+              className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'elements' ? 'is-active' : ''}`}
+              aria-selected={activeSection === 'elements'}
+              aria-label="Elements"
+              onClick={() => onSectionChange('elements')}
+            >
+              <Component size={15} aria-hidden="true" />
+            </button>
+          </IconTooltip>
         )}
-        <IconTooltip label="Links">
-          <button
-            type="button"
-            role="tab"
-            ref={(el) => { tabRefs.current.set('links', el); }}
-            className={`catalogue-header__tab catalogue-header__tab--icon ${activeSection === 'links' ? 'is-active' : ''}`}
-            aria-selected={activeSection === 'links'}
-            aria-label="Links"
-            onClick={() => onSectionChange('links')}
-          >
-            <LinkIcon size={15} aria-hidden="true" />
-          </button>
-        </IconTooltip>
         {showStudioEntry && (
           <IconTooltip label="Labelling Studio · for AI">
             <button
