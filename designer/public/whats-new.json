@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-23-comment-snap-cleanup",
+    "date": "June 23, 2026",
+    "title": "Empty \"comment removed\" placeholders self-clean",
+    "bullets": [
+      { "kind": "improved", "text": "When a deleted comment's last reply also gets deleted, the \"Comment removed\" tombstone briefly stays (3s, so you register it was there) then disintegrates with a Thanos-style fade — no more stale placeholder sitting in the thread forever" }
+    ]
+  },
+  {
     "id": "2026-06-20-comments-edit-reply",
     "date": "June 20, 2026",
     "title": "Comments — edit your own, reply to a thread",

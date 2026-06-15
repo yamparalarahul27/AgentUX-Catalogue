@@ -351,6 +351,87 @@ export function CatalogueFamilyLightbox({
   // Reply composer state — when set, the new-comment input becomes a
   // reply to this parent. Reset on screenshot change + after submit.
   const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null);
+
+  // "Thanos snap" cleanup for orphan tombstones — a soft-deleted
+  // parent's whole reason to exist is keeping its replies in context.
+  // Once every child is gone, the "Comment removed" placeholder is
+  // load-bearing for nothing. We hold it visible for 3 s so the user
+  // can register "this used to be here", then disintegrate it with a
+  // fade-scale-drift animation and finally hard-delete the row.
+  //
+  // Tracks: which comment IDs are mid-snap (drives the CSS class), and
+  // the live timers per id so cleanup on unmount / not-orphan-anymore
+  // doesn't leak setTimeouts.
+  const [snappingCommentIds, setSnappingCommentIds] = useState<Set<string>>(() => new Set());
+  const snapTimersRef = useRef<Map<string, { startTimer: number; deleteTimer: number }>>(new Map());
+
+  useEffect(() => {
+    // Find orphan tombstones: soft-deleted AND nothing in the current
+    // batch points at this as its parent.
+    const orphans = comments.filter((c) =>
+      c.deleted_at != null
+      && !comments.some((other) => other.parent_id === c.id)
+    );
+    const orphanIds = new Set(orphans.map((o) => o.id));
+
+    // Schedule a snap for any new orphan we haven't queued yet.
+    // Stagger multiple orphans by 80 ms so they don't all explode in
+    // unison (looks like a bug, not a transition).
+    let staggerIndex = 0;
+    for (const orphan of orphans) {
+      if (snapTimersRef.current.has(orphan.id)) continue;
+      const baseDelay = 3000 + (staggerIndex++ * 80);
+      const ANIMATION_MS = 380;
+      const startTimer = window.setTimeout(() => {
+        setSnappingCommentIds((prev) => {
+          const next = new Set(prev);
+          next.add(orphan.id);
+          return next;
+        });
+      }, baseDelay);
+      const deleteTimer = window.setTimeout(() => {
+        // Hard-delete the row. We don't wait on the response — if the
+        // network call fails the row sticks around in the DB, but it's
+        // already gone locally; next session can re-snap it.
+        void supabase.from('screenshot_comments').delete().eq('id', orphan.id);
+        setComments((prev) => prev.filter((c) => c.id !== orphan.id));
+        setSnappingCommentIds((prev) => {
+          const next = new Set(prev);
+          next.delete(orphan.id);
+          return next;
+        });
+        snapTimersRef.current.delete(orphan.id);
+      }, baseDelay + ANIMATION_MS);
+      snapTimersRef.current.set(orphan.id, { startTimer, deleteTimer });
+    }
+
+    // If a previously-orphan id is no longer orphan (e.g. a queued
+    // offline reply just replayed), cancel its snap.
+    for (const [id, timers] of Array.from(snapTimersRef.current.entries())) {
+      if (!orphanIds.has(id)) {
+        window.clearTimeout(timers.startTimer);
+        window.clearTimeout(timers.deleteTimer);
+        snapTimersRef.current.delete(id);
+        setSnappingCommentIds((prev) => {
+          if (!prev.has(id)) return prev;
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
+    }
+  }, [comments]);
+
+  // Clear all in-flight snap timers when the lightbox unmounts — the
+  // user closed the panel mid-snap, so the orphan stays in the DB for
+  // the next session to re-snap.
+  useEffect(() => () => {
+    snapTimersRef.current.forEach((timers) => {
+      window.clearTimeout(timers.startTimer);
+      window.clearTimeout(timers.deleteTimer);
+    });
+    snapTimersRef.current.clear();
+  }, []);
   const activeVariant = useMemo(
     () => getActiveFamilyVariant(family, activeVariantKey, preferredScreenshotId),
     [activeVariantKey, family, preferredScreenshotId],
@@ -1876,6 +1957,7 @@ export function CatalogueFamilyLightbox({
                           comment={comment}
                           isReply={isReply}
                           hasReplies={hasReplies}
+                          isSnapping={snappingCommentIds.has(comment.id)}
                           userEmail={userEmail}
                           isAdmin={isAdmin}
                           onDelete={(commentId) => void deleteComment(commentId)}
