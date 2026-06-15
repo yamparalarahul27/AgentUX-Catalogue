@@ -356,7 +356,7 @@ export function CatalogueLinksSection({
         <button
           type="button"
           onClick={() => void addLink()}
-          disabled={savingLink}
+          disabled={!linkInput.trim() || savingLink || !canEdit}
         >
           {savingLink ? <DotLoader size="sm" ariaLabel="Saving" /> : <Plus size={14} aria-hidden="true" />}
           Add link
