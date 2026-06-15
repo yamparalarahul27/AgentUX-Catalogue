@@ -51,7 +51,22 @@ export default async function handler(request: Request): Promise<Response> {
 
   const headers = new Headers();
   headers.set('content-type', 'text/html; charset=utf-8');
-  headers.set('cache-control', 'public, max-age=300');
+  // `no-cache` = caches may store but must revalidate with the origin
+  // before serving. Prototype share links are stable across re-uploads
+  // (the file is overwritten in place — see reuploadPrototype in
+  // use-catalogue-prototypes.ts), so an edited prototype MUST surface
+  // immediately rather than serving stale HTML for up to a cache window.
+  //
+  // CAVEAT (revisit later): this trades the previous `max-age=300` CDN
+  // cache for an origin fetch on every view. Negligible while prototypes
+  // are internal / low-traffic. REVISIT when the feature graduates to
+  // high-traffic public sharing — concretely, when a single prototype
+  // link regularly draws sustained concurrent traffic, or total prototype
+  // views exceed ~1k/day. The fix at that point is the ID-indirection
+  // proxy (share URL keyed by row id, proxy resolves the current
+  // storage_path), which restores CDN caching AND keeps links stable.
+  // Tracked in docs/backlog.md.
+  headers.set('cache-control', 'no-cache');
   // Intentionally NOT passing through:
   //   - content-security-policy (Supabase's `sandbox` keyword kills JS)
   //   - x-content-type-options (we want text/html honored, not nosniff'd)
