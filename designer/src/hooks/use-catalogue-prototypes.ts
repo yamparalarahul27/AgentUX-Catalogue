@@ -202,7 +202,16 @@ export function useCataloguePrototypes({ userEmail }: UseCataloguePrototypesArgs
       .from('catalogue_prototypes')
       .update({ filename: file.name })
       .eq('id', id);
-    if (updateErr) throw new Error(updateErr.message);
+    if (updateErr) {
+      // The upload already landed — the share URL is now serving the
+      // new file content. Only the displayed filename in the catalogue
+      // tile failed to refresh. Tell the user explicitly so they don't
+      // mistakenly re-upload (which would just overwrite the same
+      // file again) — a simple rename can recover the title.
+      throw new Error(
+        "File uploaded but the title couldn't refresh. Rename the prototype to update the title.",
+      );
+    }
 
     setPrototypes((prev) => prev.map((p) => (p.id === id
       ? { ...p, filename: file.name, updatedAt: new Date().toISOString() }
