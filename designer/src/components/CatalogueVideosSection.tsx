@@ -1380,7 +1380,7 @@ export function CatalogueVideosSection({
           <button
             type="button"
             onClick={() => void addXPost()}
-            disabled={savingXPost}
+            disabled={!xPostInput.trim() || savingXPost || !canEdit}
           >
             {savingXPost && <DotLoader size="sm" ariaLabel="Saving" />}
             Add X Post
