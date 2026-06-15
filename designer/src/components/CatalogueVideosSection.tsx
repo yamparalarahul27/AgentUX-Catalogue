@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Search, Share2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Pencil, Search, Share2, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import { ConfirmModal } from './ConfirmModal';
@@ -72,8 +72,10 @@ interface YouTubeReference {
 interface VideoComment {
   id: string;
   text: string;
-  author: string;
+  author: string;       // truncated display name (everything before the @)
+  userEmail: string;    // raw email — needed to gate the edit affordance
   createdAt: string;
+  updatedAt?: string | null;
 }
 
 interface CatalogueVideoReferenceRow {
@@ -93,6 +95,7 @@ interface CatalogueVideoReferenceRow {
 
 interface CatalogueVideoCommentRow {
   created_at: string;
+  updated_at?: string | null;
   id: string;
   item_key: string;
   text: string;
@@ -439,7 +442,7 @@ function XPostEmbed({ className, tweetId }: XPostEmbedProps) {
       <div ref={containerRef} className={`${className}-inner`} />
       <div className={`${className}-hint${showHint ? '' : ' is-hidden'}`} aria-hidden="true">
         <ChevronDown size={14} />
-        <span>more below</span>
+        <span>More below</span>
       </div>
     </div>
   );
@@ -907,7 +910,7 @@ export function CatalogueVideosSection({
           .order('created_at', { ascending: false }),
         supabase
           .from('catalogue_video_comments')
-          .select('id, item_key, text, user_email, created_at')
+          .select('id, item_key, text, user_email, created_at, updated_at')
           .order('created_at', { ascending: true }),
       ]);
 
@@ -929,8 +932,10 @@ export function CatalogueVideosSection({
         const nextItem: VideoComment = {
           id: row.id,
           text: row.text,
-          author: row.user_email || 'Designer',
+          author: row.user_email?.split('@')[0] || row.user_email || 'Designer',
+          userEmail: row.user_email,
           createdAt: row.created_at,
+          updatedAt: row.updated_at ?? null,
         };
         const current = accumulator[row.item_key] || [];
         accumulator[row.item_key] = [...current, nextItem];
@@ -1065,7 +1070,7 @@ export function CatalogueVideosSection({
         text,
         user_email: userEmail,
       })
-      .select('id, item_key, text, user_email, created_at')
+      .select('id, item_key, text, user_email, created_at, updated_at')
       .single();
 
     setSavingComment(false);
@@ -1076,14 +1081,51 @@ export function CatalogueVideosSection({
     const nextComment: VideoComment = {
       id: data.id,
       text: data.text,
-      author: data.user_email,
+      author: data.user_email?.split('@')[0] || data.user_email || 'Designer',
+      userEmail: data.user_email,
       createdAt: data.created_at,
+      updatedAt: data.updated_at ?? null,
     };
     setCommentsByVideo((previous) => ({
       ...previous,
       [previewItemKey]: [...(previous[previewItemKey] ?? []), nextComment],
     }));
     setCommentDraft('');
+  }
+
+  // Edit an existing video comment. Mirrors the screenshot-lightbox
+  // editComment in shape: optimistic text + updated_at swap, rollback
+  // on error. RLS already permits authenticated UPDATE; ownership is
+  // gated client-side via `userEmail`.
+  async function editVideoComment(itemKey: string, commentId: string, nextText: string) {
+    if (!ensureCanEdit()) return;
+    const trimmed = nextText.trim();
+    if (!trimmed) return;
+    const existing = (commentsByVideo[itemKey] ?? []).find((c) => c.id === commentId);
+    if (!existing || trimmed === existing.text) return;
+    const previousText = existing.text;
+    const previousUpdatedAt = existing.updatedAt ?? null;
+    const nextUpdatedAt = new Date().toISOString();
+    setCommentsByVideo((previous) => ({
+      ...previous,
+      [itemKey]: (previous[itemKey] ?? []).map((c) =>
+        c.id === commentId ? { ...c, text: trimmed, updatedAt: nextUpdatedAt } : c
+      ),
+    }));
+    const { error } = await supabase
+      .from('catalogue_video_comments')
+      .update({ text: trimmed, updated_at: nextUpdatedAt })
+      .eq('id', commentId);
+    if (error) {
+      // Roll back to the prior text + updatedAt — the user can retry
+      // from the same edit affordance.
+      setCommentsByVideo((previous) => ({
+        ...previous,
+        [itemKey]: (previous[itemKey] ?? []).map((c) =>
+          c.id === commentId ? { ...c, text: previousText, updatedAt: previousUpdatedAt } : c
+        ),
+      }));
+    }
   }
 
   async function addXPost() {
@@ -1886,13 +1928,14 @@ export function CatalogueVideosSection({
                   <p className="catalogue-videos-preview__empty">No comments yet.</p>
                 ) : (
                   activeComments.map((comment) => (
-                    <div key={comment.id} className="catalogue-videos-preview__comment">
-                      <div className="catalogue-videos-preview__comment-top">
-                        <strong>{comment.author}</strong>
-                        <span>{formatCommentTime(comment.createdAt)}</span>
-                      </div>
-                      <p>{comment.text}</p>
-                    </div>
+                    <VideoCommentItem
+                      key={comment.id}
+                      comment={comment}
+                      itemKey={previewItemKey ?? ''}
+                      currentUserEmail={userEmail}
+                      formatTime={formatCommentTime}
+                      onEdit={editVideoComment}
+                    />
                   ))
                 )}
               </div>
@@ -1974,5 +2017,118 @@ export function CatalogueVideosSection({
         );
       })()}
     </IconTooltipProvider>
+  );
+}
+
+// Inline comment row for the video preview modal. Mirrors the
+// screenshot-lightbox CommentItem in shape (own-comment edit
+// affordance, "(edited)" suffix, ⌘/Ctrl+Enter saves, Esc cancels)
+// without growing this file's component-tree into a separate file.
+interface VideoCommentItemProps {
+  comment: VideoComment;
+  itemKey: string;
+  currentUserEmail: string;
+  formatTime: (value: string) => string;
+  onEdit: (itemKey: string, commentId: string, nextText: string) => Promise<void>;
+}
+
+function VideoCommentItem({ comment, itemKey, currentUserEmail, formatTime, onEdit }: VideoCommentItemProps) {
+  const canEdit = comment.userEmail === currentUserEmail;
+  const isEdited = Boolean(comment.updatedAt);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.text);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!isEditing) setDraft(comment.text);
+  }, [comment.text, isEditing]);
+
+  function beginEdit() {
+    setDraft(comment.text);
+    setIsEditing(true);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    });
+  }
+
+  function cancelEdit() {
+    setDraft(comment.text);
+    setIsEditing(false);
+  }
+
+  async function submitEdit() {
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === comment.text) {
+      setIsEditing(false);
+      return;
+    }
+    await onEdit(itemKey, comment.id, trimmed);
+    setIsEditing(false);
+  }
+
+  return (
+    <div className="catalogue-videos-preview__comment">
+      <div className="catalogue-videos-preview__comment-top">
+        <strong>{comment.author}</strong>
+        <span>
+          {formatTime(comment.createdAt)}
+          {isEdited && <span className="catalogue-videos-preview__comment-edited"> (edited)</span>}
+        </span>
+        {canEdit && !isEditing && (
+          <IconTooltip label="Edit comment">
+            <button
+              type="button"
+              className="catalogue-videos-preview__comment-edit"
+              aria-label="Edit comment"
+              onClick={beginEdit}
+            >
+              <Pencil size={11} />
+            </button>
+          </IconTooltip>
+        )}
+      </div>
+      {isEditing ? (
+        <div className="catalogue-videos-preview__comment-edit-form">
+          <textarea
+            ref={textareaRef}
+            className="catalogue-videos-preview__comment-edit-input"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                event.preventDefault();
+                void submitEdit();
+              } else if (event.key === 'Escape') {
+                event.preventDefault();
+                cancelEdit();
+              }
+            }}
+            aria-label="Edit comment text"
+          />
+          <div className="catalogue-videos-preview__comment-edit-actions">
+            <button
+              type="button"
+              className="catalogue-videos-preview__comment-edit-cancel"
+              onClick={cancelEdit}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="catalogue-videos-preview__comment-edit-save"
+              onClick={() => void submitEdit()}
+              disabled={!draft.trim() || draft.trim() === comment.text}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p>{comment.text}</p>
+      )}
+    </div>
   );
 }
