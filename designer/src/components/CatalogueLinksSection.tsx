@@ -395,11 +395,26 @@ export function CatalogueLinksSection({
                         src={thumb}
                         alt=""
                         loading="lazy"
+                        ref={(el) => {
+                          // Cached images may already be `complete` by the
+                          // time the ref runs, so the `onLoad` listener
+                          // would never fire. Promote them straight to the
+                          // loaded state to avoid a stale blurred frame.
+                          if (el && el.complete && el.naturalWidth > 0) {
+                            el.dataset.loaded = 'true';
+                          }
+                        }}
+                        onLoad={(event) => {
+                          event.currentTarget.dataset.loaded = 'true';
+                        }}
                         onError={(event) => {
                           const img = event.currentTarget;
                           if (img.src !== faviconUrl(link.host)) {
                             img.src = faviconUrl(link.host);
                             img.classList.add('is-fallback');
+                            // Reset for the new src so the favicon also
+                            // gets its blur-reveal once it loads.
+                            delete img.dataset.loaded;
                           } else {
                             img.style.visibility = 'hidden';
                           }
@@ -411,6 +426,14 @@ export function CatalogueLinksSection({
                         src={faviconUrl(link.host)}
                         alt=""
                         loading="lazy"
+                        ref={(el) => {
+                          if (el && el.complete && el.naturalWidth > 0) {
+                            el.dataset.loaded = 'true';
+                          }
+                        }}
+                        onLoad={(event) => {
+                          event.currentTarget.dataset.loaded = 'true';
+                        }}
                       />
                     )}
                   </a>

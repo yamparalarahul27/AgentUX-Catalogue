@@ -479,6 +479,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                openOnHover
                 values={filterGroup}
                 placeholder="Group"
                 searchPlaceholder="Search groups…"
@@ -507,6 +508,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                openOnHover
                 variant="chips"
                 values={filterFlow}
                 placeholder="Flow"
@@ -520,6 +522,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                openOnHover
                 values={filterAnnotation}
                 placeholder="Annotation"
                 searchPlaceholder="Search annotations…"
@@ -532,6 +535,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                openOnHover
                 values={filterUiElement}
                 placeholder="UI Element"
                 searchPlaceholder="Search UI elements…"
@@ -556,6 +560,7 @@ export function CatalogueToolbar({
             )}
             {isFilterVisible('theme') && (
               <Dropdown
+                openOnHover
                 value={filterTheme}
                 placeholder="Theme"
                 leadingIcon={<Palette size={13} />}
@@ -568,6 +573,7 @@ export function CatalogueToolbar({
             )}
             {isFilterVisible('view') && (
               <Dropdown
+                openOnHover
                 value={viewBy}
                 placeholder="View by"
                 leadingIcon={<Eye size={13} />}
@@ -594,6 +600,7 @@ export function CatalogueToolbar({
             {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
             {!isHidden('sort') && (
               <Dropdown
+                openOnHover
                 value={sortBy}
                 placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
                 options={[
@@ -855,7 +862,16 @@ export function CatalogueToolbar({
         document.body,
       )}
 
-      {activePills.length > 0 && (
+      {/* Wrapper is always mounted so we can animate the strip's
+          height between 0 and its natural height via the
+          grid-template-rows 0fr → 1fr trick. Plain conditional
+          rendering would pop in/out — the grid wrapper gives us a
+          smooth expand on first chip and smooth collapse when the
+          last chip is removed. */}
+      <div
+        className={`catalogue-filter-pills-wrapper${activePills.length > 0 ? ' is-open' : ''}`}
+        aria-hidden={activePills.length === 0}
+      >
         <div className="catalogue-filter-pills">
           {activePills.map((pill) => (
             <button key={pill.key} type="button" className="catalogue-filter-pill" onClick={pill.onRemove}>
@@ -873,7 +889,7 @@ export function CatalogueToolbar({
             </button>
           )}
         </div>
-      )}
+      </div>
 
       <CatalogueFilterSheet
         isOpen={filterSheetOpen}

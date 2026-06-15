@@ -1475,6 +1475,7 @@ export function Catalogue({
                   webPresetKey={upload.quickUploadWebPresetKey}
                   webPresets={webPresets}
                   mobileOs={upload.quickUploadMobileOs}
+                  groupAppearanceMap={appearanceMap}
                   onClose={upload.resetQuickUploadState}
                   onPlatformChange={upload.setQuickUploadPlatform}
                   onThemeChange={upload.setQuickUploadTheme}

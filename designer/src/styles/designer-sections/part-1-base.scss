@@ -247,6 +247,19 @@ $success: #22c55e;
     margin-top: 4px;
     padding-top: 10px;
   }
+
+  // Reset/clear row at the top of the menu — only rendered when
+  // selections exist. Muted by default, hot on hover to read as a
+  // destructive-ish action without being alarming.
+  &--clear {
+    color: $text-dim;
+    font-size: 12px;
+    border-bottom: 1px solid $border;
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+
+    &:hover { color: $danger; background: rgba($danger, 0.08); }
+  }
 }
 
 .dropdown__item-main {
@@ -254,6 +267,9 @@ $success: #22c55e;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  // Grow to fill so the badge + check chip sit at the right edge of
+  // the row regardless of label length.
+  flex: 1 1 auto;
 }
 
 // Per-option icon (e.g. Latest / Group View in the Sort dropdown,

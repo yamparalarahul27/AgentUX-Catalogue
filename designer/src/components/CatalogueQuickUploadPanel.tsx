@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, Lock, Monitor, Moon, Smartphone, Sun, X } from 'lucide-react';
+import { Eye, LayoutGrid, Lock, Monitor, Moon, Smartphone, Sun, X } from 'lucide-react';
 
 import androidLogo from '../assets/android-logo.svg';
 import appleLogo from '../assets/apple-logo.svg';
 import { useOnlineStatus } from '../hooks/use-online-status';
+import {
+  type CatalogueGroupAppearanceMap,
+  resolveCatalogueGroupAppearance,
+} from '../lib/catalogue-group-appearance';
 import { MARKETING_BUCKET_GROUP } from '../lib/marketing-bucket';
 import { buildConventionName } from '../lib/naming';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
@@ -41,6 +45,9 @@ interface CatalogueQuickUploadPanelProps {
   webPresetKey: string | null;
   webPresets: WebPresetOption[];
   mobileOs: 'ios' | 'android' | null;
+  // Drives the group icons shown next to each option in the group
+  // combobox menu — mirrors the toolbar Group dropdown.
+  groupAppearanceMap: CatalogueGroupAppearanceMap;
   onPlatformChange: (value: 'web' | 'mobile' | null) => void;
   onThemeChange: (value: 'light' | 'dark' | null) => void;
   onWebPresetKeyChange: (value: string | null) => void;
@@ -68,6 +75,7 @@ export function CatalogueQuickUploadPanel({
   webPresetKey,
   webPresets,
   mobileOs,
+  groupAppearanceMap,
   onPlatformChange,
   onThemeChange,
   onWebPresetKeyChange,
@@ -273,22 +281,32 @@ export function CatalogueQuickUploadPanel({
                 />
                 {groupMenuOpen && (filteredGroupOptions.matches.length > 0 || quickUploadGroup.trim()) && (
                   <div className="catalogue-flow-combobox__menu" role="listbox">
-                    {filteredGroupOptions.matches.map((group) => (
-                      <button
-                        key={group}
-                        type="button"
-                        role="option"
-                        aria-selected={group === quickUploadGroup}
-                        className={`catalogue-flow-combobox__item ${group === quickUploadGroup ? 'is-active' : ''}`}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => {
-                          onQuickUploadGroupChange(group);
-                          setGroupMenuOpen(false);
-                        }}
-                      >
-                        {group}
-                      </button>
-                    ))}
+                    {filteredGroupOptions.matches.map((group) => {
+                      const appearance = resolveCatalogueGroupAppearance(groupAppearanceMap, group, null);
+                      return (
+                        <button
+                          key={group}
+                          type="button"
+                          role="option"
+                          aria-selected={group === quickUploadGroup}
+                          className={`catalogue-flow-combobox__item ${group === quickUploadGroup ? 'is-active' : ''}`}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => {
+                            onQuickUploadGroupChange(group);
+                            setGroupMenuOpen(false);
+                          }}
+                        >
+                          <span className="catalogue-flow-combobox__item-icon" aria-hidden="true">
+                            {appearance.iconUrl ? (
+                              <img src={appearance.iconUrl} alt="" />
+                            ) : (
+                              <LayoutGrid size={13} />
+                            )}
+                          </span>
+                          <span>{group}</span>
+                        </button>
+                      );
+                    })}
                     {quickUploadGroup.trim() && !filteredGroupOptions.exactMatch && (
                       <div className="catalogue-flow-combobox__hint">
                         Press Enter or click outside to use new group “{quickUploadGroup.trim()}”

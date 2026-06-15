@@ -28,6 +28,12 @@ interface DropdownPropsBase {
   // filters (e.g. Flow); the default vertical list scales better for
   // long lists (Group, Annotation).
   variant?: 'list' | 'chips';
+  // Hover-bridge behaviour — opens on mouse-enter (with a short
+  // debounce), stays open while the cursor is on either the trigger
+  // or the menu, closes shortly after both lose hover. Click still
+  // toggles. Off by default; only opt-in surfaces (Flow filter) use
+  // it because searchable dropdowns generally want explicit clicks.
+  openOnHover?: boolean;
 }
 
 interface DropdownPropsSingle extends DropdownPropsBase {
@@ -59,6 +65,7 @@ export function Dropdown(props: DropdownProps) {
     searchPlaceholder = 'Search…',
     leadingIcon,
     variant = 'list',
+    openOnHover = false,
   } = props;
   const isMulti = props.multiple === true;
   const [open, setOpen] = useState(false);
@@ -79,7 +86,11 @@ export function Dropdown(props: DropdownProps) {
 
   useEffect(() => {
     if (open && searchable) {
-      setTimeout(() => searchRef.current?.focus(), 0);
+      // `preventScroll: true` keeps the browser from snapping the
+      // viewport to the search input when it gains focus — without
+      // it the page jumps a few pixels every time a toolbar dropdown
+      // opens.
+      setTimeout(() => searchRef.current?.focus({ preventScroll: true }), 0);
     }
   }, [open, searchable]);
 
@@ -157,8 +168,13 @@ export function Dropdown(props: DropdownProps) {
     };
   }, [open, close]);
 
-  useLayoutEffect(() => {
-    if (!open || !ref.current) return;
+  // Compute the menu's pinned position relative to the trigger's
+  // current bounding rect. Pulled out of the layout effect so the
+  // scroll / resize listeners below can reuse it — the menu sits on
+  // `position: fixed`, so without recomputing it would drift away
+  // from the trigger as the page scrolls.
+  const computeMenuStyle = useCallback(() => {
+    if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom - 8;
     const spaceAbove = rect.top - 8;
@@ -182,7 +198,76 @@ export function Dropdown(props: DropdownProps) {
         ? { bottom: window.innerHeight - rect.top + 4 }
         : { top: rect.bottom + 4 }),
     });
-  }, [open, variant]);
+  }, [variant]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    computeMenuStyle();
+  }, [open, computeMenuStyle]);
+
+  // Keep the menu anchored to the trigger as the page (or any
+  // ancestor scroll container) scrolls or the window resizes. The
+  // capture phase catches scroll events from nested scroll containers
+  // — `window`'s bubble-phase listener alone would miss them.
+  useEffect(() => {
+    if (!open) return;
+    const reposition = () => computeMenuStyle();
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [open, computeMenuStyle]);
+
+  // Hover-bridge timers — open shortly after the cursor enters the
+  // trigger, close shortly after both trigger and menu lose hover.
+  // No-op when `openOnHover` is false (the default).
+  const hoverOpenTimerRef = useRef<number | null>(null);
+  const hoverCloseTimerRef = useRef<number | null>(null);
+
+  const cancelHoverTimers = useCallback(() => {
+    if (hoverOpenTimerRef.current !== null) {
+      window.clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = null;
+    }
+    if (hoverCloseTimerRef.current !== null) {
+      window.clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => cancelHoverTimers(), [cancelHoverTimers]);
+
+  function handleTriggerEnter() {
+    if (!openOnHover || disabled) return;
+    if (hoverCloseTimerRef.current !== null) {
+      window.clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+    if (open) return;
+    hoverOpenTimerRef.current = window.setTimeout(() => setOpen(true), 120);
+  }
+  function handleTriggerLeave() {
+    if (!openOnHover) return;
+    if (hoverOpenTimerRef.current !== null) {
+      window.clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = null;
+    }
+    if (!open) return;
+    hoverCloseTimerRef.current = window.setTimeout(() => setOpen(false), 220);
+  }
+  function handleMenuEnter() {
+    if (!openOnHover) return;
+    if (hoverCloseTimerRef.current !== null) {
+      window.clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+  }
+  function handleMenuLeave() {
+    if (!openOnHover) return;
+    hoverCloseTimerRef.current = window.setTimeout(() => setOpen(false), 220);
+  }
 
   function toggleMultiValue(value: string) {
     if (!isMulti) return;
@@ -234,7 +319,12 @@ export function Dropdown(props: DropdownProps) {
   }
 
   return (
-    <div ref={ref} className={`dropdown ${className || ''} ${open ? 'dropdown--open' : ''} ${isMulti ? 'dropdown--multi' : ''}`}>
+    <div
+      ref={ref}
+      className={`dropdown ${className || ''} ${open ? 'dropdown--open' : ''} ${isMulti ? 'dropdown--multi' : ''}`}
+      onMouseEnter={handleTriggerEnter}
+      onMouseLeave={handleTriggerLeave}
+    >
       <button
         type="button"
         className="dropdown__trigger"
@@ -251,7 +341,13 @@ export function Dropdown(props: DropdownProps) {
       </button>
 
       {open && !disabled && createPortal(
-        <div ref={menuRef} className={`dropdown__menu ${variant === 'chips' ? 'dropdown__menu--chips' : ''}`} style={menuStyle}>
+        <div
+          ref={menuRef}
+          className={`dropdown__menu ${variant === 'chips' ? 'dropdown__menu--chips' : ''}`}
+          style={menuStyle}
+          onMouseEnter={handleMenuEnter}
+          onMouseLeave={handleMenuLeave}
+        >
           {searchable && (
             <div className="dropdown__search">
               <input
@@ -266,24 +362,27 @@ export function Dropdown(props: DropdownProps) {
               />
             </div>
           )}
-          {isMulti ? (
+          {/* Clear row — only shown when there's actually something to
+              clear. Previously this rendered the placeholder label
+              ("Group", "Flow", …) which duplicated the trigger label
+              and added noise when nothing was selected. */}
+          {isMulti && selectedValues.length > 0 && (
             <button
               type="button"
-              className={`dropdown__item ${selectedValues.length === 0 ? 'dropdown__item--active' : ''}`}
+              className="dropdown__item dropdown__item--clear"
               onClick={clearMulti}
             >
-              {placeholder}
+              Clear
             </button>
-          ) : (
-            placeholder && (
-              <button
-                type="button"
-                className={`dropdown__item ${props.value === null ? 'dropdown__item--active' : ''}`}
-                onClick={() => { props.onChange(null); close(); }}
-              >
-                {placeholder}
-              </button>
-            )
+          )}
+          {!isMulti && props.value !== null && placeholder && (
+            <button
+              type="button"
+              className="dropdown__item dropdown__item--clear"
+              onClick={() => { props.onChange(null); close(); }}
+            >
+              Clear
+            </button>
           )}
           {searchable && visibleOptions.length === 0 && searchQuery.trim() && !(props as DropdownPropsSingle).creatable && (
             <div className="dropdown__empty">No matches</div>
@@ -323,17 +422,17 @@ export function Dropdown(props: DropdownProps) {
                 }}
               >
                 <span className="dropdown__item-main">
-                  {isMulti && (
-                    <span className={`dropdown__check ${isSelected ? 'dropdown__check--on' : ''}`} aria-hidden="true">
-                      {isSelected ? <Check size={12} /> : null}
-                    </span>
-                  )}
                   {o.icon && (
                     <span className="dropdown__item-icon" aria-hidden="true">{o.icon}</span>
                   )}
                   <span>{o.label}</span>
                 </span>
                 {o.badge && <span className="dropdown__badge">{o.badge}</span>}
+                {isMulti && (
+                  <span className={`dropdown__check ${isSelected ? 'dropdown__check--on' : ''}`} aria-hidden="true">
+                    {isSelected ? <Check size={12} /> : null}
+                  </span>
+                )}
               </button>
             );
           })}
