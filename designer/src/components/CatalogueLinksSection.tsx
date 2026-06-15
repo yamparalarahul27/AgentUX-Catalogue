@@ -275,7 +275,6 @@ export function CatalogueLinksSection({
         >
           <LinkIcon size={13} aria-hidden="true" />
           Saved Links
-          <span className="catalogue-links-tabs__count">{totalLinks}</span>
         </button>
         <button
           type="button"
