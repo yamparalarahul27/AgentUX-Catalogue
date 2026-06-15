@@ -479,6 +479,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                openOnHover
                 values={filterGroup}
                 placeholder="Group"
                 searchPlaceholder="Search groups…"
@@ -521,6 +522,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                openOnHover
                 values={filterAnnotation}
                 placeholder="Annotation"
                 searchPlaceholder="Search annotations…"
@@ -533,6 +535,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                openOnHover
                 values={filterUiElement}
                 placeholder="UI Element"
                 searchPlaceholder="Search UI elements…"
@@ -557,6 +560,7 @@ export function CatalogueToolbar({
             )}
             {isFilterVisible('theme') && (
               <Dropdown
+                openOnHover
                 value={filterTheme}
                 placeholder="Theme"
                 leadingIcon={<Palette size={13} />}
@@ -569,6 +573,7 @@ export function CatalogueToolbar({
             )}
             {isFilterVisible('view') && (
               <Dropdown
+                openOnHover
                 value={viewBy}
                 placeholder="View by"
                 leadingIcon={<Eye size={13} />}
@@ -595,6 +600,7 @@ export function CatalogueToolbar({
             {/* Sort dropdown — desktop shows text, mobile styled as icon pill via CSS */}
             {!isHidden('sort') && (
               <Dropdown
+                openOnHover
                 value={sortBy}
                 placeholder={isSortLocked ? 'Sort (auto)' : 'Sort'}
                 options={[

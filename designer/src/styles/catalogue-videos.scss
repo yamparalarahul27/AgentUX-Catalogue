@@ -373,8 +373,16 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #ec4899);
   flex-shrink: 0;
+  object-fit: cover;
+  display: block;
+  // Tiny dark backstop while the unavatar image is streaming in, so
+  // the slot doesn't flash the page bg through a transparent circle.
+  background: rgba(255, 255, 255, 0.05);
+
+  &--gradient {
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+  }
 }
 
 .catalogue-videos__x-name {
@@ -394,6 +402,17 @@
   font-size: 11px;
   font-weight: 400;
   color: #71717a;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+// Brand-mark prefix on the handle — unicode 𝕏 (U+1D54F) matches the
+// existing source pill (𝕏 Post) so we don't pull in a new icon dep.
+.catalogue-videos__x-handle-mark {
+  font-size: 11px;
+  color: #a1a1aa;
+  line-height: 1;
 }
 
 .catalogue-videos__x-text {

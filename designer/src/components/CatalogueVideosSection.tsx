@@ -1642,11 +1642,31 @@ export function CatalogueVideosSection({
                         </div>
                         <div className="catalogue-videos__x-body">
                           <div className="catalogue-videos__x-author">
-                            <span className="catalogue-videos__x-avatar" aria-hidden="true" />
+                            {post.authorHandle ? (
+                              // Profile photo via unavatar.io — handles the
+                              // Twitter avatar lookup for us so we don't have
+                              // to migrate a column or extend the syndication
+                              // scraper. If the image 404s (handle gone,
+                              // service down), onError hides the slot
+                              // entirely so we don't show a broken-image icon.
+                              <img
+                                className="catalogue-videos__x-avatar"
+                                src={`https://unavatar.io/twitter/${encodeURIComponent(post.authorHandle)}`}
+                                alt=""
+                                aria-hidden="true"
+                                loading="lazy"
+                                onError={(event) => {
+                                  event.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <span className="catalogue-videos__x-avatar catalogue-videos__x-avatar--gradient" aria-hidden="true" />
+                            )}
                             <span className="catalogue-videos__x-name">
                               {highlightMatch(displayName, normalizedSearchQuery)}
                               {handle && post.authorName && (
                                 <span className="catalogue-videos__x-handle">
+                                  <span className="catalogue-videos__x-handle-mark" aria-hidden="true">𝕏</span>
                                   {highlightMatch(handle, normalizedSearchQuery)}
                                 </span>
                               )}
