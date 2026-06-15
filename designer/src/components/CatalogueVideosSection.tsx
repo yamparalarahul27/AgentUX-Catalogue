@@ -1410,34 +1410,32 @@ export function CatalogueVideosSection({
             <h2>Videos as Medium</h2>
           </div>
           {/* Unified search across X / YouTube / Family Values — one
-              query filters all three collections. Tab count badges
-              update to reflect per-tab matches so cross-tab hits are
-              visible at a glance. Tag filter (X only) is layered on
-              top of search for the X tab. */}
-          {!loadingData && (
-            <div className="catalogue-videos__search" role="search">
-              <Search size={14} aria-hidden="true" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search videos (author, title, tag, URL)"
-                aria-label="Search saved videos across all tabs"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className="catalogue-videos__search-clear"
-                  onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
-                >
-                  <X size={12} aria-hidden="true" />
-                </button>
-              )}
-              <kbd className="catalogue-videos__search-kbd" aria-hidden="true">/</kbd>
-            </div>
-          )}
+              query filters all three collections. Always rendered (even
+              during initial load) so the header doesn't reflow when the
+              data lands and the input pops in. */}
+          <div className="catalogue-videos__search" role="search">
+            <Search size={14} aria-hidden="true" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search videos (author, title, tag, URL)"
+              aria-label="Search saved videos across all tabs"
+              disabled={loadingData}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="catalogue-videos__search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+              >
+                <X size={12} aria-hidden="true" />
+              </button>
+            )}
+            <kbd className="catalogue-videos__search-kbd" aria-hidden="true">/</kbd>
+          </div>
         </header>
 
         {/* Tab strip — X first (the growing collection), Family Values
@@ -1451,7 +1449,6 @@ export function CatalogueVideosSection({
             onClick={() => setActiveTab('x')}
           >
             X (Twitter)
-            <span className="catalogue-videos__tab-count">{sortedXPosts.length}</span>
           </button>
           <button
             type="button"
@@ -1461,7 +1458,6 @@ export function CatalogueVideosSection({
             onClick={() => setActiveTab('youtube')}
           >
             YouTube
-            <span className="catalogue-videos__tab-count">{filteredYouTubeVideos.length}</span>
           </button>
           <button
             type="button"
@@ -1471,7 +1467,6 @@ export function CatalogueVideosSection({
             onClick={() => setActiveTab('family')}
           >
             Family Values
-            <span className="catalogue-videos__tab-count">{filteredReferenceVideos.length}</span>
           </button>
         </div>
 
