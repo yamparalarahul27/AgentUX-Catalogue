@@ -507,6 +507,7 @@ export function CatalogueToolbar({
               <Dropdown
                 multiple
                 searchable
+                openOnHover
                 variant="chips"
                 values={filterFlow}
                 placeholder="Flow"
