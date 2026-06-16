@@ -310,7 +310,11 @@ Infinite scroll can replace the current load-all only when all are true:
    Needs explicit UX decision. Defer to M7.
 8. **Stack view virtualization still needed** — M5 fixes N+1 but not DOM
    growth. Past 500 mounted cards, scroll slows regardless of network.
-   `react-virtuoso` grouped mode is the intended solution; separate plan doc.
+   `react-virtuoso` grouped mode was the intended solution; see
+   [`catalogue-perf-and-virtualization-plan.md`](./catalogue-perf-and-virtualization-plan.md)
+   for the follow-up plan, which re-ranks toward `content-visibility` +
+   image transforms first and `@tanstack/virtual` (not virtuoso) as the
+   virtualization pick if needed.
 
 ---
 
