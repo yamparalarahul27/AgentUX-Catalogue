@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
   ExternalLink,
@@ -247,6 +247,165 @@ export function CataloguePrototypes({
 
   const totalPrototypes = prototypes.length;
 
+  // Group prototypes by uploader so the pile row + accordion can pivot
+  // on a stable per-uploader bucket. `currentUserId` (if known) floats
+  // to the top so "your prototypes" is the first pile; the rest fall
+  // in upload-count desc, breaking ties alphabetically by handle.
+  const uploaderGroups = useMemo(() => {
+    const buckets = new Map<string, { uploaderUserId: string; label: string; protos: PrototypeRecord[] }>();
+    for (const proto of prototypes) {
+      const existing = buckets.get(proto.uploaderUserId);
+      if (existing) {
+        existing.protos.push(proto);
+      } else {
+        buckets.set(proto.uploaderUserId, {
+          uploaderUserId: proto.uploaderUserId,
+          label: shortAuthor(proto.uploaderEmail) ?? 'Someone',
+          protos: [proto],
+        });
+      }
+    }
+    const list = Array.from(buckets.values());
+    list.sort((a, b) => {
+      if (currentUserId) {
+        if (a.uploaderUserId === currentUserId) return -1;
+        if (b.uploaderUserId === currentUserId) return 1;
+      }
+      if (b.protos.length !== a.protos.length) return b.protos.length - a.protos.length;
+      return a.label.localeCompare(b.label);
+    });
+    return list;
+  }, [prototypes, currentUserId]);
+
+  // Which uploader's section is currently expanded. null = collapsed
+  // (just the pile row visible). Click the same pile to collapse;
+  // click another to swap. Reset to null when the underlying uploader
+  // set changes (e.g. their last prototype was deleted).
+  const [expandedUploaderId, setExpandedUploaderId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!expandedUploaderId) return;
+    const stillExists = uploaderGroups.some((g) => g.uploaderUserId === expandedUploaderId);
+    if (!stillExists) setExpandedUploaderId(null);
+  }, [expandedUploaderId, uploaderGroups]);
+
+  // Render a single prototype card. Identical body to the original
+  // grid layout — pulled out so the accordion row can reuse it without
+  // duplicating ~100 LOC of JSX. The horizontal-scroll container in
+  // the accordion just maps over an uploader's protos through this.
+  function renderPrototypeCard(proto: PrototypeRecord) {
+    const isMine = Boolean(currentUserId && proto.uploaderUserId === currentUserId);
+    const url = getPrototypeUrl(proto.storagePath);
+    const author = shortAuthor(proto.uploaderEmail);
+    const isRenaming = renameState?.id === proto.id;
+    return (
+      <article key={proto.id} className="catalogue-prototypes__card">
+        <PrototypeThumbnail url={url} title={proto.title} />
+        <header className="catalogue-prototypes__card-head">
+          {isRenaming ? (
+            <input
+              className="catalogue-prototypes__card-title-input"
+              value={renameState.draft}
+              onChange={(event) => setRenameState({ id: proto.id, draft: event.target.value })}
+              onBlur={() => void commitRename()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void commitRename();
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setRenameState(null);
+                }
+              }}
+              autoFocus
+            />
+          ) : (
+            <button
+              type="button"
+              className="catalogue-prototypes__card-title"
+              onClick={() => (isMine ? startRename(proto) : undefined)}
+              title={isMine ? 'Click to rename' : proto.title}
+              disabled={!isMine}
+            >
+              {proto.title}
+            </button>
+          )}
+          <span
+            className={`catalogue-prototypes__visibility catalogue-prototypes__visibility--${proto.visibility}`}
+            title={proto.visibility === 'public' ? 'Visible to everyone' : 'Only you can see this'}
+          >
+            {proto.visibility === 'public' ? <Eye size={11} aria-hidden="true" /> : <EyeOff size={11} aria-hidden="true" />}
+            {proto.visibility === 'public' ? 'Public' : 'Private'}
+          </span>
+        </header>
+
+        <div className="catalogue-prototypes__card-meta">
+          {author && <span>{author}</span>}
+          <span>·</span>
+          <span title={new Date(proto.createdAt).toLocaleString()}>
+            {formatRelative(proto.createdAt)}
+          </span>
+        </div>
+
+        <footer className="catalogue-prototypes__card-actions">
+          <a
+            className="catalogue-prototypes__action catalogue-prototypes__action--primary"
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <ExternalLink size={13} aria-hidden="true" />
+            Open
+          </a>
+          <button
+            type="button"
+            className="catalogue-prototypes__action"
+            onClick={() => void handleShare(proto, url)}
+            title={copiedId === proto.id ? 'Copied!' : 'Copy share link'}
+          >
+            {copiedId === proto.id ? (
+              <Check size={13} aria-hidden="true" />
+            ) : (
+              <Link2 size={13} aria-hidden="true" />
+            )}
+          </button>
+          {isMine && (
+            <>
+              <button
+                type="button"
+                className="catalogue-prototypes__action"
+                onClick={() => void handleToggleVisibility(proto.id)}
+                title={proto.visibility === 'public' ? 'Make private' : 'Make public'}
+              >
+                {proto.visibility === 'public' ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
+              </button>
+              <IconTooltip label="Replace with a new file">
+                <button
+                  type="button"
+                  className="catalogue-prototypes__action"
+                  onClick={() => triggerReupload(proto.id)}
+                  aria-label="Replace with a new file"
+                >
+                  <RefreshCw size={13} aria-hidden="true" />
+                </button>
+              </IconTooltip>
+              <IconTooltip label="Delete prototype">
+                <button
+                  type="button"
+                  className="catalogue-prototypes__action catalogue-prototypes__action--danger"
+                  onClick={() => void handleDelete(proto.id)}
+                  aria-label="Delete prototype"
+                >
+                  <Trash2 size={13} aria-hidden="true" />
+                </button>
+              </IconTooltip>
+            </>
+          )}
+        </footer>
+      </article>
+    );
+  }
+
   return (
     <IconTooltipProvider>
     <section className="catalogue-prototypes" aria-label="HTML prototypes">
@@ -322,122 +481,77 @@ export function CataloguePrototypes({
           No prototypes yet. Drop an .html file above to add one.
         </p>
       ) : (
-        <div className="catalogue-prototypes__grid">
-          {prototypes.map((proto) => {
-            const isMine = Boolean(currentUserId && proto.uploaderUserId === currentUserId);
-            const url = getPrototypeUrl(proto.storagePath);
-            const author = shortAuthor(proto.uploaderEmail);
-            const isRenaming = renameState?.id === proto.id;
+        <div className="catalogue-prototypes__piles" role="tablist" aria-label="Prototypes grouped by uploader">
+          {uploaderGroups.map((group) => {
+            const isExpanded = expandedUploaderId === group.uploaderUserId;
+            // Up to 3 mini-thumbnails fan out behind the front card to
+            // hint at "stack of N." Anything past 3 just contributes to
+            // the count chip.
+            const fanProtos = group.protos.slice(0, 3);
+            const initial = group.label.charAt(0).toUpperCase();
             return (
-              <article key={proto.id} className="catalogue-prototypes__card">
-                <PrototypeThumbnail url={url} title={proto.title} />
-                <header className="catalogue-prototypes__card-head">
-                  {isRenaming ? (
-                    <input
-                      className="catalogue-prototypes__card-title-input"
-                      value={renameState.draft}
-                      onChange={(event) => setRenameState({ id: proto.id, draft: event.target.value })}
-                      onBlur={() => void commitRename()}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          void commitRename();
-                        }
-                        if (event.key === 'Escape') {
-                          event.preventDefault();
-                          setRenameState(null);
-                        }
+              <button
+                key={group.uploaderUserId}
+                type="button"
+                role="tab"
+                aria-selected={isExpanded}
+                aria-controls={`prototypes-section-${group.uploaderUserId}`}
+                className={`catalogue-prototypes__pile${isExpanded ? ' is-expanded' : ''}`}
+                onClick={() => setExpandedUploaderId((prev) => (prev === group.uploaderUserId ? null : group.uploaderUserId))}
+              >
+                <span className="catalogue-prototypes__pile-fan" aria-hidden="true">
+                  {fanProtos.map((proto, index) => (
+                    <span
+                      key={proto.id}
+                      className="catalogue-prototypes__pile-card"
+                      // Inline transform — driven by index so the fan
+                      // stagger isn't tied to nth-child CSS counting.
+                      style={{
+                        transform: `translateX(${index * 8}px) rotate(${(index - 1) * 4}deg)`,
+                        zIndex: fanProtos.length - index,
                       }}
-                      autoFocus
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      className="catalogue-prototypes__card-title"
-                      onClick={() => (isMine ? startRename(proto) : undefined)}
-                      title={isMine ? 'Click to rename' : proto.title}
-                      disabled={!isMine}
                     >
-                      {proto.title}
-                    </button>
-                  )}
-                  <span
-                    className={`catalogue-prototypes__visibility catalogue-prototypes__visibility--${proto.visibility}`}
-                    title={proto.visibility === 'public' ? 'Visible to everyone' : 'Only you can see this'}
-                  >
-                    {proto.visibility === 'public' ? <Eye size={11} aria-hidden="true" /> : <EyeOff size={11} aria-hidden="true" />}
-                    {proto.visibility === 'public' ? 'Public' : 'Private'}
-                  </span>
-                </header>
-
-                <div className="catalogue-prototypes__card-meta">
-                  {author && <span>{author}</span>}
-                  <span>·</span>
-                  <span title={new Date(proto.createdAt).toLocaleString()}>
-                    {formatRelative(proto.createdAt)}
-                  </span>
-                </div>
-
-                <footer className="catalogue-prototypes__card-actions">
-                  <a
-                    className="catalogue-prototypes__action catalogue-prototypes__action--primary"
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink size={13} aria-hidden="true" />
-                    Open
-                  </a>
-                  <button
-                    type="button"
-                    className="catalogue-prototypes__action"
-                    onClick={() => void handleShare(proto, url)}
-                    title={copiedId === proto.id ? 'Copied!' : 'Copy share link'}
-                  >
-                    {copiedId === proto.id ? (
-                      <Check size={13} aria-hidden="true" />
-                    ) : (
-                      <Link2 size={13} aria-hidden="true" />
-                    )}
-                  </button>
-                  {isMine && (
-                    <>
-                      <button
-                        type="button"
-                        className="catalogue-prototypes__action"
-                        onClick={() => void handleToggleVisibility(proto.id)}
-                        title={proto.visibility === 'public' ? 'Make private' : 'Make public'}
-                      >
-                        {proto.visibility === 'public' ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
-                      </button>
-                      <IconTooltip label="Replace with a new file">
-                        <button
-                          type="button"
-                          className="catalogue-prototypes__action"
-                          onClick={() => triggerReupload(proto.id)}
-                          aria-label="Replace with a new file"
-                        >
-                          <RefreshCw size={13} aria-hidden="true" />
-                        </button>
-                      </IconTooltip>
-                      <IconTooltip label="Delete prototype">
-                        <button
-                          type="button"
-                          className="catalogue-prototypes__action catalogue-prototypes__action--danger"
-                          onClick={() => void handleDelete(proto.id)}
-                          aria-label="Delete prototype"
-                        >
-                          <Trash2 size={13} aria-hidden="true" />
-                        </button>
-                      </IconTooltip>
-                    </>
-                  )}
-                </footer>
-              </article>
+                      <PrototypeThumbnail url={getPrototypeUrl(proto.storagePath)} title={proto.title} />
+                    </span>
+                  ))}
+                </span>
+                <span className="catalogue-prototypes__pile-meta">
+                  <span className="catalogue-prototypes__pile-avatar" aria-hidden="true">{initial}</span>
+                  <span className="catalogue-prototypes__pile-label">{group.label}</span>
+                  <span className="catalogue-prototypes__pile-count">{group.protos.length}</span>
+                </span>
+              </button>
             );
           })}
         </div>
       )}
+
+      {/* Accordion section — slides open under the pile row when one
+          is selected. Animates via the grid-template-rows 0fr → 1fr
+          trick (same as the toolbar filter chip strip) for a real
+          height-auto interpolation without JS measurement. */}
+      {uploaderGroups.map((group) => {
+        const isExpanded = expandedUploaderId === group.uploaderUserId;
+        return (
+          <div
+            key={group.uploaderUserId}
+            id={`prototypes-section-${group.uploaderUserId}`}
+            role="tabpanel"
+            aria-hidden={!isExpanded}
+            className={`catalogue-prototypes__accordion${isExpanded ? ' is-open' : ''}`}
+          >
+            <div className="catalogue-prototypes__accordion-body">
+              <header className="catalogue-prototypes__accordion-head">
+                <h3>{group.label}</h3>
+                <span className="catalogue-prototypes__accordion-count">{group.protos.length}</span>
+              </header>
+              <div className="catalogue-prototypes__accordion-row">
+                {group.protos.map((proto) => renderPrototypeCard(proto))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </section>
     </IconTooltipProvider>
   );
