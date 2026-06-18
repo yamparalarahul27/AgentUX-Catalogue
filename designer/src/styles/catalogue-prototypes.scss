@@ -104,6 +104,194 @@
   color: #71717a;
 }
 
+// Uploader piles ──────────────────────────────────────────────
+// One pile per uploader. Each pile shows a fanned stack of up to 3
+// mini-thumbnails behind an avatar + name + count chip. Click a pile
+// to open that uploader's accordion section below.
+.catalogue-prototypes__piles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.catalogue-prototypes__pile {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 220px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(15, 15, 18, 0.6);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  // Lift on hover — same vocabulary as the catalogue card hover.
+  transition: transform 140ms ease, border-color 140ms ease,
+              background 140ms ease, box-shadow 140ms ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(20, 20, 24, 0.78);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.5);
+    outline-offset: 2px;
+  }
+
+  &.is-expanded {
+    transform: translateY(-3px);
+    border-color: rgba(99, 102, 241, 0.55);
+    background: rgba(99, 102, 241, 0.06);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.45), 0 8px 22px rgba(0, 0, 0, 0.35);
+  }
+}
+
+// Fanned thumbnail stack — 3 cards offset + slightly rotated to read
+// as a deck. Inline transforms set in JSX (per-index), so the order
+// stays predictable even when an uploader's first prototype changes.
+.catalogue-prototypes__pile-fan {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+}
+
+.catalogue-prototypes__pile-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transform-origin: center;
+  // Each card scales down a hair below the front one so the fan reads
+  // as depth, not just a horizontal shift.
+  transition: transform 180ms ease;
+
+  // Sub-cards in the fan get the previewed iframe at a tiny scale.
+  .catalogue-prototypes__thumb {
+    border-radius: 0;
+    border: none;
+    height: 100%;
+  }
+}
+
+.catalogue-prototypes__pile-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.catalogue-prototypes__pile-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.catalogue-prototypes__pile-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fafafa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogue-prototypes__pile-count {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a1a1aa;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+// Accordion ───────────────────────────────────────────────────
+// One section per uploader, sits below the pile row. Animates the
+// height between 0 and auto via grid-template-rows: 0fr → 1fr.
+// All sections stay mounted so the close transition runs.
+.catalogue-prototypes__accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 240ms ease, opacity 200ms ease;
+
+  &.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+.catalogue-prototypes__accordion-body {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 0 2px;
+}
+
+.catalogue-prototypes__accordion-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fafafa;
+  }
+}
+
+.catalogue-prototypes__accordion-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a1a1aa;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+// Horizontal scroll row of cards — variant C from the proposal ASCII.
+// Cards keep their existing width but lay out in a horizontally-
+// scrolling track instead of the auto-fill grid.
+.catalogue-prototypes__accordion-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+
+  .catalogue-prototypes__card {
+    flex: 0 0 240px;
+  }
+}
+
 // Grid ────────────────────────────────────────────────────────
 .catalogue-prototypes__grid {
   display: grid;
