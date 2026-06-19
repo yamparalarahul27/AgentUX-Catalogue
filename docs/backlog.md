@@ -19,6 +19,7 @@ Last updated: 2026-06-06 (latest) — Filed perf-split follow-ups after the cata
 | Item | Status | Source |
 |---|---|---|
 | `purge-orphan-storage` Edge Function returns 500 after CORS fix | PR #85 open — needs Supabase log read to identify server-side error | [`parked_orphan_storage_cleanup`](../../../.claude/projects/-Users-yamparalarahul-Desktop-Personal-Apps-AgentUX-Catalogue/memory/parked_orphan_storage_cleanup.md) |
+| Welcome modal didn't show for a newly onboarded user (reported 2026-06-19) | Code chain verified intact end-to-end. Likely operational: (a) `auth-login` Edge Function not redeployed with `is_first_login`, or (b) `user_passcodes.last_login_at` was stamped by an admin test before the real user's first login. Verification steps + one-off fix in linked doc | [`welcome-modal-not-firing-diagnosis.md`](./welcome-modal-not-firing-diagnosis.md) |
 
 ---
 
