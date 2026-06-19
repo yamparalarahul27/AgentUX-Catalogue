@@ -22,7 +22,14 @@ const supabase = createClient(
 const BUCKET = 'screenshots';
 const DELETE_BATCH = 100;
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
   try {
@@ -89,6 +96,11 @@ serve(async (req) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown error';
+    const stack = err instanceof Error ? err.stack : null;
+    // Surface the full error in Supabase Logs so we don't have to dig
+    // through the browser response body to debug. The client still only
+    // gets the message in the 500 response — stack stays server-side.
+    console.error('purge-orphan-storage failed:', message, stack);
     return json({ error: message }, 500);
   }
 });
@@ -96,6 +108,6 @@ serve(async (req) => {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...corsHeaders },
   });
 }
