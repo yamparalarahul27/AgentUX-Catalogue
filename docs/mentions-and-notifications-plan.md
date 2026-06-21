@@ -5,6 +5,16 @@
 > **Out of scope for v1:** email delivery, mention-on-edit, role-aware mentions
 > ("@team" / "@everyone"), reactions, push notifications.
 
+> ⚠️ **Correction — read before implementing.** The identity model in §4–§7 below
+> (keying on `auth.users(id)` + `auth.uid()` + a `display_name`) was written before
+> the codebase was verified. It diverges from how this project actually models users
+> (**email-based**, per the `admins` RLS policy and `screenshot_comments.user_email`),
+> and it breaks for members who've been minted but never logged in. The corrected,
+> **email-keyed** schema + RLS — plus Rahul's **mention-as-task** extension — live in
+> [`mentions-notifications-tasks-addendum.md`](./mentions-notifications-tasks-addendum.md).
+> Treat the addendum as authoritative for the schema; this doc remains accurate for
+> the UX flow, components, milestones, and risks.
+
 ---
 
 ## 1. Why
