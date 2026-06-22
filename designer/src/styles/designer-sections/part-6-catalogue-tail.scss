@@ -396,6 +396,27 @@
   }
 }
 
+// M4 — bell deep-link highlight on the targeted comment row. The
+// component adds `is-recently-viewed` for ~1.5s after scrolling the
+// node into view; this keyframe paints a soft indigo halo that fades
+// to nothing. Same vocabulary as the catalogue card recently-viewed
+// glow (part-4-catalogue-core.scss) but scoped to the comment row.
+.catalogue-lightbox-comment.is-recently-viewed {
+  animation: catalogue-lightbox-comment-recently-viewed-fade 1.5s ease-out forwards;
+  border-radius: 8px;
+}
+
+@keyframes catalogue-lightbox-comment-recently-viewed-fade {
+  0% {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.85), 0 0 18px 4px rgba(99, 102, 241, 0.45);
+    background: rgba(99, 102, 241, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0), 0 0 0 0 rgba(99, 102, 241, 0);
+    background: transparent;
+  }
+}
+
 // "Needs action from @X" checkbox sits below the lightbox composer
 // when the current draft contains at least one resolved mention.
 // Subtle by default so the composer stays compact when not in use.

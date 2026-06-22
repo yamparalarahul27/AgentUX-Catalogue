@@ -94,7 +94,14 @@ export function CatalogueFamilyLightboxCommentItem({
   }
 
   return (
-    <div className={`catalogue-lightbox-comment${isReply ? ' is-reply' : ''}${isDeleted ? ' is-deleted' : ''}${isSnapping ? ' is-snapping' : ''}`}>
+    // M4 — `data-comment-id` is the anchor used by the deep-link scroll
+    // handler in CatalogueFamilyLightbox. When a notification is clicked,
+    // the lightbox finds the row via querySelector(`[data-comment-id="…"]`)
+    // and scrolls/highlights it.
+    <div
+      data-comment-id={comment.id}
+      className={`catalogue-lightbox-comment${isReply ? ' is-reply' : ''}${isDeleted ? ' is-deleted' : ''}${isSnapping ? ' is-snapping' : ''}`}
+    >
       <div className="catalogue-lightbox-comment-top">
         <span className="catalogue-lightbox-comment-email">{comment.user_email}</span>
         {!isDeleted && (canManage || (onReply && !isReply && !hasReplies)) && (

@@ -109,6 +109,14 @@ interface CatalogueVideosSectionProps {
   canEdit?: boolean;
   onRequireAuth?: () => void;
   userEmail: string;
+  // M4 — deep-link from the notification bell. When set, the section
+  // opens the preview modal for `itemKey` (the same string M2 wrote
+  // into notifications.context.item_key) and scrolls the matching
+  // comment into view + briefly highlights it. The parent component
+  // clears the prop via `onDeepLinkHandled` once the section has
+  // consumed it, so re-renders don't re-trigger the navigation.
+  deepLink?: { itemKey: string; commentId: string } | null;
+  onDeepLinkHandled?: () => void;
 }
 
 const BENJI_VIDEO_IDS = [
@@ -480,8 +488,15 @@ export function CatalogueVideosSection({
   canEdit = true,
   onRequireAuth,
   userEmail,
+  deepLink = null,
+  onDeepLinkHandled,
 }: CatalogueVideosSectionProps) {
   const [previewItemKey, setPreviewItemKey] = useState<string | null>(null);
+  // M4 — when the bell deep-links to a video comment, we open the
+  // preview AND scroll the matching comment row into view. This state
+  // holds the comment id between "preview opens" and "comments
+  // arrived", at which point the scroll/highlight effect runs.
+  const [commentToScrollTo, setCommentToScrollTo] = useState<string | null>(null);
 
   // Lock body scroll while the video preview is open so the catalogue
   // page beneath doesn't scroll-through (the bug visible on mobile).
@@ -1144,6 +1159,48 @@ export function CatalogueVideosSection({
   }, [previewItemKey, hasPrev, hasNext]);
 
   const activeComments = previewItemKey ? commentsByVideo[previewItemKey] ?? [] : [];
+
+  // M4 — bell deep-link entry. When the parent hands us a deepLink
+  // (itemKey + commentId), open the preview for that item and stage
+  // the commentId so the scroll/highlight effect below can fire once
+  // the comment thread for this item lands in commentsByVideo. The
+  // itemKey prefix (`youtube-…`, `x-…`, raw id) drives which tab we
+  // switch to so the catalogue grid lands in a consistent state.
+  useEffect(() => {
+    if (!deepLink) return;
+    const { itemKey, commentId } = deepLink;
+    if (itemKey.startsWith('youtube-')) setActiveTab('youtube');
+    else if (BENJI_VIDEO_IDS.some((id) => `benji-${id}` === itemKey)) setActiveTab('family');
+    else setActiveTab('x');
+    setPreviewItemKey(itemKey);
+    setCommentToScrollTo(commentId);
+    onDeepLinkHandled?.();
+  }, [deepLink, onDeepLinkHandled]);
+
+  // M4 — scroll the target comment into view + flash it briefly. Mirrors
+  // the lightbox handler in CatalogueFamilyLightbox: rAF before measure,
+  // 1.5s highlight class, single-shot via local state nulling.
+  useEffect(() => {
+    if (!commentToScrollTo) return;
+    if (!activeComments.some((c) => c.id === commentToScrollTo)) return;
+    let removeClass: number | null = null;
+    const raf = window.requestAnimationFrame(() => {
+      const node = document.querySelector(
+        `.catalogue-videos-preview__comments-list [data-comment-id="${commentToScrollTo}"]`,
+      );
+      if (!node) return;
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      node.classList.add('is-recently-viewed');
+      removeClass = window.setTimeout(() => {
+        node.classList.remove('is-recently-viewed');
+      }, 1500);
+      setCommentToScrollTo(null);
+    });
+    return () => {
+      window.cancelAnimationFrame(raf);
+      if (removeClass !== null) window.clearTimeout(removeClass);
+    };
+  }, [commentToScrollTo, activeComments]);
 
   async function addComment() {
     const text = commentDraft.trim();
@@ -2238,7 +2295,10 @@ function VideoCommentItem({ comment, itemKey, currentUserEmail, formatTime, onEd
   }
 
   return (
-    <div className="catalogue-videos-preview__comment">
+    // M4 — `data-comment-id` is the anchor for the deep-link scroll
+    // handler in CatalogueVideosSection (notification bell → preview
+    // modal → specific comment).
+    <div className="catalogue-videos-preview__comment" data-comment-id={comment.id}>
       <div className="catalogue-videos-preview__comment-top">
         <strong>{comment.author}</strong>
         <span>

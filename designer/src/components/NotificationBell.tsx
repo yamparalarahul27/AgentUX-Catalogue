@@ -16,11 +16,18 @@ import { IconTooltip } from './IconTooltip';
 // (everything else), exactly the shape specced in
 // docs/mentions-notifications-tasks-addendum.md §B.3.
 //
-// Deep-link routing to the source comment is M4 scope. For v1, clicking
-// a notification marks it read + closes the dropdown.
+// Deep-link routing implemented in M4 — see onOpenScreenshotComment /
+// onOpenVideoComment below. The bell parses each notification's
+// `context` payload (written by M2) and dispatches to whichever
+// handler matches. Without a handler, click only marks-read.
 
 interface NotificationBellProps {
   userEmail: string | null;
+  // M4 — deep-link callbacks. Bell reads `notification.context` and
+  // dispatches: { screenshot_id } → onOpenScreenshotComment,
+  // { item_key } → onOpenVideoComment.
+  onOpenScreenshotComment?: (screenshotId: string, commentId: string) => void;
+  onOpenVideoComment?: (itemKey: string, commentId: string) => void;
 }
 
 // Cap the count badge at "9+" — past that the badge dominates the bell
@@ -35,7 +42,11 @@ function isOpenTask(row: NotificationRow): boolean {
   return row.requires_action && row.resolved_at === null;
 }
 
-export function NotificationBell({ userEmail }: NotificationBellProps) {
+export function NotificationBell({
+  userEmail,
+  onOpenScreenshotComment,
+  onOpenVideoComment,
+}: NotificationBellProps) {
   const { notifications, unreadCount, markRead, markAllRead, resolveTask } =
     useNotifications(userEmail);
   const [open, setOpen] = useState(false);
@@ -108,8 +119,22 @@ export function NotificationBell({ userEmail }: NotificationBellProps) {
   const hasUnreadInList = notifications.some((n) => n.read_at === null);
 
   function handleItemClick(row: NotificationRow) {
-    // Tasks don't auto-close on click — they stay open until "Mark done".
-    // Plain mentions: mark read + close.
+    // M4 — dispatch to the right deep-link handler based on which
+    // payload the notification carries. Parent owns the navigation
+    // (lookup screenshot, switch tab, etc.); we just hand off the IDs.
+    // Both fields are optional in the schema — we defensively check
+    // before invoking.
+    const ctx = (row.context ?? {}) as Record<string, unknown>;
+    const screenshotId = typeof ctx.screenshot_id === 'string' ? ctx.screenshot_id : null;
+    const itemKey = typeof ctx.item_key === 'string' ? ctx.item_key : null;
+    if (row.source_kind === 'screenshot_comment' && screenshotId && onOpenScreenshotComment) {
+      onOpenScreenshotComment(screenshotId, row.source_id);
+    } else if (row.source_kind === 'video_comment' && itemKey && onOpenVideoComment) {
+      onOpenVideoComment(itemKey, row.source_id);
+    }
+
+    // Marking-read semantics are the same as before — tasks stay
+    // visible (until "Mark done"), plain mentions clear from unread.
     if (isOpenTask(row)) {
       if (row.read_at === null) void markRead(row.id);
       return;
