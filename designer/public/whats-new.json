@@ -1406,6 +1406,7 @@
     "id": "apr-20-2026",
     "date": "Apr 20, 2026",
     "title": "ThumbHash Image Placeholders",
+    "imageUrl": "/designer/changelog-images/apr-20-2026-thumbhash-image-placeholders.png",
     "bullets": [
       {
         "kind": "new",
@@ -1437,6 +1438,7 @@
     "id": "apr-15-17-2026",
     "date": "Apr 15 – 17, 2026",
     "title": "Telegram Bot, X Video Links & Feature Log Improvements",
+    "imageUrl": "/designer/changelog-images/apr-15-17-2026-telegram-bot-x-video-links-feature-log-improvements.png",
     "bullets": [
       {
         "kind": "new",
@@ -1480,6 +1482,7 @@
     "id": "apr-14-2026",
     "date": "Apr 14, 2026",
     "title": "Feature Log Lifecycle, Global Scope & Navigation Restructure",
+    "imageUrl": "/designer/changelog-images/apr-14-2026-feature-log-lifecycle-global-scope-navigation-restructure.png",
     "bullets": [
       {
         "kind": "new",
@@ -1527,6 +1530,7 @@
     "id": "apr-7-8-2026",
     "date": "Apr 7 – 8, 2026",
     "title": "Folder View, Group Appearance & Gallery Workflow",
+    "imageUrl": "/designer/changelog-images/apr-7-8-2026-folder-view-group-appearance-gallery-workflow.png",
     "bullets": [
       {
         "kind": "new",
