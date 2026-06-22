@@ -29,6 +29,7 @@ import {
   useSoundEnabled,
 } from '../lib/feedback-prefs';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { NotificationBell } from './NotificationBell';
 import { useTypingKeycapEnabled } from './TypingKeycap';
 
 type CatalogueSection =
@@ -317,6 +318,8 @@ export function CatalogueHeader({
             <span>Sign in</span>
           </button>
         )}
+
+        {userEmail && <NotificationBell userEmail={userEmail} />}
 
         {userEmail && (
           <IconTooltip label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}>
