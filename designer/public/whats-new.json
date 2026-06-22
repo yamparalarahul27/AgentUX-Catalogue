@@ -6,7 +6,8 @@
     "bullets": [
       { "kind": "new", "text": "Type @ in any comment to tag a teammate — they get a notification in the header bell within a second" },
       { "kind": "new", "text": "Optionally mark a mention as \"Needs action\" — it becomes a task that stays open in the recipient's bell until they hit Mark done" },
-      { "kind": "new", "text": "Click a notification to jump straight to the comment in context — the lightbox or video preview opens with the row scrolled into view and briefly highlighted" }
+      { "kind": "new", "text": "Click a notification to jump straight to the comment in context — the lightbox or video preview opens with the row scrolled into view and briefly highlighted" },
+      { "kind": "improved", "text": "Soft sound + light haptic when a new notification arrives — same vocabulary as save / delete / upload, gated by the existing sound + haptics toggles in the account menu" }
     ]
   },
   {
