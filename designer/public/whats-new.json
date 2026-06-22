@@ -1,5 +1,28 @@
 [
   {
+    "id": "2026-06-23-perf-content-visibility",
+    "date": "June 23, 2026",
+    "title": "Catalogue loads + scrolls faster",
+    "bullets": [
+      { "kind": "improved", "text": "Catalogue grid + stack views now skip rendering cards that are scrolled out of view — the browser only paints what's actually on screen. Most noticeable on projects with hundreds of screenshots; scrolling stays smooth instead of stuttering as the list grows" },
+      { "kind": "improved", "text": "Stack, Gallery, and Canvas Gallery views now load on demand — initial catalogue download drops by ~34 KB of JavaScript. Each non-default view fetches its own small chunk the first time you open it" }
+    ]
+  },
+  {
+    "id": "2026-06-22-mentions-and-notifications",
+    "date": "June 22, 2026",
+    "title": "@-mentions, a notification bell, and tasks",
+    "bullets": [
+      { "kind": "new", "text": "Type @ in any comment to tag a teammate — they get a notification in the header bell within a second" },
+      { "kind": "new", "text": "Optionally mark a mention as \"Needs action\" — it becomes a task that stays open in the recipient's bell until they hit Mark done" },
+      { "kind": "new", "text": "Click a notification to jump straight to the comment in context — the lightbox or video preview opens with the row scrolled into view and briefly highlighted" },
+      { "kind": "improved", "text": "Soft sound + light haptic when a new notification arrives — same vocabulary as save / delete / upload, gated by the existing sound + haptics toggles in the account menu" },
+      { "kind": "improved", "text": "@-mentions now render as a styled chip in comment bodies (avatar + name) instead of plain text — easier to spot at a glance" },
+      { "kind": "improved", "text": "Bell dropdown now closes automatically when you click a notification — fixes it floating over the opened lightbox" },
+      { "kind": "improved", "text": "Deep-linked comment gets an extra spotlight beat — a sweeping indigo stroke along the bottom edge complements the existing halo" }
+    ]
+  },
+  {
     "id": "2026-06-15-header-tabs-links-elements",
     "date": "June 15, 2026",
     "title": "Section tabs reordered — Links gets a label, Elements gets an icon",

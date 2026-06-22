@@ -388,6 +388,11 @@ export function Catalogue({
     if (!showWhatsNew) setWhatsNewUnseen(getWhatsNewUnseenCount());
   }, [showWhatsNew]);
   const [previewFamilyId, setPreviewFamilyId] = useState<string | null>(null);
+  // M4 — notification deep-link state. When the bell is clicked, one of
+  // these is populated; the corresponding surface (lightbox / videos
+  // section) consumes it and clears it via its onHandled callback.
+  const [previewCommentToScrollTo, setPreviewCommentToScrollTo] = useState<string | null>(null);
+  const [videoDeepLink, setVideoDeepLink] = useState<{ itemKey: string; commentId: string } | null>(null);
   // When the lightbox is opened from a screenshot-specific source
   // (search-result click), this hint disambiguates which exact
   // screenshot within the family should render, since multiple
@@ -1133,6 +1138,35 @@ export function Catalogue({
       type: result.ok ? 'success' : 'info',
     });
   }
+
+  // M4 — Notification bell handlers. The bell is mounted inside
+  // CatalogueHeader and routes here via callback props. Both handlers
+  // are forgiving: if the source screenshot / video can't be found in
+  // local state (e.g. it lives outside the current scope), we silently
+  // no-op rather than navigate to a broken state. Future improvement:
+  // toast "Couldn't find that screenshot."
+  function handleOpenScreenshotComment(screenshotId: string, commentId: string) {
+    // Look up the screenshot in the full scope (broader than the
+    // filtered grid). buildSyntheticFamilyFromScreenshot is the same
+    // path the search modal uses to open arbitrary screenshots in the
+    // lightbox — bypasses the family-map lookup entirely.
+    const screenshot = fullScopeScreenshots.find((s) => s.id === screenshotId);
+    if (!screenshot) return;
+    const synthetic = buildSyntheticFamilyFromScreenshot(screenshot, presetByKey);
+    setPreviewStartInlineEdit(false);
+    setPreviewScreenshotHint(screenshot.id);
+    setPreviewFamilyOverride(synthetic);
+    setPreviewFamilyId(synthetic.id);
+    setPreviewCommentToScrollTo(commentId);
+  }
+
+  function handleOpenVideoComment(itemKey: string, commentId: string) {
+    // Switch to Videos tab + hand the deep-link to the section. Its
+    // own useEffect resolves the right inner tab (X / YouTube / Family
+    // Values) from the itemKey prefix.
+    setActiveSection('videos');
+    setVideoDeepLink({ itemKey, commentId });
+  }
   return (
     <div className={`catalogue-page ${canAdmin ? 'catalogue-page--team-enabled' : ''}${canvasGalleryActive ? ' is-canvas-gallery-active' : ''}${splashFallActive ? ' is-splash-falling' : ''}${cardsArriving ? ' is-cards-arriving' : ''}`}>
       <CatalogueHeader
@@ -1175,6 +1209,8 @@ export function Catalogue({
           setWhatsNewUnseen(0);
         }}
         whatsNewUnseenCount={whatsNewUnseen}
+        onOpenScreenshotComment={handleOpenScreenshotComment}
+        onOpenVideoComment={handleOpenVideoComment}
       />
       <WhatsNewPanel isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
       <AppUpdateToast
@@ -1241,6 +1277,8 @@ export function Catalogue({
               canEdit={!isGuest}
               userEmail={user.email || 'Designer'}
               onRequireAuth={() => setShowAuthPrompt(true)}
+              deepLink={videoDeepLink}
+              onDeepLinkHandled={() => setVideoDeepLink(null)}
             />
           </div>
         </main>
@@ -1585,9 +1623,14 @@ export function Catalogue({
             setPreviewFamilyOverride(null);
             setPendingPreviewNext(false);
             setRecentlyViewedFamilyId(lastViewed);
+            // Clear the deep-link target on close so re-opening the
+            // same family doesn't re-scroll to the M4 comment.
+            setPreviewCommentToScrollTo(null);
           }}
           onPrev={() => stepPreview(-1)}
           onNext={() => stepPreview(1)}
+          commentToScrollTo={previewCommentToScrollTo}
+          onCommentScrollHandled={() => setPreviewCommentToScrollTo(null)}
           onCommentCountChange={handleCommentCountChange}
           onCropVariantImage={handleGuestAwareCropFamilyImage}
           onDeleteFamily={handleGuestAwareDeleteFamily}

@@ -2,7 +2,7 @@ import { CheckSquare, Square } from 'lucide-react';
 
 import notFoundIllustration from '../assets/not-found.svg';
 
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
 import type { GridDensity } from '../lib/catalogue-helpers';
@@ -10,15 +10,28 @@ import type { CatalogueSortOption } from '../lib/catalogue-sort';
 import type { CatalogueViewMode } from '../lib/catalogue-view';
 import { computeCoverageTargets, computeGroupCoverage } from '../lib/group-coverage';
 import type { ScreenshotNode } from '../types';
-import { CatalogueCanvasGalleryView } from './CatalogueCanvasGalleryView';
 import { CatalogueFamilyCard } from './CatalogueFamilyCard';
-import { CatalogueGalleryView } from './CatalogueGalleryView';
 import { CatalogueGroupCoverage } from './CatalogueGroupCoverage';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { CatalogueGroupView } from './CatalogueGroupView';
 import { CatalogueScrollSentinel } from './CatalogueScrollSentinel';
 import { CatalogueSkeletonList } from './CatalogueSkeletonCard';
-import { CatalogueStackView } from './CatalogueStackView';
+
+// Perf — Tier 1, code-split per non-default view. The grid view
+// (CatalogueFamilyCard + group view) stays eager since it's the
+// landing surface for almost every session. Stack / Gallery / Canvas
+// load only when their viewMode is selected — Vite splits each into
+// its own chunk, dropping the initial catalogue bundle. See
+// docs/catalogue-perf-and-virtualization-plan.md §2.4.
+const CatalogueStackView = lazy(() =>
+  import('./CatalogueStackView').then((m) => ({ default: m.CatalogueStackView }))
+);
+const CatalogueGalleryView = lazy(() =>
+  import('./CatalogueGalleryView').then((m) => ({ default: m.CatalogueGalleryView }))
+);
+const CatalogueCanvasGalleryView = lazy(() =>
+  import('./CatalogueCanvasGalleryView').then((m) => ({ default: m.CatalogueCanvasGalleryView }))
+);
 
 interface CatalogueContentProps {
   activeVariantKeys: Record<string, string>;
@@ -190,7 +203,11 @@ export function CatalogueContent({
 
   if (viewMode === 'stack') {
     return (
-      <>
+      // Suspense fallback uses the same skeleton the loading state
+      // shows, so swapping into Stack/Gallery/Canvas views from a
+      // cold session looks identical to the normal data-loading
+      // state — no flash of empty content.
+      <Suspense fallback={<CatalogueSkeletonList count={3} variant="stack" />}>
         <CatalogueStackView
           activeVariantKeys={activeVariantKeys}
           groupedFamilies={groupedFamilies}
@@ -202,42 +219,46 @@ export function CatalogueContent({
           canEditFamily={canEditFamily}
         />
         <CatalogueScrollSentinel hasMore={hasMore} loadingMore={loadingMore} onLoadMore={onLoadMore} />
-      </>
+      </Suspense>
     );
   }
 
   if (viewMode === 'gallery') {
     if (canvasGalleryEnabled && onExitCanvasGallery) {
       return (
-        <CatalogueCanvasGalleryView
-          families={filteredFamilies}
-          activeVariantKeys={activeVariantKeys}
-          onSelectFamily={onOpenPreview}
-          onExit={onExitCanvasGallery}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          onLoadMore={onLoadMore}
-        />
+        <Suspense fallback={<CatalogueSkeletonList count={8} variant="grid" />}>
+          <CatalogueCanvasGalleryView
+            families={filteredFamilies}
+            activeVariantKeys={activeVariantKeys}
+            onSelectFamily={onOpenPreview}
+            onExit={onExitCanvasGallery}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={onLoadMore}
+          />
+        </Suspense>
       );
     }
     return (
-      <CatalogueGalleryView
-        activeVariantKeys={activeVariantKeys}
-        canEdit={canEdit}
-        families={filteredFamilies}
-        onActiveVariantChange={onActiveVariantChange}
-        onAnnotationStateChange={onAnnotationStateChange}
-        onChangeFamilyGroup={onChangeFamilyGroup}
-        onCommentCountChange={onCommentCountChange}
-        onDeleteFamily={onDeleteFamily}
-        onRequireAuth={onRequireAuth}
-        onRenameFamily={onRenameFamily}
-        onRemoveReference={onRemoveReference}
-        onSetFlowLabel={onSetFlowLabel}
-        onUpdateVariantDetails={onUpdateVariantDetails}
-        userEmail={userEmail}
-        webPresets={webPresets}
-      />
+      <Suspense fallback={<CatalogueSkeletonList count={8} variant="grid" />}>
+        <CatalogueGalleryView
+          activeVariantKeys={activeVariantKeys}
+          canEdit={canEdit}
+          families={filteredFamilies}
+          onActiveVariantChange={onActiveVariantChange}
+          onAnnotationStateChange={onAnnotationStateChange}
+          onChangeFamilyGroup={onChangeFamilyGroup}
+          onCommentCountChange={onCommentCountChange}
+          onDeleteFamily={onDeleteFamily}
+          onRequireAuth={onRequireAuth}
+          onRenameFamily={onRenameFamily}
+          onRemoveReference={onRemoveReference}
+          onSetFlowLabel={onSetFlowLabel}
+          onUpdateVariantDetails={onUpdateVariantDetails}
+          userEmail={userEmail}
+          webPresets={webPresets}
+        />
+      </Suspense>
     );
   }
 

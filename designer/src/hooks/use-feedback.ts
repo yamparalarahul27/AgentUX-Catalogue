@@ -9,13 +9,18 @@ import { playSound, type SoundKey } from '../lib/feedback-sounds';
 // by trigger() at runtime). Sound and haptics are gated independently by the
 // user's prefs, which are read fresh from localStorage on each fire() so the
 // action hooks that call useFeedback() don't re-render when a pref toggles.
-export type FeedbackEvent = 'save' | 'delete' | 'upload' | 'restore';
+export type FeedbackEvent = 'save' | 'delete' | 'upload' | 'restore' | 'notify';
 
 const FEEDBACK_MAP: Record<FeedbackEvent, { sound: SoundKey; haptic: string }> = {
   save: { sound: 'select', haptic: 'selection' },
   delete: { sound: 'minimize', haptic: 'error' },
   upload: { sound: 'success', haptic: 'success' },
   restore: { sound: 'maximize', haptic: 'light' },
+  // M5 — fired when a new notification arrives via realtime INSERT in
+  // useNotifications. Uses the `select` clip (same as save — small +
+  // discreet, not celebratory) and a `light` haptic so phones buzz
+  // softly without dominating attention.
+  notify: { sound: 'select', haptic: 'light' },
 };
 
 function prefersReducedMotion(): boolean {

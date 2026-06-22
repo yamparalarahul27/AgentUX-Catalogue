@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { SquareArrowOutUpRight } from 'lucide-react';
 
+import { mentionLabel, useTeamRoster } from '../hooks/use-team-roster';
 import { supabase } from '../lib/supabase';
 
 // Render a comment body as plain text with URLs replaced by small
@@ -24,6 +25,11 @@ import { supabase } from '../lib/supabase';
 // many URLs don't burn requests on render.
 
 const URL_REGEX = /(https?:\/\/[^\s<>"]+)/gi;
+// M5 — mention chip rendering. Matches `@<token>` where token can
+// include dots, plus, dashes, underscores — matches the local-part
+// charset we tolerate elsewhere. Trailing punctuation (`.`, `-`, `_`)
+// is stripped before resolution so "Hi @rahul." finds rahul.
+const MENTION_TOKEN_RE = /@([\w.+-]+)/g;
 const STORAGE_KEY = 'catalogue-link-meta-v1';
 
 interface OgData {
@@ -177,11 +183,68 @@ function LinkChip({ url }: LinkChipProps) {
   );
 }
 
+// Inline mention chip — avatar dot + @<local-part>. Renders when the
+// text contains an @-token that resolves to a real team member. The
+// chip sits inline at the baseline so it doesn't break sentence flow.
+function MentionChip({ email }: { email: string }) {
+  const label = mentionLabel(email);
+  const initial = label.charAt(0).toUpperCase();
+  return (
+    <span className="comment-mention-chip" data-email={email}>
+      <span className="comment-mention-chip__avatar" aria-hidden="true">{initial}</span>
+      <span className="comment-mention-chip__label">@{label}</span>
+    </span>
+  );
+}
+
+// Walk a text segment looking for `@<token>` mentions. Tokens that
+// resolve to a real team member (via the roster's local-parts) become
+// chips; tokens that don't pass through as plain text. Roster is
+// supplied as a Map<localPart, email> so lookups are O(1) per match.
+function renderTextWithMentions(text: string, rosterByLabel: Map<string, string>): ReactNode[] {
+  if (!text) return [text];
+  if (rosterByLabel.size === 0) return [text];
+  const out: ReactNode[] = [];
+  let cursor = 0;
+  for (const match of text.matchAll(MENTION_TOKEN_RE)) {
+    const start = match.index ?? 0;
+    const raw = match[1];
+    // Strip trailing sentence punctuation so "@rahul." still matches.
+    const cleaned = raw.replace(/[.\-_]+$/, '').toLowerCase();
+    const email = rosterByLabel.get(cleaned);
+    if (start > cursor) out.push(text.slice(cursor, start));
+    if (email) {
+      out.push(<MentionChip key={`m-${start}`} email={email} />);
+      // Step past the `@` + cleaned label; any trailing punctuation
+      // we stripped sits AFTER cleaned.length in the original match,
+      // so the next text segment naturally picks it up.
+      cursor = start + 1 + cleaned.length;
+    } else {
+      // Not a real member — keep the whole `@<raw>` as-is.
+      out.push(match[0]);
+      cursor = start + match[0].length;
+    }
+  }
+  if (cursor < text.length) out.push(text.slice(cursor));
+  return out;
+}
+
 interface CommentTextProps {
   text: string;
 }
 
 export function CommentText({ text }: CommentTextProps) {
+  const { roster } = useTeamRoster();
+  // Build the lookup once per (roster) and re-use across multiple
+  // mention tokens in this comment. Keys are lowercased local-parts.
+  const rosterByLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const email of roster) {
+      map.set(mentionLabel(email).toLowerCase(), email);
+    }
+    return map;
+  }, [roster]);
+
   const parts = text.split(URL_REGEX);
   return (
     <>
@@ -189,7 +252,11 @@ export function CommentText({ text }: CommentTextProps) {
         if (i % 2 === 1) {
           return <LinkChip key={`link-${i}`} url={part} />;
         }
-        return <span key={`text-${i}`}>{part}</span>;
+        return (
+          <Fragment key={`text-${i}`}>
+            {renderTextWithMentions(part, rosterByLabel)}
+          </Fragment>
+        );
       })}
     </>
   );

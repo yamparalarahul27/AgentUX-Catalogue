@@ -84,6 +84,13 @@ interface CatalogueFamilyLightboxProps {
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
+  // M4 — deep-link target. When set, the comment with this id (in the
+  // current screenshot's thread) gets scrolled into view + briefly
+  // highlighted once the comments list lands. The parent component is
+  // expected to clear it after the lightbox has consumed it (otherwise
+  // re-opening the lightbox would re-trigger the scroll).
+  commentToScrollTo?: string | null;
+  onCommentScrollHandled?: () => void;
   onCommentCountChange?: (screenshotId: string, delta: number) => void;
   onChangeFamilyGroup: (familyId: string, group: string | null) => Promise<void>;
   onDeleteFamily: (familyId: string) => Promise<void>;
@@ -189,6 +196,8 @@ export function CatalogueFamilyLightbox({
   onClose,
   onPrev,
   onNext,
+  commentToScrollTo = null,
+  onCommentScrollHandled,
   onCommentCountChange,
   onChangeFamilyGroup,
   onDeleteFamily,
@@ -302,6 +311,40 @@ export function CatalogueFamilyLightbox({
     () => parseMentionsInText(newComment, roster),
     [newComment, roster],
   );
+
+  // M4 — deep-link from the notification bell. When the parent passes a
+  // `commentToScrollTo` and the comments list contains it, find the row
+  // via its `data-comment-id` attribute, scroll it into view, and tag
+  // it with `is-recently-viewed` for ~1.5s. The cleanup timer removes
+  // the class so the highlight is one-shot per arrival. Once the scroll
+  // fires we notify the parent (onCommentScrollHandled) so it can clear
+  // the prop — preventing a re-trigger if the user closes and re-opens
+  // the lightbox on the same family.
+  useEffect(() => {
+    if (!commentToScrollTo) return;
+    // Wait for the comment we're targeting to actually exist in state —
+    // the comments query is async, so the prop can land before the row
+    // does. As soon as it shows up, run the scroll/highlight.
+    if (!comments.some((c) => c.id === commentToScrollTo)) return;
+    let removeClass: number | null = null;
+    // rAF to ensure the row has painted before scrollIntoView measures.
+    const raf = window.requestAnimationFrame(() => {
+      const node = document.querySelector(
+        `.catalogue-lightbox-comments-list [data-comment-id="${commentToScrollTo}"]`,
+      );
+      if (!node) return;
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      node.classList.add('is-recently-viewed');
+      removeClass = window.setTimeout(() => {
+        node.classList.remove('is-recently-viewed');
+      }, 1500);
+      onCommentScrollHandled?.();
+    });
+    return () => {
+      window.cancelAnimationFrame(raf);
+      if (removeClass !== null) window.clearTimeout(removeClass);
+    };
+  }, [commentToScrollTo, comments, onCommentScrollHandled]);
   const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]); const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [annotationMode, setAnnotationMode] = useState(false); const [annotationDraftText, setAnnotationDraftText] = useState(''); const [annotationDraft, setAnnotationDraft] = useState<AnnotationDraft | null>(null); const [drawing, setDrawing] = useState<DrawingState | null>(null); const [annotationError, setAnnotationError] = useState('');
   // "Tag as UI Element" toggle — promotes the annotation's label into the

@@ -29,6 +29,7 @@ import {
   useSoundEnabled,
 } from '../lib/feedback-prefs';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { NotificationBell } from './NotificationBell';
 import { useTypingKeycapEnabled } from './TypingKeycap';
 
 type CatalogueSection =
@@ -54,6 +55,11 @@ interface CatalogueHeaderProps {
   // What's New panel trigger — pulsing dot when there are unseen releases.
   onOpenWhatsNew: () => void;
   whatsNewUnseenCount: number;
+  // M4 — notification bell deep-link routes. Passed through to
+  // <NotificationBell> below. The bell parses each notification's
+  // `context` payload (written by M2) and calls the right handler.
+  onOpenScreenshotComment?: (screenshotId: string, commentId: string) => void;
+  onOpenVideoComment?: (itemKey: string, commentId: string) => void;
 }
 
 function usernameOf(email: string): string {
@@ -75,6 +81,8 @@ export function CatalogueHeader({
   onToggleMyBookmarks,
   onOpenWhatsNew,
   whatsNewUnseenCount,
+  onOpenScreenshotComment,
+  onOpenVideoComment,
 }: CatalogueHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutMoreOpen, setLogoutMoreOpen] = useState(false);
@@ -316,6 +324,14 @@ export function CatalogueHeader({
             <LogIn size={14} aria-hidden="true" />
             <span>Sign in</span>
           </button>
+        )}
+
+        {userEmail && (
+          <NotificationBell
+            userEmail={userEmail}
+            onOpenScreenshotComment={onOpenScreenshotComment}
+            onOpenVideoComment={onOpenVideoComment}
+          />
         )}
 
         {userEmail && (
