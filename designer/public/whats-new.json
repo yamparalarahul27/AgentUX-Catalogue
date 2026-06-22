@@ -7,7 +7,10 @@
       { "kind": "new", "text": "Type @ in any comment to tag a teammate — they get a notification in the header bell within a second" },
       { "kind": "new", "text": "Optionally mark a mention as \"Needs action\" — it becomes a task that stays open in the recipient's bell until they hit Mark done" },
       { "kind": "new", "text": "Click a notification to jump straight to the comment in context — the lightbox or video preview opens with the row scrolled into view and briefly highlighted" },
-      { "kind": "improved", "text": "Soft sound + light haptic when a new notification arrives — same vocabulary as save / delete / upload, gated by the existing sound + haptics toggles in the account menu" }
+      { "kind": "improved", "text": "Soft sound + light haptic when a new notification arrives — same vocabulary as save / delete / upload, gated by the existing sound + haptics toggles in the account menu" },
+      { "kind": "improved", "text": "@-mentions now render as a styled chip in comment bodies (avatar + name) instead of plain text — easier to spot at a glance" },
+      { "kind": "improved", "text": "Bell dropdown now closes automatically when you click a notification — fixes it floating over the opened lightbox" },
+      { "kind": "improved", "text": "Deep-linked comment gets an extra spotlight beat — a sweeping indigo stroke along the bottom edge complements the existing halo" }
     ]
   },
   {

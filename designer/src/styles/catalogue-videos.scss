@@ -1426,10 +1426,33 @@
     word-break: break-word;
   }
 
-  // M4 — bell deep-link highlight on the targeted comment row. Same
-  // keyframe shape as the lightbox version in part-6-catalogue-tail.scss.
+  // M4 + M5 — bell deep-link highlight: halo + sweeping bottom
+  // stroke. Same vocabulary as the lightbox version in
+  // part-6-catalogue-tail.scss; geometry tweaked to match the video
+  // preview's slightly different chrome.
   &.is-recently-viewed {
-    animation: catalogue-videos-preview-comment-recently-viewed-fade 1.5s ease-out forwards;
+    animation: catalogue-videos-preview-comment-recently-viewed-fade 1.6s ease-out forwards;
+    position: relative;
+    overflow: hidden;
+  }
+
+  &.is-recently-viewed::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      rgba(99, 102, 241, 0) 0%,
+      rgba(99, 102, 241, 0.9) 50%,
+      rgba(99, 102, 241, 0) 100%
+    );
+    transform: scaleX(0);
+    transform-origin: left center;
+    animation: catalogue-videos-preview-comment-recently-viewed-stroke 1.6s ease-out forwards;
+    pointer-events: none;
   }
 }
 
@@ -1441,6 +1464,20 @@
   100% {
     box-shadow: 0 0 0 0 rgba(99, 102, 241, 0), 0 0 0 0 rgba(99, 102, 241, 0);
     background: rgba(17, 17, 19, 0.78);
+  }
+}
+
+@keyframes catalogue-videos-preview-comment-recently-viewed-stroke {
+  0%   { transform: scaleX(0); transform-origin: left center;  opacity: 0; }
+  20%  { transform: scaleX(1); transform-origin: left center;  opacity: 1; }
+  70%  { transform: scaleX(1); transform-origin: right center; opacity: 1; }
+  100% { transform: scaleX(0); transform-origin: right center; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-videos-preview__comment.is-recently-viewed::after {
+    animation: none;
+    display: none;
   }
 }
 
