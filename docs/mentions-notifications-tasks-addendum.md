@@ -1,6 +1,6 @@
 # Mentions, Notifications & Tasks — Addendum
 
-> **Status:** Draft, awaiting approval. No code, no migrations applied.
+> **Status:** Decisions locked 2026-06-22. M0 migration **drafted** (not yet applied). UI milestones pending.
 > **Companion to:** [`mentions-and-notifications-plan.md`](./mentions-and-notifications-plan.md) — read that first for the full v1 design.
 > **What this doc adds:**
 > 1. **[Part A](#part-a--identity-model-reconciliation)** — corrects the original plan's identity assumption (`auth.users(id)` + `display_name`) against how this codebase *actually* models users. This is a **blocker** for the M0 migration.
@@ -330,44 +330,57 @@ reworking the mention pipeline.
 
 ---
 
-## Open questions (please answer before M0)
+## Decisions — LOCKED (2026-06-22)
+
+All resolved with Rahul. These are now binding for the M0 migration and the
+implementation milestones.
 
 <table>
-<tr><th>#</th><th>Question</th><th>Default if you don't pick</th></tr>
+<tr><th>#</th><th>Question</th><th>Decision</th></tr>
 <tr>
   <td><strong>A-1</strong></td>
-  <td>How do <em>non-admin</em> users get the mentionable roster? The current
-  <code>list</code> action is admin-only (<code>auth-admin</code> Edge Function).</td>
-  <td>Add a tiny <code>roles</code>-gated SELECT policy (or a new lightweight
-  function) exposing <em>emails only</em> to all authenticated users. Recommend a
-  read-only view of <code>user_passcodes</code> projecting just
-  <code>email</code> + <code>enabled</code>.</td>
+  <td>How do <em>non-admin</em> users get the mentionable roster?</td>
+  <td>✅ <strong>Read-only emails view.</strong> A Postgres view over
+  <code>user_passcodes</code> exposing <em>only</em> <code>email</code> +
+  <code>enabled</code> (no hashes, no lockout state), readable by all
+  authenticated users. The <code>@</code> typeahead reads from it.</td>
 </tr>
 <tr>
   <td><strong>A-2</strong></td>
-  <td>Email-as-key — OK to accept that a future email change won't carry
-  history? (See A.4 trade-off.)</td>
-  <td>Yes — emails are the passcode PK and effectively immutable today.</td>
+  <td>Email-as-key — accept that a future email change won't carry history?</td>
+  <td>✅ <strong>Yes.</strong> Emails are the passcode PK and effectively
+  immutable today.</td>
 </tr>
 <tr>
   <td><strong>A-3</strong></td>
   <td>FK <code>mentioned_email</code>/<code>actor_email</code> →
   <code>user_passcodes(email)</code>?</td>
-  <td>Yes — prevents mentioning non-members; mirrors the <code>admins</code> FK.</td>
+  <td>✅ <strong>Yes, with cascade.</strong> Prevents mentioning non-members;
+  auto-cleans on member delete. Mirrors the <code>admins</code> FK.</td>
 </tr>
 <tr>
   <td><strong>B-1</strong></td>
-  <td>Build option 2 (mention-as-task) now, or ship plain mentions (option 1)
-  first and add tasks once mentions prove out?</td>
-  <td>Ship option 1; land the two task columns in the same M0 migration (cheap,
-  forward-compatible) but don't surface task UI until a follow-up.</td>
+  <td>Build mention-as-task now, or ship plain mentions first?</td>
+  <td>✅ <strong>Build tasks fully now.</strong> Task columns land in M0 <em>and</em>
+  the task UI (composer checkbox, "Needs your action" bell section, Mark done)
+  ships in v1.</td>
 </tr>
 <tr>
   <td><strong>B-2</strong></td>
-  <td>Who can mark a task done — recipient only, or author too?</td>
-  <td>Recipient only (free under existing RLS).</td>
+  <td>Who can mark a task done?</td>
+  <td>✅ <strong>Recipient only.</strong> Free under the recipient-only UPDATE RLS.</td>
+</tr>
+<tr>
+  <td><strong>—</strong></td>
+  <td>Delivery channel</td>
+  <td>✅ <strong>In-app only.</strong> Bell + dropdown. No email, no push. (Email
+  remains a v2 consideration.)</td>
 </tr>
 </table>
+
+> **Migration drafted from these decisions:**
+> [`supabase/migrations/20260622_mentions_notifications_tasks.sql`](../supabase/migrations/20260622_mentions_notifications_tasks.sql)
+> — **draft, not yet applied to any database.** Review before running against staging.
 
 ---
 
