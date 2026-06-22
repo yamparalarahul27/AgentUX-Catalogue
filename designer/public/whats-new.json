@@ -1210,6 +1210,7 @@
     "id": "apr-30-2026",
     "date": "Apr 30, 2026",
     "title": "Group Chip Strip, Folder Upload & Toolbar Polish",
+    "imageUrl": "/designer/changelog-images/apr-30-2026-group-chip-strip-folder-upload-toolbar-polish.png",
     "bullets": [
       {
         "kind": "new",
@@ -1261,6 +1262,7 @@
     "id": "apr-29-2026",
     "date": "Apr 29, 2026",
     "title": "Area Annotations, Annotation Filter & Bulk Flow",
+    "imageUrl": "/designer/changelog-images/apr-29-2026-area-annotations-annotation-filter-bulk-flow.png",
     "bullets": [
       {
         "kind": "new",
@@ -1316,6 +1318,7 @@
     "id": "apr-28-2026",
     "date": "Apr 28, 2026",
     "title": "Lightbox & Quick Upload Polish",
+    "imageUrl": "/designer/changelog-images/apr-28-2026-lightbox-quick-upload-polish.png",
     "bullets": [
       {
         "kind": "new",
@@ -1367,6 +1370,7 @@
     "id": "apr-27-2026",
     "date": "Apr 27, 2026",
     "title": "Catalogue Goes Solo — Repo Split & Cleanup",
+    "imageUrl": "/designer/changelog-images/apr-27-2026-catalogue-goes-solo-repo-split-cleanup.png",
     "bullets": [
       {
         "kind": "new",
