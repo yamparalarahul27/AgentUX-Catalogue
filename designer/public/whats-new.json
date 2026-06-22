@@ -2,9 +2,10 @@
   {
     "id": "2026-06-23-perf-content-visibility",
     "date": "June 23, 2026",
-    "title": "Catalogue scrolls faster on long lists",
+    "title": "Catalogue loads + scrolls faster",
     "bullets": [
-      { "kind": "improved", "text": "Catalogue grid + stack views now skip rendering cards that are scrolled out of view — the browser only paints what's actually on screen. Most noticeable on projects with hundreds of screenshots; scrolling stays smooth instead of stuttering as the list grows" }
+      { "kind": "improved", "text": "Catalogue grid + stack views now skip rendering cards that are scrolled out of view — the browser only paints what's actually on screen. Most noticeable on projects with hundreds of screenshots; scrolling stays smooth instead of stuttering as the list grows" },
+      { "kind": "improved", "text": "Stack, Gallery, and Canvas Gallery views now load on demand — initial catalogue download drops by ~34 KB of JavaScript. Each non-default view fetches its own small chunk the first time you open it" }
     ]
   },
   {
