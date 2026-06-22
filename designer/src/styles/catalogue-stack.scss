@@ -33,6 +33,14 @@
   background: #111113;
   overflow: hidden;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  // Perf — same as .catalogue-card in grid view. Stack cards are
+  // taller (min-height: 320px below) and carry an on-view comment
+  // fetch, so the win here is bigger per-card than in grid. 320px
+  // intrinsic-size matches the explicit min-height so the
+  // pre-painted reservation tracks reality.
+  // See docs/catalogue-perf-and-virtualization-plan.md §2.1.
+  content-visibility: auto;
+  contain-intrinsic-size: 0 320px;
 
   &:hover {
     border-color: #33333a;
