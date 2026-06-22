@@ -39,6 +39,8 @@ flat vector, harsh shadows, skeuomorphic gloss, low contrast mush
 <details open>
 <summary><strong>June 2026</strong></summary>
 
+- **Catalogue loads + scrolls faster** — `a frosted-glass catalogue grid with the nearest cards crisp and the distant rows softly fading, suggesting fast scrolling`
+- **@-mentions, a notification bell, and tasks** — `a frosted-glass notification bell beside a small person-dot chip and one quiet task dot`
 - **Section tabs reordered — Links gets a label, Elements gets an icon** — `a frosted-glass header tab strip with one longer labelled tab shape and one compact icon-only tab shape swapping positions`
 - **Links in comments now show a favicon chip** — `a frosted-glass comment bubble holding a small rounded link chip with a tiny abstract site-dot`
 - **YouTube videos open in the same preview as X posts** — `a frosted-glass video preview panel beside a slim notes column with small tag chips`

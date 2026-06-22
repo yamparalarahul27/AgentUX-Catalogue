@@ -35,15 +35,16 @@
     <header class="changelog-page__header">
       <h1 class="changelog-page__title">Changelog Image Review</h1>
       <p class="changelog-page__lede">Everything shipped, most recent first. Generated covers appear inline; missing covers are marked pending.</p>
-      <div class="changelog-page__summary" aria-label="Review summary"><span>94 releases</span><span>35 generated covers</span><span>59 pending covers</span></div>
+      <div class="changelog-page__summary" aria-label="Review summary"><span>96 releases</span><span>35 generated covers</span><span>61 pending covers</span></div>
     </header>
     <section class="changelog-page__entries" aria-label="Changelog entries">
-        <article class="changelog-page__entry" id="2026-06-15-header-tabs-links-elements">
-          <div class="changelog-page__date">June 15, 2026</div>
+        <article class="changelog-page__entry" id="2026-06-23-perf-content-visibility">
+          <div class="changelog-page__date">June 23, 2026</div>
           <div class="changelog-page__body">
-            <h2 class="changelog-page__entry-title">Section tabs reordered &#x2014; Links gets a label, Elements gets an icon</h2>
+            <h2 class="changelog-page__entry-title">Catalogue loads + scrolls faster</h2>
             <ul class="changelog-page__bullets">
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Links is now a labelled tab (was a bare icon), and Elements moved next to AI Studio as a compact icon &#x2014; so the row reads Catalogue &#xB7; Videos &#xB7; Links &#xB7; &#x25C7; &#xB7; &#x2728;</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Catalogue grid + stack views now skip rendering cards that are scrolled out of view &#x2014; the browser only paints what&#39;s actually on screen. Most noticeable on projects with hundreds of screenshots; scrolling stays smooth instead of stuttering as the list grows</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Stack, Gallery, and Canvas Gallery views now load on demand &#x2014; initial catalogue download drops by ~34 KB of JavaScript. Each non-default view fetches its own small chunk the first time you open it</span></li>
             </ul>
           <div class="changelog-page__figure changelog-page__figure--pending">
             <span>Image pending</span>
@@ -89,6 +90,24 @@
           </div>
           </div>
         </article>
+        <article class="changelog-page__entry" id="2026-06-22-mentions-and-notifications">
+          <div class="changelog-page__date">June 22, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">@-mentions, a notification bell, and tasks</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Type @ in any comment to tag a teammate &#x2014; they get a notification in the header bell within a second</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Optionally mark a mention as &quot;Needs action&quot; &#x2014; it becomes a task that stays open in the recipient&#39;s bell until they hit Mark done</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Click a notification to jump straight to the comment in context &#x2014; the lightbox or video preview opens with the row scrolled into view and briefly highlighted</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Soft sound + light haptic when a new notification arrives &#x2014; same vocabulary as save / delete / upload, gated by the existing sound + haptics toggles in the account menu</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>@-mentions now render as a styled chip in comment bodies (avatar + name) instead of plain text &#x2014; easier to spot at a glance</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Bell dropdown now closes automatically when you click a notification &#x2014; fixes it floating over the opened lightbox</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Deep-linked comment gets an extra spotlight beat &#x2014; a sweeping indigo stroke along the bottom edge complements the existing halo</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
         <article class="changelog-page__entry" id="2026-06-20-comments-edit-reply">
           <div class="changelog-page__date">June 20, 2026</div>
           <div class="changelog-page__body">
@@ -109,6 +128,60 @@
             <h2 class="changelog-page__entry-title">Header tabs reordered</h2>
             <ul class="changelog-page__bullets">
               <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Header order is now Catalogue &#x2192; Videos &#x2192; Elements (Videos and Elements swapped) so the most-used tabs sit next to the home tab</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-16-toolbar-customization">
+          <div class="changelog-page__date">June 16, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Customize your toolbar</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Settings &#x2192; Toolbar lets you hide individual controls (Sort, Density: Stack / Gallery, Share, Saved) so the toolbar shows only what you actually use</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Pin Platform (Mobile / Web) or Theme (Light / Dark) to surface them as inline tab switches in the toolbar &#x2014; one click to flip, no dropdown</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Choices save automatically and only affect your view &#x2014; other users see their own toolbar layout</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-15-header-tabs-links-elements">
+          <div class="changelog-page__date">June 15, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Section tabs reordered &#x2014; Links gets a label, Elements gets an icon</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Links is now a labelled tab (was a bare icon), and Elements moved next to AI Studio as a compact icon &#x2014; so the row reads Catalogue &#xB7; Videos &#xB7; Links &#xB7; &#x25C7; &#xB7; &#x2728;</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-15-prototype-card-polish">
+          <div class="changelog-page__date">June 15, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Prototype cards: live preview + share</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Each prototype card now shows a live thumbnail of the actual HTML, scaled down &#x2014; so you can scan a wall of mockups at a glance</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Share button on every card copies the prototype URL to your clipboard &#x2014; paste anywhere to share</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-14-prototypes-tab">
+          <div class="changelog-page__date">June 14, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Share HTML prototypes</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New Prototypes tab inside Links &#x2014; drop in .html mockups and they&#39;re hosted on mockups.hirahul.xyz, openable in a new tab from a card grid</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Each prototype is yours by default (private). Flip the eye icon on the card to make it public for the team</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Rename inline, replace the file with a new version, or delete &#x2014; all from the card actions</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Prototype files serve from a separate subdomain so uploaded HTML/JS can&#39;t reach the app&#39;s auth cookies or localStorage</span></li>
             </ul>
           <div class="changelog-page__figure changelog-page__figure--pending">
             <span>Image pending</span>
@@ -177,6 +250,31 @@
           </div>
           </div>
         </article>
+        <article class="changelog-page__entry" id="2026-06-13-remove-edit-in-labeling-studio">
+          <div class="changelog-page__date">June 13, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Labeling Studio: cleaner lightbox</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The Edit (pencil) icon is hidden in Labeling Studio &#x2014; it opened the catalogue-metadata editor, which duplicated fields you can already set elsewhere. Keeps focus on labeling</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-12-offline-indicator-polish">
+          <div class="changelog-page__date">June 12, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Offline indicator polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The offline status pill now sits above the group dock instead of overlapping with it</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>When you scroll to the bottom of the catalogue while offline, the pill briefly breathes to nudge your eyes &#x2014; quick visual cue that you&#39;ve seen everything available offline</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
         <article class="changelog-page__entry" id="2026-06-11-prototype-share-loader">
           <div class="changelog-page__date">June 11, 2026</div>
           <div class="changelog-page__body">
@@ -225,87 +323,6 @@
           </div>
           </div>
         </article>
-        <article class="changelog-page__entry" id="2026-06-16-toolbar-customization">
-          <div class="changelog-page__date">June 16, 2026</div>
-          <div class="changelog-page__body">
-            <h2 class="changelog-page__entry-title">Customize your toolbar</h2>
-            <ul class="changelog-page__bullets">
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Settings &#x2192; Toolbar lets you hide individual controls (Sort, Density: Stack / Gallery, Share, Saved) so the toolbar shows only what you actually use</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Pin Platform (Mobile / Web) or Theme (Light / Dark) to surface them as inline tab switches in the toolbar &#x2014; one click to flip, no dropdown</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Choices save automatically and only affect your view &#x2014; other users see their own toolbar layout</span></li>
-            </ul>
-          <div class="changelog-page__figure changelog-page__figure--pending">
-            <span>Image pending</span>
-          </div>
-          </div>
-        </article>
-        <article class="changelog-page__entry" id="2026-06-09-mobile-fixes">
-          <div class="changelog-page__date">June 9, 2026</div>
-          <div class="changelog-page__body">
-            <h2 class="changelog-page__entry-title">Mobile polish</h2>
-            <ul class="changelog-page__bullets">
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Comment box in the X-post lightbox no longer hides behind the keyboard on mobile</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Tag filters in Videos now scroll sideways in one row on mobile instead of stacking into a tall block</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Added breathing room between the header and the Links tab strip on mobile</span></li>
-            </ul>
-          <div class="changelog-page__figure changelog-page__figure--pending">
-            <span>Image pending</span>
-          </div>
-          </div>
-        </article>
-        <article class="changelog-page__entry" id="2026-06-15-prototype-card-polish">
-          <div class="changelog-page__date">June 15, 2026</div>
-          <div class="changelog-page__body">
-            <h2 class="changelog-page__entry-title">Prototype cards: live preview + share</h2>
-            <ul class="changelog-page__bullets">
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Each prototype card now shows a live thumbnail of the actual HTML, scaled down &#x2014; so you can scan a wall of mockups at a glance</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Share button on every card copies the prototype URL to your clipboard &#x2014; paste anywhere to share</span></li>
-            </ul>
-          <div class="changelog-page__figure changelog-page__figure--pending">
-            <span>Image pending</span>
-          </div>
-          </div>
-        </article>
-        <article class="changelog-page__entry" id="2026-06-14-prototypes-tab">
-          <div class="changelog-page__date">June 14, 2026</div>
-          <div class="changelog-page__body">
-            <h2 class="changelog-page__entry-title">Share HTML prototypes</h2>
-            <ul class="changelog-page__bullets">
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New Prototypes tab inside Links &#x2014; drop in .html mockups and they&#39;re hosted on mockups.hirahul.xyz, openable in a new tab from a card grid</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Each prototype is yours by default (private). Flip the eye icon on the card to make it public for the team</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Rename inline, replace the file with a new version, or delete &#x2014; all from the card actions</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Prototype files serve from a separate subdomain so uploaded HTML/JS can&#39;t reach the app&#39;s auth cookies or localStorage</span></li>
-            </ul>
-          <div class="changelog-page__figure changelog-page__figure--pending">
-            <span>Image pending</span>
-          </div>
-          </div>
-        </article>
-        <article class="changelog-page__entry" id="2026-06-13-remove-edit-in-labeling-studio">
-          <div class="changelog-page__date">June 13, 2026</div>
-          <div class="changelog-page__body">
-            <h2 class="changelog-page__entry-title">Labeling Studio: cleaner lightbox</h2>
-            <ul class="changelog-page__bullets">
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The Edit (pencil) icon is hidden in Labeling Studio &#x2014; it opened the catalogue-metadata editor, which duplicated fields you can already set elsewhere. Keeps focus on labeling</span></li>
-            </ul>
-          <div class="changelog-page__figure changelog-page__figure--pending">
-            <span>Image pending</span>
-          </div>
-          </div>
-        </article>
-        <article class="changelog-page__entry" id="2026-06-12-offline-indicator-polish">
-          <div class="changelog-page__date">June 12, 2026</div>
-          <div class="changelog-page__body">
-            <h2 class="changelog-page__entry-title">Offline indicator polish</h2>
-            <ul class="changelog-page__bullets">
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The offline status pill now sits above the group dock instead of overlapping with it</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>When you scroll to the bottom of the catalogue while offline, the pill briefly breathes to nudge your eyes &#x2014; quick visual cue that you&#39;ve seen everything available offline</span></li>
-            </ul>
-          <div class="changelog-page__figure changelog-page__figure--pending">
-            <span>Image pending</span>
-          </div>
-          </div>
-        </article>
         <article class="changelog-page__entry" id="2026-06-11-offline-crop">
           <div class="changelog-page__date">June 11, 2026</div>
           <div class="changelog-page__body">
@@ -329,6 +346,20 @@
               <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>The bottom-center status pill now shows &#39;&#x27F3; Syncing N changes&#39; on reconnect and &#39;&#x2713; Synced all&#39; when the queue drains. Quick online edits stay silent &#x2014; the indicator only surfaces for genuine offline-queued work</span></li>
               <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Comments stay visible in the lightbox even if the comment-fetch fails (e.g. while offline) &#x2014; the optimistic entry no longer gets wiped on network error</span></li>
               <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Crop still requires being online &#x2014; it&#39;s coming in the next release</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-09-mobile-fixes">
+          <div class="changelog-page__date">June 9, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Mobile polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Comment box in the X-post lightbox no longer hides behind the keyboard on mobile</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Tag filters in Videos now scroll sideways in one row on mobile instead of stacking into a tall block</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Added breathing room between the header and the Links tab strip on mobile</span></li>
             </ul>
           <div class="changelog-page__figure changelog-page__figure--pending">
             <span>Image pending</span>
@@ -899,7 +930,7 @@
             <ul class="changelog-page__bullets">
               <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Quick Upload has a Paste pill next to the drop zone &#x2014; click it and Cmd/Ctrl+V to drop in images, works on iOS via long-press too</span></li>
               <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Annotate an area then flip &quot;Tag as UI Element&quot; to add it to the UI Element filter taxonomy &#x2014; no Studio access needed</span></li>
-              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New UI Element filter in the toolbar, plus a green &quot;[&#xD83D;&#xDCE6; N]&quot; badge on cards that have tagged UI elements</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New UI Element filter in the toolbar, plus a green &quot;[&#x1F4E6; N]&quot; badge on cards that have tagged UI elements</span></li>
             </ul>
           <figure class="changelog-page__figure">
             <img src="../designer/public/changelog-images/2026-05-22-paste-from-clipboard-paste-from-clipboard-ui-element-tagging.png" alt="Paste from clipboard + UI Element tagging changelog cover" loading="lazy">
