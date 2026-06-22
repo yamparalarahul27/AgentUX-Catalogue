@@ -1528,6 +1528,34 @@
   &:hover { color: #f4f4f5; border-color: rgba(255, 255, 255, 0.28); }
 }
 
+// "Needs action" checkbox below the video preview composer — shown
+// when the current draft contains at least one resolved mention.
+.catalogue-videos-preview__needs-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 12px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  color: #a1a1aa;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    color: #fafafa;
+    background: rgba(99, 102, 241, 0.08);
+  }
+
+  input[type='checkbox'] {
+    width: 14px;
+    height: 14px;
+    accent-color: #6366f1;
+    cursor: pointer;
+  }
+}
+
 .catalogue-videos-preview__composer {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 12px;

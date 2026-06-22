@@ -2,10 +2,13 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Pencil, Search, Share2, X } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
+import { insertCommentMentions, parseMentionsInText } from '../lib/comment-mentions';
+import { useTeamRoster, mentionLabel } from '../hooks/use-team-roster';
 import { ConfirmModal } from './ConfirmModal';
 import { DotLoader } from './DotLoader';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { CommentText } from './CommentText';
+import { MentionTypeahead } from './MentionTypeahead';
 
 // Wrap each case-insensitive occurrence of `query` inside `text` with a
 // <mark> span so the catalogue-videos search highlight CSS can paint it.
@@ -584,6 +587,15 @@ export function CatalogueVideosSection({
 
   const [commentDraft, setCommentDraft] = useState('');
   const [commentsByVideo, setCommentsByVideo] = useState<Record<string, VideoComment[]>>({});
+  // M2 — mention pipeline. Roster + needsAction state shared by both
+  // X-post and YouTube previews (one composer, switched-on-source).
+  const { roster: mentionRoster } = useTeamRoster();
+  const commentDraftRef = useRef<HTMLTextAreaElement | null>(null);
+  const [commentNeedsAction, setCommentNeedsAction] = useState(false);
+  const draftMentions = useMemo(
+    () => parseMentionsInText(commentDraft, mentionRoster),
+    [commentDraft, mentionRoster],
+  );
   const [xPostInput, setXPostInput] = useState('');
   const [xPostError, setXPostError] = useState<string | null>(null);
   const [xPosts, setXPosts] = useState<XPostReference[]>([]);
@@ -1138,6 +1150,10 @@ export function CatalogueVideosSection({
     if (!previewItemKey || !text || savingComment) return;
     if (!ensureCanEdit()) return;
 
+    // Snapshot mention state BEFORE clearing the input.
+    const mentionedEmails = parseMentionsInText(text, mentionRoster);
+    const requiresAction = commentNeedsAction && mentionedEmails.length > 0;
+
     setSavingComment(true);
     const { data, error } = await supabase
       .from('catalogue_video_comments')
@@ -1167,6 +1183,25 @@ export function CatalogueVideosSection({
       [previewItemKey]: [...(previous[previewItemKey] ?? []), nextComment],
     }));
     setCommentDraft('');
+    setCommentNeedsAction(false);
+
+    // M2 — mention pipeline. Fire-and-forget after the comment row is
+    // confirmed in the DB. previewItemKey doubles as the deep-link
+    // context: 'x-<id>' for X posts, 'youtube-<id>' for YouTube, plain
+    // id for plain video references — all distinct enough that M4's
+    // deep-link router can dispatch on the prefix.
+    if (mentionedEmails.length > 0) {
+      void insertCommentMentions({
+        commentKind: 'video',
+        commentId: data.id,
+        text,
+        actorEmail: userEmail,
+        mentionedEmails,
+        needsAction: requiresAction,
+        notificationSourceKind: 'video_comment',
+        context: { item_key: previewItemKey },
+      });
+    }
   }
 
   // Edit an existing video comment. Mirrors the screenshot-lightbox
@@ -2066,6 +2101,7 @@ export function CatalogueVideosSection({
 
               <div className="catalogue-videos-preview__composer">
                 <textarea
+                  ref={commentDraftRef}
                   value={commentDraft}
                   onChange={(event) => setCommentDraft(event.target.value)}
                   placeholder="Add a reference note..."
@@ -2079,6 +2115,28 @@ export function CatalogueVideosSection({
                   Save
                 </button>
               </div>
+              <MentionTypeahead
+                inputRef={commentDraftRef}
+                value={commentDraft}
+                onChange={setCommentDraft}
+                onMentionSelected={() => {}}
+                roster={mentionRoster}
+                excludeEmails={[userEmail]}
+              />
+              {draftMentions.length > 0 && (
+                <label className="catalogue-videos-preview__needs-action">
+                  <input
+                    type="checkbox"
+                    checked={commentNeedsAction}
+                    onChange={(event) => setCommentNeedsAction(event.target.checked)}
+                  />
+                  <span>
+                    {draftMentions.length === 1
+                      ? `Needs action from @${mentionLabel(draftMentions[0])}`
+                      : `Needs action from ${draftMentions.length} people`}
+                  </span>
+                </label>
+              )}
             </aside>
           </div>
         </div>
