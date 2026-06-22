@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { supabase } from '../lib/supabase';
+import { useFeedback } from './use-feedback';
 
 // M3 — in-app notification bell. Reads / writes the notifications table
 // from the M0 migration (docs/mentions-notifications-tasks-addendum.md).
@@ -63,6 +64,19 @@ export function useNotifications(userEmail: string | null): UseNotificationsResu
     userEmailRef.current = userEmail;
   }, [userEmail]);
 
+  // M5 — bell ping. fire('notify') on a fresh realtime INSERT (not on
+  // the initial fetch — those are pre-existing rows the user already
+  // knows about). Reuses the existing useFeedback() hook the rest of
+  // the app uses for save/delete/upload acks. Captured in a ref so
+  // the realtime subscription doesn't have to re-subscribe whenever
+  // the fire closure changes — the channel is bound to userEmail
+  // only.
+  const { fire } = useFeedback();
+  const fireRef = useRef(fire);
+  useEffect(() => {
+    fireRef.current = fire;
+  }, [fire]);
+
   // Initial fetch — most-recent 20, ordered by created_at desc.
   const refresh = useCallback(async () => {
     if (!userEmail) {
@@ -112,10 +126,17 @@ export function useNotifications(userEmail: string | null): UseNotificationsResu
           // prepend — dedup by id so a manual refresh racing with the
           // realtime event doesn't double the row.
           const row = payload.new as NotificationRow;
+          let appended = false;
           setNotifications((previous) => {
             if (previous.some((n) => n.id === row.id)) return previous;
+            appended = true;
             return [row, ...previous].slice(0, INITIAL_FETCH_LIMIT);
           });
+          // Only fire the ping if the row is actually new (not a
+          // realtime echo of one we already had locally). `appended`
+          // is set inside the state updater so the dedup result drives
+          // the decision.
+          if (appended) fireRef.current('notify');
         },
       )
       .subscribe();
