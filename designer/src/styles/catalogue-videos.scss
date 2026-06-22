@@ -1425,6 +1425,23 @@
     white-space: pre-wrap;
     word-break: break-word;
   }
+
+  // M4 — bell deep-link highlight on the targeted comment row. Same
+  // keyframe shape as the lightbox version in part-6-catalogue-tail.scss.
+  &.is-recently-viewed {
+    animation: catalogue-videos-preview-comment-recently-viewed-fade 1.5s ease-out forwards;
+  }
+}
+
+@keyframes catalogue-videos-preview-comment-recently-viewed-fade {
+  0% {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.85), 0 0 18px 4px rgba(99, 102, 241, 0.45);
+    background: rgba(99, 102, 241, 0.12);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0), 0 0 0 0 rgba(99, 102, 241, 0);
+    background: rgba(17, 17, 19, 0.78);
+  }
 }
 
 .catalogue-videos-preview__comment-top {
