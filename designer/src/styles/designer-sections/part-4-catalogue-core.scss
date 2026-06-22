@@ -208,6 +208,28 @@
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.2s;
+  // Perf — skip rendering for off-screen cards entirely. The browser
+  // paints/lays-out a card only when it scrolls into the viewport;
+  // everything below the fold stays as a placeholder of the size
+  // hint below. The single biggest paint-time win for long catalogue
+  // scrolls — measured on the original perf plan (Tier 1).
+  //
+  // contain-intrinsic-size: <inline-size> <block-size>. We pass `0`
+  // for inline so the grid's track sizing still works (auto-fill
+  // minmax(220px, 1fr)), and a conservative 220px for block height —
+  // close to the rendered card (16:9 image at ~220px + info strip).
+  // Once the card scrolls in, the browser swaps in the real measured
+  // height, so an over- or under-estimate just affects scrollbar
+  // accuracy briefly, not layout correctness.
+  //
+  // Caveats baked into the perf plan docs/catalogue-perf-and-virtualization-plan.md §2.1:
+  // implies `contain: layout style paint`, so any descendant that
+  // resolves `position: fixed` against the viewport instead of this
+  // card would break — we have none today (actions/select are
+  // position: absolute relative to the card itself, which keeps
+  // working under containment).
+  content-visibility: auto;
+  contain-intrinsic-size: 0 220px;
 
   &:hover {
     border-color: lighten($border, 8%);

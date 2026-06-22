@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-23-perf-content-visibility",
+    "date": "June 23, 2026",
+    "title": "Catalogue scrolls faster on long lists",
+    "bullets": [
+      { "kind": "improved", "text": "Catalogue grid + stack views now skip rendering cards that are scrolled out of view — the browser only paints what's actually on screen. Most noticeable on projects with hundreds of screenshots; scrolling stays smooth instead of stuttering as the list grows" }
+    ]
+  },
+  {
     "id": "2026-06-22-mentions-and-notifications",
     "date": "June 22, 2026",
     "title": "@-mentions, a notification bell, and tasks",
