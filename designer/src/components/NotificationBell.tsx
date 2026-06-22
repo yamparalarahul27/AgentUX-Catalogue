@@ -133,12 +133,13 @@ export function NotificationBell({
       onOpenVideoComment(itemKey, row.source_id);
     }
 
-    // Marking-read semantics are the same as before — tasks stay
-    // visible (until "Mark done"), plain mentions clear from unread.
-    if (isOpenTask(row)) {
-      if (row.read_at === null) void markRead(row.id);
-      return;
-    }
+    // Mark-read + close dropdown for ALL clicks (tasks included). The
+    // earlier "tasks keep the dropdown open" behaviour caused the
+    // popover to float on top of the lightbox after navigating —
+    // closing the dropdown is the right ergonomic. Tasks still stay
+    // visible in the bell (they don't clear from "Needs your action"
+    // until Mark done) — that's a different concern from whether the
+    // dropdown is on screen right now.
     if (row.read_at === null) void markRead(row.id);
     setOpen(false);
   }

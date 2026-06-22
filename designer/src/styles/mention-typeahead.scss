@@ -95,3 +95,51 @@
   font-size: 12px;
   color: #71717a;
 }
+
+// M5 — inline mention chip rendered inside comment bodies (both
+// screenshot-lightbox + video preview). Visual vocabulary matches the
+// typeahead's row avatar so picking a name and seeing the chip read
+// the same way reinforces the connection. Sits at baseline so it
+// doesn't break sentence flow.
+.comment-mention-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px 1px 3px;
+  margin: 0 1px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.14);
+  color: #c7d2fe;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  vertical-align: baseline;
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.22);
+    color: #e0e7ff;
+  }
+}
+
+.comment-mention-chip__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.comment-mention-chip__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
