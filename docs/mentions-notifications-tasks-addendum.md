@@ -384,6 +384,92 @@ implementation milestones.
 
 ---
 
+## Spec amendments — 2026-06-22 (post-review)
+
+A focused review of the draft migration surfaced five gaps. Two are fixed
+in the migration itself; three are spec-level clarifications below that
+the implementation milestones (M2, M3) depend on.
+
+### Migration changes (applied in same PR)
+
+1. **`mentionable_members` filters `WHERE enabled = true`.** Disabled
+   members can't be mentioned — enforced at the view rather than expected
+   of every client. The view also drops the `enabled` column from its
+   projection since every row is `true` by definition.
+2. **`notifications` added to the `supabase_realtime` publication.** The
+   bell's `postgres_changes` subscription would otherwise return
+   success but receive no events — silent failure that M3 would have to
+   debug from scratch.
+
+### Spec clarification — badge count formula (binding for M3)
+
+The bell badge shows `unread + open tasks`, deduplicated. A row that is
+both unread AND an open task counts **once**. SQL:
+
+```sql
+select count(*) from public.notifications
+where recipient_email = (auth.jwt() ->> 'email')
+  and (
+    read_at is null
+    or (requires_action = true and resolved_at is null)
+  );
+```
+
+Display cap: `9+` for any count ≥ 10. No badge below 1.
+
+### Spec clarification — mention-on-edit (binding for M2)
+
+If a user edits a comment to **add** a new mention, **no** notification fires
+(matches the original "no edit-fire" decision in §3).
+
+If a user edits a comment to **remove** an existing `@<email>` from the text,
+the corresponding `comment_mentions` row and any unread `notifications` row
+**stay**. Rationale:
+
+- Recipient may have already seen the bell; rewriting history is jarring.
+- Edit-time mention-diffing is non-trivial (would need text → mention
+  parse-and-compare) for a v1 nicety.
+- Comment text and mention metadata diverging is acceptable — the chip
+  renderer falls back to plain text when no matching mention row exists,
+  so the displayed comment is internally consistent.
+
+M2 must therefore: parse mentions **only on insert**, never re-derive on
+update.
+
+### Spec clarification — orphan-on-comment-delete (binding for M2)
+
+`notifications.source_id` is intentionally not a FK (it points into one of
+two comment tables). If a comment is **hard-deleted**, the linked mention +
+notification rows are orphaned.
+
+For v1 this is fine — comments use the soft-delete tombstone path
+([`CatalogueFamilyLightboxCommentItem`](../designer/src/components/CatalogueFamilyLightboxCommentItem.tsx#L159))
+and aren't actually removed. The bell click-through lands on the tombstone
+("Comment removed"), which is acceptable.
+
+When a hard-delete sweep is ever added (future cleanup migration), add
+either:
+- A Postgres trigger on `screenshot_comments` / `catalogue_video_comments`
+  `BEFORE DELETE` that deletes related `comment_mentions` and
+  `notifications` rows, **or**
+- A nightly cron that prunes orphans (cheaper to maintain but eventual-consistency).
+
+### Nits documented but not addressed in v1
+
+- **Long-email display labels** (`firstname.lastname@…` → `@firstname.lastname`)
+  look awkward in chips. Add a `display_name` column to `user_passcodes`
+  later — additive, doesn't touch the mention tables.
+- **No mention-burst rate limit.** A user could `@`-blast the whole team in
+  one comment. Fine at the current team size; revisit if the member count
+  ever exceeds ~20.
+- **`mentionable_members` runs as view owner.** If Supabase ever flips view
+  defaults toward `security_invoker = true`, the view stops bypassing
+  base-table RLS and breaks. Hardening: pin
+  `security_invoker = false` explicitly, or move to a base-table policy
+  grant. Low-priority.
+
+---
+
 ## Cross-references
 
 - [`mentions-and-notifications-plan.md`](./mentions-and-notifications-plan.md) — the v1 plan this corrects/extends.

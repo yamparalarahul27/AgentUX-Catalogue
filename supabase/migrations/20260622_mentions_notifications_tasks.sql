@@ -26,6 +26,7 @@
 --   - designer/src/components/NotificationBell.tsx (M3)
 --
 -- Rollback:
+--   alter publication supabase_realtime drop table public.notifications;
 --   drop view if exists public.mentionable_members;
 --   drop table if exists public.notifications;
 --   drop table if exists public.comment_mentions;
@@ -148,22 +149,41 @@ create policy notifications_insert on public.notifications
 --
 --    user_passcodes has RLS with no policies → only the service role can
 --    read it. Non-admins still need the list of who to mention. This view
---    exposes ONLY email + enabled — never passcode_hash, lockout state, or
---    counters. A standard (non-security_invoker) view runs with the view
---    owner''s rights, so authenticated users read these two columns through
---    it without gaining access to the base table.
+--    exposes ONLY email — never passcode_hash, lockout state, or counters.
+--    A standard (non-security_invoker) view runs with the view owner''s
+--    rights, so authenticated users read this column through it without
+--    gaining access to the base table.
 --
---    Security note: this intentionally surfaces every member''s email to
---    every authenticated user. Acceptable — members are internal teammates
---    and emails are required to address them. Flagged as security-sensitive
---    in the addendum; revisit if the member set ever includes outsiders.
+--    Filtered to `enabled = true` so disabled members can''t be mentioned.
+--    Enforcement lives in the view rather than in every client so it''s
+--    impossible to forget. If admins ever need the full roster for a
+--    different surface, that''s a separate view (e.g. all_members_admin).
+--
+--    Security note: this intentionally surfaces every active member''s
+--    email to every authenticated user. Acceptable — members are internal
+--    teammates and emails are required to address them. Flagged as
+--    security-sensitive in the addendum; revisit if the member set ever
+--    includes outsiders.
 -- ────────────────────────────────────────────────────────────────────
 create or replace view public.mentionable_members as
-  select email, enabled
-  from public.user_passcodes;
+  select email
+  from public.user_passcodes
+  where enabled = true;
 
 grant select on public.mentionable_members to authenticated;
 
 comment on view public.mentionable_members is
-  'Read-only roster for @-mention typeahead. Exposes only email + enabled '
-  'from user_passcodes to authenticated users; no secrets or lockout state.';
+  'Read-only roster for @-mention typeahead. Exposes only active members'' '
+  'email; filtered to enabled = true so disabled members cannot be mentioned.';
+
+-- ────────────────────────────────────────────────────────────────────
+-- 4. Supabase Realtime publication.
+--
+--    The notification bell subscribes via
+--      supabase.channel(...).on('postgres_changes', { table: 'notifications', ... })
+--    which requires the table to be in the `supabase_realtime` publication.
+--    Without this line the subscription "works" (returns success) but no
+--    events ever fire — a silent failure that''s painful to debug. Adding
+--    it as part of M0 so the bell milestone (M3) starts on a working base.
+-- ────────────────────────────────────────────────────────────────────
+alter publication supabase_realtime add table public.notifications;
