@@ -14,6 +14,7 @@ import {
   type ScreenshotAnnotation,
 } from '../lib/screenshot-annotations';
 import { enqueueMutation } from '../lib/mutation-queue';
+import { insertCommentMentions, parseMentionsInText } from '../lib/comment-mentions';
 import { supabase } from '../lib/supabase';
 import { thumbHashToPixelatedUrl } from '../lib/thumbhash';
 import type { MobileOs, WebPreset } from '../types';
@@ -26,6 +27,8 @@ import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { CatalogueLightboxCrop } from './CatalogueLightboxCrop';
 import { Squircle } from './Squircle';
 import { CatalogueFamilyLightboxCommentItem } from './CatalogueFamilyLightboxCommentItem';
+import { MentionTypeahead } from './MentionTypeahead';
+import { useTeamRoster, mentionLabel } from '../hooks/use-team-roster';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
 import { DotLoader } from './DotLoader';
 import { EditableTitle } from './EditableTitle';
@@ -285,6 +288,20 @@ export function CatalogueFamilyLightbox({
   const [webPresetDraft, setWebPresetDraft] = useState<string | null>(null); const [mobileOsDraft, setMobileOsDraft] = useState<MobileOs | null>(null);
   const [referenceLabelDraft, setReferenceLabelDraft] = useState(''); const [referenceFileDraft, setReferenceFileDraft] = useState<File | null>(null);
   const [comments, setComments] = useState<ScreenshotComment[]>([]); const [newComment, setNewComment] = useState(''); const [loadingComments, setLoadingComments] = useState(false); const [commentsError, setCommentsError] = useState('');
+  // M2 — mention pipeline state. Roster comes from `mentionable_members`;
+  // commentInputRef anchors the typeahead popover; needsAction is the
+  // composer's "Needs action from @X" checkbox (visible only when at
+  // least one mention is in the current draft).
+  const { roster } = useTeamRoster();
+  const commentInputRef = useRef<HTMLInputElement | null>(null);
+  const [needsAction, setNeedsAction] = useState(false);
+  // Re-derived from the current draft on every render — keeps the
+  // composer in sync if the user manually edits @-tokens after picking
+  // them through the typeahead.
+  const mentionsInDraft = useMemo(
+    () => parseMentionsInText(newComment, roster),
+    [newComment, roster],
+  );
   const [annotations, setAnnotations] = useState<LightboxAnnotation[]>([]); const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [annotationMode, setAnnotationMode] = useState(false); const [annotationDraftText, setAnnotationDraftText] = useState(''); const [annotationDraft, setAnnotationDraft] = useState<AnnotationDraft | null>(null); const [drawing, setDrawing] = useState<DrawingState | null>(null); const [annotationError, setAnnotationError] = useState('');
   // "Tag as UI Element" toggle — promotes the annotation's label into the
@@ -877,6 +894,9 @@ export function CatalogueFamilyLightbox({
     // Capture parent_id (if replying) before clearing state, so the
     // optimistic row + the durable mutation carry the same value.
     const parentId = replyToCommentId;
+    // Snapshot the mention pipeline state BEFORE we clear the input.
+    const mentionedEmails = parseMentionsInText(trimmed, roster);
+    const requiresAction = needsAction && mentionedEmails.length > 0;
     const optimisticComment: ScreenshotComment = {
       id: clientId,
       user_email: userEmail,
@@ -887,6 +907,7 @@ export function CatalogueFamilyLightbox({
     // Optimistic: push immediately, clear input, bump counter.
     setComments((previous) => [...previous, optimisticComment]);
     setNewComment('');
+    setNeedsAction(false);
     setReplyToCommentId(null);
     setCommentsError('');
     onCommentCountChange?.(screenshot.id, 1);
@@ -900,7 +921,25 @@ export function CatalogueFamilyLightbox({
       clientId,
       parentId,
     });
-  }, [canEdit, newComment, onCommentCountChange, onRequireAuth, replyToCommentId, screenshot, userEmail]);
+    // M2 — mention pipeline. Fire-and-forget; failures here log but
+    // don't roll the comment back (it's already optimistically posted
+    // and queued for durable replay). The comment row's id is the
+    // client-generated clientId — already what the mutation queue uses
+    // for the screenshot_comments insert, so the FK-less source_id is
+    // stable across replays.
+    if (mentionedEmails.length > 0) {
+      void insertCommentMentions({
+        commentKind: 'screenshot',
+        commentId: clientId,
+        text: trimmed,
+        actorEmail: userEmail,
+        mentionedEmails,
+        needsAction: requiresAction,
+        notificationSourceKind: 'screenshot_comment',
+        context: { screenshot_id: screenshot.id },
+      });
+    }
+  }, [canEdit, needsAction, newComment, onCommentCountChange, onRequireAuth, replyToCommentId, roster, screenshot, userEmail]);
   const editComment = useCallback(async (commentId: string, nextText: string) => {
     if (!ensureCanEdit()) return;
     const trimmed = nextText.trim();
@@ -2000,6 +2039,7 @@ export function CatalogueFamilyLightbox({
                         as="input"
                         cornerRadius={10}
                         type="text"
+                        innerRef={commentInputRef}
                         value={newComment}
                         onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNewComment(event.target.value)}
                         onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -2012,6 +2052,28 @@ export function CatalogueFamilyLightbox({
                         <Send size={16} />
                       </Squircle>
                     </div>
+                    <MentionTypeahead
+                      inputRef={commentInputRef}
+                      value={newComment}
+                      onChange={setNewComment}
+                      onMentionSelected={() => {}}
+                      roster={roster}
+                      excludeEmails={[userEmail]}
+                    />
+                    {mentionsInDraft.length > 0 && (
+                      <label className="catalogue-lightbox-needs-action">
+                        <input
+                          type="checkbox"
+                          checked={needsAction}
+                          onChange={(event) => setNeedsAction(event.target.checked)}
+                        />
+                        <span>
+                          {mentionsInDraft.length === 1
+                            ? `Needs action from @${mentionLabel(mentionsInDraft[0])}`
+                            : `Needs action from ${mentionsInDraft.length} people`}
+                        </span>
+                      </label>
+                    )}
                   </div>
                 </>
               ) : lightboxPanel === 'ui-elements' ? (
