@@ -18,6 +18,7 @@ import { useCatalogueSettings } from '../hooks/use-catalogue-settings';
 import { useCatalogueUpload } from '../hooks/use-catalogue-upload';
 import { usePasteToUpload } from '../hooks/use-paste-to-upload';
 import { useDropToUpload } from '../hooks/use-drop-to-upload';
+import { useShareTargetIntake } from '../hooks/use-share-target-intake';
 import { useCatalogueSearchShortcut } from '../hooks/use-catalogue-search-shortcut';
 import { buildCatalogueFamilies, buildSyntheticFamilyFromScreenshot, getActiveFamilyVariant } from '../lib/catalogue-families';
 import type { CatalogueFamilyView } from '../lib/catalogue-families';
@@ -830,6 +831,21 @@ export function Catalogue({
   usePasteToUpload({
     enabled: activeSection === 'catalogue',
     onPaste: (files) => {
+      upload.handleQuickUploadQueueAdd(files);
+      upload.setShowQuickUpload(true);
+      setToast({
+        message: `${files.length} image${files.length === 1 ? '' : 's'} added to Quick Upload`,
+        type: 'success',
+      });
+    },
+  });
+
+  // Web Share Target: when an installed PWA (Android / desktop Chromium)
+  // receives shared images, the service worker stashes them and redirects
+  // here. Drain that stash into the same Quick Upload queue as paste / drop.
+  useShareTargetIntake({
+    enabled: activeSection === 'catalogue',
+    onFiles: (files) => {
       upload.handleQuickUploadQueueAdd(files);
       upload.setShowQuickUpload(true);
       setToast({
