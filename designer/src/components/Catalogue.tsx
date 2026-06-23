@@ -59,6 +59,7 @@ import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueScrollToTop } from './CatalogueScrollToTop';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
+import { CatalogueIosUploadModal } from './CatalogueIosUploadModal';
 import { CatalogueTeamSection } from './CatalogueTeamSection';
 import { CatalogueLabelingStudio } from './labeling/CatalogueLabelingStudio';
 import { useLabelingStudioTotals } from '../hooks/use-labeling-studio-totals';
@@ -358,6 +359,7 @@ export function Catalogue({
     return next;
   }, [bookmarkFilterOn, rawGroupedFamilies, bookmarks.bookmarkedIds]);
   const [showSettings, setShowSettings] = useState(false);
+  const [showIosUpload, setShowIosUpload] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   // What's New panel open / unseen count. Auto-opens on first
@@ -734,6 +736,7 @@ export function Catalogue({
   const isAnyModalOpen = Boolean(
     upload.showUpload ||
     showSettings ||
+    showIosUpload ||
     previewFamily ||
     bulkAction ||
     confirmDeleteOpen,
@@ -1190,6 +1193,7 @@ export function Catalogue({
         canAdmin={canAdmin}
         canLabelingStudio={canLabelingStudio}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenIosUpload={() => setShowIosUpload(true)}
         onSectionChange={(section) => {
           if (section === 'elements') {
             navigate('/elements');
@@ -1606,6 +1610,11 @@ export function Catalogue({
         toolbarPinnedKeys={toolbarPinnedKeys}
         onClose={() => setShowSettings(false)}
         onSaveToolbarPrefs={saveToolbarPrefs}
+      />
+      <CatalogueIosUploadModal
+        isOpen={showIosUpload}
+        userEmail={user.email ?? null}
+        onClose={() => setShowIosUpload(false)}
       />
       {previewFamily && (
         <CatalogueFamilyLightbox

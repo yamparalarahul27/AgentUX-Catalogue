@@ -13,6 +13,7 @@ import {
   Power,
   Save,
   Settings,
+  Smartphone,
   Sparkles,
   Vibrate,
   Volume2,
@@ -45,6 +46,9 @@ interface CatalogueHeaderProps {
   canAdmin: boolean;
   canLabelingStudio: boolean;
   onOpenSettings: () => void;
+  // Opens the iOS Upload (Shortcut token) modal. Optional so the header
+  // can render on pages that don't host the modal (browse / detail / 404).
+  onOpenIosUpload?: () => void;
   onSectionChange: (section: CatalogueSection) => void;
   userEmail: string | null;
   onSignIn: () => void;
@@ -72,6 +76,7 @@ export function CatalogueHeader({
   canAdmin,
   canLabelingStudio,
   onOpenSettings,
+  onOpenIosUpload,
   onSectionChange,
   userEmail,
   onSignIn,
@@ -182,6 +187,11 @@ export function CatalogueHeader({
 
   function openSettings() {
     onOpenSettings();
+    setMenuOpen(false);
+  }
+
+  function openIosUpload() {
+    onOpenIosUpload?.();
     setMenuOpen(false);
   }
 
@@ -498,6 +508,18 @@ export function CatalogueHeader({
             <SlidersHorizontal size={14} aria-hidden="true" />
             <span>Toolbar settings</span>
           </button>
+
+          {onOpenIosUpload && (
+            <button
+              type="button"
+              className="catalogue-header-menu__item catalogue-header-menu__item--row"
+              role="menuitem"
+              onClick={openIosUpload}
+            >
+              <Smartphone size={14} aria-hidden="true" />
+              <span>iOS Upload…</span>
+            </button>
+          )}
 
           <div className="catalogue-header-menu__divider" role="presentation" />
 
