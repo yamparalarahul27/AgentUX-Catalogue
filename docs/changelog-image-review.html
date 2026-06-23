@@ -1,0 +1,1483 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Changelog Image Review</title>
+  <style>
+    :root { color-scheme: dark; --bg: #0d0d0e; --surface: #161618; --surface-2: #1d1d20; --border: #27272a; --text: #f4f4f5; --text-muted: #a1a1aa; --text-dim: #71717a; --accent: #818cf8; --new-bg: rgba(129,140,248,.16); --improved-bg: rgba(251,191,36,.14); --fix-bg: rgba(74,222,128,.14); --improved: #fbbf24; --fix: #4ade80; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+    .changelog-page { min-height: 100vh; max-width: 980px; margin: 0 auto; padding: 56px 32px 96px; }
+    .changelog-page__header { margin-bottom: 40px; }
+    .changelog-page__title { margin: 0 0 6px; font-size: 32px; font-weight: 700; letter-spacing: 0; }
+    .changelog-page__lede { margin: 0; color: var(--text-muted); font-size: 14.5px; }
+    .changelog-page__summary { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; color: var(--text-dim); font-size: 13px; }
+    .changelog-page__summary span { padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+    .changelog-page__entries { display: flex; flex-direction: column; }
+    .changelog-page__entry { display: grid; grid-template-columns: 160px 1fr; gap: 32px; padding: 28px 0; border-top: 1px solid var(--border); }
+    .changelog-page__date { padding-top: 4px; color: var(--text-dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .changelog-page__entry-title { margin: 0 0 12px; font-size: 17px; font-weight: 600; letter-spacing: 0; }
+    .changelog-page__bullets { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .changelog-page__bullet { display: flex; gap: 10px; align-items: baseline; color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+    .changelog-page__kind { display: inline-block; flex-shrink: 0; margin-top: 3px; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: .06em; line-height: 1.4; text-transform: uppercase; }
+    .changelog-page__kind--new { background: var(--new-bg); color: var(--accent); }
+    .changelog-page__kind--improved { background: var(--improved-bg); color: var(--improved); }
+    .changelog-page__kind--fix { background: var(--fix-bg); color: var(--fix); }
+    .changelog-page__figure { margin: 16px 0 0; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+    .changelog-page__figure img { display: block; width: 100%; height: auto; }
+    .changelog-page__figure--pending { display: grid; min-height: 112px; place-items: center; color: var(--text-dim); font-size: 13px; border-style: dashed; }
+    @media (max-width: 720px) { .changelog-page { padding: 32px 20px 64px; } .changelog-page__title { font-size: 26px; } .changelog-page__entry { grid-template-columns: 1fr; gap: 8px; } .changelog-page__date { padding-top: 0; } }
+  </style>
+</head>
+<body>
+  <main class="changelog-page">
+    <header class="changelog-page__header">
+      <h1 class="changelog-page__title">Changelog Image Review</h1>
+      <p class="changelog-page__lede">Everything shipped, most recent first. Generated covers appear inline; missing covers are marked pending.</p>
+      <div class="changelog-page__summary" aria-label="Review summary"><span>96 releases</span><span>35 generated covers</span><span>61 pending covers</span></div>
+    </header>
+    <section class="changelog-page__entries" aria-label="Changelog entries">
+        <article class="changelog-page__entry" id="2026-06-23-perf-content-visibility">
+          <div class="changelog-page__date">June 23, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Catalogue loads + scrolls faster</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Catalogue grid + stack views now skip rendering cards that are scrolled out of view &#x2014; the browser only paints what&#39;s actually on screen. Most noticeable on projects with hundreds of screenshots; scrolling stays smooth instead of stuttering as the list grows</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Stack, Gallery, and Canvas Gallery views now load on demand &#x2014; initial catalogue download drops by ~34 KB of JavaScript. Each non-default view fetches its own small chunk the first time you open it</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-23-comment-link-chips">
+          <div class="changelog-page__date">June 23, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Links in comments now show a favicon chip</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Paste a URL into a comment and it renders as a compact pill with the site&#39;s favicon + hostname. Hover to see the full URL and the &quot;open in new tab&quot; hint</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Preview-modal close (&#x2715;) moved to the dim backdrop, top-left &#x2014; so it stops fighting YouTube&#39;s native top controls (mute / CC / settings) and gives the player room to breathe</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-23-videos-unified-preview">
+          <div class="changelog-page__date">June 23, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">YouTube videos open in the same preview as X posts</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>YouTube videos now open in the same side-by-side preview as X posts &#x2014; embed on the left, Tags + Comments on the right. Add tags to organise videos, leave notes for yourself or the team</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Edit your own comments on X-post and YouTube previews &#x2014; pencil icon &#x2192; inline edit &#x2192; Save. Edited comments show a small &quot;(edited)&quot; tag</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Scroll hint inside X-post previews now reads &quot;More Below&quot; (was lower-cased)</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-23-comment-snap-cleanup">
+          <div class="changelog-page__date">June 23, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Empty &quot;comment removed&quot; placeholders self-clean</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>When a deleted comment&#39;s last reply also gets deleted, the &quot;Comment removed&quot; tombstone briefly stays (3s, so you register it was there) then disintegrates with a Thanos-style fade &#x2014; no more stale placeholder sitting in the thread forever</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-22-mentions-and-notifications">
+          <div class="changelog-page__date">June 22, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">@-mentions, a notification bell, and tasks</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Type @ in any comment to tag a teammate &#x2014; they get a notification in the header bell within a second</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Optionally mark a mention as &quot;Needs action&quot; &#x2014; it becomes a task that stays open in the recipient&#39;s bell until they hit Mark done</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Click a notification to jump straight to the comment in context &#x2014; the lightbox or video preview opens with the row scrolled into view and briefly highlighted</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Soft sound + light haptic when a new notification arrives &#x2014; same vocabulary as save / delete / upload, gated by the existing sound + haptics toggles in the account menu</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>@-mentions now render as a styled chip in comment bodies (avatar + name) instead of plain text &#x2014; easier to spot at a glance</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Bell dropdown now closes automatically when you click a notification &#x2014; fixes it floating over the opened lightbox</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Deep-linked comment gets an extra spotlight beat &#x2014; a sweeping indigo stroke along the bottom edge complements the existing halo</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-20-comments-edit-reply">
+          <div class="changelog-page__date">June 20, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Comments &#x2014; edit your own, reply to a thread</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>You can now edit your own comments on a screenshot &#x2014; pencil icon &#x2192; inline edit &#x2192; Save. Edited comments show a small &quot;(edited)&quot; tag next to the timestamp</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Reply to a top-level comment to keep a thread together. Replies indent under their parent and chronologically follow it</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Deleting a comment that has replies now leaves a &quot;Comment removed&quot; placeholder behind so the thread keeps its context (childless comments still delete cleanly)</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-13-tabs-reorder">
+          <div class="changelog-page__date">June 20, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Header tabs reordered</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Header order is now Catalogue &#x2192; Videos &#x2192; Elements (Videos and Elements swapped) so the most-used tabs sit next to the home tab</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-16-toolbar-customization">
+          <div class="changelog-page__date">June 16, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Customize your toolbar</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Settings &#x2192; Toolbar lets you hide individual controls (Sort, Density: Stack / Gallery, Share, Saved) so the toolbar shows only what you actually use</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Pin Platform (Mobile / Web) or Theme (Light / Dark) to surface them as inline tab switches in the toolbar &#x2014; one click to flip, no dropdown</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Choices save automatically and only affect your view &#x2014; other users see their own toolbar layout</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-15-header-tabs-links-elements">
+          <div class="changelog-page__date">June 15, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Section tabs reordered &#x2014; Links gets a label, Elements gets an icon</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Links is now a labelled tab (was a bare icon), and Elements moved next to AI Studio as a compact icon &#x2014; so the row reads Catalogue &#xB7; Videos &#xB7; Links &#xB7; &#x25C7; &#xB7; &#x2728;</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-15-prototype-card-polish">
+          <div class="changelog-page__date">June 15, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Prototype cards: live preview + share</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Each prototype card now shows a live thumbnail of the actual HTML, scaled down &#x2014; so you can scan a wall of mockups at a glance</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Share button on every card copies the prototype URL to your clipboard &#x2014; paste anywhere to share</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-14-prototypes-tab">
+          <div class="changelog-page__date">June 14, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Share HTML prototypes</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New Prototypes tab inside Links &#x2014; drop in .html mockups and they&#39;re hosted on mockups.hirahul.xyz, openable in a new tab from a card grid</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Each prototype is yours by default (private). Flip the eye icon on the card to make it public for the team</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Rename inline, replace the file with a new version, or delete &#x2014; all from the card actions</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Prototype files serve from a separate subdomain so uploaded HTML/JS can&#39;t reach the app&#39;s auth cookies or localStorage</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-13-videos-tag-filter-scroll">
+          <div class="changelog-page__date">June 13, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Videos tag filter &#x2014; scrollable strip</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The tag filter above saved videos now scrolls horizontally in a single row instead of wrapping into multiple rows that ate vertical space. Soft fade on both edges hints there&#39;s more to scroll</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-13-links-flat-grid">
+          <div class="changelog-page__date">June 13, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Saved Links &#x2014; flat card grid</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Saved Links now show as one flat card grid sorted newest-first &#x2014; no more per-host grouping (it added noise and made link scanning harder). The host name is surfaced inline on each card so context isn&#39;t lost</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-13-video-share-links">
+          <div class="changelog-page__date">June 13, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Share saved videos with a link</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Each saved video tile (X post or YouTube) now has a Share icon &#x2014; click to copy a deep-link to your clipboard</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>When a teammate opens that link, the Videos section opens straight to the right tab and pops the shared video into view &#x2014; no scrolling, no searching</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-13-links-card-grid">
+          <div class="changelog-page__date">June 13, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Saved Links &#x2014; new card-grid layout</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Host groups now sit side by side in two columns instead of stacking down the page</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Links inside each host show as small visual cards (thumbnail on top, title + meta below) and wrap into rows of up to ~6 &#x2014; way more scannable than the old vertical list</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-13-button-press-pop">
+          <div class="changelog-page__date">June 13, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Buttons pop when you press them</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Every button now gives a subtle scale-up &quot;pop&quot; on click &#x2014; a small tactile confirmation that your tap landed, consistent app-wide (and fully off if you&#39;ve turned on reduced motion)</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-13-remove-edit-in-labeling-studio">
+          <div class="changelog-page__date">June 13, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Labeling Studio: cleaner lightbox</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The Edit (pencil) icon is hidden in Labeling Studio &#x2014; it opened the catalogue-metadata editor, which duplicated fields you can already set elsewhere. Keeps focus on labeling</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-12-offline-indicator-polish">
+          <div class="changelog-page__date">June 12, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Offline indicator polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The offline status pill now sits above the group dock instead of overlapping with it</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>When you scroll to the bottom of the catalogue while offline, the pill briefly breathes to nudge your eyes &#x2014; quick visual cue that you&#39;ve seen everything available offline</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-11-prototype-share-loader">
+          <div class="changelog-page__date">June 11, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Branded loading screen for shared prototypes</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Opening a shared prototype link now shows a polished AgentUX loading screen (logo, three-dot pulse, &quot;Designed &amp; Engineered by Yamparala Rahul&quot;) for the first few seconds instead of a blank tab while the prototype boots</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-11-tooltip-pass-complete">
+          <div class="changelog-page__date">June 11, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Polished tooltips across the whole app</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Every icon-only button (toolbar, lightbox actions, video tiles, members panel, prototypes, gallery, dock, view toggles, and more) now shows a styled tooltip on hover/focus instead of the browser&#39;s plain box &#x2014; same delay timing everywhere so the experience feels calm and consistent</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-11-card-action-tooltips">
+          <div class="changelog-page__date">June 11, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Smoother tooltips on catalogue cards</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Hovering the Save / Share / Delete / Reupload / Select icons on a card now shows a styled tooltip instead of the browser&#39;s plain box, with a short delay so the cards stay quiet when you&#39;re just glancing at the grid</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-11-theme-aware-favicon">
+          <div class="changelog-page__date">June 11, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Favicon follows your browser theme</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The browser-tab icon now switches between a light and a dark variant based on your system or browser theme, so the AgentUX mark stays legible either way</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-11-offline-crop">
+          <div class="changelog-page__date">June 11, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Crop works offline now</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Crop a screenshot while offline and it applies immediately &#x2014; the cropped image syncs the moment you reconnect. Up to 10 MB per crop, 100 MB total across queued crops</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The status pill&#39;s &#39;Syncing N changes&#39; counter now includes crops alongside renames and comments &#x2014; a single number for everything pending</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>If you crop the same screenshot twice while offline, only the most recent crop syncs &#x2014; the older one is discarded to avoid a wasted upload</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-10-offline-mutation-queue">
+          <div class="changelog-page__date">June 10, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Edit offline &#x2014; your changes sync when you reconnect</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Rename, group, flow, theme/platform, soft-delete, and comments all work offline now. Changes apply instantly to the UI and persist in a durable queue until the connection comes back</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>The bottom-center status pill now shows &#39;&#x27F3; Syncing N changes&#39; on reconnect and &#39;&#x2713; Synced all&#39; when the queue drains. Quick online edits stay silent &#x2014; the indicator only surfaces for genuine offline-queued work</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Comments stay visible in the lightbox even if the comment-fetch fails (e.g. while offline) &#x2014; the optimistic entry no longer gets wiped on network error</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Crop still requires being online &#x2014; it&#39;s coming in the next release</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-09-mobile-fixes">
+          <div class="changelog-page__date">June 9, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Mobile polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Comment box in the X-post lightbox no longer hides behind the keyboard on mobile</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Tag filters in Videos now scroll sideways in one row on mobile instead of stacking into a tall block</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Added breathing room between the header and the Links tab strip on mobile</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-09-offline-status-indicator">
+          <div class="changelog-page__date">June 9, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Offline indicator + auto-refresh on reconnect</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>A floating status pill at the bottom-center of the screen tells you when you&#39;re offline, when the connection feels unstable, and confirms &#39;You&#39;re online&#39; the moment you&#39;re back</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Catalogue auto-refreshes the moment your connection comes back &#x2014; no manual reload needed to see the latest</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Upload and &#39;Clean orphaned storage&#39; buttons disable themselves while offline with a tooltip explaining why &#x2014; preventing half-finished uploads when the network drops mid-action</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-08-indexeddb-cache">
+          <div class="changelog-page__date">June 8, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Open the app, see your catalogue instantly</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Warm-load catalogue paints in ~30 ms instead of waiting for a full Supabase fetch &#x2014; IndexedDB now caches your screenshots list on the device and seeds the grid from cache the moment the app mounts</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Live data still fetches in the background on every load, so anything new (uploads from another device, deletions) lands the moment it arrives. Cache and network always converge to the truth</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Logging out clears the cache so the next person logging in on the same device never sees the previous account&#39;s catalogue</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-07-youtube-tab">
+          <div class="changelog-page__date">June 7, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Videos: YouTube tab + Quick Upload tightening</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New YouTube tab in the Videos section. Paste any YouTube URL (watch, youtu.be, shorts, live, or embed) and the card hydrates with title, channel, and thumbnail automatically</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Dedicated YouTube lightbox: click any card to open the autoplay embed in a blurred-backdrop modal. ESC, backdrop click, or the close button dismisses. Iframe unloads on close so playback stops and memory is released</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Quick Upload modal &#x2014; Flow and Group now sit side-by-side instead of stacked, and the drop zone is shorter so the entire modal fits more comfortably on smaller viewports</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Quick Upload copy tightening: dropped the &#39;Naming format&#39; hint, drop-zone reads &#39;Drop or click to upload&#39;, paste button reads &#39;Paste&#39; with a concise &#39;&#x2318;V or long-press&#39; hint</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-06-click-and-boot-sounds">
+          <div class="changelog-page__date">June 6, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">New sounds: click feedback + welcome chime</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Soft click sound on tabs, buttons, links, and other interactive controls across the catalogue. Subtle volume so it doesn&#39;t feel relentless during a browse session</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Welcome chime plays once when you open the app, in sync with the splash screen (preloaded so it doesn&#39;t lag behind the visual)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Two new toggles in Account &#x2192; Settings: &#39;Click sound&#39; and &#39;Boot sound&#39;, both gated by the master &#39;Sound effects&#39; switch. Defaults to ON when sound is on, off otherwise</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Sound system now supports both inline base64 clips and URL-based files served from designer/public/sounds/, so adding new sounds doesn&#39;t bloat the JS bundle</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-06-videos-search">
+          <div class="changelog-page__date">June 6, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Videos: search across saved X posts</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New search input above the tag chips on the Videos page. Filters saved X posts by author name, handle, tweet text, tag, or URL &#x2014; case-insensitive substring, all client-side so results update on every keystroke</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Matching substrings get a soft indigo highlight in author names, handles, tweet excerpts, and tag chips so it&#39;s clear why a card was kept</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>&#x2318;K (Ctrl+K) focuses the search input from anywhere on the Videos page</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Section title shows the active count (e.g. &#39;Saved X Posts &#xB7; 2 of 23&#39;) whenever a search query or tag chip is active. Empty result state offers a one-click &#39;Clear filters&#39;</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-03-icon-refresh">
+          <div class="changelog-page__date">June 3, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Refreshed favicon + home-screen icons</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Favicon and home-screen icons re-rendered from the source SVG with a softer warm-dark background &#x2014; the cream A reads cleanly across browser tabs and mobile launchers</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Icon filenames bumped so iOS and Android fetch the new icons on next visit. Already added the app to your home screen? Remove and re-add the shortcut to pick up the new icon</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-02-resize-handles-and-ui-e-tab">
+          <div class="changelog-page__date">June 2, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Lightbox: resize handles + UI-E tab + cleaner Comments view</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Area annotations now have 8 resize handles &#x2014; drag any corner or edge to re-bbox without delete-and-redraw. Works for both saved annotations and the draft frame when refining AI suggestions</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New UI-E (UI Elements) tab in the lightbox listing every annotation tagged as a UI Element. Click any row to highlight that region on the screenshot</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Comments tab now shows a clean screenshot &#x2014; annotations are tab-scoped so the image isn&#39;t cluttered when you&#39;re reading or writing comments. Annotation overlay only shows on Ann + UI-E tabs</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Tab labels shortened to Com / Ann / UI-E to fit the narrower tab row</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-02-elements-cropped-view">
+          <div class="changelog-page__date">June 2, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Elements browse + detail: Cropped view</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New Full / Cropped toggle on the Elements browse page and every element detail page &#x2014; switch between showing full screenshots or just the bbox region for the labelled element. Pref persists per page in localStorage</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Browse cards now prefer screenshots with anchors when picking the 4-up sample strip, so Cropped mode looks substantive even when most of the catalogue isn&#39;t anchored yet</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Screenshots without an anchor for the element show a hatched &#39;No anchor&#39; placeholder in Cropped mode &#x2014; visible signal that AI labelling hasn&#39;t reached that screen yet</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-02-ai-bbox-anchors">
+          <div class="changelog-page__date">June 2, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">AI labelling now suggests element locations</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>The AI labelling prompt now asks for a bbox + confidence per UI element. Open a screenshot in the lightbox and AI-suggested anchors render as dashed indigo ghost rectangles over the image</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Right panel shows the suggestion list above your annotations &#x2014; click &#x2713; to refine and accept (loads the bbox into the existing area-annotation draft so you can drag corners before saving), or &#x2715; to dismiss</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Manual area annotations tagged as UI Elements now also persist their bbox to the label, so the Elements tab can show real cropped views per app in a follow-up</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-01-studio-fixes-trio">
+          <div class="changelog-page__date">June 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Labelling Studio &#x2014; three fixes</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Opening the Studio now refetches the full screenshot set, so anything that landed in the catalogue from any source (Quick Upload, Telegram bot, other sessions) appears immediately</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Clicking a Studio card now opens the lightbox on the screenshot you clicked, not the latest variant in that family</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Studio grid paginates 50 cards per page with explicit page tabs &#x2014; was mounting the entire library in one render (~2,000+ cards) and tanking performance</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-01-studio-lightbox-fix">
+          <div class="changelog-page__date">June 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Labelling Studio &#x2014; lightbox opens correctly on every card</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Clicking a screenshot in the Labelling Studio now opens the lightbox even when that screenshot lives outside the catalogue&#39;s current filter &#x2014; fallout from the recent Studio scope fix that surfaced clicks couldn&#39;t resolve to a family. The click handler now uses the full-scope family map.</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-01-fall-in-cards-and-svg-empty-state">
+          <div class="changelog-page__date">June 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Catalogue cards now join the splash fall-in + crisper empty-state art</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The splash fall-in now waits for the skeleton to resolve before animating the cards, so the whole sequence (header &#x2192; chips &#x2192; sidebar &#x2192; cards) reads as one continuous landing instead of cards popping in after the chrome</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Empty-state illustration is now a vector &#x2014; no more soft-edge pixelation on retina displays or large surfaces</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Upload toast was getting cropped at the viewport bottom after the page scrolled &#x2014; the splash fall-in&#39;s perspective context was overriding the toast&#39;s fixed positioning. The class now clears after the animation completes so subsequent uploads / toasts behave correctly</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-01-fall-in-empty-state-studio">
+          <div class="changelog-page__date">June 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Catalogue lands with a flourish &#x2014; plus polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>On cold launch, the catalogue chrome (header, chip strip, sidebar) and the first rows of cards now fall in from above with a tilt + blur &#x2014; once per session, respects reduced-motion</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Replaced the line-art empty state with a friendlier illustration &#x2014; same artwork used across the catalogue grid, Labelling Studio, and Elements pages when no results match</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Labelling Studio status filters were inadvertently linked to the catalogue toolbar &#x2014; they&#39;re now properly independent, operating on the full screenshot set regardless of what the catalogue is filtered to</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-01-refresh-toast-rework">
+          <div class="changelog-page__date">June 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Refresh toast &#x2014; rainbow ring + shorter snooze</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The &quot;new version available&quot; toast now wears the AgentUX brandmark and an animated rainbow ring around the edge &#x2014; same prompt, more brand presence</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>&quot;Later&quot; is now &quot;Remind me in 10 mins&quot; &#x2014; was 30, which was easy to forget about</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Quieter background &#x2014; dropped the indigo dot pattern and left gradient stripe so the message and CTA read first</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-01-new-logo-and-mobile-tweaks">
+          <div class="changelog-page__date">June 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">New AgentUX brandmark + mobile polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Fresh AgentUX icon mark &#x2014; applied to the header, share pages, favicon, Apple touch icon, Android home-screen icon, and the boot splash</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Hidden the Elements tab on mobile &#x2014; the browse view isn&#39;t responsive-ready yet, so the entry stays off until that&#39;s fixed</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-01-elements-browse">
+          <div class="changelog-page__date">June 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Browse the catalogue by element</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New &quot;Elements&quot; tab in the header &#x2014; browse every UI element, UX pattern, and page type the AI has labelled, with a sample of how four different products handle each one</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Drill into any element to see every screenshot using it across the catalogue, filtered by group, platform, or theme</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Sub-tabs split the view into UI Elements, UX Patterns, and Page Types &#x2014; or browse all at once with search + sort</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-06-01-sound-and-haptics">
+          <div class="changelog-page__date">June 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Sound effects &amp; haptic feedback</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Save, delete, restore and upload-complete now play a subtle CC0 sound &#x2014; turn on &quot;Sound effects&quot; in the account menu (off by default)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>The same actions can buzz on phones &#x2014; &quot;Haptic feedback&quot; works on iPhone too (on by default on touch devices, off on desktop)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Both respect `prefers-reduced-motion` and can be toggled independently from the account menu</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-lightbox-group-combobox-icons">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Lightbox edit &#x2014; group dropdown now shows brand icons</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>When editing a screenshot&#39;s group from inside the lightbox, the dropdown options now show each group&#39;s brand icon next to the name &#x2014; same visual as the catalogue cards and chip strip</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-crop-dashed-guides">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Crop &#x2014; dashed guide lines</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The crop region&#39;s edge guides are now dashed indigo lines, matching the Photoshop / Figma convention. The round drag-grips stay solid</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-icon-button-hover">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Icon buttons feel alive</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Every icon button (header, lightbox actions, mobile mini-bar, members panel) now subtly scales on hover and presses down on click &#x2014; tactile feedback that compounds across surfaces</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Respects `prefers-reduced-motion` &#x2014; users who opt out of motion get static buttons</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-videos-tabs">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Videos &#x2014; X (Twitter) and Family Values split into tabs</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The Videos section now has two tabs &#x2014; X (Twitter) and Family Values &#x2014; instead of stacking both grids on one page</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>X (Twitter) opens by default; the URL remembers your choice (`?tab=family`) so you can bookmark or share it</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The Add X Post input, tag filter strip, and Sort dropdown only show on the X tab &#x2014; Family Values stays clean</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-videos-scroll-lock">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Videos &#x2014; preview locks background scroll on mobile</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Opening a video preview on mobile no longer lets the catalogue page scroll behind it</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-advance-search">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Advance Search &#x2014; entity-aware chips</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Type any group, flow, platform, theme, OS, page-type, UI-element, or UX-pattern name &#x2014; Search now recognizes it and offers to convert it into a structured filter chip</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Tab accepts the highlighted suggestion (or the top one). Chips stack inside the search box; Backspace on an empty input removes the most recent</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Hit Enter with chips applied and the catalogue grid filters to exactly that combination &#x2014; search via chips and via the toolbar produce identical results</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-search-direct-open">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Search &#x2192; click &#x2192; lightbox, in one click</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Clicking a screenshot result in Search now opens the lightbox directly on that exact screenshot &#x2014; no more triple-click through narrow &#x2192; commit &#x2192; grid card</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Works for screenshots outside the current filter / pagination window &#x2014; the lightbox renders the exact screenshot you picked, never a fallback</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Dropped the &#x2318;K search shortcut (redundant with `/`) &#x2014; modal hint and tooltip updated to match</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-changelog">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Changelog has a home</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Every release we&#39;ve ever shipped now lives on a dedicated /changelog page &#x2014; open it from the history icon in the header (top-right)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Backfilled the history all the way to March 18, 2026 (the first commit) &#x2014; 46 dated entries total</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-lightbox-redesign">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Lightbox &#x2014; cleaner layout</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Title and metadata now sit at the top of the right side panel, with the close &#xD7; overlaid on the top-left of the screenshot</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Tabs (Comments &#xB7; Annotations) switched from pills to underline-on-active text &#x2014; quieter and more legible</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Right side panel sits directly on the dark backdrop with no fill or divider; tightened the gutter around the whole lightbox to 12 px on all sides for more screenshot real estate</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-29-lightbox-squircles">
+          <div class="changelog-page__date">May 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Lightbox polish &#x2014; Figma-quality squircle corners</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Close button, action toolbar, mobile mini-action bar, and the comment composer now use squircle (superellipse) corners &#x2014; the curve eases continuously into each edge instead of the abrupt circular-arc inflection point</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Mobile mini-action buttons (Delete &#xB7; Crop &#xB7; Save &#xB7; Copy) shift from circles to squircles to match the rest of the toolbar</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-28-coverage-score">
+          <div class="changelog-page__date">May 28, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Coverage score &#x2014; see at a glance which apps are well-captured</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Every group section in the catalogue now shows Mobile and Web coverage bars &#x2014; instantly see breadth of capture, not just screenshot count</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Group detail pages show the score with N / M flows captured; a &#x2726; marks groups with all variants present (iOS+Android, or all web breakpoints)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Quick Upload &#x2014; press Enter to fire Upload All when the button is enabled. No more reaching for the mouse</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-28-crop-mobile">
+          <div class="changelog-page__date">May 28, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Crop &#x2014; easier to confirm on mobile</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Crop mode now has a top header (Cancel &#xB7; Crop &#xB7; Reset) and big sticky Cancel / Apply buttons at the bottom of the screen &#x2014; no more hunting for the small Apply button in a cramped row</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Apply button stretches a bit wider than Cancel and renders in indigo so the primary action is obvious</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-27-lightbox-swipe">
+          <div class="changelog-page__date">May 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Mobile lightbox &#x2014; swipe to navigate</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Swipe left or right on the lightbox image to move to the next / previous screenshot. Keyboard arrows still work on desktop</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-27-search-fixes">
+          <div class="changelog-page__date">May 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Search &#x2014; clearer, clearable, and Enter goes where you&#39;d expect</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Press Enter (without picking a specific result) and the catalogue scopes to your query &#x2014; a banner at the top tells you what you&#39;re viewing and how many matches there are</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Modal shows a &quot;View all N results in catalogue&quot; bar at the bottom &#x2014; same effect as Enter, but visible</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Screenshots now appear first in search results &#x2014; Enter on a specific card jumps to that screenshot directly in the lightbox</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Results are sorted by relevance now &#x2014; matches in the name come before matches found in AI-generated tags or filenames</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Matching text is highlighted in result names so you can see WHY each result showed up</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Click a screenshot in the search modal and the lightbox opens straight on that screenshot, instead of just scoping the catalogue list to it</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Active search query shows as its own pill in the toolbar &#x2014; you can see what you searched for and remove it with one click</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>&quot;Clear all&quot; now genuinely clears everything (search query included), instead of leaving a hidden filter behind</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-27-perf-hygiene">
+          <div class="changelog-page__date">May 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Quieter app &#x2014; idle Canvas + smoother sign-in</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Canvas Gallery no longer burns CPU when idle &#x2014; the pan animation loop now stops itself as soon as motion settles, and re-arms when you drag or scroll again</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>After sign-in, the browser back button stays inside the catalogue instead of dropping you off the site</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>No more login-screen flash when re-opening the app &#x2014; the gate waits for the persisted session check before showing anything</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-27-canvas-chrome-rework">
+          <div class="changelog-page__date">May 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Canvas view &#x2014; new chrome layout</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Exit Canvas now lives at the top-left as a pill with a back arrow + &quot;Exit&quot; label, replacing the bare &#x2190; glyph at the bottom</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>AgentUX logo moves to the centre of the header in Canvas mode; section tabs hide so the canvas gets the full width</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-27-mobile-lightbox-tight">
+          <div class="changelog-page__date">May 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Mobile lightbox sits flush with the browser bar</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>The lightbox bottom panel (grabber + metadata line) now hugs the browser&#39;s address bar when minimized &#x2014; no more dead gap between the metadata strip and Safari&#39;s toolbar</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-27-echo-ring-loader">
+          <div class="changelog-page__date">May 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">New loading indicator across buttons + spinners</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Loading states now show an Echo Ring &#x2014; concentric diamond ripple &#x2014; in place of the old ring spinner and the &quot;Saving...&quot; text. Save buttons keep their label, the loader just appears beside it</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Echo Ring now also appears on the lightbox Crop button while a crop is being applied</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-27-mobile-viewport-fix">
+          <div class="changelog-page__date">May 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Mobile viewport fits properly now</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Modals and the lightbox no longer get cut off by the address bar on mobile Safari &#x2014; every screen now sizes to what you can actually see</span></li>
+            </ul>
+          <div class="changelog-page__figure changelog-page__figure--pending">
+            <span>Image pending</span>
+          </div>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-27-lightbox-actions-card">
+          <div class="changelog-page__date">May 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Lightbox right-side polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>The Actions card in the lightbox right panel no longer looks cut off &#x2014; same rounded edges and border as the card above it</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-27-lightbox-actions-card-lightbox-right-side-polish.png" alt="Lightbox right-side polish changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-26-canvas-gallery">
+          <div class="changelog-page__date">May 26, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Canvas view &#x2014; infinite pannable Gallery</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Gallery view becomes a pannable canvas &#x2014; drag or trackpad-swipe through your screenshots like a wallpaper</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Pan further &#x2192; next 50 screenshots load in the direction you&#39;re heading. A subtle marker tells you content is arriving</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Density toggle (A / M / C) zooms cells live &#x2014; bigger for focus, smaller for breadth</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Turn it off any time from Account menu &#x2192; Canvas view; you&#39;ll fall back to the classic gallery</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-26-canvas-gallery-canvas-view-infinite-pannable-gallery.png" alt="Canvas view &#x2014; infinite pannable Gallery changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-26-typing-key-feedback">
+          <div class="changelog-page__date">May 26, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Typing key feedback while you edit</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Editing a screenshot name shows the key you just pressed at the bottom of the screen, with a soft mechanical click</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Toggle it on or off any time from Account menu &#x2192; Typing key feedback</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-26-typing-key-feedback-typing-key-feedback-while-you-edit.png" alt="Typing key feedback while you edit changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-26-lightbox-polish">
+          <div class="changelog-page__date">May 26, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Lightbox quality of life</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>More breathing room above and below the image inside the lightbox</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Image loads instantly with a chunky preview instead of a tiny dot in the centre</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Editing the Web preset on a screenshot now saves correctly &#x2014; no more silent revert on reopen</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-26-lightbox-polish-lightbox-quality-of-life.png" alt="Lightbox quality of life changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-25-quick-upload-paste-link">
+          <div class="changelog-page__date">May 25, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Quick Upload paste affordance</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Paste-from-clipboard now sits as a compact text link below a shorter drop zone &#x2014; same iOS Universal Clipboard support, less screen real estate</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-25-quick-upload-paste-link-quick-upload-paste-affordance.png" alt="Quick Upload paste affordance changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-22-paste-from-clipboard">
+          <div class="changelog-page__date">May 22, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Paste from clipboard + UI Element tagging</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Quick Upload has a Paste pill next to the drop zone &#x2014; click it and Cmd/Ctrl+V to drop in images, works on iOS via long-press too</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Annotate an area then flip &quot;Tag as UI Element&quot; to add it to the UI Element filter taxonomy &#x2014; no Studio access needed</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>New UI Element filter in the toolbar, plus a green &quot;[&#x1F4E6; N]&quot; badge on cards that have tagged UI elements</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-22-paste-from-clipboard-paste-from-clipboard-ui-element-tagging.png" alt="Paste from clipboard + UI Element tagging changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-22-mobile-header-chips-pwa">
+          <div class="changelog-page__date">May 22, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Mobile header, PWA install &amp; filter chip strip</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Header on mobile shrinks &#x2014; identity pill collapses to a single letter, Settings moves into the dropdown, no more overlap</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Real app icon when you Add to Home Screen on iPhone &#x2014; dark boot screen, no more white flash on launch</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Selected filter chips now show as a row below the toolbar with one-click remove + Clear all</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>App-update toast moved to top-right on desktop so it stops overlapping the magnified dock</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-22-mobile-header-chips-pwa-mobile-header-pwa-install-filter-chip-strip.png" alt="Mobile header, PWA install &amp; filter chip strip changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-21-whats-new-and-toasts">
+          <div class="changelog-page__date">May 21, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">What&#39;s New panel + App-update toast</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Click the star in the header to see what shipped recently &#x2014; release notes right inside the app</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>When a new build deploys, a toast appears so you can refresh and pick up the latest</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Labelling Studio icon now matches the AI theme &#x2014; sparkles instead of tags</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-21-whats-new-and-toasts-whats-new-panel-app-update-toast.png" alt="What&#39;s New panel + App-update toast changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-20-saved-and-videos">
+          <div class="changelog-page__date">May 20, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Saved animation, Copy morph &amp; Videos overhaul</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Bookmarks is now &quot;Saved&quot; &#x2014; and you&#39;ll see screens fly into the Saved tab when you stash them</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Copying a share link gives you a clear green checkmark instead of a silent click</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Videos load instantly: see who posted and read the excerpt before deciding to load the full embed</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Speed through the lightbox with single keys &#x2014; E edit &#xB7; D delete &#xB7; C crop &#xB7; B save &#xB7; A annotate</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Jump anywhere in the app with C / V / L / I / S, or hit U to start a quick upload</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-20-saved-and-videos-saved-animation-copy-morph-videos-overhaul.png" alt="Saved animation, Copy morph &amp; Videos overhaul changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-19-keyboard-first-lightbox">
+          <div class="changelog-page__date">May 19, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Keyboard-first lightbox + group filter fixes</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Fine-tune crops with arrow keys &#x2014; hold Shift for bigger jumps</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Pick search results without touching the mouse: arrow through and hit Enter</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Your catalogue no longer comes up empty after login &#x2014; group filters now ignore casing</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Share links you paste in Slack or X show a proper preview card</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-19-keyboard-first-lightbox-keyboard-first-lightbox-group-filter-fixes.png" alt="Keyboard-first lightbox + group filter fixes changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-16-group-detail-pages">
+          <div class="changelog-page__date">May 16 &#x2013; 19, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Group detail pages, login backdrop &amp; toolbar refinements</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Every group has its own page at /g/&lt;key&gt; &#x2014; a tight grid of every screen, sized for your viewport</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Click a group icon on the login screen to land straight in that group after sign-in</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Browse flows from a chip strip below the toolbar &#x2014; quicker than opening the dropdown</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Groups without a category land in &quot;Other&quot; instead of muddying &quot;Untagged&quot;</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-16-group-detail-pages-group-detail-pages-login-backdrop-toolbar-refinements.png" alt="Group detail pages, login backdrop &amp; toolbar refinements changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="2026-05-15-roles">
+          <div class="changelog-page__date">May 15, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Role system, Marketing Bucket &amp; capability-aware UI</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Roles replace the admin / non-admin split &#x2014; every member gets exactly the capabilities they need</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Mint a passcode for a teammate and pick their role in the same step</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Marketing uploads now flow into a &quot;Marketing Bucket&quot; group, ready for an admin to promote</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/2026-05-15-roles-role-system-marketing-bucket-capability-aware-ui.png" alt="Role system, Marketing Bucket &amp; capability-aware UI changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="may-13-14-2026">
+          <div class="changelog-page__date">May 13 &#x2013; 14, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Auth Gate, RLS Hardening &amp; Telegram Bot Security</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Passcode login screen &#x2014; the old self-asserted email prompt is gone. Visitors now land on a full-page PasscodeLogin and must redeem an admin-minted passcode (argon2id-hashed server-side) to get a real Supabase Auth session. 90-day refresh token keeps members signed in across reloads. Wrong passcode is rate-limited: 5 failed attempts trigger a 15-minute lockout with a live countdown.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Members admin panel &#x2014; new Settings &#x2192; Team &#x2192; Members subtab for admins. Mint, rotate, disable, or remove member passcodes; force log-out everywhere; reset lockout counters. Add-member modal generates a fresh XXXX-XXXX-XXXX passcode and reveals it once with a one-click Copy. Self-protect on the admin&#39;s own row (no disable / delete icons). Mobile renders the same data as cards.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Log out everywhere in the profile menu &#x2014; calls signOut({ scope: &#39;global&#39; }) to invalidate every refresh token issued to the user, kicking out all other tabs and devices.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Row Level Security across the database &#x2014; the 11 catalogue tables that previously had RLS disabled are now locked down. Permissive policies for authenticated users; anon role can only read non-deleted screenshots (so public share pages keep working). Storage buckets follow the same pattern: public read for share-page images, authenticated-only for writes.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>scan-secrets hook on the dev side &#x2014; a PostToolUse hook that redacts secret-shaped strings (JWTs, Stripe / GitHub / Google / Telegram tokens, AWS keys, PEM blocks, named env-var assignments) from Bash output before they enter Claude Code&#39;s context. Closes the &quot;cat .env&quot; bypass that the deny list alone couldn&#39;t catch.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Admin gate switched from hardcoded email to the admins table. Multiple admins can now share Settings / Members / Studio access &#x2014; backed by RLS-readable rows rather than a string literal in code. Both bootstrapped accounts have full admin reach.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Edge Function CORS &#x2014; auth-login, auth-admin, and purge-orphan-storage all gained CORS headers + OPTIONS preflight handlers. Browser fetch calls no longer get silently blocked at preflight.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Telegram bot allow-list flipped to fail-closed. Previously, an unset ALLOWED_TELEGRAM_USER_IDS env meant any Telegram user could upload to the catalogue. Now an empty list rejects everyone &#x2014; including the operator, on purpose, so the misconfiguration is loud.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Pre-public-release checklist in CLAUDE.md rewritten as a &quot;done&quot; note. The three blockers that gated linking the catalogue from hirahul.xyz (auth gate, RLS, Claude permissions) are all closed.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Telegram webhook verification &#x2014; the bot endpoint was reachable by anyone who learned its URL. Added TELEGRAM_WEBHOOK_SECRET env that&#39;s compared against the x-telegram-bot-api-secret-token header Telegram echoes on every delivery. Missing or mismatched header now returns 401 before any DB writes.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Personal Telegram user ID redacted from docs/telegram-bot-setup.md. The setup doc was committing a real numeric ID as the &quot;Adding more allowed users&quot; example; replaced with a placeholder.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>&quot;Allow all&quot; public-role policies dropped on comparisons, connections, flows, projects, and screenshots. These were the second back door alongside the RLS-disabled tables &#x2014; RLS was technically on, but the policy said &quot;anyone can do anything.&quot; Replaced with authenticated-only equivalents.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Mobile toolbar Quick Upload &#x2014; the text button was leaking onto narrow viewports next to the search icon. Hidden below 960px so mobile only shows the icon button.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Storage bucket policies tightened &#x2014; public INSERT and public DELETE on the screenshots bucket are gone (anyone could previously overwrite or delete any uploaded screenshot). Anon write policies on catalogue-group-icons dropped the same way. Public read stays where the share page needs it.</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/may-13-14-2026-auth-gate-rls-hardening-telegram-bot-security.png" alt="Auth Gate, RLS Hardening &amp; Telegram Bot Security changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="may-13-2026">
+          <div class="changelog-page__date">May 13, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Categorised Search Modal</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Catalogue search modal &#x2014; Cmd+K (or Option+Space) opens a Spotlight-style modal that searches across Groups, Flows, and Screenshots at once. Each category gets its own section with match counts; up to five results per category before a &quot;+N more&quot; indicator. The screenshot results render as vertical cards with thumbnails in a horizontal scrolling row &#x2014; click to filter the catalogue to that exact screenshot.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Click actions &#x2014; selecting a Group filters the catalogue to that group; a Flow narrows to that group + flow; a Screenshot narrows further by platform and search query so the card surfaces immediately. Modal closes on select.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Keyboard nav &#x2014; &#x2191;/&#x2193; and &#x2190;/&#x2192; move across results, Enter selects, Esc closes. Cmd+K / Option+Space toggle the modal. Shortcuts are suppressed while typing in any input so they don&#39;t fight with paste / undo.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Recents &#x2014; the last five queries persist across sessions in localStorage and surface as one-tap shortcuts when the modal is empty.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Group icons &#x2014; uploaded group icons render in the result row; groups without an uploaded icon fall back to a generic Lucide LayoutGrid.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>HTML mockup preserved at docs/mockups/mockup-2026-05-13-catalogue-search-modal.html as a before/after visual reference. Static screenshots of the modal in action live alongside it. Future feature: surface these from the changelog page directly.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Toolbar search &#x2014; the inline desktop search pill is gone, replaced by a Search icon sibling to the Share icon on the right side of the toolbar. Single discovery point across desktop and mobile.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Mobile search &#x2014; the mobile Search pill now opens the same categorised modal full-screen, instead of expanding an inline search row. One mental model for everyone; the inline expandable row has been removed.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Full-scope query picks up name, file_name, and storage_path so search can match on screenshot names and render real thumbnails for top results.</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/may-13-2026-categorised-search-modal.png" alt="Categorised Search Modal changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="may-11-12-2026">
+          <div class="changelog-page__date">May 11 &#x2013; 12, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Trash, Groups Taxonomy &amp; Carousel Share View</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Trash with 15-day Restore &#x2014; deletes are now soft. Cards move to a new Settings &#x2192; Team &#x2192; Trash tab where each row shows thumb, name, group/flow/platform, who deleted it, and when. One-click Restore. A pg_cron job at 03:00 UTC permanently purges anything older than 15 days. The delete confirm now reads &quot;Move to Trash. Recoverable for 15 days&quot;. Cards animate out with a blur + fade + scale dissolve (~280ms) so the removal feels intentional, not abrupt.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Groups Type / Region taxonomy &#x2014; tag each group as CEX or DEX, and as India or Global. Tags render as coloured pills on each group card. New filter bar above the Groups grid: search input + Type radio + Region radio (each with an Untagged option, AND across axes). Filter state mirrors to URL params (?q=&amp;type=&amp;region=) via replaceState, so links are shareable and back/forward restores correctly. The Edit-group modal grew two segmented radio rows for setting Type and Region; icon uploads no longer wipe the taxonomy.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Share view: List &#x21C4; Carousel toggle &#x2014; public share links can now be viewed as the existing vertical list or a new carousel. The toggle sits next to the title; URL persists the choice (?view=carousel). Carousel uses a peek layout on desktop (~75% centre, ~12% prev/next neighbours dimmed and blurred), full-width single screen below 768px. Arrows, dots, keyboard (&#x2190; &#x2192; Home End), touch swipe, click-on-peek to jump. Deep-link to a specific step via ?view=carousel&amp;step=N. Edge cases handled: single screen (no chrome), two screens (no peeks), first/last (matching arrow + peek hidden).</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Share view: Last-updated pill in the header, with a Clock icon and relative time (&quot;2h ago&quot;). Hover/focus reveals the full date in a tooltip. Header logo centres when no timestamp is available.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Share view: Footer attribution links &#x2014; &quot;Powered by AgentUX &#xB7; Built by Yamparala Rahul&quot;. AgentUX opens agentux.hirahul.xyz/designer/, Yamparala Rahul opens the portfolio at www.hirahul.xyz. Both open in new tabs.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Auth gate design spec &#x2014; frozen-at-decision document for the upcoming public-release auth gate: per-email passcodes (argon2id hashed), Supabase Edge Functions for login + admin operations, a Members admin panel inside Settings &#x2192; Team. Lives at docs/security-auth-passcode-and-members.md. Implementation lands in a follow-up PR.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Share view header &#x2014; the &quot;AgentUX Catalogue&quot; wordmark next to the logo is gone. Logo only on the left, last-updated pill on the right (or logo centred when no timestamp). Cleaner, less visually noisy.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Share view logo &#x2014; the source SVG contains both the icon mark and a wordmark; previously it was pillarboxed inside a forced square, making the visible mark tiny. Now sized to the icon&#39;s natural aspect (~55&#xD7;56 in the header, ~29&#xD7;30 in the footer) with the wordmark cropped off via object-fit: cover.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Share view meta line &#x2014; replaced text labels with lucide icons: User for the sharer, Images for the count, Monitor / Smartphone for platform.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Share view state visuals &#x2014; Loading shows a spinning Loader2, errors show AlertTriangle, empty shows Inbox. Less text, more glance-able.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Delete confirms updated everywhere &#x2014; per-card, lightbox, and bulk-select dialogs all now read &quot;Move to Trash. Recoverable for 15 days from Settings &#x2192; Team &#x2192; Trash.&quot; instead of the old &quot;cannot be undone&quot; copy.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Groups view card layout &#x2014; edit pencil moved into the meta row (top-right of the card); screenshot count drops to its own line below. Tag pills (when set) render below that.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Bookmark filter leaked through on mobile &#x2014; the toolbar&#39;s bookmark-filter button is tagged catalogue-toolbar--desktop-only, but a higher-source-order rule in bookmarks.scss overrode the display: none via equal specificity. Now hidden on viewports &#x2264; 960px via an attribute-scoped rule that only targets the filter button (Share button next to it stays visible on mobile).</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Mobile carousel arrows took horizontal room for no benefit on touch viewports. Hidden below 768px &#x2014; swipe and dots already convey navigation.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Portfolio link in share footer didn&#39;t load in Safari for some users &#x2014; it pointed to the apex domain (hirahul.xyz). Switched to www.hirahul.xyz.</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/may-11-12-2026-trash-groups-taxonomy-carousel-share-view.png" alt="Trash, Groups Taxonomy &amp; Carousel Share View changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="may-7-9-2026">
+          <div class="changelog-page__date">May 7 &#x2013; 9, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Identity pill, Logout, Drag-Drop Upload &amp; Progress Ribbon</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Identity pill in the header &#x2014; replaces the hamburger menu. Click reveals a dropdown with the signed-in email, a &#x2605; My bookmarks toggle (flips the toolbar bookmark filter), Settings, Team (admin), Labelling Studio (admin), and Logout. When no email is set the pill becomes a Sign in CTA.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Drag-and-drop to Quick Upload &#x2014; drop image files (or a top-level folder of images) anywhere on the catalogue grid and they queue into the Quick Upload modal. Folders walk one level deep; subfolders are skipped. Non-image files are silently filtered, hidden files (.DS_Store etc) ignored, and drops are capped at 200 files with a toast if exceeded.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Upload progress ribbon &#x2014; bottom-right slim card with a thumbnail per file. Each box shows live status: queued, uploading (spinner), uploaded, or failed (red badge with error). Successful uploads fade out (blur + scale + width-to-zero) and the ribbon shrinks; the card itself shrinks to fit. A Retry failed button appears whenever any item failed and re-runs only those. Auto-dismisses 2s after a clean run; persists with errors visible until dismissed.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>One identity, one email. The bookmark-only email key (agentux:bookmark-email) and its prompt modal are gone &#x2014; bookmarks now read the same login email used for comments, annotations, and label review. Guests bookmarking a card open the standard login modal instead of a separate flow.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The legacy &quot;Uploading screenshots&#x2026;&quot; canvas overlay is gone. The progress ribbon is the single source of truth for upload status now.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Drag-drop overlay no longer covers the Quick Upload modal &#x2014; when the modal is already open, the global drop handler stands down so the modal&#39;s own drop zone takes the files.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Upload outcomes were silent &#x2014; the toast briefly flashed then nothing, leaving users wondering whether the batch succeeded. Per-file status in the ribbon makes outcome unambiguous, and individual errors are now surfaced with the actual error message.</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/may-7-9-2026-identity-pill-logout-drag-drop-upload-progress-ribbon.png" alt="Identity pill, Logout, Drag-Drop Upload &amp; Progress Ribbon changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="may-6-7-2026">
+          <div class="changelog-page__date">May 6 &#x2013; 7, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Labelling Studio, Comments Polish &amp; Lightbox Focus</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Labelling Studio (admin) &#x2014; paste-or-type structured metadata per screenshot. Six sections: Identity, Journey, Screen analysis, Visual design, Design reference, Review. Auto-fills platform, device type, theme, and flow name from existing metadata on first open. New Paste JSON modal with live preview so an AI-generated JSON blob can populate the editor in one click; pasted verified status is silently downgraded to draft so paste cannot bypass human verification.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Database-aggregated status totals at the top of the Studio so admins see how many screenshots are still unlabelled, drafted, in review, or verified &#x2014; across the whole catalogue, not just the loaded grid. Refreshes after every save.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Public catalogue filter chips driven by label data &#x2014; Page type, UI element, UX pattern, and Screen state. Search also matches labelled title and one_line_summary.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Lightbox area focus &#x2014; clicking an area annotation dims the rest of the screenshot via a stacked box-shadow. Click outside or press Esc to clear.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Comments simplified to delete-only &#x2014; Resolve concept removed (no green pills, no &quot;Resolved by &#x2026;&quot; copy). Admin can delete any comment; authors keep delete on their own.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Annotations: admin can delete any annotation (mirrors comments). Existing pin annotations from before pin-creation was disabled are now deletable by the admin.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Card surface (grid): the comment-count chip and the misleading pencil button (labelled &quot;Open preview&quot; but opened the editor) are removed. Card click is the only entry; edit is reachable from inside the lightbox.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Studio context in the lightbox: only the Label tab renders; Comments and Annotations are hidden. Action toolbar reduced to Edit (pencil) only &#x2014; Crop, Bookmark, Comments, Annotations, and Delete are hidden in admin-labelling mode.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Reference Image attachments are now behind a feature flag (REFERENCE_IMAGES_ENABLED, off by default). Existing data preserved; flip the flag to re-surface the &quot;Ref&quot; chips, the upload UI in the inline editor, and the gallery side panel.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>TypeScript error that silently hid the Studio and Team menu entries &#x2014; the canViewTeam &#x2192; canAdmin rename was missed at the call site between Catalogue.tsx and CatalogueHeader.tsx. Both menu entries now appear for admins.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Studio grid was capped at 50 screenshots because it used the paginated source without scroll-load. Now loads progressively as you scroll, matching the catalogue grid behaviour.</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/may-6-7-2026-labelling-studio-comments-polish-lightbox-focus.png" alt="Labelling Studio, Comments Polish &amp; Lightbox Focus changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="may-2-4-2026">
+          <div class="changelog-page__date">May 2 &#x2013; 4, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Edit-Icon Modal, Four-Side Crop &amp; Sticky Quick Upload</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Quick Upload now opens at sensible defaults &#x2014; Dark theme, Web platform, 1512 web preset (and iOS when Mobile is picked) &#x2014; and field values stick within a browser session: Flow, Group, Platform, Theme, preset, and Mobile OS persist across modal close, successful uploads, and reopens. A page reload returns to defaults.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>On the first Quick Upload open after a page reload, single-value catalogue toolbar filters (Flow, Group, Platform, Theme, Web preset, Mobile OS) seed the modal so a filtered context carries naturally into upload.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Lightbox crop now supports all four sides &#x2014; left and right handles alongside the existing top and bottom. Combine any subset of trims in one pass; the footer reads T &#xB7; B &#xB7; L &#xB7; R and the final width &#xD7; height. Annotations re-project across both axes &#x2014; pins outside the kept rectangle are removed, area annotations clip and re-percent over the new dimensions.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Edit Icon for catalogue groups is a focused modal &#x2014; paste an image with &#x2318;V / Ctrl+V, drag-and-drop, or click the dropzone. Replaces the old inline editor row.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Group appearance: the Emoji field has been removed from the editor, the lib layer, and the database (icon_emoji column dropped). Uploaded icon is the only icon source; first-letter avatar is the fallback.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>supabase/.temp/ added to .gitignore (Supabase CLI-generated metadata).</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/may-2-4-2026-edit-icon-modal-four-side-crop-sticky-quick-upload.png" alt="Edit-Icon Modal, Four-Side Crop &amp; Sticky Quick Upload changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="may-1-2026">
+          <div class="changelog-page__date">May 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Group Rename, Live Chip Strip, Lucide Icons &amp; Toolbar Polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Lucide icon library across primary surfaces &#x2014; header, toolbar, chip strip, lightbox actions, bulk bar, dropdowns, modals, scroll-to-top, view toggle, and confirm dialogs all use Lucide icons in place of the older inline SVGs / Unicode glyphs.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Toolbar&#39;s Quick Upload button doubles as Upload All (N) while the Quick Upload modal is open &#x2014; kick off the upload from the toolbar without scrolling to the modal&#39;s footer.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Group chip strip now refreshes instantly when a screenshot&#39;s group changes (bulk move, single change, or admin rename) &#x2014; no reload required.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Chip strip aggregates groups case-insensitively. Coinbase and coinbase now show as one chip with the combined count; clicking it filters across every casing.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Renaming a group from Team Settings is now a true rename. Saving a new name opens a confirm dialog (&quot;Rename X &#x2192; Y, affects N screenshots&quot;), then runs a single project-wide UPDATE that catches every DB casing under that canonical, and refreshes the appearance label to the new key.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Team Settings project picker dropped (single-project workflow). Per-project appearance logic still works internally.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Upload Analytics tab in Team Settings is now hidden by default. Default sub-tab is Flows.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Sort button on the chip strip simplified to label + chevron; the redundant up/down arrow icon was removed.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Past partial bulk renames that left mixed casings in the DB (e.g. some Coinbase, some coinbase) can now be cleaned in one Team Settings save &#x2014; the rename merges every casing under the new name.</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/may-1-2026-group-rename-live-chip-strip-lucide-icons-toolbar-polish.png" alt="Group Rename, Live Chip Strip, Lucide Icons &amp; Toolbar Polish changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-30-2026">
+          <div class="changelog-page__date">Apr 30, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Group Chip Strip, Folder Upload &amp; Toolbar Polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Group chip strip above the toolbar &#x2014; one chip per group, click to scope into that group with a shareable ?group= URL. Paused by default; resume the ticker from the sort menu. While paused, scroll the strip horizontally with no visible scrollbar. Honors prefers-reduced-motion.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Sort menu next to the strip (Recent &#xB7; A&#x2013;Z &#xB7; Count) is the single source of truth for between-group ordering, and now also drives Grid view section ordering. Preference persists in localStorage.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Folder drag-and-drop in Quick Upload &#x2014; drop a folder onto the Quick Upload zone and its name auto-fills the Flow input (only when empty; typed values are preserved). Images inside, plus any loose images dropped alongside, all queue together. Multi-folder drops are rejected with a toast; non-image files are skipped with a count.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Floating scroll-to-top button on the catalogue &#x2014; appears after 600px of scroll, smooth-scrolls to the top, hides itself when at the top.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Lightbox crop &#x2014; trim the top and/or bottom of a screenshot from the lightbox. Two horizontal drag handles, live size readout, a Preview toggle that shows the cropped result before committing, and Apply replaces the original (no version row to keep storage tight). Existing annotations on the screenshot are auto-shifted and clipped to the new bounds; ones fully outside the kept area are removed.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Toolbar default is now a clean slate &#x2014; first-time users see only Search and Filters &#x25BE; (renamed from + Filter for label consistency). Filters opt in one at a time via the dropdown. Existing users keep their saved visibility selections.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Toolbar layout: Quick Upload stays pinned to the right at all times. When many filters are visible, the filter row absorbs the overflow with a hidden-scrollbar horizontal scroll instead of wrapping to a new line.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Header reflowed &#x2014; AgentUX logo pinned to the left, Catalogue / Videos / Links tabs centered, &#x2630; menu remains on the right.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Bulk Change Group dialog now uses a searchable combobox (matches the sibling Bulk Change Flow dialog) &#x2014; type to find a group, press Enter to create a new one. Replaces the wall of chips that stretched the modal vertically with many groups. Primary group badge preserved.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Reupload icon hidden in the lightbox (feature-flagged off) now that Crop covers the common &quot;fix this screenshot&quot; case.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Card thumbnails now fit the whole screenshot inside the card (object-fit: contain) instead of cropping the edges. The blurred thumbhash placeholder fills the letterbox so there&#39;s no transparent gap.</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-30-2026-group-chip-strip-folder-upload-toolbar-polish.png" alt="Group Chip Strip, Folder Upload &amp; Toolbar Polish changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-29-2026">
+          <div class="changelog-page__date">Apr 29, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Area Annotations, Annotation Filter &amp; Bulk Flow</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Area annotations &#x2014; drag a box on any screenshot in the lightbox to mark a region (e.g. &quot;Sign-up modal&quot;), name it, and save. Old point pins still render as legacy data; new annotations are areas by default (a feature flag toggles pin creation if needed).</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Toolbar Annotation filter &#x2014; multi-select with built-in search; pick one or more annotation labels and the catalogue narrows to every screenshot tagged with them, scoped across the full DB regardless of pagination.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Composer autocomplete &#x2014; when naming an annotation, suggestions appear from your full set of existing labels so naming stays consistent.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Bulk Change Flow &#x2014; select multiple families and assign or remove a flow with one click, mirroring Change Group; combobox search includes a &quot;Remove flow from N&quot; action for unassigning in batch.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Annotations live in their own screenshot_annotations table with a one-time backfill from the legacy metadata blob, plus a screenshots_with_annotation_labels RPC for case-insensitive label lookup.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Annotation editing is desktop-only (&#x2264;720px viewports show existing annotations read-only); the Add control hides and a small notice appears in the panel.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Concurrent annotation edits no longer race &#x2014; each pin/area is its own row instead of being part of a single overwritten JSON array.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Annotation count and &quot;last added&quot; timestamps are now hydrated from the table for grid badges, family counts, and view-by sorting; changes propagate without a refetch.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>The &quot;Annotations added&quot; view-by option was removed from the dropdown &#x2014; the new multi-select replaces it. &quot;Comments added&quot; view-by is unchanged.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Shared Dropdown component supports an opt-in searchable prop with a search input + filter, used by the Annotation filter today.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Toolbar search now also matches Group names &#x2014; typing a group like &quot;Binance&quot; surfaces every screenshot in that group alongside name and filename matches, with no UX change to the search input or filter chips.</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Quick Upload side panel no longer hides under the sticky toolbar when scrolling &#x2014; the panel is now offset by the toolbar height so the close button and Flow input stay reachable.</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-29-2026-area-annotations-annotation-filter-bulk-flow.png" alt="Area Annotations, Annotation Filter &amp; Bulk Flow changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-28-2026">
+          <div class="changelog-page__date">Apr 28, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Lightbox &amp; Quick Upload Polish</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Lightbox keyboard navigation &#x2014; arrow keys step between screenshots without leaving the preview</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Lightbox auto-loads the next page when you arrow past the loaded boundary; spinner overlay while it fetches; &quot;End of catalogue&quot; toast at the very last screenshot</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Lightbox now uses the app&#39;s confirm modal for deletion (no more native browser dialog) and jumps to the neighbor screenshot after delete instead of closing</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Closing the lightbox highlights the last-viewed card with a soft 3-second accent glow and scrolls it into view</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Quick Upload: Group field is now a search-and-add combobox sourced from every group across your projects (no longer limited to paginated rows)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Quick Upload: Flow field is a search-and-add combobox over existing flows, with free-type for new ones</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Toolbar filters for Group and Flow now support multi-select</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Quick Upload group UX collapsed: removed the auto / existing / new chip switcher in favor of one combobox; empty input falls back to per-file filename-parsed group</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Quick Upload header tightened &#x2014; dropped the subtitle and project picker; Theme paired with Group assignment</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Flow name is now required to upload &#x2014; Upload All stays disabled with an inline hint until a flow is set</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Multi-file drop occasionally lost files when async work ran between the drop event and the read &#x2014; DataTransfer entries are now snapshotted up front</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-28-2026-lightbox-quick-upload-polish.png" alt="Lightbox &amp; Quick Upload Polish changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-27-2026">
+          <div class="changelog-page__date">Apr 27, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Catalogue Goes Solo &#x2014; Repo Split &amp; Cleanup</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Links section announced (coming soon) &#x2014; save URLs alongside screenshots and videos</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Dedicated Telegram Bot section on landing page</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Repository stripped to Catalogue-only: screenshots, videos, and links (144 files removed, 28k lines trimmed)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Dev Mode, Flow Builder, Feature Log, Compare View, Archive, and Figma sections moved to AgentUX-other</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Landing page rewritten: &quot;Screenshots. Videos. Links.&quot; &#x2014; focused entirely on Catalogue</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Header tabs simplified to Catalogue + Videos</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Vite config and Vercel rewrites updated for single-app deployment</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Removed @xyflow/react and @dagrejs/dagre dependencies (Flow Builder only)</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-27-2026-catalogue-goes-solo-repo-split-cleanup.png" alt="Catalogue Goes Solo &#x2014; Repo Split &amp; Cleanup changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-20-2026">
+          <div class="changelog-page__date">Apr 20, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">ThumbHash Image Placeholders</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>ThumbHash placeholder system &#x2014; blurry 28-byte previews render instantly before full images load</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>ThumbHash generated on every screenshot upload and stored in the database</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>ThumbHashImage component with blur-to-sharp crossfade transition (0.3s ease-in)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Database migration adding thumb_hash column to screenshots table</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Catalogue family cards now use ThumbHash placeholders instead of blank/progress-bar-only loading</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Landing page updated with ThumbHash feature mention</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-20-2026-thumbhash-image-placeholders.png" alt="ThumbHash Image Placeholders changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-15-17-2026">
+          <div class="changelog-page__date">Apr 15 &#x2013; 17, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Telegram Bot, X Video Links &amp; Feature Log Improvements</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Telegram bot Edge Function &#x2014; share screenshot images from your phone and they land in the Catalogue &quot;Social&quot; group</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>X (Twitter) video link support in Telegram bot &#x2014; paste an X post URL and it&#39;s added to the Videos section</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Duplicate detection for X posts &#x2014; bot replies with &quot;already in catalogue&quot; instead of failing</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Archive link added to landing page navigation</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Feature Log: renamed &quot;Designed&quot; status to &quot;Reference&quot; for clearer intent</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Feature Log: cards are now clickable for faster navigation to detail views</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Feature Log: replaced text back-link with an icon back button</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Landing page updated with Telegram bot, archive compare, and X video link features</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Reduced image loading progress bar from default height to 1px for a subtler loading indicator</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-15-17-2026-telegram-bot-x-video-links-feature-log-improvements.png" alt="Telegram Bot, X Video Links &amp; Feature Log Improvements changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-14-2026">
+          <div class="changelog-page__date">Apr 14, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Feature Log Lifecycle, Global Scope &amp; Navigation Restructure</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Feature Log tab with planned/reference/shipped grouping and feature CRUD</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Feature detail view with separate Shipped and Reference sections</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Global screenshot link picker for linking existing screenshots into features</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Archive menu surfaces for Flow Builder and Projects (read-only context)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Catalogue header now uses primary tabs (Catalogue, Feature Log, Videos) with a right-corner menu</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Team and catalogue filter scope now default to full DB view instead of project-scoped pages</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Feature edit modal now supports manual status override alongside title and description edits</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Mark Shipped flow now prompts clearly when shipped evidence is missing</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Feature link picker visual polish (single-stroke controls, cleaner metadata tags, image fit containment)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Catalogue preview cards now include a bottom loading progress indicator while images are resolving</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-14-2026-feature-log-lifecycle-global-scope-navigation-restructure.png" alt="Feature Log Lifecycle, Global Scope &amp; Navigation Restructure changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-7-8-2026">
+          <div class="changelog-page__date">Apr 7 &#x2013; 8, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Folder View, Group Appearance &amp; Gallery Workflow</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Folder view on CD page &#x2014; groups render as brand cards with swipeable carousel previews</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Group appearance system &#x2014; custom icons (Supabase-backed upload), descriptions, and status badges per brand</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Gallery inline editor and feedback panel for reviewing screenshots in-context</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Team section group management with 32px section icons</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Bulk webapp-to-Figma capture SOP and runner template</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>CD page now uses the same dark theme tokens as the main Catalogue (removed Nothing Design system)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Group rename and icon updates no longer require a project selection</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>React hook-order error in gallery view</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Header tabs styling on CD page</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>CI pipeline &#x2014; upgraded vite to patch 3 high-severity vulnerabilities</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-7-8-2026-folder-view-group-appearance-gallery-workflow.png" alt="Folder View, Group Appearance &amp; Gallery Workflow changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-6-2026">
+          <div class="changelog-page__date">Apr 6, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Compare Mode, Team Flows &amp; CD Page Experiments</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Compare mode &#x2014; side-by-side flow comparison across primary and vs groups</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Team section with Flows sub-tab and Figma Prototypes tab</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>CD page with Nothing Design light theme for layout experiments</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Catalogue rename script for local batch execution</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Quick upload improvements with enhanced naming conventions</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Max-lines build failures from compare mode additions</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Gallery preview image fit</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-6-2026-compare-mode-team-flows-cd-page-experiments.png" alt="Compare Mode, Team Flows &amp; CD Page Experiments changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-4-5-2026">
+          <div class="changelog-page__date">Apr 4 &#x2013; 5, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Videos Tab, AgentUX Branding &amp; CD Page</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Videos section in Catalogue for design references and competitive UX studies</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>CD test page (/designer/cd) for prototyping new layouts</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>AgentUX logo in all designer headers</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>List-view UX updates with improved inline editing</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Family grouping and legacy fallback for older screenshots</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Desktop/mobile UI scoping and card delete modal</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-4-5-2026-videos-tab-agentux-branding-cd-page.png" alt="Videos Tab, AgentUX Branding &amp; CD Page changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-3-2026">
+          <div class="changelog-page__date">Apr 3, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Mobile UX Overhaul &amp; Filter Sheet</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Filter bottom sheet replacing inline filters &#x2014; 11 iterations to get it right</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Redesigned lightbox preview with compact layout and minimizable bottom sheet</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Floating search with collapsible pill on mobile</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Inline toolbar pills for search and upload on mobile</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Team upload analytics (admin-only)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Reference removal actions and gallery zoom toolbar</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Preview-first catalogue UX restored as default interaction</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Header tabs repositioned with platform icons</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--improved">improved</span><span>Catalogue inline editing and comment workflows refined</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Modal rendering and list inline editing</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Details modal sticky save footer</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Upload modal scroll on small screens</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Search pill positioning and toolbar overlap on mobile</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-3-2026-mobile-ux-overhaul-filter-sheet.png" alt="Mobile UX Overhaul &amp; Filter Sheet changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-2-2026">
+          <div class="changelog-page__date">Apr 2, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Catalogue Core Features</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Sorting controls and refined toolbar layout</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Quick upload flow with lightbox rename</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Annotations and multiple view modes (grid, list, gallery)</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Filter and gallery controls</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>700-line max rule enforced in CI</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-2-2026-catalogue-core-features.png" alt="Catalogue Core Features changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="apr-1-2026">
+          <div class="changelog-page__date">Apr 1, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Flow Builder Canvas Enhancements</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Multi-path flow insert with node deduplication</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Undo support, placeholder flow insertion, and auto-refresh</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Text-flow studio, flow compare, and catalogue sidebar</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>New flow steps and catalogue additions no longer overlap existing nodes</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>Viewport preserved during canvas auto-refresh</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/apr-1-2026-flow-builder-canvas-enhancements.png" alt="Flow Builder Canvas Enhancements changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="mar-28-2026">
+          <div class="changelog-page__date">Mar 28, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Designer Flow Builder</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Standalone web-based Flow Builder with drag-and-drop canvas</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Screenshot upload with auto-naming and flow connection</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Catalogue sidebar for managing screenshots alongside flows</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/mar-28-2026-designer-flow-builder.png" alt="Designer Flow Builder changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="mar-21-2026">
+          <div class="changelog-page__date">Mar 21, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Landing Page &amp; MVP Definition</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Static landing page at agentux.hirahul.xyz</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Vercel deployment configuration</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>AgentUX flow MVP specification</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/mar-21-2026-landing-page-mvp-definition.png" alt="Landing Page &amp; MVP Definition changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+        <article class="changelog-page__entry" id="mar-18-19-2026">
+          <div class="changelog-page__date">Mar 18 &#x2013; 19, 2026</div>
+          <div class="changelog-page__body">
+            <h2 class="changelog-page__entry-title">Project Launch</h2>
+            <ul class="changelog-page__bullets">
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Initial appmap package &#x2014; interactive app map visualization for React</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Auto-detection for Next.js App Router, Pages Router, and React Router</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Runtime route transition tracking</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Floating dev button with draggable positioning</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Markdown + JSON export for AI agents</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>Published as @yamparala27/agentux on npm</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--new">new</span><span>CI/CD pipeline, security policy, and open-source governance</span></li>
+              <li class="changelog-page__bullet"><span class="changelog-page__kind changelog-page__kind--fix">fix</span><span>&quot;use client&quot; directive for Next.js App Router compatibility</span></li>
+            </ul>
+          <figure class="changelog-page__figure">
+            <img src="../designer/public/changelog-images/mar-18-19-2026-project-launch.png" alt="Project Launch changelog cover" loading="lazy">
+          </figure>
+          </div>
+        </article>
+    </section>
+  </main>
+</body>
+</html>
