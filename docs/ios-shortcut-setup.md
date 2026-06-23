@@ -39,20 +39,48 @@ Appears in the catalogue, tagged with your email as the uploader.
 
 ## One-time setup
 
-### 1. Deploy the backend (repo owner — `supabase` CLI)
+### 1. Deploy the backend (`supabase` CLI, from your local env)
+
+The migration ships in the repo at
+[`supabase/migrations/20260623_upload_tokens.sql`](../supabase/migrations/20260623_upload_tokens.sql).
+Apply it and deploy the function against your linked project:
 
 ```bash
-supabase db push                              # creates public.upload_tokens
-supabase functions deploy shortcut-upload     # JWT verification stays ON;
-                                              # the function authenticates by
-                                              # the upload token, not a JWT
+# 0. One-time, if this machine isn't linked yet:
+supabase link --project-ref <project-ref>
+
+# 1. Apply pending migrations (creates public.upload_tokens).
+#    db push only runs migrations not yet recorded remotely, so it's safe
+#    to re-run; it picks up 20260623_upload_tokens.sql and nothing else.
+supabase db push
+
+#    Verify it landed:
+supabase migration list            # 20260623_upload_tokens shows under "Remote"
+
+# 2. Deploy the function. --no-verify-jwt because auth is the upload token
+#    (the X-Upload-Token header), not a Supabase JWT — same model as the
+#    telegram-bot function.
+supabase functions deploy shortcut-upload --no-verify-jwt
 ```
 
-No new secrets — the function reuses `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
+No new secrets — the function reuses the `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
+that Supabase injects into every Edge Function automatically.
 
-> The Supabase Functions gateway requires the project **anon key** in an
-> `apikey` header on every call. The Shortcut sends it alongside the upload
-> token (step 3). The anon key is already public (it ships in the web app).
+**Smoke-test the endpoint** (after generating a token in step 2):
+
+```bash
+curl -i -X POST \
+  -H "X-Upload-Token: <your-token>" \
+  -F "url=https://x.com/i/status/1234567890" \
+  https://<project-ref>.supabase.co/functions/v1/shortcut-upload
+# → {"ok":true,"added":{"images":0,"x_posts":1,...},...}
+# A bad/missing token returns {"error":"unauthorized"} with HTTP 401.
+```
+
+> Running a **local stack** instead (`supabase start`)? Apply the migration to
+> the local DB with `supabase db reset` (replays all migrations) and serve the
+> function with `supabase functions serve shortcut-upload --no-verify-jwt`. The
+> endpoint becomes `http://127.0.0.1:54321/functions/v1/shortcut-upload`.
 
 ### 2. Generate your token (in the app)
 
@@ -73,8 +101,7 @@ once by hand:
      `https://<project-ref>.supabase.co/functions/v1/shortcut-upload`
    - **Method**: `POST`
    - **Headers**:
-     - `X-Upload-Token` → *(paste your token)*
-     - `apikey` → *(project anon key)*
+     - `X-Upload-Token` → *(paste your token)* — the only header needed.
    - **Request Body**: `Form`
      - For images: add field **`image`**, type **File**, value = **Shortcut
        Input**.
@@ -118,5 +145,5 @@ Account menu → **iOS Upload…**:
 - **401 unauthorized** — token missing/wrong, or it was regenerated/revoked.
   Re-copy from the modal and update the Shortcut.
 - **Nothing appears** — confirm the form field is named exactly `image` (file)
-  or `url` (text), and that the `apikey` header carries the anon key.
+  or `url` (text), and that the function was deployed with `--no-verify-jwt`.
 - Check **Dashboard → Edge Functions → shortcut-upload → Logs**.
