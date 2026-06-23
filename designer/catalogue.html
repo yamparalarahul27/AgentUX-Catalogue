@@ -59,13 +59,15 @@
       })();
     </script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Inter is self-hosted via @fontsource-variable/inter, imported in
+         catalogue-main.tsx and bundled with the app CSS (no render-blocking
+         Google Fonts round-trips on the critical path). The boot screen below
+         shows only an icon, so it never needs a webfont before the bundle
+         loads; the system stack here covers the gap until Inter swaps in. -->
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body { background: #0f0f10; }
-      body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e4e4e7; }
+      body { font-family: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e4e4e7; }
       #root { width: 100vw; height: 100vh; }
 
       /* Boot screen — visible from first paint until React mounts and
