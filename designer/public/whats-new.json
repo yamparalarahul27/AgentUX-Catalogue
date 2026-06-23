@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-23-share-to-app",
+    "date": "June 23, 2026",
+    "title": "Share images straight into the catalogue",
+    "bullets": [
+      { "kind": "new", "text": "Install the catalogue as an app (Android Chrome or desktop Chrome / Edge) and \"AgentUX Catalogue\" shows up in the system share sheet — share a screenshot from anywhere and it lands pre-loaded in Quick Upload, ready to file. (iOS support comes later via a Shortcut.)" }
+    ]
+  },
+  {
     "id": "2026-06-23-perf-content-visibility",
     "date": "June 23, 2026",
     "title": "Catalogue loads + scrolls faster",

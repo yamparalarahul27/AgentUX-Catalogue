@@ -67,3 +67,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
+
+// Register the share-target service worker (Web Share Target API). It only
+// intercepts POSTs to /designer/share-target and does no asset caching — it
+// lets installed PWAs (Android Chrome + desktop Chromium) receive shared
+// images straight into Quick Upload. iOS Safari doesn't support the API, so
+// this is a harmless no-op there. Registration failure is non-fatal.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/designer/share-target-sw.js').catch(() => {});
+  });
+}
