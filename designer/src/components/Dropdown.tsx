@@ -90,7 +90,8 @@ export function Dropdown(props: DropdownProps) {
       // viewport to the search input when it gains focus — without
       // it the page jumps a few pixels every time a toolbar dropdown
       // opens.
-      setTimeout(() => searchRef.current?.focus({ preventScroll: true }), 0);
+      const id = window.setTimeout(() => searchRef.current?.focus({ preventScroll: true }), 0);
+      return () => window.clearTimeout(id);
     }
   }, [open, searchable]);
 

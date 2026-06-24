@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-06-24-faster-loads",
+    "date": "June 24, 2026",
+    "title": "Faster loads, especially on repeat visits",
+    "bullets": [
+      { "kind": "improved", "text": "The app paints sooner — Inter is now self-hosted and the lightbox and search modal load only when you open them, instead of holding up the first screen with a font download and code you may not use" },
+      { "kind": "improved", "text": "React and Supabase are split into their own cached bundles, and the Videos / Links / Elements / Studio sections load on demand — so return visits and section switches feel quicker" }
+    ]
+  },
+  {
     "id": "2026-06-23-share-to-app",
     "date": "June 23, 2026",
     "title": "Share images straight into the catalogue",
