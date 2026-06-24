@@ -38,6 +38,7 @@ function SuggestionList({
         <li
           key={entry.id}
           role="option"
+          aria-selected={false}
           className="label-combobox__option"
           onMouseDown={(event) => {
             event.preventDefault();
