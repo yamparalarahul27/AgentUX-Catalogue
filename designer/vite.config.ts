@@ -114,6 +114,20 @@ export default defineConfig({
       input: {
         catalogue: path.resolve(__dirname, 'catalogue.html'),
       },
+      output: {
+        // Split the large, eager, rarely-changing vendor libs into their
+        // own chunks so app-code deploys (frequent — the build-id toast
+        // ships often) don't bust their cache. Deliberately NOT a blanket
+        // `node_modules → vendor` rule: that would drag tegaki/harfbuzz
+        // (used only by the lazy WelcomeModal chunk) into an eager vendor
+        // bundle and undo that split. lucide-react is also left out — it's
+        // tree-shaken per-icon across both eager and lazy chunks, so Rollup
+        // dedupes it better on its own than a forced eager chunk would.
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
     },
   },
 });
