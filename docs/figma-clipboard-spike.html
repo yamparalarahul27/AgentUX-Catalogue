@@ -1,0 +1,125 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Figma clipboard round-trip spike</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; color: #1c1c1e; }
+  h1 { font-size: 20px; }
+  .step { background: #f5f5f7; border-radius: 12px; padding: 16px 18px; margin: 14px 0; }
+  .step b { display: block; margin-bottom: 6px; }
+  #paste { min-height: 90px; border: 2px dashed #bbb; border-radius: 10px; padding: 14px;
+           background: #fff; outline: none; }
+  #paste:focus { border-color: #0a84ff; }
+  button { font: inherit; padding: 9px 16px; border-radius: 9px; border: 0;
+           background: #0a84ff; color: #fff; cursor: pointer; }
+  button:disabled { background: #c7c7cc; cursor: not-allowed; }
+  .status { margin-top: 10px; font-size: 13px; }
+  .ok { color: #1a7f37; } .bad { color: #cf222e; } .muted { color: #6e6e73; }
+  code { background: #ececf0; padding: 1px 5px; border-radius: 5px; font-size: 13px; }
+  pre { background: #1c1c1e; color: #d6d6d6; padding: 12px; border-radius: 10px;
+        overflow: auto; max-height: 160px; font-size: 12px; }
+</style>
+
+<h1>Figma clipboard round-trip spike</h1>
+<p class="muted">Proves we can <b>capture</b> Figma's clipboard blob, <b>persist</b> it as plain
+text (localStorage), and <b>re-emit</b> it so Figma accepts the paste. If the final paste
+rebuilds your layers, the AgentUX "Copy to Figma" feature is viable.</p>
+
+<div class="step">
+  <b>1 — Copy in Figma</b>
+  Select a frame / some layers in Figma and press <code>Cmd/Ctrl + C</code>.
+</div>
+
+<div class="step">
+  <b>2 — Capture here</b>
+  Click the box below and press <code>Cmd/Ctrl + V</code>.
+  <div id="paste" contenteditable="true" tabindex="0">paste here…</div>
+  <div class="status" id="capStatus"></div>
+</div>
+
+<div class="step">
+  <b>3 — Prove persistence</b>
+  <span class="muted">Reload this page (Cmd/Ctrl + R). The stored blob should survive — that's
+  what AgentUX will keep.</span>
+  <div class="status" id="storeStatus"></div>
+</div>
+
+<div class="step">
+  <b>4 — Re-emit &amp; paste into Figma</b>
+  <button id="emit" disabled>Copy to Figma</button>
+  <span class="muted">then go to Figma and press <code>Cmd/Ctrl + V</code>.</span>
+  <div class="status" id="emitStatus"></div>
+</div>
+
+<details><summary class="muted">captured HTML (debug)</summary><pre id="dump">—</pre></details>
+
+<script>
+const KEY = 'figma-spike-blob';
+const $ = id => document.getElementById(id);
+
+function hasFigmaMarkers(html) {
+  return /\(figmeta/.test(html) && /\(figma/.test(html);
+}
+
+function render() {
+  const stored = localStorage.getItem(KEY);
+  if (stored) {
+    const { html } = JSON.parse(stored);
+    $('emit').disabled = false;
+    $('storeStatus').innerHTML = `<span class="ok">✓ blob in storage — ${html.length.toLocaleString()} chars, figma markers ${hasFigmaMarkers(html) ? 'present' : 'MISSING'}</span>`;
+    $('dump').textContent = html.slice(0, 4000);
+  } else {
+    $('storeStatus').innerHTML = `<span class="muted">nothing stored yet</span>`;
+  }
+}
+
+$('paste').addEventListener('paste', e => {
+  e.preventDefault();
+  const html = e.clipboardData.getData('text/html');
+  const plain = e.clipboardData.getData('text/plain');
+  if (!html) {
+    $('capStatus').innerHTML = `<span class="bad">✗ no text/html on the clipboard — did you copy from Figma?</span>`;
+    return;
+  }
+  localStorage.setItem(KEY, JSON.stringify({ html, plain }));
+  $('paste').textContent = '✓ captured';
+  $('capStatus').innerHTML = hasFigmaMarkers(html)
+    ? `<span class="ok">✓ captured ${html.length.toLocaleString()} chars — figma markers found</span>`
+    : `<span class="bad">⚠ captured, but no (figma)/(figmeta) markers — this isn't a Figma copy</span>`;
+  render();
+});
+
+// Re-emit the stored blob. Prefer the async Clipboard API (the path iOS Safari
+// honors for text/html); fall back to the copy-event for older desktop browsers.
+$('emit').addEventListener('click', async () => {
+  const stored = localStorage.getItem(KEY);
+  if (!stored) return;
+  const { html, plain } = JSON.parse(stored);
+
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plain || ''], { type: 'text/plain' }),
+      })]);
+      $('emitStatus').innerHTML = `<span class="ok">✓ blob written to clipboard — now paste into Figma</span>`;
+      return;
+    } catch (err) {
+      $('emitStatus').innerHTML = `<span class="muted">async write blocked (${err.name}); trying fallback…</span>`;
+    }
+  }
+
+  const handler = e => {
+    e.clipboardData.setData('text/html', html);
+    e.clipboardData.setData('text/plain', plain || '');
+    e.preventDefault();
+  };
+  document.addEventListener('copy', handler);
+  const ok = document.execCommand('copy');
+  document.removeEventListener('copy', handler);
+  $('emitStatus').innerHTML = ok
+    ? `<span class="ok">✓ blob written to clipboard — now paste into Figma</span>`
+    : `<span class="bad">✗ clipboard write failed on this browser</span>`;
+});
+
+render();
+</script>
