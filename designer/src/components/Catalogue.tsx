@@ -63,8 +63,8 @@ import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueScrollToTop } from './CatalogueScrollToTop';
 import { CatalogueSettingsModal } from './CatalogueSettingsModal';
 import { CatalogueIosUploadModal } from './CatalogueIosUploadModal';
-import { CatalogueTeamSection } from './CatalogueTeamSection';
-import { CatalogueLabelingStudio } from './labeling/CatalogueLabelingStudio';
+const CatalogueTeamSection = lazy(() => import('./CatalogueTeamSection').then((m) => ({ default: m.CatalogueTeamSection })));
+const CatalogueLabelingStudio = lazy(() => import('./labeling/CatalogueLabelingStudio').then((m) => ({ default: m.CatalogueLabelingStudio })));
 import { useLabelingStudioTotals } from '../hooks/use-labeling-studio-totals';
 import type { ScreenshotLabel } from '../lib/labeling/types';
 import { deriveLabelFilterValues } from '../lib/labeling/derive-filter-values';
@@ -83,8 +83,8 @@ import { useSaveTrashAnimation } from './SaveTrashAnimation';
 import { getCachedWhatsNewReleases, loadWhatsNewReleases } from '../data/whats-new';
 import { AppUpdateToast } from './AppUpdateToast';
 import { CatalogueUploadModal } from './CatalogueUploadModal';
-import { CatalogueVideosSection } from './CatalogueVideosSection';
-import { CatalogueLinksSection } from './CatalogueLinksSection';
+const CatalogueVideosSection = lazy(() => import('./CatalogueVideosSection').then((m) => ({ default: m.CatalogueVideosSection })));
+const CatalogueLinksSection = lazy(() => import('./CatalogueLinksSection').then((m) => ({ default: m.CatalogueLinksSection })));
 import { ConfirmModal } from './ConfirmModal';
 import { Toast } from './Toast';
 interface CatalogueProps {
@@ -1249,6 +1249,7 @@ export function Catalogue({
       {activeSection === 'team' && canAdmin ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
+            <Suspense fallback={null}>
             <CatalogueTeamSection
               screenshots={fullScopeScreenshots}
               currentUserEmail={user.email ?? ''}
@@ -1268,11 +1269,13 @@ export function Catalogue({
               presetUsage={presetUsage}
               onSaveWebPresets={handleSavePresets}
             />
+            </Suspense>
           </div>
         </main>
       ) : activeSection === 'studio' && canLabelingStudio && LABELING_STUDIO_ENABLED ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
+            <Suspense fallback={null}>
             <CatalogueLabelingStudio
               // Studio works on the full unfiltered superset — the catalogue
               // toolbar's filter / search / sort must NOT bleed into here.
@@ -1291,11 +1294,13 @@ export function Catalogue({
               totals={studioTotals.totals}
               totalsLoading={studioTotals.loading}
             />
+            </Suspense>
           </div>
         </main>
       ) : activeSection === 'videos' ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
+            <Suspense fallback={null}>
             <CatalogueVideosSection
               canEdit={!isGuest}
               userEmail={user.email || 'Designer'}
@@ -1303,16 +1308,19 @@ export function Catalogue({
               deepLink={videoDeepLink}
               onDeepLinkHandled={() => setVideoDeepLink(null)}
             />
+            </Suspense>
           </div>
         </main>
       ) : activeSection === 'links' ? (
         <main className="catalogue-main">
           <div className="catalogue-shell catalogue-shell--team">
+            <Suspense fallback={null}>
             <CatalogueLinksSection
               canEdit={!isGuest}
               userEmail={user.email || 'Designer'}
               onRequireAuth={() => setShowAuthPrompt(true)}
             />
+            </Suspense>
           </div>
         </main>
       ) : (
