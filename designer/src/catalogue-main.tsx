@@ -2,6 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { CatalogueApp } from './CatalogueApp';
+// Self-hosted variable Inter (wght axis). Replaces the runtime Google Fonts
+// <link> that used to sit on catalogue.html's critical path. Imported before
+// the app styles so the @font-face is registered when they apply.
+import '@fontsource-variable/inter';
 import './styles/designer.scss';
 import './styles/catalogue-sidebar.scss';
 import './styles/catalogue-views.scss';

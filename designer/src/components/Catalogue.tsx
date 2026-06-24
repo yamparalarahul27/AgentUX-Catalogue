@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import type { ScreenshotNode, WebPreset } from '../types';
@@ -53,8 +53,11 @@ import { CatalogueFlowStrip } from './CatalogueFlowStrip';
 import { CatalogueDropOverlay } from './CatalogueDropOverlay';
 import { CatalogueUploadProgress } from './CatalogueUploadProgress';
 import { CatalogueShareModal } from './CatalogueShareModal';
-import { CatalogueSearchModal } from './CatalogueSearchModal';
-import { CatalogueFamilyLightbox } from './CatalogueFamilyLightbox';
+// Code-split: the 2.4k-LOC lightbox and the search modal are interaction-
+// gated (mounted only when a screenshot is opened / search is invoked), so
+// they load on demand instead of shipping in the initial catalogue chunk.
+const CatalogueSearchModal = lazy(() => import('./CatalogueSearchModal').then((m) => ({ default: m.CatalogueSearchModal })));
+const CatalogueFamilyLightbox = lazy(() => import('./CatalogueFamilyLightbox').then((m) => ({ default: m.CatalogueFamilyLightbox })));
 import { CatalogueHeader } from './CatalogueHeader';
 import { CatalogueQuickUploadModal } from './CatalogueQuickUploadModal';
 import { CatalogueScrollToTop } from './CatalogueScrollToTop';
@@ -1617,6 +1620,7 @@ export function Catalogue({
         onClose={() => setShowIosUpload(false)}
       />
       {previewFamily && (
+        <Suspense fallback={null}>
         <CatalogueFamilyLightbox
           activeVariantKey={upload.activeVariantKeys[previewFamily.id] ?? null}
           preferredScreenshotId={previewScreenshotHint}
@@ -1679,6 +1683,7 @@ export function Catalogue({
           onShareLink={handleShareSingleScreenshot}
           onToast={(message, type) => setToast({ message, type: type ?? 'info' })}
         />
+        </Suspense>
       )}
       {bulkAction === 'group' && (
         <CatalogueBulkGroupDialog
@@ -1769,7 +1774,9 @@ export function Catalogue({
         initialPlatform={filterPlatform === 'web' || filterPlatform === 'mobile' ? filterPlatform : null}
         userEmail={user.email ?? null}
       />
-      <CatalogueSearchModal
+      {showSearchModal && (
+        <Suspense fallback={null}>
+        <CatalogueSearchModal
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}
         screenshots={fullScopeScreenshots}
@@ -1825,6 +1832,8 @@ export function Catalogue({
           if (mobileOsChip) setFilterMobileOs(mobileOsChip.value);
         }}
       />
+        </Suspense>
+      )}
     </div>
   );
 }
