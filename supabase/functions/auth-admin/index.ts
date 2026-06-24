@@ -224,9 +224,11 @@ async function handleRotate(payload: any) {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// toggle — set enabled true/false. Disabled members can't log in but
-// existing sessions stay alive until they expire. Combine with
-// force_logout to cut them off immediately.
+// toggle — set enabled true/false. Disabling now also revokes all of the
+// member's sessions (global sign-out) so a disabled member is cut off as
+// soon as their current access token expires — they cannot refresh it.
+// Without this, `enabled=false` only blocks future logins while existing
+// sessions stayed alive until natural expiry.
 // ────────────────────────────────────────────────────────────────────
 async function handleToggle(payload: any) {
   const email = normaliseEmail(payload?.email);
@@ -238,6 +240,10 @@ async function handleToggle(payload: any) {
     .update({ enabled })
     .eq('email', email);
   if (error) return json({ error: 'update_failed', detail: error.message }, 500);
+
+  // Revoke active sessions on disable so access can't outlive the toggle.
+  if (!enabled) await forceLogoutByEmail(email);
+
   return json({ ok: true });
 }
 
