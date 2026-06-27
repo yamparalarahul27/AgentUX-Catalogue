@@ -1,10 +1,11 @@
 import { Check, Copy, Crop, MapPin, MessageCircle, Pencil, RefreshCw, Save, Trash2 } from 'lucide-react';
 
-import { REUPLOAD_ENABLED } from '../lib/feature-flags';
+import { MORPH_TOOLTIP_ENABLED, REUPLOAD_ENABLED } from '../lib/feature-flags';
 import type { MobileOs, WebPreset } from '../types';
 import { CatalogueFamilyLightboxInlineEditor } from './CatalogueFamilyLightboxInlineEditor';
 import { CopyMorphIcon, useCopyConfirmation } from './CopyMorphIcon';
-import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { IconTooltipProvider } from './IconTooltip';
+import { MorphTooltipButton, useMorphTooltip } from './ToolbarMorphTooltip';
 import { Squircle } from './Squircle';
 
 // Matches the existing border-radius: 10px on .catalogue-lightbox-icon-btn —
@@ -107,6 +108,7 @@ export function CatalogueFamilyLightboxActions({
   canDelete,
 }: CatalogueFamilyLightboxActionsProps) {
   const { justCopied: justShared, confirm: confirmShareCopy } = useCopyConfirmation();
+  const morph = useMorphTooltip(MORPH_TOOLTIP_ENABLED);
   // Labeling studio (hideCatalogueActions=true) suppresses every icon
   // here. With Edit also gated on !hideCatalogueActions and the inline
   // editor never opening in that mode, the whole summary wrapper has
@@ -117,30 +119,31 @@ export function CatalogueFamilyLightboxActions({
   return (
     <IconTooltipProvider>
     <div className="catalogue-family-lightbox__summary">
-      <div className="catalogue-lightbox-icon-bar">
+      <div className="catalogue-lightbox-icon-bar" {...morph.containerProps}>
+        {morph.overlay}
         {canEdit && !hideCatalogueActions && (
-          <IconTooltip label={isInlineEditing ? 'Close edit' : 'Edit'}>
+          <MorphTooltipButton active={morph.active} label={isInlineEditing ? 'Close edit' : 'Edit'}>
             <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onToggleInlineEdit} disabled={isSavingInline} aria-label={isInlineEditing ? 'Close edit' : 'Edit'}>
               <Pencil size={15} />
             </Squircle>
-          </IconTooltip>
+          </MorphTooltipButton>
         )}
         {REUPLOAD_ENABLED && (
-          <IconTooltip label="Reupload">
+          <MorphTooltipButton active={morph.active} label="Reupload">
             <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onReupload} aria-label="Reupload">
               <RefreshCw size={15} />
             </Squircle>
-          </IconTooltip>
+          </MorphTooltipButton>
         )}
         {!hideCatalogueActions && (
-          <IconTooltip label="Crop">
+          <MorphTooltipButton active={morph.active} label="Crop">
             <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenCrop} disabled={!canCrop} aria-label="Crop">
               <Crop size={15} />
             </Squircle>
-          </IconTooltip>
+          </MorphTooltipButton>
         )}
         {!hideCatalogueActions && onToggleBookmark && (
-          <IconTooltip label={isBookmarked ? 'Unsave' : 'Save'}>
+          <MorphTooltipButton active={morph.active} label={isBookmarked ? 'Unsave' : 'Save'}>
             <Squircle
               as="button"
               cornerRadius={ICON_BTN_RADIUS}
@@ -152,10 +155,10 @@ export function CatalogueFamilyLightboxActions({
             >
               <Save size={15} />
             </Squircle>
-          </IconTooltip>
+          </MorphTooltipButton>
         )}
         {!hideCatalogueActions && onShareLink && (
-          <IconTooltip label={justShared ? 'Copied!' : 'Copy share link'}>
+          <MorphTooltipButton active={morph.active} label={justShared ? 'Copied!' : 'Copy share link'}>
             <Squircle
               as="button"
               cornerRadius={ICON_BTN_RADIUS}
@@ -171,29 +174,29 @@ export function CatalogueFamilyLightboxActions({
                 size={15}
               />
             </Squircle>
-          </IconTooltip>
+          </MorphTooltipButton>
         )}
         <span className="catalogue-lightbox-icon-bar__spacer" />
         {!hideCatalogueActions && (
           <>
-            <IconTooltip label={`Comments (${commentsCount})`}>
+            <MorphTooltipButton active={morph.active} label={`Comments (${commentsCount})`}>
               <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenComments} aria-label={`Comments (${commentsCount})`}>
                 <MessageCircle size={15} />
                 {commentsCount > 0 && <span className="catalogue-lightbox-icon-badge">{commentsCount}</span>}
               </Squircle>
-            </IconTooltip>
-            <IconTooltip label={`Annotations (${annotationsCount})`}>
+            </MorphTooltipButton>
+            <MorphTooltipButton active={morph.active} label={`Annotations (${annotationsCount})`}>
               <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn" onClick={onOpenAnnotations} aria-label={`Annotations (${annotationsCount})`}>
                 <MapPin size={15} />
                 {annotationsCount > 0 && <span className="catalogue-lightbox-icon-badge">{annotationsCount}</span>}
               </Squircle>
-            </IconTooltip>
+            </MorphTooltipButton>
             {canDelete && (
-              <IconTooltip label="Delete">
+              <MorphTooltipButton active={morph.active} label="Delete">
                 <Squircle as="button" cornerRadius={ICON_BTN_RADIUS} type="button" className="catalogue-lightbox-icon-btn is-danger" onClick={onDelete} aria-label="Delete">
                   <Trash2 size={15} />
                 </Squircle>
-              </IconTooltip>
+              </MorphTooltipButton>
             )}
           </>
         )}

@@ -4,10 +4,11 @@
 // these styles. Visual recipe matches .catalogue-header-tooltip so the
 // morph pill is indistinguishable from the Radix tooltips around it.
 
-// The cluster becomes the positioning context for the absolutely
-// positioned pill. Only takes effect when the morph layer mounts the
-// overlay (the container otherwise lays out exactly as before).
-.catalogue-toolbar-right:has(.catalogue-morph-tooltip) {
+// Any cluster hosting the pill becomes its positioning context. Scoped
+// via :has so the rule only fires for containers that actually mount the
+// overlay (toolbar-right, the lightbox icon bar, the header cluster) and
+// they otherwise lay out exactly as before.
+:has(> .catalogue-morph-tooltip) {
   position: relative;
 }
 
@@ -41,14 +42,15 @@
     opacity: 1;
   }
 
-  // Arrow — centered under the pill, which is itself centered on the
-  // hovered button, so it always points at the icon.
+  // Arrow points at the hovered button. Normally that's the pill's center,
+  // but when the pill is clamped to the viewport edge the hook feeds an
+  // offset (--morph-arrow-offset) so the arrow slides back onto the button.
   &::before {
     content: '';
     position: absolute;
     bottom: 100%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(calc(-50% + var(--morph-arrow-offset, 0px)));
     border: 5px solid transparent;
     border-bottom-color: rgba(15, 15, 16, 0.96);
   }

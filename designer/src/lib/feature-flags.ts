@@ -39,10 +39,11 @@ export const LABELING_STUDIO_ENABLED = true;
 // in-Studio resize-down swaps content for a placeholder.
 export const LABELING_STUDIO_MIN_VIEWPORT_PX = 1024;
 
-// Shared morphing tooltip for the toolbar-right icon cluster
-// (Search / Share / Saved). A single label pill slides + resizes between
-// the buttons on hover/focus instead of each button popping its own
-// tooltip. Off by default. The Radix IconTooltip remains the accessible
-// fallback for touch and reduced-motion — those environments never get
-// the morph layer regardless of this flag.
-export const TOOLBAR_MORPH_TOOLTIP_ENABLED = false;
+// Shared morphing tooltip for contiguous icon-button rows (the
+// toolbar-right cluster, the lightbox icon bar, the header cluster). A
+// single label pill slides + resizes between the buttons in a row on
+// hover/focus instead of each button popping its own tooltip. The Radix
+// IconTooltip remains the accessible fallback for touch and
+// reduced-motion — those environments never get the morph layer
+// regardless of this flag. Isolated buttons (cards, etc.) keep IconTooltip.
+export const MORPH_TOOLTIP_ENABLED = true;

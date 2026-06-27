@@ -25,12 +25,20 @@ const DATA_ATTR = 'data-morph-label';
 
 interface PillState {
   label: string;
+  // Pill center, in pixels relative to the cluster container's left edge.
+  // Clamped so the pill never runs past the viewport (no collision lib).
   centerX: number;
+  // How far the arrow shifts from the pill's center to keep pointing at the
+  // button after the pill was clamped. 0 when the pill sits centered.
+  arrowOffset: number;
   width: number;
   visible: boolean;
 }
 
-const HIDDEN: PillState = { label: '', centerX: 0, width: 0, visible: false };
+const HIDDEN: PillState = { label: '', centerX: 0, arrowOffset: 0, width: 0, visible: false };
+
+// Keep the pill (and its arrow) this far from the viewport edge.
+const VIEWPORT_PADDING = 8;
 
 export interface MorphTooltipController {
   /** Whether the morph layer is live (flag on + capable environment). */
@@ -81,10 +89,22 @@ export function useMorphTooltip(enabled: boolean): MorphTooltipController {
     const cRect = container.getBoundingClientRect();
     const bRect = btn.getBoundingClientRect();
     measurer.textContent = label;
+    const width = measurer.offsetWidth;
+    const half = width / 2;
+    // Ideal: pill centered on the button. Clamp to the viewport so an
+    // edge-adjacent cluster (e.g. the header's top-right icons) never
+    // renders a half-clipped pill, then nudge the arrow back onto the
+    // button. Arrow stays within the pill body (6px inset).
+    const buttonCenter = bRect.left + bRect.width / 2;
+    const min = VIEWPORT_PADDING + half;
+    const max = window.innerWidth - VIEWPORT_PADDING - half;
+    const clampedCenter = max < min ? buttonCenter : Math.min(Math.max(buttonCenter, min), max);
+    const arrowOffset = Math.max(-(half - 6), Math.min(half - 6, buttonCenter - clampedCenter));
     setPill({
       label,
-      centerX: bRect.left - cRect.left + bRect.width / 2,
-      width: measurer.offsetWidth,
+      centerX: clampedCenter - cRect.left,
+      arrowOffset,
+      width,
       visible: true,
     });
   }, []);
@@ -137,6 +157,7 @@ export function useMorphTooltip(enabled: boolean): MorphTooltipController {
         style={{
           width: `${pill.width}px`,
           transform: `translate(${pill.centerX}px, 0) translateX(-50%) scale(${pill.visible ? 1 : 0.96})`,
+          ['--morph-arrow-offset' as string]: `${pill.arrowOffset}px`,
         }}
       >
         {pill.label}

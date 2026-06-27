@@ -4,7 +4,7 @@ import { Boxes, Check, ChevronDown, Clock, Eye, LayoutGrid, Palette, Plus, Rows3
 
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 import { MorphTooltipButton, useMorphTooltip } from './ToolbarMorphTooltip';
-import { TOOLBAR_MORPH_TOOLTIP_ENABLED } from '../lib/feature-flags';
+import { MORPH_TOOLTIP_ENABLED } from '../lib/feature-flags';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -454,7 +454,7 @@ export function CatalogueToolbar({
     return visibleFilters.has(key);
   }
 
-  const morph = useMorphTooltip(TOOLBAR_MORPH_TOOLTIP_ENABLED);
+  const morph = useMorphTooltip(MORPH_TOOLTIP_ENABLED);
 
   return (
     <IconTooltipProvider>
