@@ -38,3 +38,11 @@ export const LABELING_STUDIO_ENABLED = true;
 // Studio is desktop-only. Below this width: nav entry hidden;
 // in-Studio resize-down swaps content for a placeholder.
 export const LABELING_STUDIO_MIN_VIEWPORT_PX = 1024;
+
+// Shared morphing tooltip for the toolbar-right icon cluster
+// (Search / Share / Saved). A single label pill slides + resizes between
+// the buttons on hover/focus instead of each button popping its own
+// tooltip. Off by default. The Radix IconTooltip remains the accessible
+// fallback for touch and reduced-motion — those environments never get
+// the morph layer regardless of this flag.
+export const TOOLBAR_MORPH_TOOLTIP_ENABLED = false;

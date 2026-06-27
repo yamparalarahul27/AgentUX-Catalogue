@@ -1,0 +1,75 @@
+// Shared morphing tooltip for the toolbar-right icon cluster
+// (Search / Share / Saved). Gated by TOOLBAR_MORPH_TOOLTIP_ENABLED and a
+// capability check in useMorphTooltip — touch / reduced-motion never reach
+// these styles. Visual recipe matches .catalogue-header-tooltip so the
+// morph pill is indistinguishable from the Radix tooltips around it.
+
+// The cluster becomes the positioning context for the absolutely
+// positioned pill. Only takes effect when the morph layer mounts the
+// overlay (the container otherwise lays out exactly as before).
+.catalogue-toolbar-right:has(.catalogue-morph-tooltip) {
+  position: relative;
+}
+
+.catalogue-morph-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  background: rgba(15, 15, 16, 0.96);
+  border: 1px solid rgba(63, 63, 70, 0.7);
+  border-radius: 8px;
+  color: #fafafa;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform-origin: top center;
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 120ms ease-out;
+
+  &[data-visible='true'] {
+    opacity: 1;
+  }
+
+  // Arrow — centered under the pill, which is itself centered on the
+  // hovered button, so it always points at the icon.
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-bottom-color: rgba(15, 15, 16, 0.96);
+  }
+}
+
+// Off-screen sizing probe — measures the natural width of the next label
+// so the pill can animate `width` to it. Shares the pill's box metrics.
+.catalogue-morph-tooltip__measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+// Belt-and-braces: even if the capability gate is bypassed, kill the
+// motion for reduced-motion users.
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-morph-tooltip {
+    transition: opacity 120ms ease-out;
+  }
+}

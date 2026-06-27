@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { Boxes, Check, ChevronDown, Clock, Eye, LayoutGrid, Palette, Plus, Rows3, Save, Search, Share2, SlidersHorizontal, Smartphone, Tag, Workflow, X } from 'lucide-react';
 
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { MorphTooltipButton, useMorphTooltip } from './ToolbarMorphTooltip';
+import { TOOLBAR_MORPH_TOOLTIP_ENABLED } from '../lib/feature-flags';
 
 import type { CatalogueViewBy } from '../lib/catalogue-activity';
 import type { CatalogueSortOption } from '../lib/catalogue-sort';
@@ -452,6 +454,8 @@ export function CatalogueToolbar({
     return visibleFilters.has(key);
   }
 
+  const morph = useMorphTooltip(TOOLBAR_MORPH_TOOLTIP_ENABLED);
+
   return (
     <IconTooltipProvider>
     <>
@@ -627,9 +631,10 @@ export function CatalogueToolbar({
 
         </div>
 
-        <div className="catalogue-toolbar-right">
+        <div className="catalogue-toolbar-right" {...morph.containerProps}>
+          {morph.overlay}
           {onOpenSearch && (
-            <IconTooltip label="Search catalogue (press / )">
+            <MorphTooltipButton label="Search catalogue (press / )" active={morph.active}>
               <button
                 type="button"
                 className="catalogue-toolbar-search catalogue-toolbar--desktop-only"
@@ -638,10 +643,10 @@ export function CatalogueToolbar({
               >
                 <Search size={16} />
               </button>
-            </IconTooltip>
+            </MorphTooltipButton>
           )}
           {onOpenShare && !isHidden('share') && (
-            <IconTooltip label="Share this view">
+            <MorphTooltipButton label="Share this view" active={morph.active}>
               <button
                 type="button"
                 className="catalogue-toolbar-bookmark catalogue-toolbar--desktop-only"
@@ -650,10 +655,11 @@ export function CatalogueToolbar({
               >
                 <Share2 size={16} />
               </button>
-            </IconTooltip>
+            </MorphTooltipButton>
           )}
           {onBookmarkFilterToggle && !isHidden('save') && (
-            <IconTooltip
+            <MorphTooltipButton
+              active={morph.active}
               label={bookmarkFilterOn
                 ? 'Show all screenshots'
                 : `Show only Saved${bookmarkCount > 0 ? ` (${bookmarkCount})` : ''}`}
@@ -668,7 +674,7 @@ export function CatalogueToolbar({
               >
                 <Save size={16} />
               </button>
-            </IconTooltip>
+            </MorphTooltipButton>
           )}
 
           {/* Pinned filters — when the user pins Platform / Theme via
