@@ -342,13 +342,11 @@
 
   // Hidden in Canvas mode:
   //   - Section tabs (Catalogue · Videos · Saved · Account)
-  //   - What's New star button
   //   - Links section tab (icon-only)
   //   - Toolbar wrapper (filters / view-mode / sort / upload)
   //   - Magnified bottom dock
   //   - Flow strip
   .catalogue-header__tabs { display: none; }
-  .catalogue-header__sparkles-btn { display: none; }
   .catalogue-header__tab[aria-label="Links"] { display: none; }
   .catalogue-toolbar-wrapper { display: none; }
   .catalogue-toolbar-sticky-sentinel { display: none; }

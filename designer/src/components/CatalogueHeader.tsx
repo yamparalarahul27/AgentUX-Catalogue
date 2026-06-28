@@ -205,6 +205,11 @@ export function CatalogueHeader({
     setMenuOpen(false);
   }
 
+  function openWhatsNew() {
+    onOpenWhatsNew();
+    setMenuOpen(false);
+  }
+
   function handleLogout() {
     onLogout();
     setMenuOpen(false);
@@ -324,6 +329,9 @@ export function CatalogueHeader({
           >
             <span className="catalogue-identity-pill__name">{visibleUsername}</span>
             <ChevronDown size={14} aria-hidden="true" />
+            {whatsNewUnseenCount > 0 && (
+              <span className="catalogue-identity-pill__dot" aria-hidden="true" />
+            )}
           </button>
         ) : (
           <button
@@ -342,22 +350,6 @@ export function CatalogueHeader({
             onOpenScreenshotComment={onOpenScreenshotComment}
             onOpenVideoComment={onOpenVideoComment}
           />
-        )}
-
-        {userEmail && (
-          <IconTooltip label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}>
-            <button
-              type="button"
-              className="catalogue-header__icon-btn catalogue-header__sparkles-btn"
-              aria-label={whatsNewUnseenCount > 0 ? `Changelog (${whatsNewUnseenCount} new)` : 'Changelog'}
-              onClick={onOpenWhatsNew}
-            >
-              <History size={15} aria-hidden="true" />
-              {whatsNewUnseenCount > 0 && (
-                <span className="catalogue-header__sparkles-dot" aria-hidden="true" />
-              )}
-            </button>
-          </IconTooltip>
         )}
 
         {userEmail && canAdmin && !isNarrowHeader && (
@@ -392,6 +384,19 @@ export function CatalogueHeader({
           >
             <Save size={14} aria-hidden="true" />
             Saved
+          </button>
+
+          <button
+            type="button"
+            className="catalogue-header-menu__item catalogue-header-menu__item--row"
+            role="menuitem"
+            onClick={openWhatsNew}
+          >
+            <History size={14} aria-hidden="true" />
+            <span>Changelog</span>
+            {whatsNewUnseenCount > 0 && (
+              <span className="catalogue-header-menu__unseen-dot" aria-hidden="true" />
+            )}
           </button>
 
           <button

@@ -53,6 +53,7 @@
 // pill itself stays in normal flex flow so it sits next to its
 // neighbour (Settings icon button).
 .catalogue-identity-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -102,6 +103,34 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   text-transform: capitalize;
+}
+
+// Unseen-changelog cue. Now that the Changelog trigger lives inside the
+// account menu, the ambient "something's new" indicator rides on the
+// pill itself — a small indigo dot notched into the top-right corner.
+// Reuses the What's New pulse so it reads the same as the old icon dot.
+.catalogue-identity-pill__dot {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 0 0 2px #0f0f10;
+  animation: whats-new-pulse 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+// Matching dot on the Changelog row inside the account menu so, once
+// opened, it's obvious which item is new. Sits inline after the label.
+.catalogue-header-menu__unseen-dot {
+  width: 7px;
+  height: 7px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: #6366f1;
+  flex-shrink: 0;
 }
 
 .catalogue-header-menu {

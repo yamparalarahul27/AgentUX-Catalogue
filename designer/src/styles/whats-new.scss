@@ -339,29 +339,6 @@
   color: #86efac;
 }
 
-// ── Header trigger (✨ icon) ────────────────────────────────────
-// Sits in .catalogue-header__right between the identity pill and
-// the Settings icon. Reuses the existing icon-btn pattern + adds
-// the pulsing unseen-dot top-right corner.
-.catalogue-header__sparkles-btn {
-  position: relative;
-}
-
-.catalogue-header__sparkles-dot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #6366f1;
-  // Outline matching the header background so the dot reads as
-  // notched into the icon rather than floating over it.
-  box-shadow: 0 0 0 2px #0f0f10;
-  animation: whats-new-pulse 2.4s ease-in-out infinite;
-  pointer-events: none;
-}
-
 // ── App-update toast (top-right on desktop) ─────────────────────
 // Sticky — doesn't auto-dismiss. The user has to act (Refresh,
 // Later, or ×). Top-right on desktop matches the system-notification
