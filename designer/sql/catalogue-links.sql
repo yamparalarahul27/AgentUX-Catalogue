@@ -5,6 +5,7 @@ create table if not exists public.catalogue_link_references (
   host text not null,
   title text,
   added_by_email text,
+  is_tool boolean not null default false,
   created_at timestamptz not null default now()
 );
 

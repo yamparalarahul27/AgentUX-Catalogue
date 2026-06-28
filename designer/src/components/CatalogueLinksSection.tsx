@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileCode2, Link as LinkIcon, Plus, Search, X } from 'lucide-react';
+import { FileCode2, Link as LinkIcon, Plus, Search, Wrench, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLinkMetadata, type LinkMetadata } from '../hooks/use-link-metadata';
 import { CataloguePrototypes } from './CataloguePrototypes';
 import { DotLoader } from './DotLoader';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
 
-type LinksSubTab = 'saved-links' | 'prototypes';
+type LinksSubTab = 'saved-links' | 'prototypes' | 'tools';
 
 interface LinkReference {
   id: string;
@@ -14,6 +14,7 @@ interface LinkReference {
   normalizedUrl: string;
   host: string;
   title: string | null;
+  isTool: boolean;
   addedAt: string;
   addedByEmail: string | null;
 }
@@ -24,6 +25,7 @@ interface CatalogueLinkReferenceRow {
   normalized_url: string;
   host: string;
   title: string | null;
+  is_tool: boolean;
   added_by_email: string | null;
   created_at: string;
 }
@@ -71,6 +73,7 @@ function toLinkReference(row: CatalogueLinkReferenceRow): LinkReference {
     normalizedUrl: row.normalized_url,
     host: row.host,
     title: row.title,
+    isTool: row.is_tool,
     addedAt: row.created_at,
     addedByEmail: row.added_by_email,
   };
@@ -135,6 +138,16 @@ export function CatalogueLinksSection({
   const allUrls = useMemo(() => links.map((link) => link.url), [links]);
   const { metadata } = useLinkMetadata(allUrls);
 
+  const isToolsTab = activeTab === 'tools';
+
+  // The Tools tab is a filtered view over the same links — a flagged link
+  // still lives under Saved Links. Everything below (search, counts, empty
+  // states) operates on this scoped set so each tab reads independently.
+  const scopedLinks = useMemo<LinkReference[]>(
+    () => (isToolsTab ? links.filter((link) => link.isTool) : links),
+    [links, isToolsTab],
+  );
+
   const trimmedSearch = search.trim().toLowerCase();
   const isSearching = trimmedSearch.length > 0;
 
@@ -143,8 +156,8 @@ export function CatalogueLinksSection({
   // is surfaced inline on each card so the host context isn't lost.
   const filteredLinks = useMemo<LinkReference[]>(() => {
     const filtered = !isSearching
-      ? links
-      : links.filter((link) => {
+      ? scopedLinks
+      : scopedLinks.filter((link) => {
           const meta = metadata[link.url];
           const haystack = [
             link.title || '',
@@ -159,7 +172,7 @@ export function CatalogueLinksSection({
           return haystack.includes(trimmedSearch);
         });
     return [...filtered].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
-  }, [links, metadata, isSearching, trimmedSearch]);
+  }, [scopedLinks, metadata, isSearching, trimmedSearch]);
 
   function ensureCanEdit() {
     if (canEdit) return true;
@@ -176,7 +189,7 @@ export function CatalogueLinksSection({
 
       const { data, error } = await supabase
         .from('catalogue_link_references')
-        .select('id, url, normalized_url, host, title, added_by_email, created_at')
+        .select('id, url, normalized_url, host, title, is_tool, added_by_email, created_at')
         .order('created_at', { ascending: false });
 
       if (cancelled) return;
@@ -221,6 +234,7 @@ export function CatalogueLinksSection({
         normalized_url: parsed.normalizedUrl,
         host: parsed.host,
         title: null,
+        is_tool: isToolsTab,
         added_by_email: userEmail,
       })
       .select('id, url, normalized_url, host, title, added_by_email, created_at')
@@ -245,6 +259,29 @@ export function CatalogueLinksSection({
     setLinkError(null);
   }
 
+  // Flag / unflag a saved link as a tool. Optimistic — revert on failure.
+  async function toggleTool(linkId: string) {
+    if (!ensureCanEdit()) return;
+    const target = links.find((item) => item.id === linkId);
+    if (!target) return;
+    const next = !target.isTool;
+
+    setLinks((previous) =>
+      previous.map((link) => (link.id === linkId ? { ...link, isTool: next } : link)),
+    );
+
+    const { error } = await supabase
+      .from('catalogue_link_references')
+      .update({ is_tool: next })
+      .eq('id', linkId);
+
+    if (error) {
+      setLinks((previous) =>
+        previous.map((link) => (link.id === linkId ? { ...link, isTool: !next } : link)),
+      );
+    }
+  }
+
   async function removeLink(linkId: string) {
     if (!ensureCanEdit()) return;
     const target = links.find((item) => item.id === linkId);
@@ -260,8 +297,9 @@ export function CatalogueLinksSection({
     setLinks((previous) => previous.filter((link) => link.id !== linkId));
   }
 
-  const totalLinks = links.length;
+  const totalLinks = scopedLinks.length;
   const hasLinks = totalLinks > 0;
+  const noun = isToolsTab ? 'tool' : 'link';
 
   return (
     <div className="catalogue-links-shell">
@@ -286,6 +324,16 @@ export function CatalogueLinksSection({
           <FileCode2 size={13} aria-hidden="true" />
           Prototypes
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'tools'}
+          className={`catalogue-links-tabs__tab ${activeTab === 'tools' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('tools')}
+        >
+          <Wrench size={13} aria-hidden="true" />
+          Tools
+        </button>
       </nav>
 
       {activeTab === 'prototypes' ? (
@@ -295,11 +343,15 @@ export function CatalogueLinksSection({
           userEmail={userEmail}
         />
       ) : (
-    <section className="catalogue-links" aria-label="Saved links">
+    <section className="catalogue-links" aria-label={isToolsTab ? 'Tools' : 'Saved links'}>
       <header className="catalogue-links__head">
         <div className="catalogue-links__copy">
-          <h2>Saved Links</h2>
-          <p>Reference URLs saved from the catalogue.</p>
+          <h2>{isToolsTab ? 'Tools' : 'Saved Links'}</h2>
+          <p>
+            {isToolsTab
+              ? "Saved links you've flagged as tools."
+              : 'Reference URLs saved from the catalogue.'}
+          </p>
         </div>
         {/* Search pill on the right — same placement / shortcut as the
             Videos section so the muscle memory carries across tabs.
@@ -317,8 +369,8 @@ export function CatalogueLinksSection({
               className="catalogue-links__search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={`Search ${totalLinks} link${totalLinks === 1 ? '' : 's'}...`}
-              aria-label="Search saved links"
+              placeholder={`Search ${totalLinks} ${noun}${totalLinks === 1 ? '' : 's'}...`}
+              aria-label={isToolsTab ? 'Search tools' : 'Search saved links'}
             />
             {search && (
               <button
@@ -351,7 +403,7 @@ export function CatalogueLinksSection({
               void addLink();
             }
           }}
-          placeholder="Paste any URL (https://...)"
+          placeholder={isToolsTab ? 'Paste a tool URL (https://...)' : 'Paste any URL (https://...)'}
         />
         <button
           type="button"
@@ -359,19 +411,21 @@ export function CatalogueLinksSection({
           disabled={!linkInput.trim() || savingLink || !canEdit}
         >
           {savingLink ? <DotLoader size="sm" ariaLabel="Saving" /> : <Plus size={14} aria-hidden="true" />}
-          Add link
+          {isToolsTab ? 'Add tool' : 'Add link'}
         </button>
       </div>
       {linkError && <p className="catalogue-links__error">{linkError}</p>}
 
       {loadingData ? (
-        <p className="catalogue-links__loading">Loading saved links...</p>
+        <p className="catalogue-links__loading">Loading {isToolsTab ? 'tools' : 'saved links'}...</p>
       ) : !hasLinks ? (
         <p className="catalogue-links__empty">
-          No links yet. Paste a URL above to save it.
+          {isToolsTab
+            ? 'No tools yet. Flag a saved link with the wrench, or paste a URL above.'
+            : 'No links yet. Paste a URL above to save it.'}
         </p>
       ) : filteredLinks.length === 0 ? (
-        <p className="catalogue-links__empty">No links match "{search.trim()}".</p>
+        <p className="catalogue-links__empty">No {noun}s match "{search.trim()}".</p>
       ) : (
         <IconTooltipProvider>
           <ul className="catalogue-links__items">
@@ -456,6 +510,17 @@ export function CatalogueLinksSection({
                       <span className="catalogue-links__host">{link.host}</span>
                     </div>
                   </div>
+                  <IconTooltip label={link.isTool ? 'Remove from tools' : 'Mark as tool'}>
+                    <button
+                      type="button"
+                      className={`catalogue-links__tool ${link.isTool ? 'is-on' : ''}`}
+                      onClick={() => void toggleTool(link.id)}
+                      aria-label={link.isTool ? `Remove ${label} from tools` : `Mark ${label} as a tool`}
+                      aria-pressed={link.isTool}
+                    >
+                      <Wrench size={13} aria-hidden="true" />
+                    </button>
+                  </IconTooltip>
                   <IconTooltip label="Remove link">
                     <button
                       type="button"

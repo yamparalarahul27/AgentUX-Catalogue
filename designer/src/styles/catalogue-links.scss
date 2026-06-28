@@ -199,7 +199,8 @@
     border-color: rgba(255, 255, 255, 0.12);
     transform: translateY(-1px);
 
-    .catalogue-links__remove {
+    .catalogue-links__remove,
+    .catalogue-links__tool {
       opacity: 1;
     }
   }
@@ -343,6 +344,47 @@
   }
 }
 
+// Wrench toggle — flags a saved link as a tool. Sits just left of the
+// remove button. Reveals on hover like remove, but stays lit (accent)
+// when the link is flagged so the state is readable at a glance.
+.catalogue-links__tool {
+  position: absolute;
+  top: 6px;
+  right: 34px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #e4e4e7;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.85);
+    color: #fff;
+  }
+
+  &:focus-visible {
+    opacity: 1;
+    outline: 2px solid rgba(99, 102, 241, 0.55);
+    outline-offset: 1px;
+  }
+
+  &.is-on {
+    opacity: 1;
+    background: rgba(99, 102, 241, 0.9);
+    color: #fff;
+  }
+}
+
 // Step the card grid down as the viewport tightens. 5 desktop →
 // 4 → 3 → 2 → 1. Mobile breakpoint also bumps misc layout below.
 @media (max-width: 1280px) {
@@ -366,7 +408,8 @@
     width: 100%;
   }
 
-  .catalogue-links__remove {
+  .catalogue-links__remove,
+  .catalogue-links__tool {
     opacity: 1;
   }
 
