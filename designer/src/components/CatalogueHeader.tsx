@@ -207,6 +207,11 @@ export function CatalogueHeader({
     setMenuOpen(false);
   }
 
+  function openWhatsNew() {
+    onOpenWhatsNew();
+    setMenuOpen(false);
+  }
+
   function handleLogout() {
     onLogout();
     setMenuOpen(false);
@@ -327,6 +332,12 @@ export function CatalogueHeader({
           >
             <span className="catalogue-identity-pill__name">{visibleUsername}</span>
             <ChevronDown size={14} aria-hidden="true" />
+            {/* Unseen-changelog cue on the pill only when the standalone
+                Changelog icon is hidden (narrow header). On desktop the
+                icon carries its own dot, so showing both would double up. */}
+            {whatsNewUnseenCount > 0 && isNarrowHeader && (
+              <span className="catalogue-identity-pill__dot" aria-hidden="true" />
+            )}
           </button>
         ) : (
           <button
@@ -347,7 +358,10 @@ export function CatalogueHeader({
           />
         )}
 
-        {userEmail && (
+        {/* Changelog lives in the header on desktop; on the narrow
+            header it folds into the account menu (see below) to keep
+            the mobile chrome uncluttered. */}
+        {userEmail && !isNarrowHeader && (
           <MorphTooltipButton
             active={morph.active}
             label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}
@@ -399,6 +413,24 @@ export function CatalogueHeader({
             <Save size={14} aria-hidden="true" />
             Saved
           </button>
+
+          {/* Mobile-only entry point — desktop reaches the Changelog via
+              the standalone header icon, so the row would be redundant
+              there. */}
+          {isNarrowHeader && (
+            <button
+              type="button"
+              className="catalogue-header-menu__item catalogue-header-menu__item--row"
+              role="menuitem"
+              onClick={openWhatsNew}
+            >
+              <History size={14} aria-hidden="true" />
+              <span>Changelog</span>
+              {whatsNewUnseenCount > 0 && (
+                <span className="catalogue-header-menu__unseen-dot" aria-hidden="true" />
+              )}
+            </button>
+          )}
 
           <button
             type="button"
