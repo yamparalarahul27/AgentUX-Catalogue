@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 import agentuxMark from '../assets/agentux-mark.svg';
-import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
+import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX, MORPH_TOOLTIP_ENABLED } from '../lib/feature-flags';
 import { useViewportWidth } from '../hooks/use-viewport-width';
 import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
 import {
@@ -30,6 +30,7 @@ import {
   useSoundEnabled,
 } from '../lib/feedback-prefs';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { MorphTooltipButton, useMorphTooltip } from './ToolbarMorphTooltip';
 import { NotificationBell } from './NotificationBell';
 import { useTypingKeycapEnabled } from './TypingKeycap';
 
@@ -90,6 +91,7 @@ export function CatalogueHeader({
   onOpenVideoComment,
 }: CatalogueHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const morph = useMorphTooltip(MORPH_TOOLTIP_ENABLED);
   const [logoutMoreOpen, setLogoutMoreOpen] = useState(false);
   const [typingKeycapEnabled, setTypingKeycapEnabled] = useTypingKeycapEnabled();
   const [canvasGalleryEnabled, setCanvasGalleryEnabled] = useCanvasGalleryEnabled();
@@ -316,7 +318,8 @@ export function CatalogueHeader({
         )}
       </div>
 
-      <div className="catalogue-header__right">
+      <div className="catalogue-header__right" {...morph.containerProps}>
+        {morph.overlay}
         {userEmail ? (
           <button
             ref={pillRef}
@@ -329,7 +332,10 @@ export function CatalogueHeader({
           >
             <span className="catalogue-identity-pill__name">{visibleUsername}</span>
             <ChevronDown size={14} aria-hidden="true" />
-            {whatsNewUnseenCount > 0 && (
+            {/* Unseen-changelog cue on the pill only when the standalone
+                Changelog icon is hidden (narrow header). On desktop the
+                icon carries its own dot, so showing both would double up. */}
+            {whatsNewUnseenCount > 0 && isNarrowHeader && (
               <span className="catalogue-identity-pill__dot" aria-hidden="true" />
             )}
           </button>
@@ -352,8 +358,30 @@ export function CatalogueHeader({
           />
         )}
 
+        {/* Changelog lives in the header on desktop; on the narrow
+            header it folds into the account menu (see below) to keep
+            the mobile chrome uncluttered. */}
+        {userEmail && !isNarrowHeader && (
+          <MorphTooltipButton
+            active={morph.active}
+            label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}
+          >
+            <button
+              type="button"
+              className="catalogue-header__icon-btn catalogue-header__sparkles-btn"
+              aria-label={whatsNewUnseenCount > 0 ? `Changelog (${whatsNewUnseenCount} new)` : 'Changelog'}
+              onClick={onOpenWhatsNew}
+            >
+              <History size={15} aria-hidden="true" />
+              {whatsNewUnseenCount > 0 && (
+                <span className="catalogue-header__sparkles-dot" aria-hidden="true" />
+              )}
+            </button>
+          </MorphTooltipButton>
+        )}
+
         {userEmail && canAdmin && !isNarrowHeader && (
-          <IconTooltip label="Settings">
+          <MorphTooltipButton active={morph.active} label="Settings">
             <button
               type="button"
               className={`catalogue-header__icon-btn ${activeSection === 'team' ? 'is-active' : ''}`}
@@ -362,7 +390,7 @@ export function CatalogueHeader({
             >
               <Settings size={15} aria-hidden="true" />
             </button>
-          </IconTooltip>
+          </MorphTooltipButton>
         )}
       </div>
 
@@ -386,18 +414,23 @@ export function CatalogueHeader({
             Saved
           </button>
 
-          <button
-            type="button"
-            className="catalogue-header-menu__item catalogue-header-menu__item--row"
-            role="menuitem"
-            onClick={openWhatsNew}
-          >
-            <History size={14} aria-hidden="true" />
-            <span>Changelog</span>
-            {whatsNewUnseenCount > 0 && (
-              <span className="catalogue-header-menu__unseen-dot" aria-hidden="true" />
-            )}
-          </button>
+          {/* Mobile-only entry point — desktop reaches the Changelog via
+              the standalone header icon, so the row would be redundant
+              there. */}
+          {isNarrowHeader && (
+            <button
+              type="button"
+              className="catalogue-header-menu__item catalogue-header-menu__item--row"
+              role="menuitem"
+              onClick={openWhatsNew}
+            >
+              <History size={14} aria-hidden="true" />
+              <span>Changelog</span>
+              {whatsNewUnseenCount > 0 && (
+                <span className="catalogue-header-menu__unseen-dot" aria-hidden="true" />
+              )}
+            </button>
+          )}
 
           <button
             type="button"

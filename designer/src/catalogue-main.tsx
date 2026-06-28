@@ -30,6 +30,7 @@ import './styles/mention-typeahead.scss';
 import './styles/notification-bell.scss';
 import './styles/catalogue-prototypes.scss';
 import './styles/catalogue-toolbar-customization.scss';
+import './styles/catalogue-toolbar-morph-tooltip.scss';
 import './styles/catalogue-header-menu.scss';
 import './styles/catalogue-filter-sheet.scss';
 import './styles/catalogue-chip-strip.scss';
