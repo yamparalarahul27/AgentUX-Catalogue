@@ -6,6 +6,7 @@ import { CatalogueApp } from './CatalogueApp';
 // <link> that used to sit on catalogue.html's critical path. Imported before
 // the app styles so the @font-face is registered when they apply.
 import '@fontsource-variable/inter';
+import './styles/surfaces.scss';
 import './styles/designer.scss';
 import './styles/catalogue-sidebar.scss';
 import './styles/catalogue-views.scss';

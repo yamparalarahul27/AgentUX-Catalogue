@@ -6,7 +6,7 @@
   border: 1px solid #27272a;
   border-radius: 20px;
   padding: 22px;
-  background: linear-gradient(180deg, rgba(24, 24, 27, 0.96) 0%, rgba(17, 17, 19, 0.96) 100%);
+  background: var(--surface-1); // panel sits one level above the page (surface-0)
 }
 
 .catalogue-links__head {
@@ -189,14 +189,16 @@
   gap: 0;
   padding: 0;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-2); // content on the panel
   border: 1px solid rgba(255, 255, 255, 0.05);
   overflow: hidden;
-  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease,
+    box-shadow 160ms ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--surface-3); // lifts one level on hover
     border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-surface-2);
     transform: translateY(-1px);
 
     .catalogue-links__remove,

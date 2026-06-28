@@ -1,0 +1,47 @@
+// ========================================
+// Surface tokens — elevation ladder
+// ========================================
+//
+// Adapted from Fluid Functionalism's "surfaces" system
+// (https://www.fluidfunctionalism.com/docs/surfaces).
+//
+// The idea: nested UI (panel → card → dropdown → dialog) must stay visually
+// distinct at any depth. Instead of every component inventing its own
+// rgba(255,255,255,0.0x) overlay, components pick a *level* and read the
+// background + shadow from these tokens. Deeper = lighter (this app is
+// dark-only, so lightness — not shadow — carries elevation, exactly as the
+// source system does for dark mode).
+//
+// Ladder is anchored to the existing palette: surface-0 = page ($bg #0f0f10),
+// surface-1 = standard panel ($surface #18181b), then an even ~+7 lightness
+// step per level. The slight cool tint of the base greys is preserved.
+//
+// NOTE: values are hex for now. Next step is to express this ladder in OKLCH
+// (perceptually even steps) once the oklch skill is in — converting is a
+// single-block edit here, nothing downstream changes.
+//
+// Usage: background: var(--surface-2);  box-shadow: var(--shadow-surface-3);
+
+:root {
+  // Background ladder — deeper nesting = lighter.
+  --surface-0: #0f0f10; // page substrate
+  --surface-1: #18181b; // base panel
+  --surface-2: #1f1f23;
+  --surface-3: #26262b;
+  --surface-4: #2d2d33;
+  --surface-5: #34343b;
+  --surface-6: #3b3b43;
+  --surface-7: #42424b;
+  --surface-8: #494953;
+
+  // Shadow ladder — subtle in dark mode (lightness does the lifting), but
+  // present so raised surfaces still cast. Offsets ~double each level.
+  --shadow-surface-1: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --shadow-surface-2: 0 2px 4px rgba(0, 0, 0, 0.18);
+  --shadow-surface-3: 0 4px 8px rgba(0, 0, 0, 0.20);
+  --shadow-surface-4: 0 6px 12px rgba(0, 0, 0, 0.22);
+  --shadow-surface-5: 0 8px 18px rgba(0, 0, 0, 0.24);
+  --shadow-surface-6: 0 12px 26px rgba(0, 0, 0, 0.28);
+  --shadow-surface-7: 0 18px 38px rgba(0, 0, 0, 0.32);
+  --shadow-surface-8: 0 26px 54px rgba(0, 0, 0, 0.38);
+}
