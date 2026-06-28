@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 import agentuxMark from '../assets/agentux-mark.svg';
-import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX } from '../lib/feature-flags';
+import { LABELING_STUDIO_ENABLED, LABELING_STUDIO_MIN_VIEWPORT_PX, MORPH_TOOLTIP_ENABLED } from '../lib/feature-flags';
 import { useViewportWidth } from '../hooks/use-viewport-width';
 import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
 import {
@@ -30,6 +30,7 @@ import {
   useSoundEnabled,
 } from '../lib/feedback-prefs';
 import { IconTooltip, IconTooltipProvider } from './IconTooltip';
+import { MorphTooltipButton, useMorphTooltip } from './ToolbarMorphTooltip';
 import { NotificationBell } from './NotificationBell';
 import { useTypingKeycapEnabled } from './TypingKeycap';
 
@@ -90,6 +91,7 @@ export function CatalogueHeader({
   onOpenVideoComment,
 }: CatalogueHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const morph = useMorphTooltip(MORPH_TOOLTIP_ENABLED);
   const [logoutMoreOpen, setLogoutMoreOpen] = useState(false);
   const [typingKeycapEnabled, setTypingKeycapEnabled] = useTypingKeycapEnabled();
   const [canvasGalleryEnabled, setCanvasGalleryEnabled] = useCanvasGalleryEnabled();
@@ -311,7 +313,8 @@ export function CatalogueHeader({
         )}
       </div>
 
-      <div className="catalogue-header__right">
+      <div className="catalogue-header__right" {...morph.containerProps}>
+        {morph.overlay}
         {userEmail ? (
           <button
             ref={pillRef}
@@ -345,7 +348,10 @@ export function CatalogueHeader({
         )}
 
         {userEmail && (
-          <IconTooltip label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}>
+          <MorphTooltipButton
+            active={morph.active}
+            label={whatsNewUnseenCount > 0 ? `Changelog · ${whatsNewUnseenCount} new` : 'Changelog'}
+          >
             <button
               type="button"
               className="catalogue-header__icon-btn catalogue-header__sparkles-btn"
@@ -357,11 +363,11 @@ export function CatalogueHeader({
                 <span className="catalogue-header__sparkles-dot" aria-hidden="true" />
               )}
             </button>
-          </IconTooltip>
+          </MorphTooltipButton>
         )}
 
         {userEmail && canAdmin && !isNarrowHeader && (
-          <IconTooltip label="Settings">
+          <MorphTooltipButton active={morph.active} label="Settings">
             <button
               type="button"
               className={`catalogue-header__icon-btn ${activeSection === 'team' ? 'is-active' : ''}`}
@@ -370,7 +376,7 @@ export function CatalogueHeader({
             >
               <Settings size={15} aria-hidden="true" />
             </button>
-          </IconTooltip>
+          </MorphTooltipButton>
         )}
       </div>
 
