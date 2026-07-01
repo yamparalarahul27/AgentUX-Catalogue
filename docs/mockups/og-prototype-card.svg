@@ -1,0 +1,27 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Static OG card for shared HTML prototypes (mockups.hirahul.xyz).
+       Source of truth; rasterised to designer/public/og/prototype-card.png
+       via: rsvg-convert -w 1200 -h 630 og-prototype-card.svg -o …/prototype-card.png -->
+  <rect width="1200" height="630" fill="#1A1B26"/>
+
+  <!-- subtle brutalist accent bar, top -->
+  <rect x="0" y="0" width="1200" height="8" fill="#6C77F1"/>
+
+  <!-- brand row: AgentUX mark + wordmark -->
+  <g transform="translate(80, 74) scale(0.185)">
+    <path d="M143.611 157.6L166.442 107.678C171.199 103.908 180.712 104.851 184.517 110.504L231.13 216.942C233.032 224.474 229.376 230.924 217.812 231.071H187.371C178.017 228.87 174.394 225.62 170.247 216.942L143.611 157.6Z" fill="#6C77F1"/>
+    <path d="M191.175 108.62C185.923 96.4156 184.991 90.4669 188.322 82.2461L239.691 196.219C240.967 202.336 240.401 205.119 235.886 208.464L191.175 108.62Z" fill="#6C77F1"/>
+    <ellipse cx="253.008" cy="220.706" rx="12.3667" ry="12.245" fill="#38ED60"/>
+    <path d="M49.4346 231.071H88.4373C99.9465 230.226 103.955 226.914 108.414 217.884L168.345 86.9565C175.004 77.5355 186.419 76.5936 192.128 93.55L238.741 206.581C244.121 200.573 243.499 198.112 241.607 190.616L241.595 190.568L196.884 89.7823C190.669 75.9548 185.2 71.7152 172.151 70.0019H120.781C108.442 69.9313 102.654 71.7819 96.9989 83.1888L38.0191 214.116C37.7576 224.771 40.1114 228.544 49.4346 231.071Z" fill="#F8EFE3"/>
+  </g>
+  <text x="150" y="112" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="34" font-weight="600" fill="#F8EFE3">AgentUX</text>
+  <text x="286" y="112" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="34" font-weight="400" fill="#71717A">· Prototype</text>
+
+  <!-- headline -->
+  <text x="80" y="360" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="92" font-weight="700" fill="#F8EFE3">Interactive Prototype</text>
+  <text x="80" y="430" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="34" font-weight="400" fill="#A1A1AA">A live, clickable design shared from the AgentUX catalogue.</text>
+
+  <!-- footer -->
+  <text x="80" y="566" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="28" font-weight="500" fill="#71717A">hirahul.xyz</text>
+  <text x="1120" y="566" text-anchor="end" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="28" font-weight="600" fill="#818CF8">▸ live prototype</text>
+</svg>

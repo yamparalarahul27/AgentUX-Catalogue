@@ -18,7 +18,7 @@
 // Routed via vercel.json: any request to mockups.hirahul.xyz/<path>
 // rewrites to /api/prototype-proxy?path=<path>.
 
-import { injectOverlay } from './_prototype-overlay';
+import { injectOgMeta, injectOverlay } from './_prototype-overlay';
 
 export const config = { runtime: 'edge' };
 
@@ -76,8 +76,11 @@ export default async function handler(request: Request): Promise<Response> {
   // Buffer the response so we can inject the branded loading overlay
   // at the top of <body>. Mockups are typically small (10-100 KB), so
   // buffering vs streaming is a wash; the brand polish is worth it.
+  // Inject OG/Twitter meta (so shared links unfurl with a branded card +
+  // the prototype's real title) then the branded loading overlay. The two
+  // target <head> and <body> respectively, so order is independent.
   const html = await upstream.text();
-  const modified = injectOverlay(html);
+  const modified = injectOverlay(injectOgMeta(html));
   return new Response(modified, {
     status: 200,
     headers,
