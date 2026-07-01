@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-06-24-prototype-share-preview",
+    "date": "June 24, 2026",
+    "title": "Shared prototype links now show a preview card",
+    "bullets": [
+      { "kind": "improved", "text": "When you share a prototype link (Slack, iMessage, X, etc.) it now unfurls with a branded AgentUX card and the prototype's own title, instead of a blank preview" }
+    ]
+  },
+  {
     "id": "2026-06-24-faster-loads",
     "date": "June 24, 2026",
     "title": "Faster loads, especially on repeat visits",
