@@ -7,7 +7,7 @@ import { useCanvasGalleryEnabled } from '../lib/canvas-gallery-prefs';
 import { useIsAdmin } from '../lib/auth-passcode';
 import { useCapability, useMyRole } from '../hooks/use-role-capabilities';
 import { MARKETING_BUCKET_GROUP } from '../lib/marketing-bucket';
-import { copySingleScreenshotShareLink } from '../lib/copy-single-share-link';
+import { shareSingleScreenshotLink } from '../lib/copy-single-share-link';
 import { useCatalogueData } from '../hooks/use-catalogue-data';
 import { useCatalogueFamilyActions } from '../hooks/use-catalogue-family-actions';
 import { useCatalogueFilterState } from '../hooks/use-catalogue-filter-state';
@@ -727,12 +727,14 @@ export function Catalogue({
   // Single-screenshot share — copy URL to clipboard + toast. Wired to
   // the lightbox icon-bar button and the card hover overlay.
   const handleShareSingleScreenshot = useCallback((screenshotId: string) => {
-    void copySingleScreenshotShareLink(screenshotId, { by: user.email ?? null }).then((result) => {
-      setToast(
-        result.ok
-          ? { message: 'Link copied', type: 'success' }
-          : { message: 'Could not copy — copy from the address bar instead.', type: 'error' },
-      );
+    void shareSingleScreenshotLink(screenshotId, { by: user.email ?? null }).then((method) => {
+      // 'shared' → the OS sheet was the feedback; 'cancelled' → user backed out.
+      // Only surface a toast for the clipboard fallback and hard failures.
+      if (method === 'copied') {
+        setToast({ message: 'Link copied', type: 'success' });
+      } else if (method === 'failed') {
+        setToast({ message: 'Could not share — copy from the address bar instead.', type: 'error' });
+      }
     });
   }, [setToast, user.email]);
 

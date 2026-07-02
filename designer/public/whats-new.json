@@ -1,5 +1,13 @@
 [
   {
+    "id": "2026-07-02-native-share",
+    "date": "July 2, 2026",
+    "title": "Share to any app from your phone",
+    "bullets": [
+      { "kind": "new", "text": "On mobile, sharing a view or a single screen now opens your phone's native share sheet — send straight to Messages, WhatsApp, Slack, etc. On desktop it still copies the link as before" }
+    ]
+  },
+  {
     "id": "2026-06-24-prototype-share-preview",
     "date": "June 24, 2026",
     "title": "Shared prototype links now show a preview card",

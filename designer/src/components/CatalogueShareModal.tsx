@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Copy, X } from 'lucide-react';
+import { Check, Copy, Share, X } from 'lucide-react';
 
 import { buildShareUrl, type SharePlatform } from '../lib/share-url';
+import { canNativeShare, copyToClipboard, shareOrCopyUrl } from '../lib/native-share';
 import type { ScreenshotNode } from '../types';
 import { CATALOGUE_FLOW_LABEL_KEY } from '../lib/catalogue-families';
 import { CatalogueGroupLabel } from './CatalogueGroupLabel';
@@ -117,10 +118,12 @@ export function CatalogueShareModal({
   }, [group, flow, platform, screenshots]);
 
   const canShare = Boolean(group && flow && platform && matchCount > 0 && title.trim().length > 0);
+  // Web Share API is a mobile/PWA affordance — decided once at render.
+  const nativeShareSupported = useMemo(() => canNativeShare(), []);
 
-  async function handleCopy() {
-    if (!canShare || !group || !flow || !platform) return;
-    const url = buildShareUrl({
+  function buildUrl(): string | null {
+    if (!canShare || !group || !flow || !platform) return null;
+    return buildShareUrl({
       mode: 'filter',
       group,
       flow,
@@ -128,17 +131,27 @@ export function CatalogueShareModal({
       title: title.trim() || null,
       by: userEmail,
     });
-    try {
-      await navigator.clipboard.writeText(url);
+  }
+
+  async function handleCopy() {
+    const url = buildUrl();
+    if (!url) return;
+    // Copy button always copies — never the OS sheet (that's the Share button).
+    if (await copyToClipboard(url)) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      const input = document.createElement('input');
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      try { document.execCommand('copy'); setCopied(true); window.setTimeout(() => setCopied(false), 1800); }
-      finally { document.body.removeChild(input); }
+    }
+  }
+
+  async function handleNativeShare() {
+    const url = buildUrl();
+    if (!url) return;
+    const method = await shareOrCopyUrl({ url, title: title.trim() || undefined });
+    // On a successful OS share, close the modal — the sheet was the action.
+    if (method === 'shared') onClose();
+    else if (method === 'copied') {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
     }
   }
 
@@ -237,13 +250,24 @@ export function CatalogueShareModal({
           <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
           <button
             type="button"
-            className={`btn-primary catalogue-share-modal__copy ${copied ? 'is-copied' : ''}`}
+            className={`${nativeShareSupported ? 'btn-secondary' : 'btn-primary'} catalogue-share-modal__copy ${copied ? 'is-copied' : ''}`}
             disabled={!canShare}
             onClick={handleCopy}
           >
             {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
-            {copied ? 'Link copied' : 'Copy share link'}
+            {copied ? 'Link copied' : 'Copy link'}
           </button>
+          {nativeShareSupported && (
+            <button
+              type="button"
+              className="btn-primary catalogue-share-modal__share"
+              disabled={!canShare}
+              onClick={handleNativeShare}
+            >
+              <Share size={14} aria-hidden="true" />
+              Share
+            </button>
+          )}
         </div>
       </div>
     </div>
